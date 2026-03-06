@@ -59,7 +59,11 @@ for pattern in \
   'fallback reply failed' \
   'Invalid access_token'
 do
-  count="$(rg -c "${pattern}" "${journal_file}" || true)"
+  if rg -q "${pattern}" "${journal_file}"; then
+    count="$(rg -c "${pattern}" "${journal_file}")"
+  else
+    count="0"
+  fi
   echo "${pattern}: ${count}"
 done
 
