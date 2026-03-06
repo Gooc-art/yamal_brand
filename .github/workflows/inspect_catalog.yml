@@ -1,0 +1,58 @@
+name: Inspect Catalog Structure
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    steps:
+      - name: Print catalog tree from production DB
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import sqlite3
+
+          DB_PATH = "/home/sergey/yamal_brand/max_catalog.db"
+          ROOT_ID = hashlib.sha1(b".").hexdigest()[:16]
+
+          conn = sqlite3.connect(DB_PATH)
+          conn.row_factory = sqlite3.Row
+
+          def children(parent_id):
+              return conn.execute(
+                  """
+                  SELECT id, name, type
+                  FROM assets
+                  WHERE parent_id = ? AND is_active = 1
+                  ORDER BY CASE type WHEN 'folder' THEN 0 ELSE 1 END, sort_order ASC, name ASC
+                  """,
+                  (parent_id,),
+              ).fetchall()
+
+          def counts(parent_id):
+              folder_count = conn.execute(
+                  "SELECT COUNT(*) FROM assets WHERE parent_id = ? AND is_active = 1 AND type = 'folder'",
+                  (parent_id,),
+              ).fetchone()[0]
+              file_count = conn.execute(
+                  "SELECT COUNT(*) FROM assets WHERE parent_id = ? AND is_active = 1 AND type = 'file'",
+                  (parent_id,),
+              ).fetchone()[0]
+              return folder_count, file_count
+
+          root_items = [row for row in children(ROOT_ID) if row["type"] == "folder"]
+          print(f"ROOT folders: {len(root_items)}")
+          print()
+
+          for root in root_items:
+              folders, files = counts(root["id"])
+              print(f"# {root['name']} | folders={folders} files={files}")
+              for child in children(root["id"]):
+                  child_folders, child_files = counts(child["id"]) if child["type"] == "folder" else (0, 0)
+                  print(
+                      f"  - {child['type']}: {child['name']}"
+                      + (f" | folders={child_folders} files={child_files}" if child["type"] == "folder" else "")
+                  )
+              print()
+          PY

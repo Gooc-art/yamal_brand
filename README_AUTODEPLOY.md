@@ -86,6 +86,9 @@ If passwordless `sudo` is not available, deploy fails:
 Push to `main` or run workflow manually:
 - GitHub -> `Actions` -> `Deploy Yamal MAX Bot` -> `Run workflow`.
 
+To inspect the real catalog structure on the production runner:
+- GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.
+
 ## 5) Verify on server
 
 ```bash
