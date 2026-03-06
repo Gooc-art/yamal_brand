@@ -22,7 +22,7 @@ start_bot() {
   fi
 
   cd "${BOT_DIR}"
-  nohup "${NODE_BIN}" src/bot.js >> "${LOG_FILE}" 2>&1 &
+  env -u RUNNER_TRACKING_ID nohup "${NODE_BIN}" src/bot.js >> "${LOG_FILE}" 2>&1 < /dev/null &
   echo $! > "${PID_FILE}"
   sleep 2
 

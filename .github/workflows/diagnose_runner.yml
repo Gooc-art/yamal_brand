@@ -43,3 +43,11 @@ jobs:
           mkdir -p /tmp/yamal-diag
           sudo -n cp -R /root/projects/yamal_brand/input/Макеты1 /tmp/yamal-diag/ 2>&1 || true
           ls -la /tmp/yamal-diag || true
+
+      - name: Inspect user bot process
+        run: |
+          set -x
+          ls -la /home/sergey/yamal_brand/run || true
+          cat /home/sergey/yamal_brand/run/max_bot.pid || true
+          pgrep -af 'src/bot.js' || true
+          tail -n 80 /home/sergey/yamal_brand/logs/max_bot.log || true
