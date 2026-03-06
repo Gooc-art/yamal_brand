@@ -4,6 +4,12 @@ import crypto from 'node:crypto';
 import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import { config } from './config.js';
 import { CatalogDb } from './db.js';
+import {
+  QUICK_SEARCHES,
+  getQuickSearchByKey,
+  paginateItems,
+  resolveMenuSections,
+} from './menu.js';
 import { buildQueryVariants, rankSearch } from './search.js';
 
 function safeId(value) {
@@ -62,7 +68,47 @@ function buttonForItem(item) {
   return Keyboard.button.callback(`📄 ${truncate(item.name, 40)}`, `file:${item.id}`);
 }
 
+function getRootFolders() {
+  return db.listChildren(ROOT_ID, 200, 0).filter((item) => item.type === 'folder');
+}
+
+function buildMainMenuKeyboard() {
+  const sections = resolveMenuSections(getRootFolders());
+  const rows = sections.map((section) => {
+    if (section.kind === 'direct') {
+      return [Keyboard.button.callback(`📂 ${section.title}`, `open:${section.targetId}:0`)];
+    }
+    return [Keyboard.button.callback(`📚 ${section.title}`, `section:${section.key}:0`)];
+  });
+
+  rows.push([
+    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[0].label}`, `quick:${QUICK_SEARCHES[0].key}`),
+    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[1].label}`, `quick:${QUICK_SEARCHES[1].key}`),
+  ]);
+  rows.push([
+    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[2].label}`, `quick:${QUICK_SEARCHES[2].key}`),
+    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[3].label}`, `quick:${QUICK_SEARCHES[3].key}`),
+  ]);
+  rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
+
+  return Keyboard.inlineKeyboard(rows);
+}
+
+async function renderMainMenu(ctx, intro = false) {
+  const text = [
+    intro ? 'Привет. Это каталог бренда ЯМАЛ.' : 'Главное меню бренда ЯМАЛ.',
+    'Выберите раздел или быстрый поиск.',
+    'Можно просто отправить текст: логотип, брендбук, шрифт, сувенир.',
+  ].join('\n');
+
+  await ctx.reply(text, { keyboard: buildMainMenuKeyboard() });
+}
+
 function buildNavigationRow(parentId, page, total, pageSize) {
+  if (parentId === ROOT_ID) {
+    return [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)];
+  }
+
   const row = [];
   if (page > 0) row.push(Keyboard.button.callback('◀️', `open:${parentId}:${page - 1}`));
   if ((page + 1) * pageSize < total) row.push(Keyboard.button.callback('▶️', `open:${parentId}:${page + 1}`));
@@ -81,6 +127,11 @@ function buildNavigationRow(parentId, page, total, pageSize) {
 }
 
 async function renderFolder(ctx, parentId, page = 0) {
+  if (parentId === ROOT_ID) {
+    await renderMainMenu(ctx);
+    return;
+  }
+
   const pageSafe = Number.isFinite(page) && page >= 0 ? page : 0;
   const total = db.countChildren(parentId);
   const maxPage = Math.max(0, Math.ceil(total / config.pageSize) - 1);
@@ -103,6 +154,41 @@ async function renderFolder(ctx, parentId, page = 0) {
 
   const text = children.length ? header : `${header}\n\nРаздел пуст.`;
   await ctx.reply(text, { keyboard: Keyboard.inlineKeyboard(rows) });
+}
+
+function buildSectionNavigationRow(sectionKey, page, total, pageSize) {
+  const row = [];
+  if (page > 0) row.push(Keyboard.button.callback('◀️', `section:${sectionKey}:${page - 1}`));
+  if ((page + 1) * pageSize < total) row.push(Keyboard.button.callback('▶️', `section:${sectionKey}:${page + 1}`));
+  row.push(Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`));
+  return row;
+}
+
+async function renderSection(ctx, sectionKey, page = 0) {
+  const section = resolveMenuSections(getRootFolders()).find((item) => item.key === sectionKey);
+  if (!section) {
+    await ctx.reply('Раздел не найден.');
+    await renderMainMenu(ctx);
+    return;
+  }
+
+  if (section.kind === 'direct' && section.targetId) {
+    await renderFolder(ctx, section.targetId, 0);
+    return;
+  }
+
+  const paged = paginateItems(section.items, page, config.pageSize);
+  const rows = paged.items.map((item) => [buttonForItem(item)]);
+  rows.push(buildSectionNavigationRow(sectionKey, paged.page, paged.total, config.pageSize));
+
+  await ctx.reply(
+    [
+      `📚 ${section.title}`,
+      `Подразделов: ${paged.total}`,
+      `Страница: ${paged.page + 1}/${Math.max(1, paged.maxPage + 1)}`,
+    ].join('\n'),
+    { keyboard: Keyboard.inlineKeyboard(rows) }
+  );
 }
 
 async function sendFileById(ctx, fileId) {
@@ -149,8 +235,8 @@ async function runSearch(ctx, query) {
     return;
   }
 
-  const direct = db.searchByVariants(variants, false, config.maxSearchResults * 5);
-  const fuzzyPool = db.allSearchCandidates(false, 2000);
+  const direct = db.searchByVariants(variants, true, config.maxSearchResults * 5);
+  const fuzzyPool = db.allSearchCandidates(true, 2000);
   const fuzzy = rankSearch(query, fuzzyPool, config.maxSearchResults * 5);
 
   const merged = new Map();
@@ -173,14 +259,18 @@ async function runSearch(ctx, query) {
     return;
   }
 
-  const rows = items.map((item) => [
-    Keyboard.button.callback(`📄 ${truncate(item.name, 36)}`, `file:${item.id}`),
-  ]);
+  const rows = items.map((item) => [buttonForItem(item)]);
   rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
 
-  await ctx.reply(`🔎 Найдено: ${items.length} (запрос: ${query})`, {
-    keyboard: Keyboard.inlineKeyboard(rows),
-  });
+  await ctx.reply(
+    [
+      `🔎 Найдено: ${items.length} (запрос: ${query})`,
+      'Папки открываются, файлы отправляются сразу.',
+    ].join('\n'),
+    {
+      keyboard: Keyboard.inlineKeyboard(rows),
+    }
+  );
 }
 
 function parseCommandArgs(text, cmd) {
@@ -202,14 +292,13 @@ async function safeHandle(ctx, fn) {
 
 bot.command('start', async (ctx) => {
   await safeHandle(ctx, async () => {
-    await ctx.reply('Привет. Это каталог бренда ЯМАЛ. Выберите раздел или введите запрос для поиска.');
-    await renderFolder(ctx, ROOT_ID, 0);
+    await renderMainMenu(ctx, true);
   });
 });
 
 bot.command('menu', async (ctx) => {
   await safeHandle(ctx, async () => {
-    await renderFolder(ctx, ROOT_ID, 0);
+    await renderMainMenu(ctx);
   });
 });
 
@@ -222,7 +311,8 @@ bot.command('help', async (ctx) => {
         '/menu - главное меню',
         '/search <запрос> - поиск файла',
         '',
-        'Можно просто отправить текст, бот воспримет это как поиск.'
+        'Можно просто отправить текст, бот воспримет это как поиск.',
+        'В главном меню есть быстрые кнопки по разделам и популярным запросам.',
       ].join('\n')
     );
   });
@@ -260,6 +350,37 @@ bot.action(/.*/, async (ctx) => {
     m = data.match(/^file:([a-f0-9]{16})$/i);
     if (m) {
       await sendFileById(ctx, m[1].toLowerCase());
+      return;
+    }
+
+    m = data.match(/^section:([a-z0-9_-]+):(\d+)$/i);
+    if (m) {
+      await renderSection(ctx, m[1].toLowerCase(), Number.parseInt(m[2], 10));
+      return;
+    }
+
+    m = data.match(/^quick:([a-z0-9_-]+)$/i);
+    if (m) {
+      const quick = getQuickSearchByKey(m[1].toLowerCase());
+      if (!quick) {
+        await ctx.reply('Быстрый поиск не найден.');
+        return;
+      }
+      await runSearch(ctx, quick.query);
+      return;
+    }
+
+    if (data === 'help:main') {
+      await ctx.reply(
+        [
+          'Как пользоваться:',
+          '1. Выберите раздел кнопками меню.',
+          '2. Или нажмите быстрый поиск.',
+          '3. Или просто отправьте текстовый запрос.',
+          '',
+          'Папки открываются, файлы отправляются сразу в чат.',
+        ].join('\n')
+      );
       return;
     }
 
