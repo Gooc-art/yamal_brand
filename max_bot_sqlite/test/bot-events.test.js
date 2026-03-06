@@ -19,3 +19,8 @@ test('bot sends inline buttons as MAX attachments instead of unsupported keyboar
   assert.match(botSource, /fileAttachment\.toJson\(\),[\s\S]*inlineKeyboardAttachment\(\[/);
   assert.doesNotMatch(botSource, /keyboard:\s*Keyboard\.inlineKeyboard/);
 });
+
+test('bot reads MAX callback payload and acknowledges button clicks', () => {
+  assert.match(botSource, /ctx\?\.\s*callback\?\.\s*payload/);
+  assert.match(botSource, /ctx\.answerOnCallback\(\)/);
+});

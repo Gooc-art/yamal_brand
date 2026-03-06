@@ -99,13 +99,14 @@ test('decorateFolderItems shortens and enriches known section children', () => {
   ];
 
   const decorated = decorateFolderItems(parent, items);
-  assert.equal(decorated[0].label, 'Сувениры');
-  assert.equal(decorated[0].icon, '🎁');
-  assert.equal(decorated[1].label, 'Полиграфия и навигация');
-  assert.equal(decorated[1].icon, '🪧');
-  assert.equal(decorated[2].label, 'детские футболки');
-  assert.equal(decorated[2].icon, '📁');
-  assert.equal(decorated[3].icon, '📕');
+  const byName = new Map(decorated.map((item) => [item.name, item]));
+  assert.equal(byName.get('1-Сувенирная продукция')?.label, 'Сувениры');
+  assert.equal(byName.get('1-Сувенирная продукция')?.icon, '🎁');
+  assert.equal(byName.get('3-Полиграфия и уличная навигация')?.label, 'Полиграфия и навигация');
+  assert.equal(byName.get('3-Полиграфия и уличная навигация')?.icon, '🪧');
+  assert.equal(byName.get('1-1 детские футболки')?.label, 'Детские футболки');
+  assert.equal(byName.get('1-1 детские футболки')?.icon, '👕');
+  assert.equal(byName.get('guide.pdf')?.icon, '📕');
 });
 
 test('decorateFolderItems prioritizes direct brandbook files and exposes section hints', () => {
@@ -120,4 +121,20 @@ test('decorateFolderItems prioritizes direct brandbook files and exposes section
   assert.equal(decorated[0].icon, '📕');
   assert.equal(decorated[1].label, 'Файлы и исходники');
   assert.match(getSectionHint(parent), /сразу открыть PDF/u);
+});
+
+test('decorateFolderItems unifies style folders and short file format buttons', () => {
+  const parent = { name: '2. Color' };
+  const items = [
+    { id: '1', name: 'Логотип_Color.png', type: 'file' },
+    { id: '2', name: 'Логотип_Color.ai', type: 'file' },
+    { id: '3', name: 'Логотип_Color.pdf', type: 'file' },
+  ];
+
+  const decorated = decorateFolderItems(parent, items);
+  assert.deepEqual(
+    decorated.map((item) => item.label),
+    ['AI', 'PDF', 'PNG']
+  );
+  assert.equal(getSectionHint(parent), 'Выберите формат файла.');
 });

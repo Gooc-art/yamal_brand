@@ -97,11 +97,53 @@ const FILE_ICONS = {
   ttf: '🔤',
 };
 
+const FORMAT_LABELS = {
+  ai: 'AI',
+  cdr: 'CDR',
+  eps: 'EPS',
+  jpg: 'JPG',
+  jpeg: 'JPG',
+  pdf: 'PDF',
+  png: 'PNG',
+  svg: 'SVG',
+  zip: 'ZIP',
+  otf: 'OTF',
+  ttf: 'TTF',
+};
+
+const FORMAT_ORDER = {
+  ai: 0,
+  cdr: 1,
+  eps: 2,
+  pdf: 3,
+  png: 4,
+  jpg: 5,
+  jpeg: 5,
+  svg: 6,
+  zip: 7,
+  otf: 8,
+  ttf: 9,
+};
+
+const STYLE_FOLDER_NAMES = new Set([
+  '1. CMYK для печати',
+  '2. Color',
+  '3. Black',
+  '4. White',
+]);
+
+function upperFirst(value) {
+  const text = String(value || '');
+  return text ? `${text.slice(0, 1).toUpperCase()}${text.slice(1)}` : text;
+}
+
 function cleanupFolderLabel(name) {
-  return String(name || '')
+  return upperFirst(
+    String(name || '')
     .replace(/^\d+(?:[.-]\d+)*\s*[-.)]?\s*/u, '')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+  );
 }
 
 function fileExt(name) {
@@ -109,20 +151,48 @@ function fileExt(name) {
   return match ? match[1] : '';
 }
 
-function fileConfig(item) {
+function fileConfig(item, parentName) {
   const ext = fileExt(item?.name);
+  const formatLabel = FORMAT_LABELS[ext];
+  if (STYLE_FOLDER_NAMES.has(parentName) && formatLabel) {
+    return {
+      label: formatLabel,
+      icon: FILE_ICONS[ext] || '📄',
+      order: FORMAT_ORDER[ext] ?? 999,
+    };
+  }
   return {
     label: item?.name || '',
     icon: FILE_ICONS[ext] || '📄',
+    order: FORMAT_ORDER[ext] ?? 999,
   };
 }
 
+function inferFolderIcon(parentName, label) {
+  const haystack = `${parentName} ${label}`.toLowerCase();
+  if (/футбол|худи|свитшот|толстов|майк|одеж|кеп|панам|шапк/u.test(haystack)) return '👕';
+  if (/круж|термос|бутыл|стакан/u.test(haystack)) return '🥤';
+  if (/ручк|карандаш|маркер/u.test(haystack)) return '✏️';
+  if (/блокнот|тетрад|ежеднев|планер/u.test(haystack)) return '📒';
+  if (/пакет|шоппер|сумк|рюкзак/u.test(haystack)) return '👜';
+  if (/стикер|наклей/u.test(haystack)) return '🏷️';
+  if (/значок|пин/u.test(haystack)) return '📌';
+  if (/флеш/u.test(haystack)) return '💾';
+  if (/зонт/u.test(haystack)) return '☂️';
+  if (/плед/u.test(haystack)) return '🧶';
+  if (/буклет|листов|плакат|баннер|навигац|таблич|полиграф/u.test(haystack)) return '🪧';
+  if (/диджитал|сайт|экран|презент|соцсет/u.test(haystack)) return '💻';
+  if (/шрифт/u.test(haystack)) return '🔤';
+  return '📁';
+}
+
 function folderConfig(parentName, itemName) {
+  const fallbackLabel = cleanupFolderLabel(itemName);
   return (
     PARENT_SPECIFIC_LABELS[parentName]?.[itemName] ||
     GENERIC_FOLDER_LABELS[itemName] || {
-      label: cleanupFolderLabel(itemName),
-      icon: '📁',
+      label: fallbackLabel,
+      icon: inferFolderIcon(parentName, fallbackLabel),
     }
   );
 }
@@ -159,6 +229,12 @@ export function getQuickSearchByKey(key) {
 
 export function getSectionHint(itemOrName) {
   const name = typeof itemOrName === 'string' ? itemOrName : itemOrName?.name;
+  if (STYLE_FOLDER_NAMES.has(name)) return 'Выберите формат файла.';
+  if (name === '1-Сувенирная продукция') return 'Выберите категорию сувениров.';
+  if (name === '2-Канцелярия') return 'Выберите тип канцелярии.';
+  if (name === '3-Полиграфия и уличная навигация') return 'Выберите тип носителя.';
+  if (name === '4-Диджитал') return 'Выберите цифровой носитель.';
+  if (name === 'Ямал 95') return 'Выберите PNG или вектор.';
   return SECTION_HINTS[name] || '';
 }
 
@@ -166,11 +242,12 @@ export function decorateFolderItems(parentItem, items) {
   const parentName = parentItem?.name || '';
   const decorated = items.map((item) => {
     if (item.type === 'file') {
-      const config = fileConfig(item);
+      const config = fileConfig(item, parentName);
       return {
         ...item,
         label: config.label,
         icon: config.icon,
+        sortRank: config.order ?? 999,
       };
     }
 
@@ -179,15 +256,19 @@ export function decorateFolderItems(parentItem, items) {
       ...item,
       label: config.label,
       icon: config.icon,
+      sortRank: 0,
     };
   });
 
-  if (!/^Брендбук /u.test(parentName)) {
-    return decorated;
-  }
-
   return decorated.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'file' ? -1 : 1;
+    if (/^Брендбук /u.test(parentName) && a.type !== b.type) {
+      return a.type === 'file' ? -1 : 1;
+    }
+    if (STYLE_FOLDER_NAMES.has(parentName) && a.type === 'file' && b.type === 'file') {
+      if ((a.sortRank ?? 999) !== (b.sortRank ?? 999)) {
+        return (a.sortRank ?? 999) - (b.sortRank ?? 999);
+      }
+    }
     return String(a.name).localeCompare(String(b.name), 'ru');
   });
 }

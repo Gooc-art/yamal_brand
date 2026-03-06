@@ -57,7 +57,9 @@ async function denyAccess(ctx) {
 
 function getCallbackData(ctx) {
   return String(
-    ctx?.callbackQuery?.payload ||
+    ctx?.callback?.payload ||
+      ctx?.update?.callback?.payload ||
+      ctx?.callbackQuery?.payload ||
       ctx?.callbackQuery?.data ||
       ctx?.update?.callback_query?.payload ||
       ctx?.update?.callback_query?.data ||
@@ -99,6 +101,16 @@ function chunkIntoRows(items, size) {
 
 function inlineKeyboardAttachment(rows) {
   return Keyboard.inlineKeyboard(rows);
+}
+
+function buildFolderItemRows(items) {
+  const buttons = items.map((item) => buttonForItem(item));
+  const maxLen = items.reduce(
+    (max, item) => Math.max(max, String(item.label || item.name || '').length),
+    0
+  );
+  const rowSize = maxLen <= 8 ? 3 : maxLen <= 22 ? 2 : 1;
+  return chunkIntoRows(buttons, rowSize);
 }
 
 function buildMainMenuKeyboard() {
@@ -168,7 +180,7 @@ async function renderFolder(ctx, parentId, page = 0) {
   const title = parentId === ROOT_ID ? 'Бренд ЯМАЛ' : parent?.name || 'Раздел';
   const children = decorateFolderItems(parent, db.listChildren(parentId, config.pageSize, offset));
 
-  const rows = children.map((item) => [buttonForItem(item)]);
+  const rows = buildFolderItemRows(children);
   const navRow = buildNavigationRow(parentId, pageClamped, total, config.pageSize);
   if (navRow.length) rows.push(navRow);
   const hint = getSectionHint(parent);
@@ -342,6 +354,9 @@ bot.on('message_created', async (ctx) => {
 
 bot.action(/.*/, async (ctx) => {
   await safeHandle(ctx, async () => {
+    if (ctx?.callback?.callback_id) {
+      await ctx.answerOnCallback();
+    }
     const data = getCallbackData(ctx);
     let m = data.match(/^open:([a-f0-9]{16}):(\d+)$/i);
     if (m) {
