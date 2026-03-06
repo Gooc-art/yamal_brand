@@ -58,8 +58,15 @@ chown -R sergey:sergey /home/sergey/yamal_brand
 
 Put runtime data there (once):
 - `/home/sergey/yamal_brand/input/Макеты1`
-- `/home/sergey/yamal_brand/max_bot_sqlite/.env` with valid `MAX_BOT_TOKEN`
+- `/home/sergey/yamal_brand/max_bot_sqlite/.env`
 - Node.js is bootstrapped automatically into `/home/sergey/yamal_brand/.runtime/node` during deploy if the server does not have `node`/`npm` installed.
+- `MAX_BOT_TOKEN` can be injected automatically from GitHub Actions Secret `MAX_BOT_TOKEN`
+
+Set the repo secret once:
+
+```bash
+gh secret set MAX_BOT_TOKEN -R <YOUR_GH>/<YOUR_REPO>
+```
 
 Allow the runner user to manage the bot service:
 

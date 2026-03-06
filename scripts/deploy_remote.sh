@@ -28,6 +28,24 @@ run_systemctl() {
   fi
 }
 
+upsert_env_line() {
+  local key
+  local value
+  local file
+  local tmp
+
+  key="$1"
+  value="$2"
+  file="$3"
+  tmp="$(mktemp)"
+
+  if [ -f "${file}" ]; then
+    grep -v "^${key}=" "${file}" > "${tmp}" || true
+  fi
+  printf '%s=%s\n' "${key}" "${value}" >> "${tmp}"
+  mv "${tmp}" "${file}"
+}
+
 ensure_node_runtime() {
   if [ -x "${NODE_RUNTIME_LINK}/bin/node" ] && [ -x "${NODE_RUNTIME_LINK}/bin/npm" ]; then
     NODE_BIN="${NODE_RUNTIME_LINK}/bin/node"
@@ -132,6 +150,10 @@ fi
 if [ ! -f "${ENV_FILE}" ]; then
   echo "[deploy] ERROR: .env missing at ${ENV_FILE}. Fill MAX_BOT_TOKEN and rerun." >&2
   exit 1
+fi
+
+if [ -n "${MAX_BOT_TOKEN:-}" ]; then
+  upsert_env_line "MAX_BOT_TOKEN" "${MAX_BOT_TOKEN}" "${ENV_FILE}"
 fi
 
 if ! grep -q '^MAX_BOT_TOKEN=' "${ENV_FILE}"; then

@@ -15,6 +15,7 @@ jobs:
     env:
       DEPLOY_DIR: /home/sergey/yamal_brand
       DEPLOY_SERVICE: max_yamal_bot.service
+      MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
 
     steps:
       - name: Checkout
