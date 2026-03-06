@@ -59,6 +59,7 @@ chown -R sergey:sergey /home/sergey/yamal_brand
 Put runtime data there (once):
 - `/home/sergey/yamal_brand/input/Макеты1`
 - `/home/sergey/yamal_brand/max_bot_sqlite/.env` with valid `MAX_BOT_TOKEN`
+- Node.js is bootstrapped automatically into `/home/sergey/yamal_brand/.runtime/node` during deploy if the server does not have `node`/`npm` installed.
 
 Allow the runner user to manage the bot service:
 
@@ -81,5 +82,5 @@ journalctl -u max_yamal_bot.service -n 80 --no-pager
 ```
 
 ## Notes
-- Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`.
+- Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`, `.runtime/`.
 - If you changed service file, deploy script re-installs it into `/etc/systemd/system/max_yamal_bot.service`.

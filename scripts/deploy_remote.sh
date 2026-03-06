@@ -8,9 +8,14 @@ ENV_FILE="${ENV_FILE:-${BOT_DIR}/.env}"
 CATALOG_SOURCE_DIR="${CATALOG_SOURCE_DIR:-${DEPLOY_DIR}/input/Макеты1}"
 CATALOG_DB_PATH="${CATALOG_DB_PATH:-${DEPLOY_DIR}/max_catalog.db}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+NODE_VERSION="${NODE_VERSION:-20.11.1}"
+NODE_RUNTIME_LINK="${NODE_RUNTIME_LINK:-${DEPLOY_DIR}/.runtime/node}"
 LEGACY_DEPLOY_DIR="${LEGACY_DEPLOY_DIR:-/root/projects/yamal_brand}"
 LEGACY_ENV_FILE="${LEGACY_ENV_FILE:-${LEGACY_DEPLOY_DIR}/max_bot_sqlite/.env}"
 LEGACY_CATALOG_SOURCE_DIR="${LEGACY_CATALOG_SOURCE_DIR:-${LEGACY_DEPLOY_DIR}/input/Макеты1}"
+
+NODE_BIN=""
+NPM_BIN=""
 
 run_systemctl() {
   if [ "$(id -u)" -eq 0 ]; then
@@ -21,6 +26,64 @@ run_systemctl() {
     echo "[deploy] ERROR: privileged command failed and sudo is unavailable: $*" >&2
     exit 1
   fi
+}
+
+ensure_node_runtime() {
+  if [ -x "${NODE_RUNTIME_LINK}/bin/node" ] && [ -x "${NODE_RUNTIME_LINK}/bin/npm" ]; then
+    NODE_BIN="${NODE_RUNTIME_LINK}/bin/node"
+    NPM_BIN="${NODE_RUNTIME_LINK}/bin/npm"
+    return
+  fi
+
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    NODE_BIN="$(command -v node)"
+    NPM_BIN="$(command -v npm)"
+    return
+  fi
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "[deploy] ERROR: curl is required to bootstrap Node.js runtime" >&2
+    exit 1
+  fi
+  if ! command -v tar >/dev/null 2>&1; then
+    echo "[deploy] ERROR: tar is required to bootstrap Node.js runtime" >&2
+    exit 1
+  fi
+
+  local arch
+  case "$(uname -m)" in
+    x86_64|amd64) arch="x64" ;;
+    aarch64|arm64) arch="arm64" ;;
+    *)
+      echo "[deploy] ERROR: unsupported CPU architecture: $(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+
+  local runtime_root
+  local node_dist
+  local archive_name
+  local download_url
+  local tmp_dir
+
+  runtime_root="${DEPLOY_DIR}/.runtime"
+  node_dist="node-v${NODE_VERSION}-linux-${arch}"
+  archive_name="${node_dist}.tar.xz"
+  download_url="https://nodejs.org/dist/v${NODE_VERSION}/${archive_name}"
+
+  mkdir -p "${runtime_root}"
+  tmp_dir="$(mktemp -d)"
+  trap 'rm -rf "${tmp_dir}"' RETURN
+
+  echo "[deploy] bootstrap local Node.js runtime ${NODE_VERSION} (${arch})"
+  curl -fsSL "${download_url}" -o "${tmp_dir}/${archive_name}"
+  tar -xf "${tmp_dir}/${archive_name}" -C "${tmp_dir}"
+  rm -rf "${runtime_root}/${node_dist}"
+  mv "${tmp_dir}/${node_dist}" "${runtime_root}/${node_dist}"
+  ln -sfn "${runtime_root}/${node_dist}" "${NODE_RUNTIME_LINK}"
+
+  NODE_BIN="${NODE_RUNTIME_LINK}/bin/node"
+  NPM_BIN="${NODE_RUNTIME_LINK}/bin/npm"
 }
 
 echo "[deploy] host=$(hostname) dir=${DEPLOY_DIR} service=${DEPLOY_SERVICE}"
@@ -78,11 +141,12 @@ if grep -Eq '^MAX_BOT_TOKEN=(\s*|put_your_token_here)$' "${ENV_FILE}"; then
 fi
 
 echo "[deploy] install dependencies"
+ensure_node_runtime
 cd "${BOT_DIR}"
 if [ -f package-lock.json ]; then
-  npm ci --no-audit --no-fund
+  "${NPM_BIN}" ci --no-audit --no-fund
 else
-  npm install --no-audit --no-fund
+  "${NPM_BIN}" install --no-audit --no-fund
 fi
 
 echo "[deploy] rebuild SQLite catalog"

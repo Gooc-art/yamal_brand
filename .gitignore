@@ -5,6 +5,7 @@ __pycache__/
 # Node
 node_modules/
 max_bot_sqlite/node_modules/
+.runtime/
 
 # Runtime secrets
 .env

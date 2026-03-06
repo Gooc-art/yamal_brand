@@ -18,6 +18,8 @@ cp .env.example .env
 npm install
 ```
 
+Для автодеплоя отдельная системная установка Node.js не обязательна: deploy-скрипт сам скачает локальный runtime в `/home/sergey/yamal_brand/.runtime/node`.
+
 Заполни в `.env`:
 - `MAX_BOT_TOKEN`
 - при необходимости `ALLOWED_USER_IDS`
