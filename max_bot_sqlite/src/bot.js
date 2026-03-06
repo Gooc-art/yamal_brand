@@ -88,6 +88,10 @@ function chunkIntoRows(items, size) {
   return rows;
 }
 
+function inlineKeyboardAttachment(rows) {
+  return Keyboard.inlineKeyboard(rows);
+}
+
 function buildMainMenuKeyboard() {
   const rootFolders = resolveRootMenuFolders(getRootFolders());
   const rows = chunkIntoRows(
@@ -107,7 +111,7 @@ function buildMainMenuKeyboard() {
   ]);
   rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
 
-  return Keyboard.inlineKeyboard(rows);
+  return inlineKeyboardAttachment(rows);
 }
 
 async function renderMainMenu(ctx, intro = false) {
@@ -117,7 +121,7 @@ async function renderMainMenu(ctx, intro = false) {
     'Можно просто отправить текст: логотип, брендбук, шрифт, сувенир.',
   ].join('\n');
 
-  await ctx.reply(text, { keyboard: buildMainMenuKeyboard() });
+  await ctx.reply(text, { attachments: [buildMainMenuKeyboard()] });
 }
 
 function buildNavigationRow(parentId, page, total, pageSize) {
@@ -169,7 +173,7 @@ async function renderFolder(ctx, parentId, page = 0) {
   ].join('\n');
 
   const text = children.length ? header : `${header}\n\nРаздел пуст.`;
-  await ctx.reply(text, { keyboard: Keyboard.inlineKeyboard(rows) });
+  await ctx.reply(text, { attachments: [inlineKeyboardAttachment(rows)] });
 }
 
 async function sendFileById(ctx, fileId) {
@@ -197,11 +201,13 @@ async function sendFileById(ctx, fileId) {
     const fileAttachment = await bot.api.uploadFile({ source: fs.createReadStream(fullPath) });
     const backParent = item.parent_id || ROOT_ID;
     await ctx.reply(`📄 ${item.name}`, {
-      attachments: [fileAttachment.toJson()],
-      keyboard: Keyboard.inlineKeyboard([
-        [Keyboard.button.callback('⬅️ К разделу', `open:${backParent}:0`)],
-        [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
-      ]),
+      attachments: [
+        fileAttachment.toJson(),
+        inlineKeyboardAttachment([
+          [Keyboard.button.callback('⬅️ К разделу', `open:${backParent}:0`)],
+          [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+        ]),
+      ],
     });
   } catch (err) {
     await ctx.reply('Не удалось отправить файл. Проверь размер/доступность файла.');
@@ -249,7 +255,7 @@ async function runSearch(ctx, query) {
       'Папки открываются, файлы отправляются сразу.',
     ].join('\n'),
     {
-      keyboard: Keyboard.inlineKeyboard(rows),
+      attachments: [inlineKeyboardAttachment(rows)],
     }
   );
 }

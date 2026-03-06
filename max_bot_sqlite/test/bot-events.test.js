@@ -12,3 +12,10 @@ test('bot uses MAX-specific update names for start and text messages', () => {
   assert.match(botSource, /bot\.on\('message_created'/);
   assert.doesNotMatch(botSource, /bot\.on\('message'/);
 });
+
+test('bot sends inline buttons as MAX attachments instead of unsupported keyboard field', () => {
+  assert.match(botSource, /attachments:\s*\[buildMainMenuKeyboard\(\)\]/);
+  assert.match(botSource, /attachments:\s*\[inlineKeyboardAttachment\(rows\)\]/);
+  assert.match(botSource, /fileAttachment\.toJson\(\),[\s\S]*inlineKeyboardAttachment\(\[/);
+  assert.doesNotMatch(botSource, /keyboard:\s*Keyboard\.inlineKeyboard/);
+});
