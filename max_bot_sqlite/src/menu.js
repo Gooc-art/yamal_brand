@@ -15,8 +15,17 @@ export const ROOT_MENU_FOLDERS = [
 ];
 
 export const QUICK_SEARCHES = [
+  { key: 'logo', label: 'Логотип', query: 'логотип' },
+  { key: 'brandbook', label: 'Брендбук', query: 'брендбук' },
+  { key: 'city', label: 'Город', query: 'город' },
+  { key: 'pattern', label: 'Паттерн', query: 'паттерн' },
   { key: 'font', label: 'Шрифт', query: 'шрифт' },
+  { key: 'souvenir', label: 'Сувенир', query: 'сувенир' },
 ];
+
+export function getMainMenuQuickSearches() {
+  return QUICK_SEARCHES.filter((item) => item.key === 'font');
+}
 
 const SECTION_HINTS = {
   'Логотип': 'Выберите тип логотипа или готовый формат.',

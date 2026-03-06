@@ -37,3 +37,11 @@ test('help screen includes back and menu buttons', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
   assert.match(botSource, /attachments:\s*\[buildHelpKeyboard\(\)\]/);
 });
+
+test('main menu exposes dedicated search screen with quick shortcuts', () => {
+  assert.match(botSource, /Keyboard\.button\.callback\('🔎 Поиск',\s*'search:main'\)/);
+  assert.match(botSource, /function buildSearchKeyboard\(\)/);
+  assert.match(botSource, /if \(data === 'search:main'\)/);
+  assert.match(botSource, /Отправьте слово или фразу, даже если не уверены в точном названии\./);
+  assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
+});

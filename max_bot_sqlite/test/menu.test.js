@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
+  getMainMenuQuickSearches,
   getQuickSearchByKey,
   getSectionHint,
   paginateItems,
@@ -80,9 +81,17 @@ test('resolveRootMenuFolders appends unknown root folders after known sections',
 
 test('menu helpers return configured quick search and paginate items', () => {
   assert.equal(getQuickSearchByKey('font')?.query, 'шрифт');
-  assert.equal(getQuickSearchByKey('pattern'), null);
-  assert.equal(QUICK_SEARCHES.length, 1);
-  assert.deepEqual(QUICK_SEARCHES.map((item) => item.label), ['Шрифт']);
+  assert.equal(getQuickSearchByKey('pattern')?.query, 'паттерн');
+  assert.equal(QUICK_SEARCHES.length, 6);
+  assert.deepEqual(getMainMenuQuickSearches().map((item) => item.label), ['Шрифт']);
+  assert.deepEqual(QUICK_SEARCHES.map((item) => item.label), [
+    'Логотип',
+    'Брендбук',
+    'Город',
+    'Паттерн',
+    'Шрифт',
+    'Сувенир',
+  ]);
 
   const result = paginateItems([1, 2, 3, 4, 5], 9, 2);
   assert.equal(result.page, 2);

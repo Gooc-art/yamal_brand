@@ -8,6 +8,7 @@ import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
+  getMainMenuQuickSearches,
   getQuickSearchByKey,
   getSectionHint,
   resolveRootMenuFolders,
@@ -174,9 +175,12 @@ function buildMainMenuKeyboard() {
   );
 
   const quickSearchRows = chunkIntoRows(
-    QUICK_SEARCHES.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`)),
+    getMainMenuQuickSearches().map((item) =>
+      Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`)
+    ),
     2
   );
+  rows.push([Keyboard.button.callback('🔎 Поиск', 'search:main')]);
   rows.push(...quickSearchRows);
   rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
 
@@ -192,11 +196,23 @@ function buildHelpKeyboard() {
   ]);
 }
 
+function buildSearchKeyboard() {
+  const rows = chunkIntoRows(
+    QUICK_SEARCHES.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`)),
+    2
+  );
+  rows.push([
+    Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
+    Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
+  ]);
+  return inlineKeyboardAttachment(rows);
+}
+
 async function renderMainMenu(ctx, intro = false) {
   const text = [
     intro ? 'Привет. Это каталог бренда ЯМАЛ.' : 'Главное меню бренда ЯМАЛ.',
     'Вынесены верхние разделы, городские брендбуки и паттерны.',
-    'Можно просто отправить текст: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир.',
+    'Можно нажать кнопку Поиск или просто отправить текст: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир.',
   ].join('\n');
 
   await replyReplacingLast(ctx, text, { attachments: [buildMainMenuKeyboard()] });
@@ -389,7 +405,7 @@ bot.command('help', async (ctx) => {
         '/search <запрос> - поиск файла',
         '',
         'Можно просто отправить текст, бот воспримет это как поиск.',
-        'В главном меню есть кнопки всех верхних разделов и одна быстрая кнопка: Шрифт.',
+        'В главном меню есть кнопки разделов, кнопка Поиск и быстрая кнопка Шрифт.',
       ].join('\n')
     );
   });
@@ -454,6 +470,19 @@ bot.action(/.*/, async (ctx) => {
           'Папки открываются, файлы отправляются сразу в чат.',
         ].join('\n'),
         { attachments: [buildHelpKeyboard()] }
+      );
+      return;
+    }
+
+    if (data === 'search:main') {
+      await replyReplacingLast(
+        ctx,
+        [
+          'Поиск:',
+          'Отправьте слово или фразу, даже если не уверены в точном названии.',
+          'Можно искать так: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир.',
+        ].join('\n'),
+        { attachments: [buildSearchKeyboard()] }
       );
       return;
     }
