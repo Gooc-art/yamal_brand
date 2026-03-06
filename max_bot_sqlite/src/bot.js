@@ -183,6 +183,15 @@ function buildMainMenuKeyboard() {
   return inlineKeyboardAttachment(rows);
 }
 
+function buildHelpKeyboard() {
+  return inlineKeyboardAttachment([
+    [
+      Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
+      Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
+    ],
+  ]);
+}
+
 async function renderMainMenu(ctx, intro = false) {
   const text = [
     intro ? 'Привет. Это каталог бренда ЯМАЛ.' : 'Главное меню бренда ЯМАЛ.',
@@ -443,7 +452,8 @@ bot.action(/.*/, async (ctx) => {
           '4. Или просто отправьте текстовый запрос.',
           '',
           'Папки открываются, файлы отправляются сразу в чат.',
-        ].join('\n')
+        ].join('\n'),
+        { attachments: [buildHelpKeyboard()] }
       );
       return;
     }

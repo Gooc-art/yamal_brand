@@ -30,3 +30,10 @@ test('bot replaces previous bot reply before sending a new one', () => {
   assert.match(botSource, /await clearPreviousBotReply\(ctx,\s*\{\s*deleteCurrentMessage:\s*ctx\?\.\s*updateType === 'message_callback'/);
   assert.match(botSource, /rememberBotReply\(ctx,\s*sent\)/);
 });
+
+test('help screen includes back and menu buttons', () => {
+  assert.match(botSource, /function buildHelpKeyboard\(\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\('⬅️ Назад',\s*`open:\$\{ROOT_ID\}:0`\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
+  assert.match(botSource, /attachments:\s*\[buildHelpKeyboard\(\)\]/);
+});
