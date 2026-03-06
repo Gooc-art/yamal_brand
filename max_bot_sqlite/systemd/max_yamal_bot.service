@@ -6,9 +6,11 @@ After=network.target
 Type=simple
 WorkingDirectory=/home/sergey/yamal_brand/max_bot_sqlite
 EnvironmentFile=/home/sergey/yamal_brand/max_bot_sqlite/.env
+Environment=NODE_ENV=production
 ExecStart=/home/sergey/yamal_brand/.runtime/node/bin/node /home/sergey/yamal_brand/max_bot_sqlite/src/bot.js
 Restart=always
-RestartSec=3
+RestartSec=5
+SyslogIdentifier=max_yamal_bot
 User=sergey
 
 [Install]

@@ -28,6 +28,22 @@ run_systemctl() {
   fi
 }
 
+can_run_privileged() {
+  if [ "$(id -u)" -eq 0 ]; then
+    return 0
+  fi
+  if ! command -v sudo >/dev/null 2>&1; then
+    return 1
+  fi
+  sudo -n "$@" >/dev/null 2>&1
+}
+
+can_manage_systemd_service() {
+  can_run_privileged cp --version &&
+    can_run_privileged systemctl --version &&
+    can_run_privileged journalctl --version
+}
+
 upsert_env_line() {
   local key
   local value
@@ -179,10 +195,18 @@ echo "[deploy] rebuild SQLite catalog"
   --source "${CATALOG_SOURCE_DIR}" \
   --db "${CATALOG_DB_PATH}"
 
-if [ "$(id -u)" -eq 0 ] || sudo -n true 2>/dev/null; then
+if can_manage_systemd_service; then
   echo "[deploy] install/update systemd unit"
   if [ -f "${BOT_DIR}/systemd/max_yamal_bot.service" ]; then
     run_systemctl cp "${BOT_DIR}/systemd/max_yamal_bot.service" "/etc/systemd/system/max_yamal_bot.service"
+  fi
+
+  if [ -x "${DEPLOY_DIR}/scripts/manage_user_bot.sh" ]; then
+    echo "[deploy] stop legacy user-managed bot process"
+    DEPLOY_DIR="${DEPLOY_DIR}" BOT_DIR="${BOT_DIR}" NODE_BIN="${NODE_BIN}" \
+      bash "${DEPLOY_DIR}/scripts/manage_user_bot.sh" stop || true
+    DEPLOY_DIR="${DEPLOY_DIR}" BOT_DIR="${BOT_DIR}" NODE_BIN="${NODE_BIN}" \
+      bash "${DEPLOY_DIR}/scripts/manage_user_bot.sh" disable-reboot || true
   fi
 
   echo "[deploy] restart service"
@@ -194,10 +218,8 @@ if [ "$(id -u)" -eq 0 ] || sudo -n true 2>/dev/null; then
   echo "[deploy] recent logs"
   run_systemctl journalctl -u "${DEPLOY_SERVICE}" -S '10 minutes ago' --no-pager -l | tail -n 120 || true
 else
-  echo "[deploy] passwordless sudo unavailable, using user-managed bot process"
-  chmod +x "${DEPLOY_DIR}/scripts/manage_user_bot.sh"
-  DEPLOY_DIR="${DEPLOY_DIR}" BOT_DIR="${BOT_DIR}" NODE_BIN="${NODE_BIN}" \
-    bash "${DEPLOY_DIR}/scripts/manage_user_bot.sh" deploy
+  echo "[deploy] ERROR: passwordless sudo for cp/systemctl/journalctl is required for systemd deployment" >&2
+  exit 1
 fi
 
 echo "[deploy] done"

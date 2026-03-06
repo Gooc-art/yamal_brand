@@ -4,7 +4,34 @@ import { buildQueryVariants, rankSearch } from '../src/search.js';
 
 test('buildQueryVariants expands synonyms and transliteration', () => {
   const variants = buildQueryVariants('логотип');
-  assert.deepEqual(variants, ['логотип', 'logotip', 'лого', 'logo', 'brandmark']);
+  assert.deepEqual(variants, [
+    'логотип',
+    'logotip',
+    'лого',
+    'logo',
+    'logotype',
+    'brandmark',
+    'знак',
+    'эмблема',
+  ]);
+});
+
+test('buildQueryVariants expands non-obvious user vocabulary', () => {
+  assert.deepEqual(buildQueryVariants('сувенирка'), [
+    'сувенирка',
+    'suvenirka',
+    'сувенир',
+    'мерч',
+    'merch',
+    'подарок',
+  ]);
+  assert.deepEqual(buildQueryVariants('гайд'), [
+    'гайд',
+    'gaid',
+    'брендбук',
+    'гайдлайн',
+    'guide',
+  ]);
 });
 
 test('rankSearch prefers exact and more relevant matches', () => {

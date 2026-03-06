@@ -118,6 +118,18 @@ install_reboot_job() {
   echo "[user-bot] ensured @reboot crontab entry"
 }
 
+disable_reboot_job() {
+  local current
+  local tmp
+
+  current="$(crontab -l 2>/dev/null || true)"
+  tmp="$(mktemp)"
+  printf '%s\n' "${current}" | grep -Fv "scripts/manage_user_bot.sh' start" > "${tmp}" || true
+  crontab "${tmp}"
+  rm -f "${tmp}"
+  echo "[user-bot] removed @reboot crontab entry"
+}
+
 tail_logs() {
   tail -n 120 "${LOG_FILE}" 2>/dev/null || true
 }
@@ -143,11 +155,14 @@ case "${1:-}" in
     status_bot
     tail_logs
     ;;
+  disable-reboot)
+    disable_reboot_job
+    ;;
   logs)
     tail_logs
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart|status|deploy|logs}" >&2
+    echo "Usage: $0 {start|stop|restart|status|deploy|disable-reboot|logs}" >&2
     exit 1
     ;;
 esac

@@ -76,11 +76,10 @@ chmod 440 /etc/sudoers.d/yamal-bot
 visudo -cf /etc/sudoers.d/yamal-bot
 ```
 
-If passwordless `sudo` is not available, deploy still works:
-- the bot is started as user `sergey`
-- logs go to `/home/sergey/yamal_brand/logs/max_bot.log`
-- pid file goes to `/home/sergey/yamal_brand/run/max_bot.pid`
-- autostart is registered via `crontab @reboot`
+If passwordless `sudo` is not available, deploy fails:
+- this project now treats it as a deployment error
+- the runner must be able to run `cp`, `systemctl` and `journalctl` through `sudo -n`
+- this keeps the bot under one normal `systemd` service and avoids duplicate processes
 
 ## 4) Run autodeploy
 
@@ -97,3 +96,4 @@ journalctl -u max_yamal_bot.service -n 80 --no-pager
 ## Notes
 - Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`, `.runtime/`, `logs/`, `run/`.
 - If you changed service file, deploy script re-installs it into `/etc/systemd/system/max_yamal_bot.service`.
+- During migration from the old user-managed mode, deploy stops the legacy process and removes its `@reboot` crontab entry before enabling `systemd`.

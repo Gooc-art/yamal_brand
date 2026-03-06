@@ -34,6 +34,12 @@ python3 /home/sergey/yamal_brand/scripts/query_sqlite_catalog.py \
   --db "/home/sergey/yamal_brand/max_catalog.db" search --query "логотип"
 ```
 
+Search understands broader user wording too:
+- `логотип`, `знак`, `эмблема`
+- `брендбук`, `гайд`, `гайдлайн`
+- `шрифт`, `гарнитура`
+- `сувенир`, `мерч`, `сувенирка`
+
 ## 3) Integration idea for MAX bot
 
 - `/start` -> run `children --parent-id <root_id>`
