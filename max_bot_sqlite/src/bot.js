@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import { config } from './config.js';
 import { CatalogDb } from './db.js';
+import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
@@ -20,6 +21,7 @@ function safeId(value) {
 const ROOT_ID = safeId('.');
 const db = new CatalogDb(config.dbPath);
 const bot = new Bot(config.token);
+const lastBotMessageIds = new Map();
 
 bot.catch((err, ctx) => {
   console.error('[bot] unhandled error', {
@@ -32,6 +34,11 @@ bot.catch((err, ctx) => {
 
 function getMessageText(ctx) {
   return String(ctx?.message?.body?.text || ctx?.message?.text || ctx?.text || '').trim();
+}
+
+function getChatKey(ctx) {
+  if (ctx?.chatId === undefined || ctx?.chatId === null) return '';
+  return String(ctx.chatId);
 }
 
 function getSenderId(ctx) {
@@ -52,7 +59,7 @@ function isAllowed(ctx) {
 }
 
 async function denyAccess(ctx) {
-  await ctx.reply('Доступ ограничен. Обратитесь к администратору бота.');
+  await replyReplacingLast(ctx, 'Доступ ограничен. Обратитесь к администратору бота.');
 }
 
 function getCallbackData(ctx) {
@@ -103,6 +110,50 @@ function inlineKeyboardAttachment(rows) {
   return Keyboard.inlineKeyboard(rows);
 }
 
+async function deleteMessageSafe(messageId) {
+  if (!messageId) return;
+  try {
+    await bot.api.deleteMessage(messageId);
+  } catch (err) {
+    if ([400, 403, 404].includes(Number(err?.status))) return;
+    console.warn('[deleteMessageSafe] failed', { messageId, err });
+  }
+}
+
+async function clearPreviousBotReply(ctx, { deleteCurrentMessage = false } = {}) {
+  const chatKey = getChatKey(ctx);
+  const ids = buildMessageIdsToDelete({
+    trackedId: chatKey ? lastBotMessageIds.get(chatKey) : '',
+    currentMessageId: ctx?.messageId,
+    deleteCurrentMessage,
+  });
+
+  for (const messageId of ids) {
+    await deleteMessageSafe(messageId);
+  }
+
+  if (chatKey) {
+    lastBotMessageIds.delete(chatKey);
+  }
+}
+
+function rememberBotReply(ctx, message) {
+  const chatKey = getChatKey(ctx);
+  const messageId = getMessageId(message);
+  if (chatKey && messageId) {
+    lastBotMessageIds.set(chatKey, messageId);
+  }
+}
+
+async function replyReplacingLast(ctx, text, extra) {
+  await clearPreviousBotReply(ctx, {
+    deleteCurrentMessage: ctx?.updateType === 'message_callback',
+  });
+  const sent = await ctx.reply(text, extra);
+  rememberBotReply(ctx, sent);
+  return sent;
+}
+
 function buildFolderItemRows(items) {
   const buttons = items.map((item) => buttonForItem(item));
   const maxLen = items.reduce(
@@ -139,7 +190,7 @@ async function renderMainMenu(ctx, intro = false) {
     'Можно просто отправить текст: логотип, брендбук, город, паттерн, шрифт, сувенир.',
   ].join('\n');
 
-  await ctx.reply(text, { attachments: [buildMainMenuKeyboard()] });
+  await replyReplacingLast(ctx, text, { attachments: [buildMainMenuKeyboard()] });
 }
 
 function buildNavigationRow(parentId, page, total, pageSize) {
@@ -194,13 +245,13 @@ async function renderFolder(ctx, parentId, page = 0) {
   const text = children.length
     ? [header, hint].filter(Boolean).join('\n\n')
     : `${header}\n\nРаздел пуст.`;
-  await ctx.reply(text, { attachments: [inlineKeyboardAttachment(rows)] });
+  await replyReplacingLast(ctx, text, { attachments: [inlineKeyboardAttachment(rows)] });
 }
 
 async function sendFileById(ctx, fileId) {
   const item = db.getById(fileId);
   if (!item || item.type !== 'file') {
-    await ctx.reply('Файл не найден.');
+    await replyReplacingLast(ctx, 'Файл не найден.');
     return;
   }
 
@@ -210,18 +261,18 @@ async function sendFileById(ctx, fileId) {
   );
 
   if (!fullPath.startsWith(config.rootPath)) {
-    await ctx.reply('Некорректный путь файла.');
+    await replyReplacingLast(ctx, 'Некорректный путь файла.');
     return;
   }
   if (!fs.existsSync(fullPath)) {
-    await ctx.reply('Файл отсутствует на диске.');
+    await replyReplacingLast(ctx, 'Файл отсутствует на диске.');
     return;
   }
 
   try {
     const fileAttachment = await bot.api.uploadFile({ source: fs.createReadStream(fullPath) });
     const backParent = item.parent_id || ROOT_ID;
-    await ctx.reply(`📄 ${item.name}`, {
+    await replyReplacingLast(ctx, `📄 ${item.name}`, {
       attachments: [
         fileAttachment.toJson(),
         inlineKeyboardAttachment([
@@ -231,7 +282,7 @@ async function sendFileById(ctx, fileId) {
       ],
     });
   } catch (err) {
-    await ctx.reply('Не удалось отправить файл. Проверь размер/доступность файла.');
+    await replyReplacingLast(ctx, 'Не удалось отправить файл. Проверь размер/доступность файла.');
     console.error('[sendFileById] upload failed', err);
   }
 }
@@ -239,7 +290,7 @@ async function sendFileById(ctx, fileId) {
 async function runSearch(ctx, query) {
   const variants = buildQueryVariants(query);
   if (!variants.length) {
-    await ctx.reply('Введите запрос для поиска.');
+    await replyReplacingLast(ctx, 'Введите запрос для поиска.');
     return;
   }
 
@@ -261,7 +312,8 @@ async function runSearch(ctx, query) {
 
   const items = [...merged.values()].slice(0, config.maxSearchResults);
   if (!items.length) {
-    await ctx.reply(
+    await replyReplacingLast(
+      ctx,
       `По запросу «${query}» ничего не найдено. Попробуйте: логотип, брендбук, город, паттерн, шрифт, сувенир.`
     );
     return;
@@ -270,7 +322,8 @@ async function runSearch(ctx, query) {
   const rows = items.map((item) => [buttonForItem(item)]);
   rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
 
-  await ctx.reply(
+  await replyReplacingLast(
+    ctx,
     [
       `🔎 Найдено: ${items.length} (запрос: ${query})`,
       'Папки открываются, файлы отправляются сразу.',
@@ -294,7 +347,7 @@ async function safeHandle(ctx, fn) {
     await fn();
   } catch (err) {
     console.error('[handler] error', err);
-    await ctx.reply('Внутренняя ошибка. Попробуйте еще раз.');
+    await replyReplacingLast(ctx, 'Внутренняя ошибка. Попробуйте еще раз.');
   }
 }
 
@@ -318,7 +371,8 @@ bot.command('menu', async (ctx) => {
 
 bot.command('help', async (ctx) => {
   await safeHandle(ctx, async () => {
-    await ctx.reply(
+    await replyReplacingLast(
+      ctx,
       [
         'Команды:',
         '/start - открыть каталог',
@@ -337,7 +391,7 @@ bot.command('search', async (ctx) => {
     const text = getMessageText(ctx);
     const query = parseCommandArgs(text, 'search');
     if (!query) {
-      await ctx.reply('Использование: /search логотип');
+      await replyReplacingLast(ctx, 'Использование: /search логотип');
       return;
     }
     await runSearch(ctx, query);
@@ -371,7 +425,7 @@ bot.action(/.*/, async (ctx) => {
     if (m) {
       const quick = getQuickSearchByKey(m[1].toLowerCase());
       if (!quick) {
-        await ctx.reply('Быстрый поиск не найден.');
+        await replyReplacingLast(ctx, 'Быстрый поиск не найден.');
         return;
       }
       await runSearch(ctx, quick.query);
@@ -379,7 +433,8 @@ bot.action(/.*/, async (ctx) => {
     }
 
     if (data === 'help:main') {
-      await ctx.reply(
+      await replyReplacingLast(
+        ctx,
         [
           'Как пользоваться:',
           '1. Нажмите кнопку нужного верхнего раздела.',
@@ -393,7 +448,7 @@ bot.action(/.*/, async (ctx) => {
       return;
     }
 
-    await ctx.reply('Неизвестное действие.');
+    await replyReplacingLast(ctx, 'Неизвестное действие.');
   });
 });
 

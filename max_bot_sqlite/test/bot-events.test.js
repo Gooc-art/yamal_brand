@@ -24,3 +24,9 @@ test('bot reads MAX callback payload directly from MAX update fields', () => {
   assert.match(botSource, /ctx\?\.\s*callback\?\.\s*payload/);
   assert.doesNotMatch(botSource, /ctx\.answerOnCallback\(/);
 });
+
+test('bot replaces previous bot reply before sending a new one', () => {
+  assert.match(botSource, /const lastBotMessageIds = new Map\(\)/);
+  assert.match(botSource, /await clearPreviousBotReply\(ctx,\s*\{\s*deleteCurrentMessage:\s*ctx\?\.\s*updateType === 'message_callback'/);
+  assert.match(botSource, /rememberBotReply\(ctx,\s*sent\)/);
+});
