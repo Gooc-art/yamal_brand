@@ -6,6 +6,7 @@ import { config } from './config.js';
 import { CatalogDb } from './db.js';
 import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
 import { buttonLayoutUnits, packButtonsIntoRows } from './keyboard-layout.js';
+import { retryMaxApiCall } from './max-api-retry.js';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
@@ -107,7 +108,7 @@ function inlineKeyboardAttachment(rows) {
 async function deleteMessageSafe(messageId) {
   if (!messageId) return;
   try {
-    await bot.api.deleteMessage(messageId);
+    await retryMaxApiCall('deleteMessage', () => bot.api.deleteMessage(messageId));
   } catch (err) {
     if ([400, 403, 404].includes(Number(err?.status))) return;
     console.warn('[deleteMessageSafe] failed', { messageId, err });
@@ -143,7 +144,7 @@ async function replyReplacingLast(ctx, text, extra) {
   await clearPreviousBotReply(ctx, {
     deleteCurrentMessage: ctx?.updateType === 'message_callback',
   });
-  const sent = await ctx.reply(text, extra);
+  const sent = await retryMaxApiCall('reply', () => ctx.reply(text, extra));
   rememberBotReply(ctx, sent);
   return sent;
 }
@@ -288,11 +289,20 @@ async function sendFileById(ctx, fileId) {
   }
 
   try {
-    const fileAttachment = await bot.api.uploadFile({ source: fs.createReadStream(fullPath) });
+    const fileAttachment = await retryMaxApiCall(
+      'uploadFile',
+      () => bot.api.uploadFile({ source: fs.createReadStream(fullPath) }),
+      { retries: 3, delaysMs: [400, 1200, 2400] }
+    );
+    const attachmentJson = await retryMaxApiCall(
+      'attachmentToJson',
+      async () => fileAttachment.toJson(),
+      { retries: 3, delaysMs: [300, 900, 1800] }
+    );
     const backParent = item.parent_id || ROOT_ID;
     await replyReplacingLast(ctx, `📄 ${item.name}`, {
       attachments: [
-        fileAttachment.toJson(),
+        attachmentJson,
         inlineKeyboardAttachment([
           [Keyboard.button.callback('⬅️ К разделу', `open:${backParent}:0`)],
           [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
@@ -365,7 +375,11 @@ async function safeHandle(ctx, fn) {
     await fn();
   } catch (err) {
     console.error('[handler] error', err);
-    await replyReplacingLast(ctx, 'Внутренняя ошибка. Попробуйте еще раз.');
+    try {
+      await replyReplacingLast(ctx, 'Внутренняя ошибка. Попробуйте еще раз.');
+    } catch (replyErr) {
+      console.error('[safeHandle] fallback reply failed', replyErr);
+    }
   }
 }
 

@@ -62,6 +62,7 @@ systemctl status max_yamal_bot.service --no-pager
 - в разделе `Как пользоваться` есть кнопки `Назад` и `Меню`
 - при новом действии бот удаляет свой предыдущий ответ, чтобы не копить старые сообщения
 - клавиатура адаптируется под размер экрана: длинные кнопки идут по одной, средние по две, короткие до трех в ряд
+- отправка сообщений и файлов в MAX API теперь идет с retry/backoff на краткие сетевые таймауты и `Attachment not ready`
 - по кнопке папки: открытие раздела с короткими и понятными названиями подпапок
 - по кнопке файла: отправка файла напрямую
 
@@ -93,4 +94,11 @@ systemctl status max_yamal_bot.service --no-pager
 ```bash
 cd /home/sergey/yamal_brand/max_bot_sqlite
 npm test
+```
+
+## Диагностика
+
+```bash
+cd /home/sergey/yamal_brand
+LOOKBACK_HOURS=12 JOURNAL_LINES=120 ./scripts/diagnose_bot_service.sh max_yamal_bot.service
 ```

@@ -16,7 +16,7 @@ test('bot uses MAX-specific update names for start and text messages', () => {
 test('bot sends inline buttons as MAX attachments instead of unsupported keyboard field', () => {
   assert.match(botSource, /attachments:\s*\[buildMainMenuKeyboard\(\)\]/);
   assert.match(botSource, /attachments:\s*\[inlineKeyboardAttachment\(rows\)\]/);
-  assert.match(botSource, /fileAttachment\.toJson\(\),[\s\S]*inlineKeyboardAttachment\(\[/);
+  assert.match(botSource, /attachments:\s*\[\s*attachmentJson,\s*[\s\S]*inlineKeyboardAttachment\(\[/);
   assert.doesNotMatch(botSource, /keyboard:\s*Keyboard\.inlineKeyboard/);
 });
 
@@ -33,8 +33,9 @@ test('bot replaces previous bot reply before sending a new one', () => {
 
 test('help screen includes back and menu buttons', () => {
   assert.match(botSource, /function buildHelpKeyboard\(\)/);
-  assert.match(botSource, /Keyboard\.button\.callback\('⬅️ Назад',\s*`open:\$\{ROOT_ID\}:0`\)/);
-  assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\('⬅️ Назад'/);
+  assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню'/);
+  assert.match(botSource, /open:\$\{ROOT_ID\}:0/);
   assert.match(botSource, /attachments:\s*\[buildHelpKeyboard\(\)\]/);
 });
 
@@ -50,4 +51,11 @@ test('bot uses adaptive row packing for menu and folder keyboards', () => {
   assert.match(botSource, /import\s+\{\s*buttonLayoutUnits,\s*packButtonsIntoRows\s*\}\s+from '\.\/keyboard-layout\.js'/);
   assert.match(botSource, /packButtonsIntoRows\(items,\s*\{/);
   assert.match(botSource, /function buildNavigationRows\(/);
+});
+
+test('bot wraps MAX API calls with retry helper for transient failures', () => {
+  assert.match(botSource, /import\s+\{\s*retryMaxApiCall\s*\}\s+from '\.\/max-api-retry\.js'/);
+  assert.match(botSource, /retryMaxApiCall\('reply',\s*\(\)\s*=>\s*ctx\.reply\(text,\s*extra\)\)/);
+  assert.match(botSource, /retryMaxApiCall\(\s*'uploadFile'/);
+  assert.match(botSource, /retryMaxApiCall\(\s*'attachmentToJson'/);
 });

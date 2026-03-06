@@ -89,14 +89,22 @@ Push to `main` or run workflow manually:
 To inspect the real catalog structure on the production runner:
 - GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.
 
+To inspect bot health and recent runtime errors on the production runner:
+- GitHub -> `Actions` -> `Diagnose Runner Filesystem` -> `Run workflow`
+- optional inputs:
+  - `lookback_hours` for how much journal history to inspect
+  - `journal_lines` for how many recent lines to print
+
 ## 5) Verify on server
 
 ```bash
 systemctl status max_yamal_bot.service --no-pager
 journalctl -u max_yamal_bot.service -n 80 --no-pager
+LOOKBACK_HOURS=12 JOURNAL_LINES=120 /home/sergey/yamal_brand/scripts/diagnose_bot_service.sh max_yamal_bot.service
 ```
 
 ## Notes
 - Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`, `.runtime/`, `logs/`, `run/`.
 - If you changed service file, deploy script re-installs it into `/etc/systemd/system/max_yamal_bot.service`.
 - During migration from the old user-managed mode, deploy stops the legacy process and removes its `@reboot` crontab entry before enabling `systemd`.
+- Bot-side network calls now retry short-lived MAX API failures such as header/connect timeouts and `Attachment not ready`.

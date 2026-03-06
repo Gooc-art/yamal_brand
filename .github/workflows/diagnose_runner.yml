@@ -2,11 +2,26 @@ name: Diagnose Runner Filesystem
 
 on:
   workflow_dispatch:
+    inputs:
+      lookback_hours:
+        description: Hours of service journal to inspect
+        required: false
+        default: '12'
+      journal_lines:
+        description: Number of recent journal lines to print
+        required: false
+        default: '120'
 
 jobs:
   diagnose:
     runs-on: [self-hosted, linux, yamal-max-prod]
+    env:
+      LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '12' }}
+      JOURNAL_LINES: ${{ github.event.inputs.journal_lines || '120' }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Basic context
         run: |
           set -x
@@ -48,7 +63,5 @@ jobs:
       - name: Inspect bot process and service
         run: |
           set -x
-          sudo -n systemctl status max_yamal_bot.service --no-pager -n 40 || true
-          sudo -n journalctl -u max_yamal_bot.service -n 40 --no-pager || true
+          ./scripts/diagnose_bot_service.sh max_yamal_bot.service
           crontab -l 2>/dev/null | sed -n '1,20p' || true
-          pgrep -af 'src/bot.js' || true
