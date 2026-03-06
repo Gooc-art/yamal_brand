@@ -5,6 +5,7 @@ import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import { config } from './config.js';
 import { CatalogDb } from './db.js';
 import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
+import { buttonLayoutUnits, packButtonsIntoRows } from './keyboard-layout.js';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
@@ -99,14 +100,6 @@ function getRootFolders() {
   return db.listChildren(ROOT_ID, 200, 0).filter((item) => item.type === 'folder');
 }
 
-function chunkIntoRows(items, size) {
-  const rows = [];
-  for (let index = 0; index < items.length; index += size) {
-    rows.push(items.slice(index, index + size));
-  }
-  return rows;
-}
-
 function inlineKeyboardAttachment(rows) {
   return Keyboard.inlineKeyboard(rows);
 }
@@ -156,29 +149,28 @@ async function replyReplacingLast(ctx, text, extra) {
 }
 
 function buildFolderItemRows(items) {
-  const buttons = items.map((item) => buttonForItem(item));
-  const maxLen = items.reduce(
-    (max, item) => Math.max(max, String(item.label || item.name || '').length),
-    0
-  );
-  const rowSize = maxLen <= 8 ? 3 : maxLen <= 22 ? 2 : 1;
-  return chunkIntoRows(buttons, rowSize);
+  return packButtonsIntoRows(items, {
+    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
+    maxButtonsPerRow: 3,
+  }).map((row) => row.map((item) => buttonForItem(item)));
 }
 
 function buildMainMenuKeyboard() {
   const rootFolders = resolveRootMenuFolders(getRootFolders());
-  const rows = chunkIntoRows(
-    rootFolders.map((item) =>
+  const rows = packButtonsIntoRows(rootFolders, {
+    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
+    maxButtonsPerRow: 2,
+  }).map((row) =>
+    row.map((item) =>
       Keyboard.button.callback(`${item.icon} ${truncate(item.label, 28)}`, `open:${item.id}:0`)
-    ),
-    2
+    )
   );
 
-  const quickSearchRows = chunkIntoRows(
-    getMainMenuQuickSearches().map((item) =>
-      Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`)
-    ),
-    2
+  const quickSearchRows = packButtonsIntoRows(getMainMenuQuickSearches(), {
+    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
+    maxButtonsPerRow: 3,
+  }).map((row) =>
+    row.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`))
   );
   rows.push([Keyboard.button.callback('🔎 Поиск', 'search:main')]);
   rows.push(...quickSearchRows);
@@ -197,9 +189,11 @@ function buildHelpKeyboard() {
 }
 
 function buildSearchKeyboard() {
-  const rows = chunkIntoRows(
-    QUICK_SEARCHES.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`)),
-    2
+  const rows = packButtonsIntoRows(QUICK_SEARCHES, {
+    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
+    maxButtonsPerRow: 3,
+  }).map((row) =>
+    row.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`))
   );
   rows.push([
     Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
@@ -218,26 +212,26 @@ async function renderMainMenu(ctx, intro = false) {
   await replyReplacingLast(ctx, text, { attachments: [buildMainMenuKeyboard()] });
 }
 
-function buildNavigationRow(parentId, page, total, pageSize) {
+function buildNavigationRows(parentId, page, total, pageSize) {
   if (parentId === ROOT_ID) {
-    return [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)];
+    return [[Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]];
   }
 
-  const row = [];
-  if (page > 0) row.push(Keyboard.button.callback('◀️', `open:${parentId}:${page - 1}`));
-  if ((page + 1) * pageSize < total) row.push(Keyboard.button.callback('▶️', `open:${parentId}:${page + 1}`));
-
-  if (parentId !== ROOT_ID) {
-    const parent = db.getById(parentId);
-    const backId = parent?.parent_id || ROOT_ID;
-    row.push(Keyboard.button.callback('⬅️ Назад', `open:${backId}:0`));
+  const rows = [];
+  const pagingRow = [];
+  if (page > 0) pagingRow.push(Keyboard.button.callback('◀️', `open:${parentId}:${page - 1}`));
+  if ((page + 1) * pageSize < total) {
+    pagingRow.push(Keyboard.button.callback('▶️', `open:${parentId}:${page + 1}`));
   }
+  if (pagingRow.length) rows.push(pagingRow);
 
-  if (parentId !== ROOT_ID) {
-    row.push(Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`));
-  }
-
-  return row;
+  const parent = db.getById(parentId);
+  const backId = parent?.parent_id || ROOT_ID;
+  rows.push([
+    Keyboard.button.callback('⬅️ Назад', `open:${backId}:0`),
+    Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
+  ]);
+  return rows;
 }
 
 async function renderFolder(ctx, parentId, page = 0) {
@@ -257,8 +251,7 @@ async function renderFolder(ctx, parentId, page = 0) {
   const children = decorateFolderItems(parent, db.listChildren(parentId, config.pageSize, offset));
 
   const rows = buildFolderItemRows(children);
-  const navRow = buildNavigationRow(parentId, pageClamped, total, config.pageSize);
-  if (navRow.length) rows.push(navRow);
+  rows.push(...buildNavigationRows(parentId, pageClamped, total, config.pageSize));
   const hint = getSectionHint(parent);
 
   const header = [

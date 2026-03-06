@@ -45,3 +45,9 @@ test('main menu exposes dedicated search screen with quick shortcuts', () => {
   assert.match(botSource, /Отправьте слово или фразу, даже если не уверены в точном названии\./);
   assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
 });
+
+test('bot uses adaptive row packing for menu and folder keyboards', () => {
+  assert.match(botSource, /import\s+\{\s*buttonLayoutUnits,\s*packButtonsIntoRows\s*\}\s+from '\.\/keyboard-layout\.js'/);
+  assert.match(botSource, /packButtonsIntoRows\(items,\s*\{/);
+  assert.match(botSource, /function buildNavigationRows\(/);
+});
