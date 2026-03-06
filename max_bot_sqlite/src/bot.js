@@ -20,6 +20,15 @@ const ROOT_ID = safeId('.');
 const db = new CatalogDb(config.dbPath);
 const bot = new Bot(config.token);
 
+bot.catch((err, ctx) => {
+  console.error('[bot] unhandled error', {
+    updateType: ctx?.updateType,
+    chatId: ctx?.chatId,
+    messageId: ctx?.messageId,
+  });
+  throw err;
+});
+
 function getMessageText(ctx) {
   return String(ctx?.message?.body?.text || ctx?.message?.text || ctx?.text || '').trim();
 }
@@ -296,6 +305,12 @@ bot.command('start', async (ctx) => {
   });
 });
 
+bot.on('bot_started', async (ctx) => {
+  await safeHandle(ctx, async () => {
+    await renderMainMenu(ctx, true);
+  });
+});
+
 bot.command('menu', async (ctx) => {
   await safeHandle(ctx, async () => {
     await renderMainMenu(ctx);
@@ -330,7 +345,7 @@ bot.command('search', async (ctx) => {
   });
 });
 
-bot.on('message', async (ctx) => {
+bot.on('message_created', async (ctx) => {
   await safeHandle(ctx, async () => {
     const text = getMessageText(ctx);
     if (!text || text.startsWith('/')) return;
