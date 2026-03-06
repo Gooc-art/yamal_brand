@@ -8,6 +8,9 @@ ENV_FILE="${ENV_FILE:-${BOT_DIR}/.env}"
 CATALOG_SOURCE_DIR="${CATALOG_SOURCE_DIR:-${DEPLOY_DIR}/input/Макеты1}"
 CATALOG_DB_PATH="${CATALOG_DB_PATH:-${DEPLOY_DIR}/max_catalog.db}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+LEGACY_DEPLOY_DIR="${LEGACY_DEPLOY_DIR:-/root/projects/yamal_brand}"
+LEGACY_ENV_FILE="${LEGACY_ENV_FILE:-${LEGACY_DEPLOY_DIR}/max_bot_sqlite/.env}"
+LEGACY_CATALOG_SOURCE_DIR="${LEGACY_CATALOG_SOURCE_DIR:-${LEGACY_DEPLOY_DIR}/input/Макеты1}"
 
 run_systemctl() {
   if [ "$(id -u)" -eq 0 ]; then
@@ -31,6 +34,13 @@ if [ ! -d "${BOT_DIR}" ]; then
   exit 1
 fi
 if [ ! -d "${CATALOG_SOURCE_DIR}" ]; then
+  if [ -d "${LEGACY_CATALOG_SOURCE_DIR}" ]; then
+    echo "[deploy] source folder missing, copying from legacy path"
+    mkdir -p "$(dirname "${CATALOG_SOURCE_DIR}")"
+    run_systemctl cp -R "${LEGACY_CATALOG_SOURCE_DIR}" "$(dirname "${CATALOG_SOURCE_DIR}")/"
+  fi
+fi
+if [ ! -d "${CATALOG_SOURCE_DIR}" ]; then
   echo "[deploy] ERROR: source folder not found: ${CATALOG_SOURCE_DIR}" >&2
   exit 1
 fi
@@ -40,9 +50,20 @@ if [ ! -f "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" ]; then
 fi
 
 if [ ! -f "${ENV_FILE}" ]; then
+  if [ -f "${LEGACY_ENV_FILE}" ]; then
+    echo "[deploy] .env missing, copying from legacy path"
+    mkdir -p "$(dirname "${ENV_FILE}")"
+    run_systemctl cp "${LEGACY_ENV_FILE}" "${ENV_FILE}"
+  fi
+fi
+
+if [ ! -f "${ENV_FILE}" ]; then
   if [ -f "${BOT_DIR}/.env.example" ]; then
     cp "${BOT_DIR}/.env.example" "${ENV_FILE}"
   fi
+fi
+
+if [ ! -f "${ENV_FILE}" ]; then
   echo "[deploy] ERROR: .env missing at ${ENV_FILE}. Fill MAX_BOT_TOKEN and rerun." >&2
   exit 1
 fi
