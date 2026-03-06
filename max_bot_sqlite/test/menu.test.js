@@ -68,12 +68,12 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
 test('resolveRootMenuFolders appends unknown root folders after known sections', () => {
   const rootItems = [
     { id: 'a', name: 'Шрифт', type: 'folder' },
-    { id: 'b', name: 'Новый раздел', type: 'folder' },
+    { id: 'b', name: ', новый раздел', type: 'folder' },
     { id: 'c', name: 'Логотип', type: 'folder' },
   ];
 
   const menuFolders = resolveRootMenuFolders(rootItems);
-  assert.equal(menuFolders.at(-1)?.name, 'Новый раздел');
+  assert.equal(menuFolders.at(-1)?.name, ', новый раздел');
   assert.equal(menuFolders.at(-1)?.label, 'Новый раздел');
   assert.equal(menuFolders.at(-1)?.icon, '📁');
 });
@@ -108,6 +108,20 @@ test('decorateFolderItems shortens and enriches known section children', () => {
   assert.equal(byName.get('1-1 детские футболки')?.label, 'Детские футболки');
   assert.equal(byName.get('1-1 детские футболки')?.icon, '👕');
   assert.equal(byName.get('guide.pdf')?.icon, '📕');
+});
+
+test('decorateFolderItems strips leading punctuation and capitalizes generic labels', () => {
+  const parent = { name: 'Каталог сувенирной продукции' };
+  const items = [
+    { id: '1', name: ',, наклейки', type: 'folder' },
+    { id: '2', name: '...брендбук.pdf', type: 'file' },
+  ];
+
+  const decorated = decorateFolderItems(parent, items);
+  const byName = new Map(decorated.map((item) => [item.name, item]));
+  assert.equal(byName.get(',, наклейки')?.label, 'Наклейки');
+  assert.equal(byName.get('...брендбук.pdf')?.label, 'Брендбук.pdf');
+  assert.equal(byName.get('...брендбук.pdf')?.icon, '📕');
 });
 
 test('decorateFolderItems prioritizes direct brandbook files and exposes section hints', () => {

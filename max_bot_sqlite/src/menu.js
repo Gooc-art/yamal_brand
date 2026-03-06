@@ -132,13 +132,26 @@ function upperFirst(value) {
   return text ? `${text.slice(0, 1).toUpperCase()}${text.slice(1)}` : text;
 }
 
-function cleanupFolderLabel(name) {
+function normalizeButtonLabel(name, { stripNumericPrefix = true } = {}) {
+  let text = String(name || '');
+  if (stripNumericPrefix) {
+    text = text.replace(/^\d+(?:[.-]\d+)*\s*[-.)]?\s*/u, '');
+  }
+
   return upperFirst(
-    String(name || '')
-    .replace(/^\d+(?:[.-]\d+)*\s*[-.)]?\s*/u, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+    text
+      .replace(/^[\s,.;:!?'"`~\-–—_()[\]{}<>«»/\\|]+/u, '')
+      .replace(/\s+/g, ' ')
+      .trim()
   );
+}
+
+function cleanupFolderLabel(name) {
+  return normalizeButtonLabel(name);
+}
+
+function cleanupFileLabel(name) {
+  return normalizeButtonLabel(name, { stripNumericPrefix: false });
 }
 
 function fileExt(name) {
@@ -157,7 +170,7 @@ function fileConfig(item, parentName) {
     };
   }
   return {
-    label: item?.name || '',
+    label: cleanupFileLabel(item?.name || '') || item?.name || 'Файл',
     icon: FILE_ICONS[ext] || '📄',
     order: FORMAT_ORDER[ext] ?? 999,
   };
@@ -211,7 +224,7 @@ export function resolveRootMenuFolders(rootItems) {
     .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'))
     .map((item) => ({
       ...item,
-      label: item.name,
+      label: cleanupFolderLabel(item.name) || item.name,
       icon: '📁',
     }));
 
