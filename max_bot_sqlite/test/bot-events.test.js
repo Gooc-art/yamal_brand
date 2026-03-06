@@ -20,7 +20,7 @@ test('bot sends inline buttons as MAX attachments instead of unsupported keyboar
   assert.doesNotMatch(botSource, /keyboard:\s*Keyboard\.inlineKeyboard/);
 });
 
-test('bot reads MAX callback payload and acknowledges button clicks', () => {
+test('bot reads MAX callback payload directly from MAX update fields', () => {
   assert.match(botSource, /ctx\?\.\s*callback\?\.\s*payload/);
-  assert.match(botSource, /ctx\.answerOnCallback\(\)/);
+  assert.doesNotMatch(botSource, /ctx\.answerOnCallback\(/);
 });

@@ -354,9 +354,6 @@ bot.on('message_created', async (ctx) => {
 
 bot.action(/.*/, async (ctx) => {
   await safeHandle(ctx, async () => {
-    if (ctx?.callback?.callback_id) {
-      await ctx.answerOnCallback();
-    }
     const data = getCallbackData(ctx);
     let m = data.match(/^open:([a-f0-9]{16}):(\d+)$/i);
     if (m) {
