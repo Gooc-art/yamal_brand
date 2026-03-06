@@ -201,8 +201,9 @@ if can_manage_systemd_service; then
     run_systemctl cp "${BOT_DIR}/systemd/max_yamal_bot.service" "/etc/systemd/system/max_yamal_bot.service"
   fi
 
-  if [ -x "${DEPLOY_DIR}/scripts/manage_user_bot.sh" ]; then
+  if [ -f "${DEPLOY_DIR}/scripts/manage_user_bot.sh" ]; then
     echo "[deploy] stop legacy user-managed bot process"
+    chmod +x "${DEPLOY_DIR}/scripts/manage_user_bot.sh"
     DEPLOY_DIR="${DEPLOY_DIR}" BOT_DIR="${BOT_DIR}" NODE_BIN="${NODE_BIN}" \
       bash "${DEPLOY_DIR}/scripts/manage_user_bot.sh" stop || true
     DEPLOY_DIR="${DEPLOY_DIR}" BOT_DIR="${BOT_DIR}" NODE_BIN="${NODE_BIN}" \
