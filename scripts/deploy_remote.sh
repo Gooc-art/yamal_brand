@@ -157,22 +157,25 @@ echo "[deploy] rebuild SQLite catalog"
   --source "${CATALOG_SOURCE_DIR}" \
   --db "${CATALOG_DB_PATH}"
 
-echo "[deploy] install/update systemd unit"
-if [ -f "${BOT_DIR}/systemd/max_yamal_bot.service" ]; then
-  if [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
-    echo "[deploy] ERROR: passwordless sudo is required for systemctl/cp on runner host" >&2
-    exit 1
+if [ "$(id -u)" -eq 0 ] || sudo -n true 2>/dev/null; then
+  echo "[deploy] install/update systemd unit"
+  if [ -f "${BOT_DIR}/systemd/max_yamal_bot.service" ]; then
+    run_systemctl cp "${BOT_DIR}/systemd/max_yamal_bot.service" "/etc/systemd/system/max_yamal_bot.service"
   fi
-  run_systemctl cp "${BOT_DIR}/systemd/max_yamal_bot.service" "/etc/systemd/system/max_yamal_bot.service"
+
+  echo "[deploy] restart service"
+  run_systemctl systemctl daemon-reload
+  run_systemctl systemctl enable --now "${DEPLOY_SERVICE}"
+  run_systemctl systemctl restart "${DEPLOY_SERVICE}"
+  run_systemctl systemctl --no-pager --full status "${DEPLOY_SERVICE}" -n 40
+
+  echo "[deploy] recent logs"
+  run_systemctl journalctl -u "${DEPLOY_SERVICE}" -S '10 minutes ago' --no-pager -l | tail -n 120 || true
+else
+  echo "[deploy] passwordless sudo unavailable, using user-managed bot process"
+  chmod +x "${DEPLOY_DIR}/scripts/manage_user_bot.sh"
+  DEPLOY_DIR="${DEPLOY_DIR}" BOT_DIR="${BOT_DIR}" NODE_BIN="${NODE_BIN}" \
+    bash "${DEPLOY_DIR}/scripts/manage_user_bot.sh" deploy
 fi
-
-echo "[deploy] restart service"
-run_systemctl systemctl daemon-reload
-run_systemctl systemctl enable --now "${DEPLOY_SERVICE}"
-run_systemctl systemctl restart "${DEPLOY_SERVICE}"
-run_systemctl systemctl --no-pager --full status "${DEPLOY_SERVICE}" -n 40
-
-echo "[deploy] recent logs"
-run_systemctl journalctl -u "${DEPLOY_SERVICE}" -S '10 minutes ago' --no-pager -l | tail -n 120 || true
 
 echo "[deploy] done"

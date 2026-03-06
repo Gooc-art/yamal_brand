@@ -13,6 +13,8 @@ max_bot_sqlite/.env
 
 # Local data / artifacts
 .scan_work/
+logs/
+run/
 input/
 *.db
 max_catalog.db

@@ -69,6 +69,12 @@ chmod 440 /etc/sudoers.d/yamal-bot
 visudo -cf /etc/sudoers.d/yamal-bot
 ```
 
+If passwordless `sudo` is not available, deploy still works:
+- the bot is started as user `sergey`
+- logs go to `/home/sergey/yamal_brand/logs/max_bot.log`
+- pid file goes to `/home/sergey/yamal_brand/run/max_bot.pid`
+- autostart is registered via `crontab @reboot`
+
 ## 4) Run autodeploy
 
 Push to `main` or run workflow manually:
@@ -82,5 +88,5 @@ journalctl -u max_yamal_bot.service -n 80 --no-pager
 ```
 
 ## Notes
-- Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`, `.runtime/`.
+- Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`, `.runtime/`, `logs/`, `run/`.
 - If you changed service file, deploy script re-installs it into `/etc/systemd/system/max_yamal_bot.service`.
