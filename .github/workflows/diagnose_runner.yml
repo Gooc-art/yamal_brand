@@ -1,0 +1,45 @@
+name: Diagnose Runner Filesystem
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    steps:
+      - name: Basic context
+        run: |
+          set -x
+          whoami
+          id
+          hostname
+          pwd
+          command -v cp
+          command -v sudo || true
+
+      - name: Inspect likely paths
+        run: |
+          set -x
+          ls -ld /home /home/sergey || true
+          ls -la /home/sergey || true
+          ls -ld /root || true
+          ls -ld /root/projects || true
+          ls -ld /root/projects/yamal_brand || true
+          ls -ld /root/projects/yamal_brand/input || true
+          ls -ld /home/sergey/yamal_brand || true
+          ls -ld /home/sergey/yamal_brand/input || true
+          ls -ld /home/sergey/yamal_brand/input/Макеты1 || true
+
+      - name: Search for catalog folder
+        run: |
+          set -x
+          find /home -maxdepth 5 -type d -name 'Макеты1' 2>/dev/null | sed -n '1,50p'
+          find /opt -maxdepth 5 -type d -name 'Макеты1' 2>/dev/null | sed -n '1,50p'
+          find /srv -maxdepth 5 -type d -name 'Макеты1' 2>/dev/null | sed -n '1,50p'
+
+      - name: Test legacy copy access
+        run: |
+          set -x
+          mkdir -p /tmp/yamal-diag
+          sudo -n cp -R /root/projects/yamal_brand/input/Макеты1 /tmp/yamal-diag/ 2>&1 || true
+          ls -la /tmp/yamal-diag || true
