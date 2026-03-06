@@ -80,8 +80,9 @@ test('resolveRootMenuFolders appends unknown root folders after known sections',
 
 test('menu helpers return configured quick search and paginate items', () => {
   assert.equal(getQuickSearchByKey('font')?.query, 'шрифт');
-  assert.equal(getQuickSearchByKey('pattern')?.query, 'паттерн');
-  assert.equal(QUICK_SEARCHES.length, 6);
+  assert.equal(getQuickSearchByKey('pattern'), null);
+  assert.equal(QUICK_SEARCHES.length, 1);
+  assert.deepEqual(QUICK_SEARCHES.map((item) => item.label), ['Шрифт']);
 
   const result = paginateItems([1, 2, 3, 4, 5], 9, 2);
   assert.equal(result.page, 2);

@@ -15,12 +15,7 @@ export const ROOT_MENU_FOLDERS = [
 ];
 
 export const QUICK_SEARCHES = [
-  { key: 'logo', label: 'Логотип', query: 'логотип' },
-  { key: 'brandbook', label: 'Брендбук', query: 'брендбук' },
-  { key: 'city', label: 'Город', query: 'город' },
-  { key: 'pattern', label: 'Паттерн', query: 'паттерн' },
   { key: 'font', label: 'Шрифт', query: 'шрифт' },
-  { key: 'souvenir', label: 'Сувенир', query: 'сувенир' },
 ];
 
 const SECTION_HINTS = {
