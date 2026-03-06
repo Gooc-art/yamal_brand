@@ -34,10 +34,10 @@ if [ ! -d "${BOT_DIR}" ]; then
   exit 1
 fi
 if [ ! -d "${CATALOG_SOURCE_DIR}" ]; then
-  if [ -d "${LEGACY_CATALOG_SOURCE_DIR}" ]; then
-    echo "[deploy] source folder missing, copying from legacy path"
-    mkdir -p "$(dirname "${CATALOG_SOURCE_DIR}")"
-    run_systemctl cp -R "${LEGACY_CATALOG_SOURCE_DIR}" "$(dirname "${CATALOG_SOURCE_DIR}")/"
+  echo "[deploy] source folder missing, trying legacy path"
+  mkdir -p "$(dirname "${CATALOG_SOURCE_DIR}")"
+  if run_systemctl cp -R "${LEGACY_CATALOG_SOURCE_DIR}" "$(dirname "${CATALOG_SOURCE_DIR}")/" 2>/dev/null; then
+    echo "[deploy] source folder copied from legacy path"
   fi
 fi
 if [ ! -d "${CATALOG_SOURCE_DIR}" ]; then
@@ -50,10 +50,10 @@ if [ ! -f "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" ]; then
 fi
 
 if [ ! -f "${ENV_FILE}" ]; then
-  if [ -f "${LEGACY_ENV_FILE}" ]; then
-    echo "[deploy] .env missing, copying from legacy path"
-    mkdir -p "$(dirname "${ENV_FILE}")"
-    run_systemctl cp "${LEGACY_ENV_FILE}" "${ENV_FILE}"
+  echo "[deploy] .env missing, trying legacy path"
+  mkdir -p "$(dirname "${ENV_FILE}")"
+  if run_systemctl cp "${LEGACY_ENV_FILE}" "${ENV_FILE}" 2>/dev/null; then
+    echo "[deploy] .env copied from legacy path"
   fi
 fi
 
