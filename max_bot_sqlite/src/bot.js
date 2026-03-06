@@ -6,7 +6,9 @@ import { config } from './config.js';
 import { CatalogDb } from './db.js';
 import {
   QUICK_SEARCHES,
+  decorateFolderItems,
   getQuickSearchByKey,
+  getSectionHint,
   resolveRootMenuFolders,
 } from './menu.js';
 import { buildQueryVariants, rankSearch } from './search.js';
@@ -70,10 +72,17 @@ function truncate(text, max) {
 }
 
 function buttonForItem(item) {
+  const displayName = item.label || item.name;
   if (item.type === 'folder') {
-    return Keyboard.button.callback(`📁 ${truncate(item.name, 40)}`, `open:${item.id}:0`);
+    return Keyboard.button.callback(
+      `${item.icon || '📁'} ${truncate(displayName, 40)}`,
+      `open:${item.id}:0`
+    );
   }
-  return Keyboard.button.callback(`📄 ${truncate(item.name, 40)}`, `file:${item.id}`);
+  return Keyboard.button.callback(
+    `${item.icon || '📄'} ${truncate(displayName, 40)}`,
+    `file:${item.id}`
+  );
 }
 
 function getRootFolders() {
@@ -157,11 +166,12 @@ async function renderFolder(ctx, parentId, page = 0) {
 
   const parent = db.getById(parentId);
   const title = parentId === ROOT_ID ? 'Бренд ЯМАЛ' : parent?.name || 'Раздел';
-  const children = db.listChildren(parentId, config.pageSize, offset);
+  const children = decorateFolderItems(parent, db.listChildren(parentId, config.pageSize, offset));
 
   const rows = children.map((item) => [buttonForItem(item)]);
   const navRow = buildNavigationRow(parentId, pageClamped, total, config.pageSize);
   if (navRow.length) rows.push(navRow);
+  const hint = getSectionHint(parent);
 
   const header = [
     `📂 ${title}`,
@@ -169,7 +179,9 @@ async function renderFolder(ctx, parentId, page = 0) {
     `Страница: ${pageClamped + 1}/${Math.max(1, maxPage + 1)}`,
   ].join('\n');
 
-  const text = children.length ? header : `${header}\n\nРаздел пуст.`;
+  const text = children.length
+    ? [header, hint].filter(Boolean).join('\n\n')
+    : `${header}\n\nРаздел пуст.`;
   await ctx.reply(text, { attachments: [inlineKeyboardAttachment(rows)] });
 }
 
