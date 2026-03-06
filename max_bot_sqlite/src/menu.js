@@ -1,29 +1,13 @@
-export const MENU_SECTIONS = [
-  {
-    key: 'logos',
-    title: 'Логотипы и знаки',
-    folderNames: ['Логотип', 'Детский логотип', 'Логотипы городов', 'Фирменный знак'],
-  },
-  {
-    key: 'brandbooks',
-    title: 'Брендбуки',
-    folderNames: ['Брендбук ЯМАЛ 100', 'Брендбук ЯМАЛ Мастер бренд'],
-  },
-  {
-    key: 'illustrations',
-    title: 'Иллюстрации и SVG',
-    folderNames: ['Иллюстрации мастер-бренда SVG-элементы'],
-  },
-  {
-    key: 'fonts',
-    title: 'Шрифты',
-    folderNames: ['Шрифт'],
-  },
-  {
-    key: 'souvenirs',
-    title: 'Сувенирная продукция',
-    folderNames: ['Каталог сувенирной продукции'],
-  },
+export const ROOT_MENU_FOLDERS = [
+  { folderName: 'Логотип', label: 'Логотип', icon: '🏷️' },
+  { folderName: 'Фирменный знак', label: 'Фирменный знак', icon: '🔰' },
+  { folderName: 'Детский логотип', label: 'Детский логотип', icon: '🧒' },
+  { folderName: 'Логотипы городов', label: 'Логотипы городов', icon: '🏙️' },
+  { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук ЯМАЛ 100', icon: '📘' },
+  { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-бренд', icon: '📕' },
+  { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации и SVG', icon: '🖼️' },
+  { folderName: 'Шрифт', label: 'Шрифт', icon: '🔤' },
+  { folderName: 'Каталог сувенирной продукции', label: 'Сувенирная продукция', icon: '🎁' },
 ];
 
 export const QUICK_SEARCHES = [
@@ -33,24 +17,30 @@ export const QUICK_SEARCHES = [
   { key: 'souvenir', label: 'Сувенир', query: 'сувенир' },
 ];
 
-export function resolveMenuSections(rootItems) {
+export function resolveRootMenuFolders(rootItems) {
   const byName = new Map(rootItems.map((item) => [item.name, item]));
+  const ordered = [];
 
-  return MENU_SECTIONS.map((section) => {
-    const items = section.folderNames.map((name) => byName.get(name)).filter(Boolean);
-    if (!items.length) return null;
+  for (const config of ROOT_MENU_FOLDERS) {
+    const item = byName.get(config.folderName);
+    if (!item) continue;
+    ordered.push({
+      ...item,
+      label: config.label,
+      icon: config.icon,
+    });
+    byName.delete(config.folderName);
+  }
 
-    return {
-      ...section,
-      items,
-      kind: items.length === 1 ? 'direct' : 'group',
-      targetId: items.length === 1 ? items[0].id : null,
-    };
-  }).filter(Boolean);
-}
+  const rest = [...byName.values()]
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'))
+    .map((item) => ({
+      ...item,
+      label: item.name,
+      icon: '📁',
+    }));
 
-export function getSectionByKey(key) {
-  return MENU_SECTIONS.find((section) => section.key === key) || null;
+  return [...ordered, ...rest];
 }
 
 export function getQuickSearchByKey(key) {

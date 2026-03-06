@@ -7,8 +7,7 @@ import { CatalogDb } from './db.js';
 import {
   QUICK_SEARCHES,
   getQuickSearchByKey,
-  paginateItems,
-  resolveMenuSections,
+  resolveRootMenuFolders,
 } from './menu.js';
 import { buildQueryVariants, rankSearch } from './search.js';
 
@@ -81,14 +80,22 @@ function getRootFolders() {
   return db.listChildren(ROOT_ID, 200, 0).filter((item) => item.type === 'folder');
 }
 
+function chunkIntoRows(items, size) {
+  const rows = [];
+  for (let index = 0; index < items.length; index += size) {
+    rows.push(items.slice(index, index + size));
+  }
+  return rows;
+}
+
 function buildMainMenuKeyboard() {
-  const sections = resolveMenuSections(getRootFolders());
-  const rows = sections.map((section) => {
-    if (section.kind === 'direct') {
-      return [Keyboard.button.callback(`📂 ${section.title}`, `open:${section.targetId}:0`)];
-    }
-    return [Keyboard.button.callback(`📚 ${section.title}`, `section:${section.key}:0`)];
-  });
+  const rootFolders = resolveRootMenuFolders(getRootFolders());
+  const rows = chunkIntoRows(
+    rootFolders.map((item) =>
+      Keyboard.button.callback(`${item.icon} ${truncate(item.label, 28)}`, `open:${item.id}:0`)
+    ),
+    2
+  );
 
   rows.push([
     Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[0].label}`, `quick:${QUICK_SEARCHES[0].key}`),
@@ -106,7 +113,7 @@ function buildMainMenuKeyboard() {
 async function renderMainMenu(ctx, intro = false) {
   const text = [
     intro ? 'Привет. Это каталог бренда ЯМАЛ.' : 'Главное меню бренда ЯМАЛ.',
-    'Выберите раздел или быстрый поиск.',
+    'Все основные разделы вынесены в кнопки.',
     'Можно просто отправить текст: логотип, брендбук, шрифт, сувенир.',
   ].join('\n');
 
@@ -163,41 +170,6 @@ async function renderFolder(ctx, parentId, page = 0) {
 
   const text = children.length ? header : `${header}\n\nРаздел пуст.`;
   await ctx.reply(text, { keyboard: Keyboard.inlineKeyboard(rows) });
-}
-
-function buildSectionNavigationRow(sectionKey, page, total, pageSize) {
-  const row = [];
-  if (page > 0) row.push(Keyboard.button.callback('◀️', `section:${sectionKey}:${page - 1}`));
-  if ((page + 1) * pageSize < total) row.push(Keyboard.button.callback('▶️', `section:${sectionKey}:${page + 1}`));
-  row.push(Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`));
-  return row;
-}
-
-async function renderSection(ctx, sectionKey, page = 0) {
-  const section = resolveMenuSections(getRootFolders()).find((item) => item.key === sectionKey);
-  if (!section) {
-    await ctx.reply('Раздел не найден.');
-    await renderMainMenu(ctx);
-    return;
-  }
-
-  if (section.kind === 'direct' && section.targetId) {
-    await renderFolder(ctx, section.targetId, 0);
-    return;
-  }
-
-  const paged = paginateItems(section.items, page, config.pageSize);
-  const rows = paged.items.map((item) => [buttonForItem(item)]);
-  rows.push(buildSectionNavigationRow(sectionKey, paged.page, paged.total, config.pageSize));
-
-  await ctx.reply(
-    [
-      `📚 ${section.title}`,
-      `Подразделов: ${paged.total}`,
-      `Страница: ${paged.page + 1}/${Math.max(1, paged.maxPage + 1)}`,
-    ].join('\n'),
-    { keyboard: Keyboard.inlineKeyboard(rows) }
-  );
 }
 
 async function sendFileById(ctx, fileId) {
@@ -327,7 +299,7 @@ bot.command('help', async (ctx) => {
         '/search <запрос> - поиск файла',
         '',
         'Можно просто отправить текст, бот воспримет это как поиск.',
-        'В главном меню есть быстрые кнопки по разделам и популярным запросам.',
+        'В главном меню есть кнопки всех верхних разделов и быстрые поисковые кнопки.',
       ].join('\n')
     );
   });
@@ -368,12 +340,6 @@ bot.action(/.*/, async (ctx) => {
       return;
     }
 
-    m = data.match(/^section:([a-z0-9_-]+):(\d+)$/i);
-    if (m) {
-      await renderSection(ctx, m[1].toLowerCase(), Number.parseInt(m[2], 10));
-      return;
-    }
-
     m = data.match(/^quick:([a-z0-9_-]+)$/i);
     if (m) {
       const quick = getQuickSearchByKey(m[1].toLowerCase());
@@ -389,9 +355,10 @@ bot.action(/.*/, async (ctx) => {
       await ctx.reply(
         [
           'Как пользоваться:',
-          '1. Выберите раздел кнопками меню.',
-          '2. Или нажмите быстрый поиск.',
-          '3. Или просто отправьте текстовый запрос.',
+          '1. Нажмите кнопку нужного верхнего раздела.',
+          '2. Дальше открывайте вложенные папки кнопками.',
+          '3. Или нажмите быстрый поиск.',
+          '4. Или просто отправьте текстовый запрос.',
           '',
           'Папки открываются, файлы отправляются сразу в чат.',
         ].join('\n')
