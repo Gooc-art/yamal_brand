@@ -101,14 +101,11 @@ function buildMainMenuKeyboard() {
     2
   );
 
-  rows.push([
-    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[0].label}`, `quick:${QUICK_SEARCHES[0].key}`),
-    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[1].label}`, `quick:${QUICK_SEARCHES[1].key}`),
-  ]);
-  rows.push([
-    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[2].label}`, `quick:${QUICK_SEARCHES[2].key}`),
-    Keyboard.button.callback(`🔎 ${QUICK_SEARCHES[3].label}`, `quick:${QUICK_SEARCHES[3].key}`),
-  ]);
+  const quickSearchRows = chunkIntoRows(
+    QUICK_SEARCHES.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`)),
+    2
+  );
+  rows.push(...quickSearchRows);
   rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
 
   return inlineKeyboardAttachment(rows);
@@ -117,8 +114,8 @@ function buildMainMenuKeyboard() {
 async function renderMainMenu(ctx, intro = false) {
   const text = [
     intro ? 'Привет. Это каталог бренда ЯМАЛ.' : 'Главное меню бренда ЯМАЛ.',
-    'Все основные разделы вынесены в кнопки.',
-    'Можно просто отправить текст: логотип, брендбук, шрифт, сувенир.',
+    'Вынесены верхние разделы, городские брендбуки и паттерны.',
+    'Можно просто отправить текст: логотип, брендбук, город, паттерн, шрифт, сувенир.',
   ].join('\n');
 
   await ctx.reply(text, { attachments: [buildMainMenuKeyboard()] });
@@ -241,7 +238,7 @@ async function runSearch(ctx, query) {
   const items = [...merged.values()].slice(0, config.maxSearchResults);
   if (!items.length) {
     await ctx.reply(
-      `По запросу «${query}» ничего не найдено. Попробуйте: логотип, брендбук, шрифт, сувенир.`
+      `По запросу «${query}» ничего не найдено. Попробуйте: логотип, брендбук, город, паттерн, шрифт, сувенир.`
     );
     return;
   }

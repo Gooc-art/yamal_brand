@@ -3,8 +3,12 @@ export const ROOT_MENU_FOLDERS = [
   { folderName: 'Фирменный знак', label: 'Фирменный знак', icon: '🔰' },
   { folderName: 'Детский логотип', label: 'Детский логотип', icon: '🧒' },
   { folderName: 'Логотипы городов', label: 'Логотипы городов', icon: '🏙️' },
+  { folderName: 'Паттерны', label: 'Паттерны', icon: '🧩' },
   { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук ЯМАЛ 100', icon: '📘' },
   { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-бренд', icon: '📕' },
+  { folderName: 'Брендбук Салехард', label: 'Брендбук Салехард', icon: '📗' },
+  { folderName: 'Брендбук Новый Уренгой', label: 'Брендбук Н. Уренгой', icon: '📙' },
+  { folderName: 'Брендбук Ноябрьск', label: 'Брендбук Ноябрьск', icon: '📒' },
   { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации и SVG', icon: '🖼️' },
   { folderName: 'Шрифт', label: 'Шрифт', icon: '🔤' },
   { folderName: 'Каталог сувенирной продукции', label: 'Сувенирная продукция', icon: '🎁' },
@@ -13,6 +17,8 @@ export const ROOT_MENU_FOLDERS = [
 export const QUICK_SEARCHES = [
   { key: 'logo', label: 'Логотип', query: 'логотип' },
   { key: 'brandbook', label: 'Брендбук', query: 'брендбук' },
+  { key: 'city', label: 'Город', query: 'город' },
+  { key: 'pattern', label: 'Паттерн', query: 'паттерн' },
   { key: 'font', label: 'Шрифт', query: 'шрифт' },
   { key: 'souvenir', label: 'Сувенир', query: 'сувенир' },
 ];

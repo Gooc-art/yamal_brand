@@ -18,6 +18,10 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
     { id: 'g', name: 'Детский логотип', type: 'folder' },
     { id: 'h', name: 'Логотипы городов', type: 'folder' },
     { id: 'i', name: 'Брендбук ЯМАЛ 100', type: 'folder' },
+    { id: 'j', name: 'Паттерны', type: 'folder' },
+    { id: 'k', name: 'Брендбук Салехард', type: 'folder' },
+    { id: 'l', name: 'Брендбук Новый Уренгой', type: 'folder' },
+    { id: 'm', name: 'Брендбук Ноябрьск', type: 'folder' },
   ];
 
   const menuFolders = resolveRootMenuFolders(rootItems);
@@ -28,8 +32,12 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Фирменный знак',
       'Детский логотип',
       'Логотипы городов',
+      'Паттерны',
       'Брендбук ЯМАЛ 100',
       'Брендбук ЯМАЛ Мастер бренд',
+      'Брендбук Салехард',
+      'Брендбук Новый Уренгой',
+      'Брендбук Ноябрьск',
       'Иллюстрации мастер-бренда SVG-элементы',
       'Шрифт',
       'Каталог сувенирной продукции',
@@ -42,8 +50,12 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Фирменный знак',
       'Детский логотип',
       'Логотипы городов',
+      'Паттерны',
       'Брендбук ЯМАЛ 100',
       'Мастер-бренд',
+      'Брендбук Салехард',
+      'Брендбук Н. Уренгой',
+      'Брендбук Ноябрьск',
       'Иллюстрации и SVG',
       'Шрифт',
       'Сувенирная продукция',
@@ -66,7 +78,8 @@ test('resolveRootMenuFolders appends unknown root folders after known sections',
 
 test('menu helpers return configured quick search and paginate items', () => {
   assert.equal(getQuickSearchByKey('font')?.query, 'шрифт');
-  assert.equal(QUICK_SEARCHES.length, 4);
+  assert.equal(getQuickSearchByKey('pattern')?.query, 'паттерн');
+  assert.equal(QUICK_SEARCHES.length, 6);
 
   const result = paginateItems([1, 2, 3, 4, 5], 9, 2);
   assert.equal(result.page, 2);
