@@ -5,7 +5,7 @@ export const ROOT_MENU_FOLDERS = [
   { folderName: 'Логотипы городов', label: 'Логотипы городов', icon: '🏙️' },
   { folderName: 'Паттерны', label: 'Паттерны', icon: '🧩' },
   { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук ЯМАЛ 100', icon: '📘' },
-  { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-бренд', icon: '📕' },
+  { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-Бренд', icon: '📕' },
   { folderName: 'Брендбук Салехард', label: 'Брендбук Салехард', icon: '📗' },
   { folderName: 'Брендбук Новый Уренгой', label: 'Брендбук Н. Уренгой', icon: '📙' },
   { folderName: 'Брендбук Ноябрьск', label: 'Брендбук Ноябрьск', icon: '📒' },

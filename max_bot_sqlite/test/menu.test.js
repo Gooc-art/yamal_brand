@@ -54,7 +54,7 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Логотипы городов',
       'Паттерны',
       'Брендбук ЯМАЛ 100',
-      'Мастер-бренд',
+      'Мастер-Бренд',
       'Брендбук Салехард',
       'Брендбук Н. Уренгой',
       'Брендбук Ноябрьск',
