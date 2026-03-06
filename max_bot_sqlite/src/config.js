@@ -1,7 +1,11 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+const botDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const projectDir = path.resolve(botDir, '..');
 
 function required(name) {
   const value = process.env[name];
@@ -31,8 +35,8 @@ function parseAllowedIds(raw) {
 
 export const config = {
   token: required('MAX_BOT_TOKEN'),
-  dbPath: path.resolve(process.env.CATALOG_DB_PATH || '/root/projects/yamal_brand/max_catalog.db'),
-  rootPath: path.resolve(process.env.CATALOG_ROOT_PATH || '/root/projects/yamal_brand/input/Макеты1'),
+  dbPath: path.resolve(process.env.CATALOG_DB_PATH || path.join(projectDir, 'max_catalog.db')),
+  rootPath: path.resolve(process.env.CATALOG_ROOT_PATH || path.join(projectDir, 'input', 'Макеты1')),
   pageSize: intEnv('PAGE_SIZE', 8),
   maxSearchResults: intEnv('MAX_SEARCH_RESULTS', 20),
   allowedUserIds: parseAllowedIds(process.env.ALLOWED_USER_IDS || ''),

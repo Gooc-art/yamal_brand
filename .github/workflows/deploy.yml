@@ -13,7 +13,7 @@ jobs:
   deploy:
     runs-on: [self-hosted, linux, yamal-max-prod]
     env:
-      DEPLOY_DIR: /root/projects/yamal_brand
+      DEPLOY_DIR: /home/sergey/yamal_brand
       DEPLOY_SERVICE: max_yamal_bot.service
 
     steps:

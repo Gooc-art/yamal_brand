@@ -8,30 +8,30 @@ This setup stores the file catalog in local SQLite and works well for:
 ## 1) Build DB from your folder tree
 
 ```bash
-python3 /root/projects/yamal_brand/scripts/build_sqlite_catalog.py \
-  --source "/root/projects/yamal_brand/input/Макеты1" \
-  --db "/root/projects/yamal_brand/max_catalog.db"
+python3 /home/sergey/yamal_brand/scripts/build_sqlite_catalog.py \
+  --source "/home/sergey/yamal_brand/input/Макеты1" \
+  --db "/home/sergey/yamal_brand/max_catalog.db"
 ```
 
 ## 2) Quick checks
 
 ```bash
-python3 /root/projects/yamal_brand/scripts/query_sqlite_catalog.py \
-  --db "/root/projects/yamal_brand/max_catalog.db" stats
+python3 /home/sergey/yamal_brand/scripts/query_sqlite_catalog.py \
+  --db "/home/sergey/yamal_brand/max_catalog.db" stats
 ```
 
 List root buttons:
 
 ```bash
-python3 /root/projects/yamal_brand/scripts/query_sqlite_catalog.py \
-  --db "/root/projects/yamal_brand/max_catalog.db" children
+python3 /home/sergey/yamal_brand/scripts/query_sqlite_catalog.py \
+  --db "/home/sergey/yamal_brand/max_catalog.db" children
 ```
 
 Search files:
 
 ```bash
-python3 /root/projects/yamal_brand/scripts/query_sqlite_catalog.py \
-  --db "/root/projects/yamal_brand/max_catalog.db" search --query "логотип"
+python3 /home/sergey/yamal_brand/scripts/query_sqlite_catalog.py \
+  --db "/home/sergey/yamal_brand/max_catalog.db" search --query "логотип"
 ```
 
 ## 3) Integration idea for MAX bot

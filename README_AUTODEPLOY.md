@@ -51,12 +51,22 @@ Configure runner (replace token and URL):
 ## 3) Prepare deploy directory on server
 
 ```bash
-mkdir -p /root/projects/yamal_brand
+mkdir -p /home/sergey/yamal_brand/input
+cp -a /root/projects/yamal_brand/input/Макеты1 /home/sergey/yamal_brand/input/
+chown -R sergey:sergey /home/sergey/yamal_brand
 ```
 
 Put runtime data there (once):
-- `/root/projects/yamal_brand/input/Макеты1`
-- `/root/projects/yamal_brand/max_bot_sqlite/.env` with valid `MAX_BOT_TOKEN`
+- `/home/sergey/yamal_brand/input/Макеты1`
+- `/home/sergey/yamal_brand/max_bot_sqlite/.env` with valid `MAX_BOT_TOKEN`
+
+Allow the runner user to manage the bot service:
+
+```bash
+printf '%s\n' 'sergey ALL=(root) NOPASSWD: /usr/bin/systemctl, /usr/bin/cp, /usr/bin/journalctl' > /etc/sudoers.d/yamal-bot
+chmod 440 /etc/sudoers.d/yamal-bot
+visudo -cf /etc/sudoers.d/yamal-bot
+```
 
 ## 4) Run autodeploy
 

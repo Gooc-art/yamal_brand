@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/bot.js",
-    "build-db": "python3 /root/projects/yamal_brand/scripts/build_sqlite_catalog.py --source \"/root/projects/yamal_brand/input/Макеты1\" --db \"/root/projects/yamal_brand/max_catalog.db\""
+    "build-db": "python3 ../scripts/build_sqlite_catalog.py --source \"../input/Макеты1\" --db \"../max_catalog.db\""
   },
   "dependencies": {
     "@maxhub/max-bot-api": "latest",

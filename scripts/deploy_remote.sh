@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_DIR="${DEPLOY_DIR:-/root/projects/yamal_brand}"
+DEPLOY_DIR="${DEPLOY_DIR:-/home/sergey/yamal_brand}"
 DEPLOY_SERVICE="${DEPLOY_SERVICE:-max_yamal_bot.service}"
 BOT_DIR="${BOT_DIR:-${DEPLOY_DIR}/max_bot_sqlite}"
 ENV_FILE="${ENV_FILE:-${BOT_DIR}/.env}"
@@ -10,10 +10,13 @@ CATALOG_DB_PATH="${CATALOG_DB_PATH:-${DEPLOY_DIR}/max_catalog.db}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 run_systemctl() {
-  if command -v sudo >/dev/null 2>&1; then
-    sudo "$@"
-  else
+  if [ "$(id -u)" -eq 0 ]; then
     "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo -n "$@"
+  else
+    echo "[deploy] ERROR: privileged command failed and sudo is unavailable: $*" >&2
+    exit 1
   fi
 }
 
@@ -68,6 +71,10 @@ echo "[deploy] rebuild SQLite catalog"
 
 echo "[deploy] install/update systemd unit"
 if [ -f "${BOT_DIR}/systemd/max_yamal_bot.service" ]; then
+  if [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
+    echo "[deploy] ERROR: passwordless sudo is required for systemctl/cp on runner host" >&2
+    exit 1
+  fi
   run_systemctl cp "${BOT_DIR}/systemd/max_yamal_bot.service" "/etc/systemd/system/max_yamal_bot.service"
 fi
 
