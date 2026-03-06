@@ -171,7 +171,7 @@ function buildMainMenuKeyboard() {
       type: 'quick',
       key: fontShortcut.key,
       label: fontShortcut.label,
-      icon: '🔎',
+      icon: '⌨️',
       name: fontShortcut.label,
     };
     const insertIndex = mainItems.findIndex((item) => item.name === 'Каталог сувенирной продукции');
