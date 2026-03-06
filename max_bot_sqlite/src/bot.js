@@ -342,7 +342,10 @@ async function runSearch(ctx, query) {
   if (!items.length) {
     await replyReplacingLast(
       ctx,
-      `По запросу «${query}» ничего не найдено. Попробуйте: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир.`
+      'Пупупу....пусто',
+      {
+        attachments: [inlineKeyboardAttachment([[Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]])],
+      }
     );
     return;
   }

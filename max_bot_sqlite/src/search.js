@@ -8,6 +8,17 @@ const ruToLat = new Map([
   ['ъ', ''], ['ы', 'y'], ['ь', ''], ['э', 'e'], ['ю', 'yu'], ['я', 'ya'],
 ]);
 
+const keyboardSwap = new Map([
+  ['q', 'й'], ['w', 'ц'], ['e', 'у'], ['r', 'к'], ['t', 'е'], ['y', 'н'], ['u', 'г'],
+  ['i', 'ш'], ['o', 'щ'], ['p', 'з'], ['a', 'ф'], ['s', 'ы'], ['d', 'в'], ['f', 'а'],
+  ['g', 'п'], ['h', 'р'], ['j', 'о'], ['k', 'л'], ['l', 'д'], ['z', 'я'], ['x', 'ч'],
+  ['c', 'с'], ['v', 'м'], ['b', 'и'], ['n', 'т'], ['m', 'ь'],
+  ['й', 'q'], ['ц', 'w'], ['у', 'e'], ['к', 'r'], ['е', 't'], ['н', 'y'], ['г', 'u'],
+  ['ш', 'i'], ['щ', 'o'], ['з', 'p'], ['ф', 'a'], ['ы', 's'], ['в', 'd'], ['а', 'f'],
+  ['п', 'g'], ['р', 'h'], ['о', 'j'], ['л', 'k'], ['д', 'l'], ['я', 'z'], ['ч', 'x'],
+  ['с', 'c'], ['м', 'v'], ['и', 'b'], ['т', 'n'], ['ь', 'm'],
+]);
+
 const synonyms = {
   'лого': ['логотип', 'logo', 'logotype'],
   'логотип': ['лого', 'logo', 'logotype', 'brandmark', 'знак', 'эмблема'],
@@ -71,19 +82,43 @@ export function translitToLatin(value) {
   return normalizeText(out);
 }
 
+export function swapKeyboardLayout(value) {
+  const src = String(value || '').toLowerCase();
+  let out = '';
+  for (const ch of src) {
+    out += keyboardSwap.has(ch) ? keyboardSwap.get(ch) : ch;
+  }
+  return normalizeText(out);
+}
+
 export function buildQueryVariants(query) {
   const norm = normalizeText(query);
-  if (!norm) return [];
+  const swapped = swapKeyboardLayout(query);
+  const bases = [norm, swapped].filter(Boolean);
+  if (!bases.length) return [];
 
-  const variants = [norm];
-  const lat = translitToLatin(norm);
-  if (lat && !variants.includes(lat)) variants.push(lat);
+  const variants = [];
+  const seen = new Set();
 
-  for (const token of norm.split(' ')) {
-    const syns = synonyms[token] || [];
-    for (const syn of syns) {
-      const v = normalizeText(syn);
-      if (v && !variants.includes(v)) variants.push(v);
+  function addVariant(value) {
+    const v = normalizeText(value);
+    if (!v || seen.has(v)) return;
+    seen.add(v);
+    variants.push(v);
+  }
+
+  for (const base of bases) {
+    addVariant(base);
+    addVariant(translitToLatin(base));
+  }
+
+  for (const base of [...variants]) {
+    for (const token of base.split(' ')) {
+      const syns = synonyms[token] || [];
+      for (const syn of syns) {
+        addVariant(syn);
+        addVariant(translitToLatin(syn));
+      }
     }
   }
 
@@ -103,28 +138,139 @@ function ratio(a, b) {
   return same / Math.max(sa.size, sb.size, 1);
 }
 
+function splitTokens(value) {
+  return normalizeText(value).split(' ').filter(Boolean);
+}
+
+function damerauLevenshtein(a, b) {
+  if (a === b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+
+  const rows = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i += 1) rows[i][0] = i;
+  for (let j = 0; j <= b.length; j += 1) rows[0][j] = j;
+
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      rows[i][j] = Math.min(
+        rows[i - 1][j] + 1,
+        rows[i][j - 1] + 1,
+        rows[i - 1][j - 1] + cost
+      );
+
+      if (
+        i > 1 &&
+        j > 1 &&
+        a[i - 1] === b[j - 2] &&
+        a[i - 2] === b[j - 1]
+      ) {
+        rows[i][j] = Math.min(rows[i][j], rows[i - 2][j - 2] + cost);
+      }
+    }
+  }
+
+  return rows[a.length][b.length];
+}
+
+function stringSimilarity(a, b) {
+  const left = normalizeText(a);
+  const right = normalizeText(b);
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) {
+    return Math.min(left.length, right.length) / Math.max(left.length, right.length);
+  }
+  const distance = damerauLevenshtein(left, right);
+  return Math.max(0, 1 - distance / Math.max(left.length, right.length));
+}
+
+function buildNgrams(value, size = 3) {
+  const text = normalizeText(value).replace(/\s+/g, ' ');
+  if (!text) return new Set();
+  if (text.length <= size) return new Set([text]);
+  const out = new Set();
+  for (let index = 0; index <= text.length - size; index += 1) {
+    out.add(text.slice(index, index + size));
+  }
+  return out;
+}
+
+function jaccard(a, b) {
+  if (!a.size || !b.size) return 0;
+  let common = 0;
+  for (const item of a) if (b.has(item)) common += 1;
+  return common / (a.size + b.size - common);
+}
+
+function tokenCoverage(queryTokens, candidateTokens) {
+  if (!queryTokens.length || !candidateTokens.length) return 0;
+  let total = 0;
+
+  for (const token of queryTokens) {
+    let best = 0;
+    for (const candidate of candidateTokens) {
+      const score = stringSimilarity(token, candidate);
+      if (score > best) best = score;
+      if (best >= 1) break;
+    }
+    total += best;
+  }
+
+  return total / queryTokens.length;
+}
+
 export function rankSearch(query, rows, limit) {
+  const variants = buildQueryVariants(query);
   const qn = normalizeText(query);
-  const qt = new Set(qn.split(' ').filter(Boolean));
+  const qt = new Set(splitTokens(qn));
   const scored = [];
 
   for (const row of rows) {
     const name = row.normalized_name || '';
     const rel = row.normalized_path || '';
+    const searchText = row.search_text || `${name} ${rel}`;
+    const candidateTokens = splitTokens(`${name} ${rel} ${searchText}`);
+    const candidateTokenSet = new Set(candidateTokens);
+    const nameNgrams = buildNgrams(name);
+    const relNgrams = buildNgrams(rel);
+    const searchNgrams = buildNgrams(searchText);
 
-    const r1 = ratio(qn, name);
-    const r2 = ratio(qn, rel);
+    let score = 0;
+    for (const variant of variants) {
+      const variantTokens = splitTokens(variant);
+      const variantNgrams = buildNgrams(variant);
+      const directMatch =
+        name.includes(variant) || rel.includes(variant) || searchText.includes(variant) ? 1 : 0;
+      const ratioScore = Math.max(ratio(variant, name), ratio(variant, rel), ratio(variant, searchText));
+      const overlap = variantTokens.length
+        ? variantTokens.filter((token) => candidateTokenSet.has(token)).length / variantTokens.length
+        : 0;
+      const tokenScore = tokenCoverage(variantTokens, candidateTokens);
+      const ngramScore = Math.max(
+        jaccard(variantNgrams, nameNgrams),
+        jaccard(variantNgrams, relNgrams),
+        jaccard(variantNgrams, searchNgrams)
+      );
+      const typoScore = Math.max(
+        stringSimilarity(variant, name),
+        stringSimilarity(variant, rel),
+        stringSimilarity(variant, searchText)
+      );
 
-    let overlap = 0;
-    if (qt.size) {
-      const st = new Set(`${name} ${rel}`.split(' ').filter(Boolean));
-      let common = 0;
-      for (const t of qt) if (st.has(t)) common += 1;
-      overlap = common / qt.size;
+      const variantScore =
+        directMatch * 0.34 +
+        ratioScore * 0.14 +
+        overlap * 0.16 +
+        tokenScore * 0.24 +
+        ngramScore * 0.12 +
+        typoScore * 0.2;
+
+      if (variantScore > score) score = variantScore;
     }
 
-    const score = Math.max(r1, r2) * 0.75 + overlap * 0.25;
-    if (score >= 0.35) {
+    if (score >= 0.31) {
       scored.push({ ...row, score: Number(score.toFixed(4)) });
     }
   }

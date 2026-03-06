@@ -1,37 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildQueryVariants, rankSearch } from '../src/search.js';
+import { buildQueryVariants, rankSearch, swapKeyboardLayout } from '../src/search.js';
 
 test('buildQueryVariants expands synonyms and transliteration', () => {
   const variants = buildQueryVariants('логотип');
-  assert.deepEqual(variants, [
-    'логотип',
-    'logotip',
-    'лого',
-    'logo',
-    'logotype',
-    'brandmark',
-    'знак',
-    'эмблема',
-  ]);
+  assert.deepEqual(
+    ['логотип', 'logotip', 'лого', 'logo', 'logotype', 'brandmark', 'знак', 'эмблема'].every(
+      (item) => variants.includes(item)
+    ),
+    true
+  );
 });
 
 test('buildQueryVariants expands non-obvious user vocabulary', () => {
-  assert.deepEqual(buildQueryVariants('сувенирка'), [
-    'сувенирка',
-    'suvenirka',
-    'сувенир',
-    'мерч',
-    'merch',
-    'подарок',
-  ]);
-  assert.deepEqual(buildQueryVariants('гайд'), [
-    'гайд',
-    'gaid',
-    'брендбук',
-    'гайдлайн',
-    'guide',
-  ]);
+  const souvenir = buildQueryVariants('сувенирка');
+  assert.deepEqual(
+    ['сувенирка', 'suvenirka', 'сувенир', 'мерч', 'merch', 'подарок'].every((item) =>
+      souvenir.includes(item)
+    ),
+    true
+  );
+
+  const guide = buildQueryVariants('гайд');
+  assert.deepEqual(
+    ['гайд', 'gaid', 'брендбук', 'гайдлайн', 'guide'].every((item) => guide.includes(item)),
+    true
+  );
+});
+
+test('buildQueryVariants corrects wrong keyboard layout', () => {
+  assert.equal(swapKeyboardLayout('kjujnbg'), 'логотип');
+  assert.equal(buildQueryVariants('kjujnbg').includes('логотип'), true);
 });
 
 test('rankSearch prefers exact and more relevant matches', () => {
@@ -63,4 +62,29 @@ test('rankSearch prefers exact and more relevant matches', () => {
   assert.equal(ranked[0].id, '1');
   assert.equal(ranked[1].id, '3');
   assert.ok(ranked.every((item) => item.score >= 0.35));
+});
+
+test('rankSearch tolerates typos and layout mistakes', () => {
+  const rows = [
+    {
+      id: '1',
+      name: 'Логотип Ямал',
+      normalized_name: 'логотип ямал',
+      normalized_path: 'логотип логотип ямал cdr',
+      search_text: 'логотип ямал logo logotip',
+      depth: 1,
+    },
+    {
+      id: '2',
+      name: 'Брендбук Ямал',
+      normalized_name: 'брендбук ямал',
+      normalized_path: 'брендбук ямал pdf',
+      search_text: 'брендбук ямал brandbook guide',
+      depth: 1,
+    },
+  ];
+
+  assert.equal(rankSearch('логотип', rows, 10)[0]?.id, '1');
+  assert.equal(rankSearch('kjujnbg', rows, 10)[0]?.id, '1');
+  assert.equal(rankSearch('брендбк', rows, 10)[0]?.id, '2');
 });

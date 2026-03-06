@@ -47,6 +47,11 @@ test('main menu exposes dedicated search screen with quick shortcuts', () => {
   assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
 });
 
+test('search empty state shows custom text and menu button', () => {
+  assert.match(botSource, /'Пупупу\.\.\.\.пусто'/);
+  assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
+});
+
 test('bot uses adaptive row packing for menu and folder keyboards', () => {
   assert.match(botSource, /import\s+\{\s*buttonLayoutUnits,\s*packButtonsIntoRows\s*\}\s+from '\.\/keyboard-layout\.js'/);
   assert.match(botSource, /packButtonsIntoRows\(items,\s*\{/);
