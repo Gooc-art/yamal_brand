@@ -51,7 +51,4 @@ jobs:
           sudo -n systemctl status max_yamal_bot.service --no-pager -n 40 || true
           sudo -n journalctl -u max_yamal_bot.service -n 40 --no-pager || true
           crontab -l 2>/dev/null | sed -n '1,20p' || true
-          ls -la /home/sergey/yamal_brand/run || true
-          cat /home/sergey/yamal_brand/run/max_bot.pid || true
           pgrep -af 'src/bot.js' || true
-          tail -n 80 /home/sergey/yamal_brand/logs/max_bot.log || true
