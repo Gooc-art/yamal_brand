@@ -30,6 +30,21 @@ jobs:
                   (parent_id,),
               ).fetchall()
 
+          def print_tree(parent_id, indent=0, max_depth=2):
+              if indent > max_depth:
+                  return
+              for child in children(parent_id):
+                  prefix = "  " * indent
+                  child_folders, child_files = counts(child["id"]) if child["type"] == "folder" else (0, 0)
+                  extra = (
+                      f" | folders={child_folders} files={child_files}"
+                      if child["type"] == "folder"
+                      else ""
+                  )
+                  print(f"{prefix}- {child['type']}: {child['name']}{extra}")
+                  if child["type"] == "folder":
+                      print_tree(child["id"], indent + 1, max_depth)
+
           def counts(parent_id):
               folder_count = conn.execute(
                   "SELECT COUNT(*) FROM assets WHERE parent_id = ? AND is_active = 1 AND type = 'folder'",
@@ -54,5 +69,23 @@ jobs:
                       f"  - {child['type']}: {child['name']}"
                       + (f" | folders={child_folders} files={child_files}" if child["type"] == "folder" else "")
                   )
+              print()
+
+          focus_names = {
+              "Каталог сувенирной продукции",
+              "Логотип",
+              "Логотипы городов",
+              "Фирменный знак",
+          }
+
+          print("FOCUSED SUBTREES")
+          print()
+          by_name = {row["name"]: row["id"] for row in root_items}
+          for name in focus_names:
+              item_id = by_name.get(name)
+              if not item_id:
+                  continue
+              print(f"## {name}")
+              print_tree(item_id, indent=0, max_depth=3)
               print()
           PY
