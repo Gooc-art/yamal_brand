@@ -159,8 +159,78 @@ function cleanupFolderLabel(name) {
   return normalizeButtonLabel(name);
 }
 
-function cleanupFileLabel(name) {
-  return normalizeButtonLabel(name, { stripNumericPrefix: false });
+function stripFileExtension(name) {
+  return String(name || '').replace(/\.[^.]+$/u, '');
+}
+
+function cleanupFileStem(name) {
+  return normalizeButtonLabel(
+    stripFileExtension(name).replace(/[_]+/gu, ' '),
+    { stripNumericPrefix: false }
+  );
+}
+
+function splitWords(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/ё/gu, 'е')
+    .replace(/[^0-9a-zа-я]+/giu, ' ')
+    .trim()
+    .split(/\s+/u)
+    .filter(Boolean);
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function collectContextPhrases(item, parentName) {
+  const rawParts = [
+    parentName,
+    ...String(item?.relative_path || '')
+      .split('/')
+      .slice(-4, -1),
+  ];
+
+  return [...new Set(rawParts.map((part) => cleanupFolderLabel(part)).filter(Boolean))]
+    .sort((a, b) => b.length - a.length);
+}
+
+function removeContextPhrases(label, phrases) {
+  let text = String(label || '');
+  for (const phrase of phrases) {
+    if (!phrase || phrase.length < 4) continue;
+    text = text.replace(new RegExp(`(^|\\s)${escapeRegex(phrase)}(?=\\s|$)`, 'iu'), ' ');
+  }
+  return text.replace(/\s+/gu, ' ').trim();
+}
+
+function inferFileKind(text) {
+  const source = String(text || '').toLowerCase();
+  if (/брендбук/u.test(source)) return 'Брендбук';
+  if (/логотип/u.test(source)) return 'Логотип';
+  if (/знак/u.test(source)) return 'Знак';
+  if (/паттерн/u.test(source)) return 'Паттерн';
+  if (/шрифт/u.test(source)) return 'Шрифт';
+  if (/иллюстра|svg/u.test(source)) return 'Иллюстрация';
+  if (/сувенир|мерч|макет/u.test(source)) return 'Макет';
+  return '';
+}
+
+function cleanupFileLabel(item, parentName, ext) {
+  const stem = cleanupFileStem(item?.name || '');
+  const contextPhrases = collectContextPhrases(item, parentName);
+  const contextWords = new Set(contextPhrases.flatMap((value) => splitWords(value)));
+  let main = removeContextPhrases(stem, contextPhrases);
+  const mainWords = splitWords(main);
+
+  if (!main || (mainWords.length && mainWords.every((word) => contextWords.has(word)))) {
+    main = inferFileKind(`${stem} ${parentName}`) || 'Файл';
+  }
+  main = upperFirst(main);
+
+  const extLabel = FORMAT_LABELS[ext] || String(ext || '').toUpperCase();
+  return [main, extLabel].filter(Boolean).join(' • ');
 }
 
 function fileExt(name) {
@@ -179,7 +249,7 @@ function fileConfig(item, parentName) {
     };
   }
   return {
-    label: cleanupFileLabel(item?.name || '') || item?.name || 'Файл',
+    label: cleanupFileLabel(item, parentName, ext) || item?.name || 'Файл',
     icon: FILE_ICONS[ext] || '📄',
     order: FORMAT_ORDER[ext] ?? 999,
   };

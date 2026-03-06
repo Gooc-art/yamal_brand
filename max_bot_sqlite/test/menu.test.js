@@ -105,7 +105,12 @@ test('decorateFolderItems shortens and enriches known section children', () => {
     { id: '1', name: '1-Сувенирная продукция', type: 'folder' },
     { id: '2', name: '3-Полиграфия и уличная навигация', type: 'folder' },
     { id: '3', name: '1-1 детские футболки', type: 'folder' },
-    { id: '4', name: 'guide.pdf', type: 'file' },
+    {
+      id: '4',
+      name: 'Детские футболки белые.pdf',
+      type: 'file',
+      relative_path: 'Каталог сувенирной продукции/1-Сувенирная продукция/1-1 детские футболки/Детские футболки белые.pdf',
+    },
   ];
 
   const decorated = decorateFolderItems(parent, items);
@@ -116,7 +121,8 @@ test('decorateFolderItems shortens and enriches known section children', () => {
   assert.equal(byName.get('3-Полиграфия и уличная навигация')?.icon, '🪧');
   assert.equal(byName.get('1-1 детские футболки')?.label, 'Детские футболки');
   assert.equal(byName.get('1-1 детские футболки')?.icon, '👕');
-  assert.equal(byName.get('guide.pdf')?.icon, '📕');
+  assert.equal(byName.get('Детские футболки белые.pdf')?.label, 'Белые • PDF');
+  assert.equal(byName.get('Детские футболки белые.pdf')?.icon, '📕');
 });
 
 test('decorateFolderItems strips leading punctuation and capitalizes generic labels', () => {
@@ -129,7 +135,7 @@ test('decorateFolderItems strips leading punctuation and capitalizes generic lab
   const decorated = decorateFolderItems(parent, items);
   const byName = new Map(decorated.map((item) => [item.name, item]));
   assert.equal(byName.get(',, наклейки')?.label, 'Наклейки');
-  assert.equal(byName.get('...брендбук.pdf')?.label, 'Брендбук.pdf');
+  assert.equal(byName.get('...брендбук.pdf')?.label, 'Брендбук • PDF');
   assert.equal(byName.get('...брендбук.pdf')?.icon, '📕');
 });
 
@@ -142,6 +148,7 @@ test('decorateFolderItems prioritizes direct brandbook files and exposes section
 
   const decorated = decorateFolderItems(parent, items);
   assert.equal(decorated[0].type, 'file');
+  assert.equal(decorated[0].label, 'Брендбук • PDF');
   assert.equal(decorated[0].icon, '📕');
   assert.equal(decorated[1].label, 'Файлы и исходники');
   assert.match(getSectionHint(parent), /сразу открыть PDF/u);
