@@ -32,12 +32,14 @@ ensure_node_runtime() {
   if [ -x "${NODE_RUNTIME_LINK}/bin/node" ] && [ -x "${NODE_RUNTIME_LINK}/bin/npm" ]; then
     NODE_BIN="${NODE_RUNTIME_LINK}/bin/node"
     NPM_BIN="${NODE_RUNTIME_LINK}/bin/npm"
+    export PATH="${NODE_RUNTIME_LINK}/bin:${PATH}"
     return
   fi
 
   if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
     NODE_BIN="$(command -v node)"
     NPM_BIN="$(command -v npm)"
+    export PATH="$(dirname "${NODE_BIN}"):${PATH}"
     return
   fi
 
@@ -84,6 +86,7 @@ ensure_node_runtime() {
 
   NODE_BIN="${NODE_RUNTIME_LINK}/bin/node"
   NPM_BIN="${NODE_RUNTIME_LINK}/bin/npm"
+  export PATH="${NODE_RUNTIME_LINK}/bin:${PATH}"
 }
 
 echo "[deploy] host=$(hostname) dir=${DEPLOY_DIR} service=${DEPLOY_SERVICE}"
