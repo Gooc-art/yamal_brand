@@ -11,13 +11,26 @@ LOG_FILE="${LOG_FILE:-${LOG_DIR}/max_bot.log}"
 
 mkdir -p "${RUN_DIR}" "${LOG_DIR}"
 
+bot_pids() {
+  pgrep -f 'src/bot.js' 2>/dev/null || true
+}
+
+sync_pid_file() {
+  local pid
+  pid="$(bot_pids | head -n 1)"
+  if [ -n "${pid}" ]; then
+    echo "${pid}" > "${PID_FILE}"
+  fi
+}
+
 is_running() {
-  [ -f "${PID_FILE}" ] && kill -0 "$(cat "${PID_FILE}")" 2>/dev/null
+  bot_pids | grep -q .
 }
 
 start_bot() {
   if is_running; then
-    echo "[user-bot] already running pid=$(cat "${PID_FILE}")"
+    sync_pid_file
+    echo "[user-bot] already running pids=$(bot_pids | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
     return 0
   fi
 
@@ -32,22 +45,42 @@ start_bot() {
     exit 1
   fi
 
+  sync_pid_file
   echo "[user-bot] started pid=$(cat "${PID_FILE}")"
 }
 
 stop_bot() {
-  if ! is_running; then
+  local pids
+  pids="$(
+    {
+      [ -f "${PID_FILE}" ] && cat "${PID_FILE}" || true
+      bot_pids
+    } | awk 'NF' | sort -u
+  )"
+
+  if [ -z "${pids}" ]; then
     rm -f "${PID_FILE}"
     echo "[user-bot] not running"
     return 0
   fi
 
   local pid
-  pid="$(cat "${PID_FILE}")"
-  kill "${pid}" 2>/dev/null || true
+  while IFS= read -r pid; do
+    [ -n "${pid}" ] || continue
+    kill "${pid}" 2>/dev/null || true
+  done <<< "${pids}"
 
   for _ in $(seq 1 20); do
-    if ! kill -0 "${pid}" 2>/dev/null; then
+    local remaining
+    remaining=""
+    while IFS= read -r pid; do
+      [ -n "${pid}" ] || continue
+      if kill -0 "${pid}" 2>/dev/null; then
+        remaining="${remaining} ${pid}"
+      fi
+    done <<< "${pids}"
+
+    if [ -z "${remaining}" ]; then
       rm -f "${PID_FILE}"
       echo "[user-bot] stopped"
       return 0
@@ -55,13 +88,14 @@ stop_bot() {
     sleep 1
   done
 
-  echo "[user-bot] stop timeout for pid=${pid}" >&2
+  echo "[user-bot] stop timeout for pids=$(echo "${pids}" | tr '\n' ' ' | sed 's/[[:space:]]*$//')" >&2
   exit 1
 }
 
 status_bot() {
   if is_running; then
-    echo "[user-bot] running pid=$(cat "${PID_FILE}")"
+    sync_pid_file
+    echo "[user-bot] running pids=$(bot_pids | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
     return 0
   fi
 

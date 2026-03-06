@@ -27,6 +27,7 @@ npm install
 
 Для автодеплоя отдельная системная установка Node.js не обязательна: deploy-скрипт сам скачает локальный runtime в `/home/sergey/yamal_brand/.runtime/node`.
 Если на сервере нет passwordless `sudo`, deploy-скрипт запустит бота от пользователя `sergey` и будет хранить логи в `/home/sergey/yamal_brand/logs/max_bot.log`.
+При каждом деплое старые экземпляры user-managed процесса останавливаются перед стартом нового.
 
 Заполни в `.env`:
 - `MAX_BOT_TOKEN`
