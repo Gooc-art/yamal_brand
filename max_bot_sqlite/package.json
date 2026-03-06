@@ -1,0 +1,15 @@
+{
+  "name": "yamal-max-bot-sqlite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.js",
+    "build-db": "python3 /root/projects/yamal_brand/scripts/build_sqlite_catalog.py --source \"/root/projects/yamal_brand/input/Макеты1\" --db \"/root/projects/yamal_brand/max_catalog.db\""
+  },
+  "dependencies": {
+    "@maxhub/max-bot-api": "latest",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.5"
+  }
+}

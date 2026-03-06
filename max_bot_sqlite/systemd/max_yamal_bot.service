@@ -1,0 +1,15 @@
+[Unit]
+Description=YAMAL MAX bot (SQLite catalog)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/projects/yamal_brand/max_bot_sqlite
+EnvironmentFile=/root/projects/yamal_brand/max_bot_sqlite/.env
+ExecStart=/usr/bin/env node /root/projects/yamal_brand/max_bot_sqlite/src/bot.js
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

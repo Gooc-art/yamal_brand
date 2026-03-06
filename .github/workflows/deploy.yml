@@ -1,0 +1,38 @@
+name: Deploy Yamal MAX Bot
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: deploy-yamal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    env:
+      DEPLOY_DIR: /root/projects/yamal_brand
+      DEPLOY_SERVICE: max_yamal_bot.service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync repository to deploy path
+        run: |
+          mkdir -p "${DEPLOY_DIR}"
+          rsync -az --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "max_bot_sqlite/.env" \
+            --exclude "max_bot_sqlite/node_modules/" \
+            --exclude "input/" \
+            --exclude "*.db" \
+            ./ "${DEPLOY_DIR}/"
+
+      - name: Deploy on runner host
+        run: |
+          chmod +x "${DEPLOY_DIR}/scripts/deploy_remote.sh"
+          DEPLOY_DIR="${DEPLOY_DIR}" DEPLOY_SERVICE="${DEPLOY_SERVICE}" bash "${DEPLOY_DIR}/scripts/deploy_remote.sh"
