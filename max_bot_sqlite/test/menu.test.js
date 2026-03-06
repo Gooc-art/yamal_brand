@@ -42,7 +42,6 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Брендбук Новый Уренгой',
       'Брендбук Ноябрьск',
       'Иллюстрации мастер-бренда SVG-элементы',
-      'Шрифт',
       'Каталог сувенирной продукции',
     ]
   );
@@ -60,7 +59,6 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Брендбук Н. Уренгой',
       'Брендбук Ноябрьск',
       'Иллюстрации и SVG',
-      'Шрифт',
       'Сувенирная продукция',
     ]
   );
@@ -74,6 +72,7 @@ test('resolveRootMenuFolders appends unknown root folders after known sections',
   ];
 
   const menuFolders = resolveRootMenuFolders(rootItems);
+  assert.equal(menuFolders.some((item) => item.name === 'Шрифт'), false);
   assert.equal(menuFolders.at(-1)?.name, ', новый раздел');
   assert.equal(menuFolders.at(-1)?.label, 'Новый раздел');
   assert.equal(menuFolders.at(-1)?.icon, '📁');

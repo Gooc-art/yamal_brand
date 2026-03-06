@@ -10,9 +10,10 @@ export const ROOT_MENU_FOLDERS = [
   { folderName: 'Брендбук Новый Уренгой', label: 'Брендбук Н. Уренгой', icon: '📙' },
   { folderName: 'Брендбук Ноябрьск', label: 'Брендбук Ноябрьск', icon: '📒' },
   { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации и SVG', icon: '🖼️' },
-  { folderName: 'Шрифт', label: 'Шрифт', icon: '🔤' },
   { folderName: 'Каталог сувенирной продукции', label: 'Сувенирная продукция', icon: '🎁' },
 ];
+
+const HIDDEN_ROOT_FOLDERS = new Set(['Шрифт']);
 
 export const QUICK_SEARCHES = [
   { key: 'logo', label: 'Логотип', query: 'логотип' },
@@ -285,7 +286,11 @@ function folderConfig(parentName, itemName) {
 }
 
 export function resolveRootMenuFolders(rootItems) {
-  const byName = new Map(rootItems.map((item) => [item.name, item]));
+  const byName = new Map(
+    rootItems
+      .filter((item) => !HIDDEN_ROOT_FOLDERS.has(item.name))
+      .map((item) => [item.name, item])
+  );
   const ordered = [];
 
   for (const config of ROOT_MENU_FOLDERS) {

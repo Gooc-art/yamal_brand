@@ -47,6 +47,12 @@ test('main menu exposes dedicated search screen with quick shortcuts', () => {
   assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
 });
 
+test('main menu keeps only quick font shortcut instead of root font folder button', () => {
+  assert.match(botSource, /item\.type === 'quick'/);
+  assert.match(botSource, /`quick:\$\{item\.key\}`/);
+  assert.match(botSource, /findIndex\(\(item\) => item\.name === 'Каталог сувенирной продукции'\)/);
+});
+
 test('search empty state shows custom text and menu button', () => {
   assert.match(botSource, /'Пупупу\.\.\.\.пусто'/);
   assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);

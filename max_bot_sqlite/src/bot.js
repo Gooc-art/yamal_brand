@@ -85,6 +85,12 @@ function truncate(text, max) {
 
 function buttonForItem(item) {
   const displayName = item.label || item.name;
+  if (item.type === 'quick') {
+    return Keyboard.button.callback(
+      `${item.icon || '🔎'} ${truncate(displayName, 40)}`,
+      `quick:${item.key}`
+    );
+  }
   if (item.type === 'folder') {
     return Keyboard.button.callback(
       `${item.icon || '📁'} ${truncate(displayName, 40)}`,
@@ -158,23 +164,29 @@ function buildFolderItemRows(items) {
 
 function buildMainMenuKeyboard() {
   const rootFolders = resolveRootMenuFolders(getRootFolders());
-  const rows = packButtonsIntoRows(rootFolders, {
+  const mainItems = [...rootFolders];
+  const fontShortcut = getMainMenuQuickSearches()[0];
+  if (fontShortcut) {
+    const shortcutItem = {
+      type: 'quick',
+      key: fontShortcut.key,
+      label: fontShortcut.label,
+      icon: '🔎',
+      name: fontShortcut.label,
+    };
+    const insertIndex = mainItems.findIndex((item) => item.name === 'Каталог сувенирной продукции');
+    if (insertIndex >= 0) {
+      mainItems.splice(insertIndex, 0, shortcutItem);
+    } else {
+      mainItems.push(shortcutItem);
+    }
+  }
+
+  const rows = packButtonsIntoRows(mainItems, {
     measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
     maxButtonsPerRow: 2,
-  }).map((row) =>
-    row.map((item) =>
-      Keyboard.button.callback(`${item.icon} ${truncate(item.label, 28)}`, `open:${item.id}:0`)
-    )
-  );
-
-  const quickSearchRows = packButtonsIntoRows(getMainMenuQuickSearches(), {
-    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
-    maxButtonsPerRow: 3,
-  }).map((row) =>
-    row.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`))
-  );
+  }).map((row) => row.map((item) => buttonForItem(item)));
   rows.push([Keyboard.button.callback('🔎 Поиск', 'search:main')]);
-  rows.push(...quickSearchRows);
   rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
 
   return inlineKeyboardAttachment(rows);
