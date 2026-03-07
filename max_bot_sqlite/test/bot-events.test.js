@@ -47,6 +47,15 @@ test('main menu exposes dedicated search screen with quick shortcuts', () => {
   assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
 });
 
+test('main menu exposes favorites screen and tracks runtime usage', () => {
+  assert.match(botSource, /Keyboard\.button\.callback\('⭐ Избранное',\s*'favorites:main'\)/);
+  assert.match(botSource, /if \(data === 'favorites:main'\)/);
+  assert.match(botSource, /async function renderFavorites\(ctx\)/);
+  assert.match(botSource, /state\.logSearch\(query,\s*items\.length\)/);
+  assert.match(botSource, /state\.trackItemEvent\(parent,\s*'open_folder'\)/);
+  assert.match(botSource, /state\.trackItemEvent\(item,\s*'send_file'\)/);
+});
+
 test('main menu keeps only quick font shortcut instead of root font folder button', () => {
   assert.match(botSource, /item\.type === 'quick'/);
   assert.match(botSource, /`quick:\$\{item\.key\}`/);

@@ -10,18 +10,20 @@ SPEC.loader.exec_module(MODULE)
 
 
 def test_query_variants_expand_everyday_terms():
-    assert MODULE.query_variants("сувенирка") == [
-        "сувенирка",
-        "suvenirka",
-        "сувенир",
-        "мерч",
-        "merch",
-        "подарок",
-    ]
-    assert MODULE.query_variants("гайд") == [
-        "гайд",
-        "gaid",
-        "брендбук",
-        "гайдлайн",
-        "guide",
-    ]
+    souvenir = MODULE.query_variants("сувенирка")
+    assert all(
+        value in souvenir
+        for value in ["сувенирка", "suvenirka", "сувенир", "merch", "подарок", "podarok"]
+    )
+
+    guide = MODULE.query_variants("гайд")
+    assert all(
+        value in guide
+        for value in ["гайд", "gaid", "брендбук", "brendbuk", "гайдлайн", "guide"]
+    )
+
+    stickers = MODULE.query_variants("наклейка")
+    assert all(
+        value in stickers
+        for value in ["наклейка", "nakleika", "стикер", "stiker", "наклейки", "стикеры"]
+    )

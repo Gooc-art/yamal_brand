@@ -59,6 +59,7 @@ chown -R sergey:sergey /home/sergey/yamal_brand
 Put runtime data there (once):
 - `/home/sergey/yamal_brand/input/Макеты1`
 - `/home/sergey/yamal_brand/max_bot_sqlite/.env`
+- optional runtime analytics DB path in `.env`: `RUNTIME_DB_PATH=/home/sergey/yamal_brand/max_bot_runtime.db`
 - Node.js is bootstrapped automatically into `/home/sergey/yamal_brand/.runtime/node` during deploy if the server does not have `node`/`npm` installed.
 - `MAX_BOT_TOKEN` can be injected automatically from GitHub Actions Secret `MAX_BOT_TOKEN`
 
@@ -101,10 +102,13 @@ To inspect bot health and recent runtime errors on the production runner:
 systemctl status max_yamal_bot.service --no-pager
 journalctl -u max_yamal_bot.service -n 80 --no-pager
 LOOKBACK_HOURS=12 JOURNAL_LINES=120 /home/sergey/yamal_brand/scripts/diagnose_bot_service.sh max_yamal_bot.service
+python3 /home/sergey/yamal_brand/scripts/report_bot_usage.py --catalog-db /home/sergey/yamal_brand/max_catalog.db --runtime-db /home/sergey/yamal_brand/max_bot_runtime.db
+python3 /home/sergey/yamal_brand/scripts/backup_bot_data.py --catalog-db /home/sergey/yamal_brand/max_catalog.db --runtime-db /home/sergey/yamal_brand/max_bot_runtime.db --output-dir /home/sergey/yamal_brand/backups
 ```
 
 ## Notes
 - Workflow preserves runtime files: `input/`, `.env`, `*.db`, `node_modules/`, `.runtime/`, `logs/`, `run/`.
+- That means both `max_catalog.db` and `max_bot_runtime.db` survive redeploys.
 - If you changed service file, deploy script re-installs it into `/etc/systemd/system/max_yamal_bot.service`.
 - During migration from the old user-managed mode, deploy stops the legacy process and removes its `@reboot` crontab entry before enabling `systemd`.
 - Bot-side network calls now retry short-lived MAX API failures such as header/connect timeouts and `Attachment not ready`.

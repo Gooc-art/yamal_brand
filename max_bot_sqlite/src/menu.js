@@ -137,6 +137,13 @@ const STYLE_FOLDER_NAMES = new Set([
   '4. White',
 ]);
 
+const LOW_VALUE_FILE_PATTERNS = [
+  /(^|\s)(?:исходник(?:и)?|макет(?:ы)?|вариант(?:ы)?|версия|копия|copy|final)(?=\s|$)/giu,
+  /(^|\s)финальн(?:ый|ая|ое|ые)(?=\s|$)/giu,
+  /(^|\s)готов(?:ый|ая|ое|ые)(?=\s|$)/giu,
+  /(^|\s)(?:для\s+печати|для\s+экрана)(?=\s|$)/giu,
+];
+
 function upperFirst(value) {
   const text = String(value || '');
   return text ? `${text.slice(0, 1).toUpperCase()}${text.slice(1)}` : text;
@@ -169,6 +176,32 @@ function cleanupFileStem(name) {
     stripFileExtension(name).replace(/[_]+/gu, ' '),
     { stripNumericPrefix: false }
   );
+}
+
+function stripLowValueFilePhrases(value) {
+  let text = String(value || '');
+  for (const pattern of LOW_VALUE_FILE_PATTERNS) {
+    text = text.replace(pattern, ' ');
+  }
+  return text.replace(/\s+/gu, ' ').trim();
+}
+
+function dedupeWords(value) {
+  const out = [];
+  const seen = new Set();
+  for (const word of String(value || '').split(/\s+/u).filter(Boolean)) {
+    const key = word.toLowerCase().replace(/ё/gu, 'е');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(word);
+  }
+  return out.join(' ');
+}
+
+function shortenLongLabel(value, maxWords = 4) {
+  const words = String(value || '').split(/\s+/u).filter(Boolean);
+  if (words.length <= maxWords) return words.join(' ');
+  return words.slice(0, maxWords).join(' ');
 }
 
 function splitWords(value) {
@@ -223,6 +256,9 @@ function cleanupFileLabel(item, parentName, ext) {
   const contextPhrases = collectContextPhrases(item, parentName);
   const contextWords = new Set(contextPhrases.flatMap((value) => splitWords(value)));
   let main = removeContextPhrases(stem, contextPhrases);
+  main = stripLowValueFilePhrases(main);
+  main = dedupeWords(main);
+  main = shortenLongLabel(main);
   const mainWords = splitWords(main);
 
   if (!main || (mainWords.length && mainWords.every((word) => contextWords.has(word)))) {

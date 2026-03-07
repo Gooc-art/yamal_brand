@@ -7,6 +7,7 @@ import { CatalogDb } from './db.js';
 import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
 import { buttonLayoutUnits, packButtonsIntoRows } from './keyboard-layout.js';
 import { retryMaxApiCall } from './max-api-retry.js';
+import { RuntimeStateDb } from './state-db.js';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
@@ -23,6 +24,7 @@ function safeId(value) {
 
 const ROOT_ID = safeId('.');
 const db = new CatalogDb(config.dbPath);
+const state = new RuntimeStateDb(config.runtimeDbPath);
 const bot = new Bot(config.token);
 const lastBotMessageIds = new Map();
 
@@ -186,7 +188,10 @@ function buildMainMenuKeyboard() {
     measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
     maxButtonsPerRow: 2,
   }).map((row) => row.map((item) => buttonForItem(item)));
-  rows.push([Keyboard.button.callback('🔎 Поиск', 'search:main')]);
+  rows.push([
+    Keyboard.button.callback('⭐ Избранное', 'favorites:main'),
+    Keyboard.button.callback('🔎 Поиск', 'search:main'),
+  ]);
   rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
 
   return inlineKeyboardAttachment(rows);
@@ -215,14 +220,105 @@ function buildSearchKeyboard() {
   return inlineKeyboardAttachment(rows);
 }
 
+function decorateSingleItem(item) {
+  const parent = item?.parent_id ? db.getById(item.parent_id) : null;
+  return decorateFolderItems(parent, [item])[0] || item;
+}
+
+function buildFavoriteFallbackItems() {
+  const preferredNames = [
+    'Логотип',
+    'Брендбук ЯМАЛ 100',
+    'Брендбук ЯМАЛ Мастер бренд',
+    'Логотипы городов',
+    'Каталог сувенирной продукции',
+  ];
+  const rootByName = new Map(resolveRootMenuFolders(getRootFolders()).map((item) => [item.name, item]));
+  const fallback = [];
+
+  for (const name of preferredNames) {
+    const item = rootByName.get(name);
+    if (!item) continue;
+    fallback.push(item);
+    if (fallback.length >= config.favoritesLimit - 1) break;
+  }
+
+  const fontShortcut = getMainMenuQuickSearches()[0];
+  if (fontShortcut && fallback.length < config.favoritesLimit) {
+    fallback.push({
+      type: 'quick',
+      key: fontShortcut.key,
+      label: fontShortcut.label,
+      icon: '⌨️',
+      name: fontShortcut.label,
+    });
+  }
+
+  return fallback.slice(0, config.favoritesLimit);
+}
+
+function getFavoriteItems() {
+  const ranked = state.getTopItems(config.favoritesLimit * 3);
+  const items = [];
+  const seen = new Set();
+
+  for (const record of ranked) {
+    if (!record?.item_id || seen.has(record.item_id)) continue;
+    const item = db.getById(record.item_id);
+    if (!item || !item.is_active) continue;
+    const decorated = decorateSingleItem(item);
+    items.push({
+      ...decorated,
+      uses: Number(record.uses || 0),
+    });
+    seen.add(record.item_id);
+    if (items.length >= config.favoritesLimit) break;
+  }
+
+  return items.length ? items : buildFavoriteFallbackItems();
+}
+
 async function renderMainMenu(ctx, intro = false) {
   const text = [
     intro ? 'Привет. Это каталог бренда ЯМАЛ.' : 'Главное меню бренда ЯМАЛ.',
     'Вынесены верхние разделы, городские брендбуки и паттерны.',
-    'Можно нажать кнопку Поиск или просто отправить текст: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир.',
+    'Можно открыть Избранное, нажать Поиск или просто отправить текст: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир.',
   ].join('\n');
 
   await replyReplacingLast(ctx, text, { attachments: [buildMainMenuKeyboard()] });
+}
+
+async function renderFavorites(ctx) {
+  const items = getFavoriteItems();
+  if (!items.length) {
+    await replyReplacingLast(ctx, 'Избранное пока пусто.', {
+      attachments: [
+        inlineKeyboardAttachment([[Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]]),
+      ],
+    });
+    return;
+  }
+
+  const rows = buildFolderItemRows(items);
+  rows.push([
+    Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
+    Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
+  ]);
+
+  const hasStats = Number(state.stats()?.total_item_events || 0) > 0;
+  const text = hasStats
+    ? [
+        '⭐ Избранное',
+        'Здесь собраны самые часто открываемые разделы и файлы.',
+      ].join('\n')
+    : [
+        '⭐ Избранное',
+        'Пока статистики мало, поэтому показаны базовые разделы.',
+      ].join('\n');
+
+  await replyReplacingLast(ctx, text, {
+    attachments: [inlineKeyboardAttachment(rows)],
+  });
 }
 
 function buildNavigationRows(parentId, page, total, pageSize) {
@@ -277,6 +373,9 @@ async function renderFolder(ctx, parentId, page = 0) {
     ? [header, hint].filter(Boolean).join('\n\n')
     : `${header}\n\nРаздел пуст.`;
   await replyReplacingLast(ctx, text, { attachments: [inlineKeyboardAttachment(rows)] });
+  if (parent) {
+    state.trackItemEvent(parent, 'open_folder');
+  }
 }
 
 async function sendFileById(ctx, fileId) {
@@ -321,6 +420,7 @@ async function sendFileById(ctx, fileId) {
         ]),
       ],
     });
+    state.trackItemEvent(item, 'send_file');
   } catch (err) {
     await replyReplacingLast(ctx, 'Не удалось отправить файл. Проверь размер/доступность файла.');
     console.error('[sendFileById] upload failed', err);
@@ -351,6 +451,7 @@ async function runSearch(ctx, query) {
   }
 
   const items = [...merged.values()].slice(0, config.maxSearchResults);
+  state.logSearch(query, items.length);
   if (!items.length) {
     await replyReplacingLast(
       ctx,
@@ -420,15 +521,15 @@ bot.command('help', async (ctx) => {
   await safeHandle(ctx, async () => {
     await replyReplacingLast(
       ctx,
-      [
-        'Команды:',
-        '/start - открыть каталог',
-        '/menu - главное меню',
-        '/search <запрос> - поиск файла',
-        '',
-        'Можно просто отправить текст, бот воспримет это как поиск.',
-        'В главном меню есть кнопки разделов, кнопка Поиск и быстрая кнопка Шрифт.',
-      ].join('\n')
+        [
+          'Команды:',
+          '/start - открыть каталог',
+          '/menu - главное меню',
+          '/search <запрос> - поиск файла',
+          '',
+          'Можно просто отправить текст, бот воспримет это как поиск.',
+          'В главном меню есть кнопки разделов, кнопки Избранное и Поиск, а также быстрая кнопка Шрифт.',
+        ].join('\n')
     );
   });
 });
@@ -485,14 +586,20 @@ bot.action(/.*/, async (ctx) => {
         [
           'Как пользоваться:',
           '1. Нажмите кнопку нужного верхнего раздела.',
-          '2. Дальше открывайте вложенные папки кнопками.',
-          '3. При необходимости нажмите кнопку Шрифт.',
-          '4. Или просто отправьте текстовый запрос.',
+          '2. Для быстрых материалов откройте Избранное.',
+          '3. Дальше открывайте вложенные папки кнопками.',
+          '4. При необходимости нажмите кнопку Шрифт.',
+          '5. Или просто отправьте текстовый запрос.',
           '',
           'Папки открываются, файлы отправляются сразу в чат.',
         ].join('\n'),
         { attachments: [buildHelpKeyboard()] }
       );
+      return;
+    }
+
+    if (data === 'favorites:main') {
+      await renderFavorites(ctx);
       return;
     }
 
@@ -515,6 +622,7 @@ bot.action(/.*/, async (ctx) => {
 
 const stat = db.stats();
 console.log('[boot] db=', config.dbPath, 'rows=', stat.total, 'files=', stat.files, 'folders=', stat.folders);
+console.log('[boot] runtimeDb=', config.runtimeDbPath, 'state=', state.stats());
 console.log('[boot] rootPath=', config.rootPath);
 console.log('[boot] rootId=', ROOT_ID);
 

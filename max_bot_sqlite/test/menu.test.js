@@ -138,6 +138,21 @@ test('decorateFolderItems strips leading punctuation and capitalizes generic lab
   assert.equal(byName.get('...брендбук.pdf')?.icon, '📕');
 });
 
+test('decorateFolderItems removes low-value file words and keeps meaningful short labels', () => {
+  const parent = { name: 'Логотип' };
+  const items = [
+    {
+      id: '1',
+      name: 'Логотип основной вариант для печати финальный.pdf',
+      type: 'file',
+      relative_path: 'Логотип/Логотип основной вариант для печати финальный.pdf',
+    },
+  ];
+
+  const decorated = decorateFolderItems(parent, items);
+  assert.equal(decorated[0]?.label, 'Основной • PDF');
+});
+
 test('decorateFolderItems prioritizes direct brandbook files and exposes section hints', () => {
   const parent = { name: 'Брендбук ЯМАЛ 100' };
   const items = [

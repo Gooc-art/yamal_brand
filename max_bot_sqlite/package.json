@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/bot.js",
     "test": "node --test",
-    "build-db": "python3 ../scripts/build_sqlite_catalog.py --source \"../input/Макеты1\" --db \"../max_catalog.db\""
+    "build-db": "python3 ../scripts/build_sqlite_catalog.py --source \"../input/Макеты1\" --db \"../max_catalog.db\"",
+    "report-usage": "python3 ../scripts/report_bot_usage.py --catalog-db ../max_catalog.db --runtime-db ../max_bot_runtime.db",
+    "backup-data": "python3 ../scripts/backup_bot_data.py --catalog-db ../max_catalog.db --runtime-db ../max_bot_runtime.db --output-dir ../backups"
   },
   "dependencies": {
     "@maxhub/max-bot-api": "latest",

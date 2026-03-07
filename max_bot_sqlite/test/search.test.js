@@ -26,6 +26,20 @@ test('buildQueryVariants expands non-obvious user vocabulary', () => {
     ['гайд', 'gaid', 'брендбук', 'гайдлайн', 'guide'].every((item) => guide.includes(item)),
     true
   );
+
+  const merch = buildQueryVariants('наклейка');
+  assert.deepEqual(
+    ['наклейка', 'stiker', 'стикер', 'наклейки'].every((item) => merch.includes(item)),
+    true
+  );
+
+  const digital = buildQueryVariants('диджитал');
+  assert.deepEqual(
+    ['диджитал', 'prezentaciya', 'презентация', 'соцсети'].every((item) =>
+      digital.includes(item)
+    ),
+    true
+  );
 });
 
 test('buildQueryVariants corrects wrong keyboard layout', () => {

@@ -4,6 +4,7 @@ This setup stores the file catalog in local SQLite and works well for:
 - inline folder navigation
 - text search by name/path/extension
 - direct file lookup by `id`
+- runtime analytics and popular-item stats in a separate writable SQLite DB
 
 ## 1) Build DB from your folder tree
 
@@ -39,8 +40,37 @@ Search understands broader user wording too:
 - `брендбук`, `гайд`, `гайдлайн`
 - `шрифт`, `гарнитура`
 - `сувенир`, `мерч`, `сувенирка`
+- `наклейка`, `стикер`
+- `полиграфия`, `навигация`, `баннер`
+- `диджитал`, `презентация`, `соцсети`
 
-## 3) Integration idea for MAX bot
+## 3) Runtime analytics
+
+Report current usage summary:
+
+```bash
+python3 /home/sergey/yamal_brand/scripts/report_bot_usage.py \
+  --catalog-db "/home/sergey/yamal_brand/max_catalog.db" \
+  --runtime-db "/home/sergey/yamal_brand/max_bot_runtime.db"
+```
+
+Create a timestamped backup snapshot with CSV/JSON exports:
+
+```bash
+python3 /home/sergey/yamal_brand/scripts/backup_bot_data.py \
+  --catalog-db "/home/sergey/yamal_brand/max_catalog.db" \
+  --runtime-db "/home/sergey/yamal_brand/max_bot_runtime.db" \
+  --output-dir "/home/sergey/yamal_brand/backups"
+```
+
+Snapshot contents:
+- `assets.csv`
+- `top_searches.csv`
+- `top_empty_searches.csv`
+- `top_items.csv`
+- `summary.json`
+
+## 4) Integration idea for MAX bot
 
 - `/start` -> run `children --parent-id <root_id>`
 - folder button -> run `children --parent-id <folder_id>`

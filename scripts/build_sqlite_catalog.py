@@ -99,6 +99,50 @@ _RU_TO_LAT = str.maketrans(
     }
 )
 
+_SYNONYMS = {
+    "лого": ["логотип", "logo", "logotype"],
+    "логотип": ["лого", "logo", "logotype", "brandmark", "знак", "эмблема"],
+    "logo": ["логотип", "лого", "logotype", "brandmark"],
+    "logotype": ["логотип", "logo", "лого"],
+    "brandmark": ["логотип", "logo", "знак"],
+    "знак": ["логотип", "brandmark", "эмблема", "symbol"],
+    "эмблема": ["логотип", "знак", "symbol"],
+    "symbol": ["знак", "эмблема", "brandmark"],
+    "брендбук": ["гайдлайн", "гайд", "guide", "guideline", "brandbook"],
+    "brandbook": ["брендбук", "гайдлайн", "guide", "guideline"],
+    "гайдлайн": ["брендбук", "brandbook", "guide", "guideline"],
+    "guideline": ["брендбук", "brandbook", "гайдлайн", "guide"],
+    "гайд": ["брендбук", "гайдлайн", "guide"],
+    "guide": ["брендбук", "brandbook", "гайдлайн", "guideline"],
+    "шрифт": ["font", "fonts", "ttf", "otf", "гарнитура", "typeface"],
+    "font": ["шрифт", "fonts", "ttf", "otf", "гарнитура", "typeface"],
+    "гарнитура": ["шрифт", "font", "typeface"],
+    "сувенир": ["мерч", "merch", "сувенирка", "подарок", "подарки"],
+    "мерч": ["сувенир", "merch", "сувенирка", "подарок"],
+    "сувенирка": ["сувенир", "мерч", "merch", "подарок"],
+    "иллюстрация": ["иллюстрации", "svg", "вектор", "элемент", "графика"],
+    "иллюстрации": ["иллюстрация", "svg", "вектор", "элементы", "графика"],
+    "svg": ["иллюстрация", "иллюстрации", "вектор", "элемент"],
+    "паттерн": ["svg", "элемент", "орнамент"],
+    "город": ["города", "муниципалитет"],
+    "города": ["город", "муниципалитет"],
+    "мастербренд": ["мастер бренд", "брендбук", "гайдлайн"],
+    "мастер": ["мастербренд", "мастер бренд", "брендбук"],
+    "юбилей": ["100", "95", "брендбук"],
+    "наклейка": ["стикер", "наклейки", "стикеры"],
+    "стикер": ["наклейка", "стикеры", "наклейки"],
+    "одежда": ["футболка", "худи", "мерч"],
+    "футболка": ["одежда", "мерч"],
+    "худи": ["одежда", "мерч"],
+    "баннер": ["полиграфия", "навигация"],
+    "навигация": ["полиграфия", "баннер", "табличка"],
+    "полиграфия": ["баннер", "навигация", "буклет"],
+    "диджитал": ["презентация", "соцсети", "цифровой"],
+    "презентация": ["диджитал", "цифровой"],
+    "соцсети": ["диджитал", "цифровой"],
+    "канцелярия": ["ручка", "блокнот", "ежедневник"],
+}
+
 
 def normalize_text(value: str) -> str:
     value = value.lower().replace("ё", "е")
@@ -120,8 +164,25 @@ def translit_to_latin(value: str) -> str:
 
 def build_search_text(name: str, rel_path: str, ext: str) -> str:
     base = normalize_text(f"{name} {rel_path} {ext}")
-    lat = normalize_text(translit_to_latin(base))
-    return f"{base} {lat}".strip()
+    variants: list[str] = []
+    seen: set[str] = set()
+
+    def add_variant(value: str) -> None:
+        normalized = normalize_text(value)
+        if not normalized or normalized in seen:
+            return
+        seen.add(normalized)
+        variants.append(normalized)
+
+    add_variant(base)
+    add_variant(translit_to_latin(base))
+
+    for token in base.split():
+        for synonym in _SYNONYMS.get(token, []):
+            add_variant(synonym)
+            add_variant(translit_to_latin(synonym))
+
+    return " ".join(variants).strip()
 
 
 def build_rows(

@@ -36,8 +36,12 @@ function parseAllowedIds(raw) {
 export const config = {
   token: required('MAX_BOT_TOKEN'),
   dbPath: path.resolve(process.env.CATALOG_DB_PATH || path.join(projectDir, 'max_catalog.db')),
+  runtimeDbPath: path.resolve(
+    process.env.RUNTIME_DB_PATH || path.join(projectDir, 'max_bot_runtime.db')
+  ),
   rootPath: path.resolve(process.env.CATALOG_ROOT_PATH || path.join(projectDir, 'input', 'Макеты1')),
   pageSize: intEnv('PAGE_SIZE', 8),
   maxSearchResults: intEnv('MAX_SEARCH_RESULTS', 20),
+  favoritesLimit: intEnv('FAVORITES_LIMIT', 8),
   allowedUserIds: parseAllowedIds(process.env.ALLOWED_USER_IDS || ''),
 };
