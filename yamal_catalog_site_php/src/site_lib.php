@@ -55,11 +55,16 @@ function site_config(): array
     return $config;
 }
 
+function safe_id(string $value): string
+{
+    return substr(sha1($value), 0, 16);
+}
+
 function root_id(): string
 {
     static $rootId = null;
     if ($rootId === null) {
-        $rootId = substr(sha1('.'), 0, 16);
+        $rootId = safe_id('.');
     }
     return $rootId;
 }
@@ -225,6 +230,51 @@ function split_tokens(string $value): array
         return [];
     }
     return preg_split('/\s+/u', $normalized) ?: [];
+}
+
+function is_hidden_relative_path(string $value): bool
+{
+    foreach (explode('/', str_replace('\\', '/', $value)) as $part) {
+        if ($part !== '' && str_starts_with($part, '.')) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function as_iso_utc(int $timestamp): string
+{
+    return gmdate(DATE_ATOM, $timestamp);
+}
+
+function build_catalog_search_text(string $name, string $relPath, string $ext): string
+{
+    $base = normalize_text(trim($name . ' ' . $relPath . ' ' . $ext));
+    if ($base === '') {
+        return '';
+    }
+
+    $variants = [];
+    $seen = [];
+    $addVariant = static function (string $value) use (&$variants, &$seen): void {
+        $normalized = normalize_text($value);
+        if ($normalized === '' || isset($seen[$normalized])) {
+            return;
+        }
+        $seen[$normalized] = true;
+        $variants[] = $normalized;
+    };
+
+    $addVariant($base);
+    $addVariant(translit_to_latin($base));
+    foreach (split_tokens($base) as $token) {
+        foreach (search_synonyms()[$token] ?? [] as $synonym) {
+            $addVariant($synonym);
+            $addVariant(translit_to_latin($synonym));
+        }
+    }
+
+    return implode(' ', $variants);
 }
 
 function string_similarity(string $left, string $right): float
@@ -767,13 +817,203 @@ function content_type_by_ext(string $ext): string
     return $map[strtolower($ext)] ?? 'application/octet-stream';
 }
 
+function detect_catalog_source_root(string $catalogRootPath): ?string
+{
+    $rootReal = realpath($catalogRootPath);
+    if ($rootReal === false || !is_dir($rootReal)) {
+        return null;
+    }
+
+    $entries = array_values(array_filter(scandir($rootReal) ?: [], static function (string $name): bool {
+        return $name !== '.' && $name !== '..' && !str_starts_with($name, '.');
+    }));
+    if ($entries === []) {
+        return null;
+    }
+
+    $dirs = [];
+    $files = [];
+    foreach ($entries as $name) {
+        $fullPath = $rootReal . DIRECTORY_SEPARATOR . $name;
+        if (is_dir($fullPath)) {
+            $dirs[] = $fullPath;
+        } elseif (is_file($fullPath)) {
+            $files[] = $fullPath;
+        }
+    }
+
+    if ($files === [] && count($dirs) === 1) {
+        return $dirs[0];
+    }
+    return $rootReal;
+}
+
+function build_catalog_rows(string $sourceRoot): array
+{
+    $sourceReal = realpath($sourceRoot);
+    if ($sourceReal === false || !is_dir($sourceReal)) {
+        return [];
+    }
+
+    $rows = [];
+    $rootName = basename($sourceReal) ?: $sourceReal;
+    $iter = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($sourceReal, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+
+    $makeRow = static function (string $fullPath, string $type) use ($sourceReal, $rootName): array {
+        $relativePath = $fullPath === $sourceReal
+            ? '.'
+            : str_replace('\\', '/', substr($fullPath, strlen($sourceReal) + 1));
+        $parentPath = $relativePath === '.'
+            ? ''
+            : str_replace('\\', '/', dirname($relativePath));
+        if ($parentPath === '.') {
+            $parentPath = '';
+        }
+
+        $depth = $relativePath === '.' ? 0 : count(array_values(array_filter(explode('/', $relativePath), static fn(string $part): bool => $part !== '')));
+        $name = $relativePath === '.' ? $rootName : basename($fullPath);
+        $stat = stat($fullPath);
+        $extension = $type === 'file' ? strtolower((string) pathinfo($name, PATHINFO_EXTENSION)) : '';
+        $mimeType = $type === 'file' ? (mime_content_type($fullPath) ?: content_type_by_ext($extension)) : '';
+        $sizeBytes = $type === 'file' ? (int) ($stat['size'] ?? 0) : null;
+
+        return [
+            'id' => safe_id($relativePath),
+            'parent_id' => $relativePath === '.' ? '' : safe_id($parentPath !== '' ? $parentPath : '.'),
+            'type' => $type,
+            'name' => $name,
+            'relative_path' => $relativePath,
+            'parent_path' => $parentPath,
+            'depth' => $depth,
+            'extension' => $extension,
+            'size_bytes' => $sizeBytes,
+            'mime_type' => $mimeType,
+            'modified_utc' => as_iso_utc((int) ($stat['mtime'] ?? time())),
+            'normalized_name' => normalize_text($name),
+            'normalized_path' => normalize_text($relativePath),
+            'search_text' => build_catalog_search_text($name, $relativePath, $extension),
+            'is_active' => 1,
+            'sort_order' => 0,
+        ];
+    };
+
+    $rows[] = $makeRow($sourceReal, 'folder');
+    foreach ($iter as $item) {
+        $fullPath = $item->getPathname();
+        $relativePath = str_replace('\\', '/', substr($fullPath, strlen($sourceReal) + 1));
+        if ($relativePath === '' || is_hidden_relative_path($relativePath)) {
+            continue;
+        }
+        $rows[] = $makeRow($fullPath, $item->isDir() ? 'folder' : 'file');
+    }
+
+    usort($rows, static function (array $left, array $right): int {
+        if (($left['depth'] ?? 0) !== ($right['depth'] ?? 0)) {
+            return ($left['depth'] <=> $right['depth']);
+        }
+        if (($left['type'] ?? '') !== ($right['type'] ?? '')) {
+            return ($left['type'] === 'folder') ? -1 : 1;
+        }
+        return strnatcasecmp((string) ($left['relative_path'] ?? ''), (string) ($right['relative_path'] ?? ''));
+    });
+
+    return $rows;
+}
+
+function init_catalog_db(PDO $pdo): void
+{
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS assets (
+            id TEXT PRIMARY KEY,
+            parent_id TEXT NOT NULL,
+            type TEXT NOT NULL CHECK (type IN ("folder", "file")),
+            name TEXT NOT NULL,
+            relative_path TEXT NOT NULL UNIQUE,
+            parent_path TEXT NOT NULL,
+            depth INTEGER NOT NULL,
+            extension TEXT NOT NULL,
+            size_bytes INTEGER,
+            mime_type TEXT NOT NULL,
+            modified_utc TEXT NOT NULL,
+            normalized_name TEXT NOT NULL,
+            normalized_path TEXT NOT NULL,
+            search_text TEXT NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            sort_order INTEGER NOT NULL DEFAULT 0
+        )'
+    );
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_assets_parent ON assets(parent_id, type, is_active)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_assets_search ON assets(search_text)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_assets_name ON assets(normalized_name)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_assets_rel ON assets(relative_path)');
+    $pdo->exec('CREATE TABLE IF NOT EXISTS catalog_meta (meta_key TEXT PRIMARY KEY, meta_value TEXT NOT NULL)');
+}
+
+function rebuild_catalog_database(string $catalogRootPath, string $dbPath): ?array
+{
+    $sourceRoot = detect_catalog_source_root($catalogRootPath);
+    if ($sourceRoot === null) {
+        return null;
+    }
+
+    $rows = build_catalog_rows($sourceRoot);
+    if ($rows === []) {
+        return null;
+    }
+
+    $dbDir = dirname($dbPath);
+    if (!is_dir($dbDir)) {
+        @mkdir($dbDir, 0775, true);
+    }
+
+    $pdo = new PDO('sqlite:' . $dbPath, null, null, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+    init_catalog_db($pdo);
+    $pdo->beginTransaction();
+    $pdo->exec('DELETE FROM assets');
+    $stmt = $pdo->prepare(
+        'INSERT INTO assets (
+            id, parent_id, type, name, relative_path, parent_path, depth, extension,
+            size_bytes, mime_type, modified_utc, normalized_name, normalized_path,
+            search_text, is_active, sort_order
+        ) VALUES (
+            :id, :parent_id, :type, :name, :relative_path, :parent_path, :depth, :extension,
+            :size_bytes, :mime_type, :modified_utc, :normalized_name, :normalized_path,
+            :search_text, :is_active, :sort_order
+        )'
+    );
+    foreach ($rows as $row) {
+        $stmt->execute($row);
+    }
+
+    $metaStmt = $pdo->prepare('INSERT INTO catalog_meta (meta_key, meta_value) VALUES (?, ?) ON CONFLICT(meta_key) DO UPDATE SET meta_value = excluded.meta_value');
+    $metaStmt->execute(['scan_root_path', $sourceRoot]);
+    $metaStmt->execute(['build_utc', gmdate(DATE_ATOM)]);
+    $metaStmt->execute(['root_name', basename($sourceRoot)]);
+    $pdo->commit();
+
+    return [
+        'scan_root_path' => $sourceRoot,
+        'rows' => count($rows),
+    ];
+}
+
 class CatalogDb
 {
     private ?PDO $pdo = null;
     private bool $available = false;
+    private string $scanRootPath = '';
 
-    public function __construct(private readonly string $dbPath)
+    public function __construct(private readonly string $dbPath, ?string $catalogRootPath = null)
     {
+        if (!is_file($dbPath) && $catalogRootPath !== null) {
+            rebuild_catalog_database($catalogRootPath, $dbPath);
+        }
         if (!is_file($dbPath)) {
             return;
         }
@@ -781,12 +1021,33 @@ class CatalogDb
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
+        $this->scanRootPath = (string) ($this->metaValue('scan_root_path') ?? '');
         $this->available = true;
     }
 
     public function isAvailable(): bool
     {
         return $this->available;
+    }
+
+    public function getScanRootPath(): string
+    {
+        return $this->scanRootPath;
+    }
+
+    private function metaValue(string $key): ?string
+    {
+        if ($this->pdo === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT meta_value FROM catalog_meta WHERE meta_key = ? LIMIT 1');
+        try {
+            $stmt->execute([$key]);
+            $value = $stmt->fetchColumn();
+        } catch (Throwable) {
+            return null;
+        }
+        return $value === false ? null : (string) $value;
     }
 
     public function getById(string $id): ?array
@@ -1059,7 +1320,7 @@ class SiteCatalogService
     public function __construct(?array $config = null, ?CatalogDb $db = null, ?RuntimeDb $state = null)
     {
         $this->config = $config ?? site_config();
-        $this->db = $db ?? new CatalogDb($this->config['catalog_db_path']);
+        $this->db = $db ?? new CatalogDb($this->config['catalog_db_path'], $this->config['catalog_root_path']);
         $this->state = $state ?? new RuntimeDb($this->config['runtime_db_path']);
     }
 
@@ -1108,7 +1369,7 @@ class SiteCatalogService
         return [
             'title' => $this->config['title'],
             'rootId' => root_id(),
-            'setupMessage' => $this->db->isAvailable() ? '' : 'Каталог еще не загружен на хостинг. Сайт уже готов, осталось положить базу и файлы в папку data/.',
+            'setupMessage' => $this->db->isAvailable() ? '' : 'Каталог еще не загружен на хостинг. Сайт уже готов, осталось положить файлы в папку data/files.',
             'stats' => [
                 'totalAssets' => (int) ($catalogStats['total'] ?? 0),
                 'files' => (int) ($catalogStats['files'] ?? 0),
@@ -1131,7 +1392,7 @@ class SiteCatalogService
                 'root' => true,
                 'folder' => ['id' => root_id(), 'label' => 'Главное меню', 'name' => 'Главное меню', 'type' => 'folder'],
                 'breadcrumbs' => [['id' => root_id(), 'name' => 'Главная', 'type' => 'folder', 'relative_path' => '.']],
-                'hint' => $this->db->isAvailable() ? 'Выберите раздел каталога.' : 'Сайт готов. Как только появится база каталога, здесь отобразятся разделы.',
+                'hint' => $this->db->isAvailable() ? 'Выберите раздел каталога.' : 'Сайт готов. Как только в data/files появятся материалы, каталог соберется автоматически.',
                 'page' => 0,
                 'total' => count($roots),
                 'pageSize' => $this->config['page_size'],
@@ -1221,7 +1482,7 @@ class SiteCatalogService
         if ($item === null || ($item['type'] ?? '') !== 'file') {
             return null;
         }
-        $rootPath = rtrim((string) $this->config['catalog_root_path'], '/');
+        $rootPath = rtrim($this->db->getScanRootPath() !== '' ? $this->db->getScanRootPath() : (string) $this->config['catalog_root_path'], '/');
         $relative = (string) ($item['relative_path'] ?? '');
         $fullPath = realpath($rootPath . '/' . $relative);
         $rootReal = realpath($rootPath);

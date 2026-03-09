@@ -11,11 +11,6 @@ function assert_true(bool $condition, string $message): void
     }
 }
 
-if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-    fwrite(STDOUT, "skipped: pdo_sqlite not available in local PHP CLI\n");
-    exit(0);
-}
-
 function create_catalog_db(string $path): void
 {
     $pdo = new PDO('sqlite:' . $path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -56,9 +51,24 @@ function create_catalog_db(string $path): void
 
 $base = sys_get_temp_dir() . '/yamal-php-site-' . bin2hex(random_bytes(4));
 mkdir($base, 0777, true);
-mkdir($base . '/files', 0777, true);
-mkdir($base . '/files/Логотип', 0777, true);
-file_put_contents($base . '/files/Логотип/Логотип основной вариант для печати финальный.pdf', 'pdf');
+mkdir($base . '/upload', 0777, true);
+mkdir($base . '/upload/Макеты1', 0777, true);
+mkdir($base . '/upload/Макеты1/Логотип', 0777, true);
+file_put_contents($base . '/upload/Макеты1/Логотип/Логотип основной вариант для печати финальный.pdf', 'pdf');
+
+$detectedRoot = detect_catalog_source_root($base . '/upload');
+assert_true($detectedRoot === $base . '/upload/Макеты1', 'detect nested source root');
+
+$builtRows = build_catalog_rows($detectedRoot);
+assert_true(count($builtRows) === 3, 'scan returns root folder, child folder and file');
+assert_true($builtRows[0]['id'] === root_id(), 'root id is stable');
+assert_true($builtRows[2]['relative_path'] === 'Логотип/Логотип основной вариант для печати финальный.pdf', 'relative path built');
+assert_true(str_contains((string) $builtRows[2]['search_text'], 'логотип'), 'search text includes normalized file words');
+
+if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
+    fwrite(STDOUT, "skipped: pdo_sqlite not available in local PHP CLI; pure scan checks passed\n");
+    exit(0);
+}
 
 $catalogDb = $base . '/max_catalog.db';
 $runtimeDb = $base . '/max_bot_runtime.db';
@@ -68,7 +78,7 @@ $service = new SiteCatalogService([
     'title' => 'Test Site',
     'catalog_db_path' => $catalogDb,
     'runtime_db_path' => $runtimeDb,
-    'catalog_root_path' => $base . '/files',
+    'catalog_root_path' => $base . '/upload',
     'page_size' => 12,
     'favorites_limit' => 5,
     'public_base' => '',
@@ -94,6 +104,11 @@ $download = $service->resolveDownload('file1');
 assert_true($download !== null, 'download resolves');
 assert_true(is_file($download['fullPath']), 'download file exists');
 
+mkdir($base . '/missing-files', 0777, true);
+mkdir($base . '/missing-files/Макеты1', 0777, true);
+mkdir($base . '/missing-files/Макеты1/Шрифт', 0777, true);
+file_put_contents($base . '/missing-files/Макеты1/Шрифт/Arial.ttf', 'font');
+
 $missing = new SiteCatalogService([
     'title' => 'Missing',
     'catalog_db_path' => $base . '/missing.db',
@@ -104,6 +119,7 @@ $missing = new SiteCatalogService([
     'public_base' => '',
 ]);
 $missingBootstrap = $missing->getBootstrap();
-assert_true($missingBootstrap['setupMessage'] !== '', 'missing db returns setup message');
+assert_true($missingBootstrap['setupMessage'] === '', 'missing db auto-builds when files exist');
+assert_true(($missingBootstrap['stats']['totalAssets'] ?? 0) >= 3, 'auto-built db has rows');
 
 echo "ok\n";
