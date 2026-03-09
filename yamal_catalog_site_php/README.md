@@ -69,6 +69,7 @@ php /root/projects/yamal_brand/yamal_catalog_site_php/test/site_php_test.php
 
 Готовый скрипт:
 - [deploy_regru_php_site.sh](/root/projects/yamal_brand/scripts/deploy_regru_php_site.sh)
+- [import_regru_archive.sh](/root/projects/yamal_brand/scripts/import_regru_archive.sh)
 
 Пример:
 
@@ -87,6 +88,20 @@ SSH_PORT=22 \
 - не трогает `data/` и `_backup/`
 - умеет работать через парольный `SSH`, если передать `SSH_PASSWORD`
 - создает рабочий `.env` с путями под текущий веб-корень, если файла еще нет
+
+## Импорт каталога по прямой ссылке
+
+Есть отдельный GitHub Actions workflow:
+- [import_regru_archive.yml](/root/projects/yamal_brand/.github/workflows/import_regru_archive.yml)
+
+Он нужен для сценария, когда сервер недоступен по SSH, но есть прямая ссылка на архив `zip/tar.gz`.
+
+Что делает workflow:
+- скачивает архив по `archive_url`
+- делает backup текущих `data/files` и баз на хостинге
+- заливает содержимое архива в `data/files/`
+- удаляет старый `max_catalog.db`
+- прогревает сайт, чтобы каталог пересобрался автоматически
 
 ## Что нужно положить на хостинг после выкладки
 

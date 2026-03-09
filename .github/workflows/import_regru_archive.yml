@@ -1,0 +1,34 @@
+name: Import REG.RU Catalog Archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      archive_url:
+        description: Direct URL to zip/tar/tar.gz archive with Макеты1
+        required: true
+        type: string
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      REMOTE_HOST: ${{ secrets.REGRU_HOST }}
+      REMOTE_USER: ${{ secrets.REGRU_USER }}
+      REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
+      REMOTE_SITE_URL: ${{ secrets.REGRU_SITE_URL }}
+      SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
+      ARCHIVE_URL: ${{ inputs.archive_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install import dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync unzip
+
+      - name: Import archive to REG.RU hosting
+        run: |
+          chmod +x scripts/import_regru_archive.sh
+          ./scripts/import_regru_archive.sh

@@ -87,6 +87,11 @@ If passwordless `sudo` is not available, deploy fails:
 Push to `main` or run workflow manually:
 - GitHub -> `Actions` -> `Deploy Yamal MAX Bot` -> `Run workflow`.
 
+For the public REG.RU website there is a separate archive-import workflow:
+- GitHub -> `Actions` -> `Import REG.RU Catalog Archive` -> `Run workflow`
+- pass a direct `zip` or `tar.gz` URL with the `Макеты1` files
+- the workflow downloads the archive, backs up current `data/files`, uploads new files to `брендямал.рф`, deletes `max_catalog.db` and triggers automatic rebuild
+
 To inspect the real catalog structure on the production runner:
 - GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.
 
