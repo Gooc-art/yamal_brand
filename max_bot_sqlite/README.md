@@ -4,6 +4,7 @@
 
 На той же базе теперь можно поднять отдельный сайт:
 - [README сайта](/root/projects/yamal_brand/yamal_catalog_site/README.md)
+- [README сайта для shared hosting](/root/projects/yamal_brand/yamal_catalog_site_php/README.md)
 
 Что уже настроено в боте:
 - главное меню с основными верхними разделами каталога без дублирующей кнопки шрифтов

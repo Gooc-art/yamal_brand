@@ -5,7 +5,8 @@ This setup stores the file catalog in local SQLite and works well for:
 - text search by name/path/extension
 - direct file lookup by `id`
 - runtime analytics and popular-item stats in a separate writable SQLite DB
-- parallel web interface in `/yamal_catalog_site`
+- parallel Node.js web interface in `/yamal_catalog_site`
+- parallel PHP + SQLite web interface for shared hosting in `/yamal_catalog_site_php`
 
 ## 1) Build DB from your folder tree
 
