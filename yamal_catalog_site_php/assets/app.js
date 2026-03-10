@@ -679,7 +679,6 @@
     const payload = await api('bootstrap');
     state.bootstrap = payload;
     document.title = `${payload.title} — каталог`;
-    els.siteTitle.textContent = payload.title;
     renderSetupBanner(payload.setupMessage || '');
     renderBrandRoutes(payload);
     state.featurePanels = buildFeaturePanels(payload);
