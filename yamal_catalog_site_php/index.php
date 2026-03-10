@@ -214,20 +214,21 @@ $config = site_config();
           <div id="content-items" class="card-grid"></div>
           <div id="pagination" class="pagination"></div>
         </section>
-
-        <aside class="surface workspace-inspector">
-          <div class="block-head compact inspector-head">
-            <div>
-              <p class="eyebrow">Инспектор</p>
-              <h2>Карточка файла</h2>
-            </div>
-          </div>
-          <p class="rail-copy inspector-copy">Путь, формат, размер и скачивание без перехода в отдельный экран.</p>
-          <div id="detail-panel" class="detail-panel">
-            <p class="detail-empty">Выберите файл, чтобы увидеть путь, размер и скачать его.</p>
-          </div>
-        </aside>
       </main>
+      <div id="inspector-backdrop" class="inspector-backdrop" data-action="close-inspector" hidden></div>
+      <aside id="workspace-inspector" class="surface workspace-inspector" aria-hidden="true">
+        <div class="block-head compact inspector-head">
+          <div>
+            <p class="eyebrow">Инспектор</p>
+            <h2>Карточка файла</h2>
+          </div>
+          <button type="button" class="ghost-button close-inspector-button" data-action="close-inspector">Закрыть</button>
+        </div>
+        <p class="rail-copy inspector-copy">Путь, формат, размер и скачивание без перехода в отдельный экран.</p>
+        <div id="detail-panel" class="detail-panel">
+          <p class="detail-empty">Выберите файл, чтобы увидеть путь, размер и скачать его.</p>
+        </div>
+      </aside>
       </section>
     </div>
 

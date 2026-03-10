@@ -15,6 +15,7 @@
     detail: null,
     workspaceCollapsed: false,
     catalogMode: false,
+    inspectorOpen: false,
     featurePanels: [],
   };
 
@@ -41,6 +42,8 @@
     workspaceGrid: document.querySelector('#workspace-grid'),
     workspaceToggle: document.querySelector('#workspace-toggle'),
     workspaceCopy: document.querySelector('#workspace-copy'),
+    workspaceInspector: document.querySelector('#workspace-inspector'),
+    inspectorBackdrop: document.querySelector('#inspector-backdrop'),
     catalogModeButtons: Array.from(document.querySelectorAll('.catalog-mode-toggle')),
   };
 
@@ -157,6 +160,19 @@
       window.localStorage.setItem(CATALOG_MODE_STORAGE_KEY, state.catalogMode ? '1' : '0');
     } catch (error) {
       console.warn(error);
+    }
+  }
+
+  function setInspectorOpen(nextValue) {
+    state.inspectorOpen = Boolean(nextValue);
+    if (els.workspaceShell) {
+      els.workspaceShell.classList.toggle('inspector-open', state.inspectorOpen);
+    }
+    if (els.workspaceInspector) {
+      els.workspaceInspector.setAttribute('aria-hidden', state.inspectorOpen ? 'false' : 'true');
+    }
+    if (els.inspectorBackdrop) {
+      els.inspectorBackdrop.hidden = !state.inspectorOpen;
     }
   }
 
@@ -639,6 +655,7 @@
         </div>
       </article>
     `;
+    setInspectorOpen(true);
   }
 
   function renderDetailPlaceholder() {
@@ -677,6 +694,7 @@
 
   async function openRoot() {
     setLoading('Главное меню');
+    setInspectorOpen(false);
     renderDetailPlaceholder();
     const payload = await api('folder');
     renderFolder(payload);
@@ -688,6 +706,8 @@
       return;
     }
     setLoading('Открываю раздел');
+    setInspectorOpen(false);
+    renderDetailPlaceholder();
     const payload = await api('folder', { id, page: page || 0 });
     renderFolder(payload);
     await refreshFavorites();
@@ -695,6 +715,8 @@
 
   async function search(query) {
     setLoading('Поиск', 'Ищу материалы по запросу.');
+    setInspectorOpen(false);
+    renderDetailPlaceholder();
     const payload = await api('search', { q: query || '' });
     renderSearch(payload);
     await refreshFavorites();
@@ -728,6 +750,10 @@
       setCatalogMode(!state.catalogMode);
       return;
     }
+    if (action === 'close-inspector') {
+      setInspectorOpen(false);
+      return;
+    }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
       ensureWorkspaceVisible();
     }
@@ -749,6 +775,12 @@
     search(els.searchInput.value.trim());
   });
 
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.inspectorOpen) {
+      setInspectorOpen(false);
+    }
+  });
+
   try {
     setWorkspaceCollapsed(window.localStorage.getItem(WORKSPACE_STORAGE_KEY) === '1');
   } catch (error) {
@@ -760,6 +792,8 @@
   } catch (error) {
     console.warn(error);
   }
+
+  setInspectorOpen(false);
 
   loadBootstrap()
     .then(openRoot)

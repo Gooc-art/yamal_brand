@@ -1087,7 +1087,7 @@ input[type="search"]:focus {
 
 .workspace-composition {
   display: grid;
-  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr) minmax(290px, 330px);
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
   gap: 18px;
   margin-top: 20px;
   align-items: start;
@@ -1132,12 +1132,23 @@ input[type="search"]:focus {
 .workspace-stage {
   min-height: 760px;
   background: linear-gradient(180deg, rgba(255, 253, 249, 0.97), rgba(248, 243, 236, 0.96));
+  transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
 .workspace-inspector {
-  position: sticky;
-  top: 18px;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 60;
+  width: min(392px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
   background: linear-gradient(180deg, rgba(252, 249, 243, 0.98), rgba(244, 238, 230, 0.96));
+  box-shadow: 0 28px 90px rgba(24, 42, 49, 0.2);
+  transform: translateX(calc(100% + 24px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 220ms ease, opacity 220ms ease;
 }
 
 .rail-panel-sections {
@@ -1358,6 +1369,25 @@ input[type="search"]:focus {
   margin-bottom: 18px;
 }
 
+.inspector-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(24, 42, 49, 0.22);
+  backdrop-filter: blur(4px);
+}
+
+.workspace-shell.inspector-open .workspace-inspector {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.workspace-shell.inspector-open .workspace-stage {
+  box-shadow: 0 20px 60px rgba(24, 42, 49, 0.08);
+  transform: translateX(-6px);
+}
+
 .divider {
   margin: 18px 0;
   border: 0;
@@ -1448,11 +1478,6 @@ input[type="search"]:focus {
   .workspace-composition {
     grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
   }
-
-  .workspace-inspector {
-    position: static;
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 1120px) {
@@ -1474,9 +1499,26 @@ input[type="search"]:focus {
     grid-template-columns: 1fr;
   }
 
-  .workspace-rail,
-  .workspace-inspector {
+  .workspace-rail {
     position: static;
+  }
+
+  .workspace-inspector {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: min(100vw, 560px);
+    max-height: min(82vh, 860px);
+    border-radius: 28px 28px 0 0;
+    transform: translateY(calc(100% + 24px));
+  }
+
+  .workspace-shell.inspector-open .workspace-inspector {
+    transform: translateY(0);
+  }
+
+  .workspace-shell.inspector-open .workspace-stage {
+    transform: none;
   }
 
   .stats-grid,
@@ -1513,10 +1555,17 @@ input[type="search"]:focus {
   .showcase-block,
   .rail-panel,
   .content-block,
-  .workspace-inspector,
   .stat-card,
   .workspace-header {
     padding: 20px;
+  }
+
+  .workspace-inspector {
+    width: 100vw;
+    max-height: 86vh;
+    right: 0;
+    left: 0;
+    border-radius: 26px 26px 0 0;
   }
 
   .hero::before {
