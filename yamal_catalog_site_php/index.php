@@ -15,12 +15,24 @@ $config = site_config();
     <div class="page-shell">
       <header class="hero surface">
         <div class="hero-main">
+          <div class="brand-lockup">
+            <img class="brand-logo" src="assets/brand-logo-main.svg" alt="Логотип Бренд Ямал" />
+            <div class="brand-lockup-copy">
+              <span class="brand-lockup-tag">Мастер-бренд Ямал</span>
+              <span class="brand-lockup-subtitle">Официальный логотип и знак встроены прямо из каталога бренд-материалов.</span>
+            </div>
+          </div>
           <p class="eyebrow">Открытый бренд-каталог</p>
           <h1 id="site-title"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
           <p class="hero-copy">
             Быстрый доступ к логотипам, брендбукам, паттернам, SVG и готовым материалам Ямала.
             Поиск понимает близкие совпадения, а карточки сразу ведут к скачиванию.
           </p>
+          <div class="hero-actions">
+            <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Брендбуки</button>
+            <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="логотип">Логотипы</button>
+            <a class="link-button" href="assets/brand-logo-main.svg" download>SVG логотип</a>
+          </div>
           <div class="hero-badges">
             <span class="hero-badge">Публичный доступ</span>
             <span class="hero-badge">Умный поиск</span>
@@ -64,6 +76,9 @@ $config = site_config();
             </div>
           </form>
           <div class="hero-note">
+            <div class="hero-note-mark" aria-hidden="true">
+              <img src="assets/brand-mark.svg" alt="" />
+            </div>
             <p class="eyebrow">Как пользоваться</p>
             <div class="hero-steps">
               <p><strong>1.</strong> Выбери раздел или запусти поиск по названию файла.</p>
