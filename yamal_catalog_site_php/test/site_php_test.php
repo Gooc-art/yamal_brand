@@ -14,13 +14,16 @@ function assert_true(bool $condition, string $message): void
 $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-brief'), 'index contains hero summary scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-logo-main.svg'), 'index contains brand logo asset');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-routes'), 'index contains brand routes scaffold');
 
 $stylesTemplate = file_get_contents(dirname(__DIR__) . '/assets/styles.css');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-badge'), 'styles contain refreshed hero classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-lockup'), 'styles contain brand lockup classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-grid'), 'styles contain brand route classes');
 
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroBrief'), 'frontend contains hero summary renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');

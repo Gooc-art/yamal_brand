@@ -91,6 +91,50 @@ $config = site_config();
 
       <section id="setup-banner" class="surface setup-banner"></section>
       <section id="stats-grid" class="stats-grid"></section>
+      <section class="brand-stage">
+        <section class="surface brand-manifesto">
+          <div class="brand-manifesto-copy">
+            <p class="eyebrow">Дизайн-система Ямала</p>
+            <h2>Сайт теперь ведет не только по папкам, но и по сценариям бренда.</h2>
+            <p class="brand-manifesto-text">
+              Мастер-бренд, юбилейная линия, городские идентичности, логотипы, SVG-элементы и паттерны
+              собраны как отдельные входы. Это делает каталог ближе к бренд-платформе, а не к файловому архиву.
+            </p>
+            <div class="hero-actions">
+              <button type="button" class="accent-button" data-action="search-chip" data-query="мастер бренд">Мастер-бренд</button>
+              <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="салехард">Городские версии</button>
+            </div>
+          </div>
+          <div class="brand-manifesto-art" aria-hidden="true">
+            <img src="assets/brand-mark.svg" alt="" />
+          </div>
+          <div id="brand-metrics" class="brand-metric-row">
+            <article class="brand-metric">
+              <span>Брендбуки</span>
+              <strong>Считаю…</strong>
+            </article>
+            <article class="brand-metric">
+              <span>Города</span>
+              <strong>Считаю…</strong>
+            </article>
+            <article class="brand-metric">
+              <span>SVG</span>
+              <strong>Считаю…</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="surface brand-routes-block">
+          <div class="block-head brand-routes-head">
+            <div>
+              <p class="eyebrow">Бренд-маршруты</p>
+              <h2>Быстрые входы в материалы</h2>
+            </div>
+            <button type="button" class="ghost-button" data-action="search-chip" data-query="svg">Открыть SVG</button>
+          </div>
+          <div id="brand-routes" class="brand-route-grid"></div>
+        </section>
+      </section>
 
       <main class="layout-grid">
         <aside class="surface sidebar-block">

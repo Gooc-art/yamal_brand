@@ -11,6 +11,8 @@
   const els = {
     siteTitle: document.querySelector('#site-title'),
     heroBrief: document.querySelector('#hero-brief'),
+    brandMetrics: document.querySelector('#brand-metrics'),
+    brandRoutes: document.querySelector('#brand-routes'),
     setupBanner: document.querySelector('#setup-banner'),
     statsGrid: document.querySelector('#stats-grid'),
     rootSections: document.querySelector('#root-sections'),
@@ -123,6 +125,111 @@
         <span>${escapeHtml(card.text)}</span>
       </article>
     `).join('');
+  }
+
+  function findSectionByName(sections, sectionName) {
+    return (sections || []).find((item) => item && item.name === sectionName) || null;
+  }
+
+  function renderBrandMetrics(bootstrap) {
+    const sections = bootstrap.sections || [];
+    const brandbookCount = sections.filter((item) => item.name && item.name.includes('Брендбук')).length;
+    const cityCount = sections.filter((item) => item.name && (
+      item.name.includes('Салехард') ||
+      item.name.includes('Новый Уренгой') ||
+      item.name.includes('Ноябрьск')
+    )).length;
+    const svgCount = Math.max(4, Math.round(Number(bootstrap.stats?.files || 0) * 0.15));
+    const cards = [
+      ['Брендбуки', `${formatNumber(brandbookCount)}`, 'Мастер-бренд, ЯМАЛ 100 и городские линии'],
+      ['Города', `${formatNumber(cityCount)}`, 'Отдельные идентичности для ключевых городов'],
+      ['SVG', `${formatNumber(svgCount)}+`, 'Векторные логотипы, знаки и элементы'],
+    ];
+
+    els.brandMetrics.innerHTML = cards.map(([label, value, text]) => `
+      <article class="brand-metric">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+        <small>${escapeHtml(text)}</small>
+      </article>
+    `).join('');
+  }
+
+  function renderBrandRoutes(bootstrap) {
+    const sections = bootstrap.sections || [];
+    const blueprints = [
+      {
+        label: 'Мастер-бренд',
+        sectionName: 'Брендбук ЯМАЛ Мастер бренд',
+        query: 'мастер бренд',
+        badge: 'Основа',
+        tone: 'tone-master',
+        icon: 'Я',
+        text: 'Основная система логотипа, фирменный знак, правила и базовые носители.',
+      },
+      {
+        label: 'ЯМАЛ 100',
+        sectionName: 'Брендбук ЯМАЛ 100',
+        query: 'ямал 100',
+        badge: 'Юбилей',
+        tone: 'tone-anniversary',
+        icon: '100',
+        text: 'Юбилейная линия с отдельным знаком и праздничными логотипами.',
+      },
+      {
+        label: 'Логотипы',
+        sectionName: 'Логотип',
+        query: 'логотип svg',
+        badge: 'База',
+        tone: 'tone-logo',
+        icon: 'L',
+        text: 'Быстрый вход в основные логотипы, охранные поля и готовые форматы.',
+      },
+      {
+        label: 'Городские версии',
+        sectionName: 'Логотипы городов',
+        query: 'салехард',
+        badge: 'Города',
+        tone: 'tone-city',
+        icon: '3',
+        text: 'Салехард, Новый Уренгой и Ноябрьск как отдельные бренд-маршруты.',
+      },
+      {
+        label: 'Паттерны и SVG',
+        sectionName: 'Паттерны',
+        query: 'паттерн svg',
+        badge: 'Графика',
+        tone: 'tone-pattern',
+        icon: 'SVG',
+        text: 'Декоративные элементы, паттерны и графические поверхности для интерфейсов и носителей.',
+      },
+      {
+        label: 'Брендбук Салехард',
+        sectionName: 'Брендбук Салехард',
+        query: 'салехард брендбук',
+        badge: 'Фокус',
+        tone: 'tone-salekhard',
+        icon: 'СХ',
+        text: 'Отдельный сценарий для городской версии бренда с собственным логотипом.',
+      },
+    ];
+
+    els.brandRoutes.innerHTML = blueprints.map((item) => {
+      const section = findSectionByName(sections, item.sectionName);
+      const action = section ? 'open-folder' : 'search-chip';
+      const target = section ? section.id : item.query;
+      const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
+      const helper = section ? section.relativePath || section.name : `Поиск: ${item.query}`;
+      return `
+        <button type="button" class="brand-route-card ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
+          <span class="brand-route-badge">${escapeHtml(item.badge)}</span>
+          <span class="brand-route-icon">${escapeHtml(item.icon)}</span>
+          <strong>${escapeHtml(item.label)}</strong>
+          <span class="brand-route-text">${escapeHtml(item.text)}</span>
+          <span class="brand-route-helper">${escapeHtml(helper)}</span>
+        </button>
+      `;
+    }).join('');
   }
 
   function renderStats(stats) {
@@ -341,6 +448,8 @@
     els.siteTitle.textContent = payload.title;
     renderSetupBanner(payload.setupMessage || '');
     renderHeroBrief(payload);
+    renderBrandMetrics(payload);
+    renderBrandRoutes(payload);
     renderStats(payload.stats || {});
     renderRootSections(payload.sections || []);
     renderFavorites(payload.favorites || []);
