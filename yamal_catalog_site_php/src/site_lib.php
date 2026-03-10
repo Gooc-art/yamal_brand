@@ -55,6 +55,17 @@ function site_config(): array
     return $config;
 }
 
+function asset_url(string $relativePath): string
+{
+    $normalized = ltrim(str_replace('\\', '/', $relativePath), '/');
+    $fullPath = dirname(__DIR__) . '/' . $normalized;
+    if (!is_file($fullPath)) {
+        return $normalized;
+    }
+    $version = (string) (filemtime($fullPath) ?: 0);
+    return $normalized . '?v=' . rawurlencode($version);
+}
+
 function safe_id(string $value): string
 {
     return substr(sha1($value), 0, 16);

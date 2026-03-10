@@ -9,14 +9,14 @@ $config = site_config();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></title>
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/styles.css'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" />
   </head>
   <body>
     <div class="page-shell">
       <header class="hero surface">
         <div class="hero-main">
           <div class="brand-lockup">
-            <img class="brand-logo" src="assets/brand-logo-main.svg" alt="Логотип Бренд Ямал" />
+            <img class="brand-logo" src="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="Логотип Бренд Ямал" />
             <div class="brand-lockup-copy">
               <span class="brand-lockup-tag">Мастер-бренд Ямал</span>
               <span class="brand-lockup-subtitle">Основной логотип и постоянный элемент фирменного стиля Ямала.</span>
@@ -31,7 +31,7 @@ $config = site_config();
           <div class="hero-actions">
             <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Открыть брендбуки</button>
             <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="логотип">Перейти к логотипам</button>
-            <a class="link-button" href="assets/brand-logo-main.svg" download>Скачать SVG логотип</a>
+            <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>Скачать SVG логотип</a>
           </div>
           <div class="brand-note">
             <strong>Принцип из брендбука:</strong>
@@ -153,6 +153,6 @@ $config = site_config();
         downloadBase: 'download.php?id='
       };
     </script>
-    <script src="assets/app.js"></script>
+    <script src="<?= htmlspecialchars(asset_url('assets/app.js'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"></script>
   </body>
 </html>

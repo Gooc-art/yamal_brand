@@ -13,7 +13,9 @@ function assert_true(bool $condition, string $message): void
 
 $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-note'), 'index contains brand note block');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-logo-main.svg'), 'index contains brand logo asset');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/styles.css')"), 'index uses versioned stylesheet url');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/app.js')"), 'index uses versioned app script url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-routes'), 'index contains brand routes scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-principles'), 'index contains brand principles scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-brief'), 'index removed old hero brief scaffold');
@@ -32,6 +34,9 @@ assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'ren
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
+assert_true(str_contains(asset_url('assets/styles.css'), '?v='), 'asset_url appends version query');
+assert_true(str_contains(asset_url('assets/app.js'), '?v='), 'asset_url versions app script');
+assert_true(str_contains(asset_url('assets/brand-logo-main.svg'), '?v='), 'asset_url versions logo asset');
 
 function create_catalog_db(string $path): void
 {
