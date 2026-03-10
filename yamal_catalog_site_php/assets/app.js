@@ -64,11 +64,60 @@
     return String(extension || '').trim().toUpperCase() || 'Файл';
   }
 
+  function labelIncludesToken(label, token) {
+    const source = String(label || '').toUpperCase();
+    const needle = String(token || '').trim().toUpperCase();
+    return Boolean(needle) && source.includes(needle);
+  }
+
   function trimPreviewLabel(value) {
     const source = String(value || '').trim();
     if (!source) return '';
     const clean = source.replace(/\s*•\s*[A-Z0-9]+$/u, '').trim();
     return clean.length > 48 ? `${clean.slice(0, 45).trim()}...` : clean;
+  }
+
+  function compactRelativePath(relativePath, type) {
+    const source = String(relativePath || '').trim();
+    if (!source || source === '.') return '';
+    const parts = source.split('/').filter(Boolean);
+    if (!parts.length) return '';
+    if (type === 'file') {
+      parts.pop();
+    }
+    return parts.slice(-2).join(' / ');
+  }
+
+  function buildItemSecondary(item) {
+    const trail = compactRelativePath(item.relativePath, item.type);
+    if (trail && trail !== item.label && trail !== item.name) {
+      return trail;
+    }
+    return item.type === 'folder' ? item.kindLabel : '';
+  }
+
+  function buildItemPills(item) {
+    const pills = [];
+    if (item.type === 'folder') {
+      pills.push(item.kindLabel);
+      return pills;
+    }
+    if (item.sizeLabel) {
+      pills.push(item.sizeLabel);
+    }
+    const extensionLabel = formatExtension(item.extension);
+    if (item.extension && !labelIncludesToken(item.label, extensionLabel)) {
+      pills.push(extensionLabel);
+    }
+    return pills;
+  }
+
+  function buildDetailTrail(items) {
+    const folders = (items || [])
+      .filter((item, index, all) => item && item.type === 'folder' && index < all.length - 1)
+      .map((item) => item.name)
+      .filter(Boolean);
+    return folders.join(' / ');
   }
 
   function isPreviewableImage(extension) {
@@ -129,8 +178,8 @@
     }
     if (els.workspaceCopy) {
       els.workspaceCopy.textContent = state.workspaceCollapsed
-        ? 'Рабочий блок свернут. При открытии раздела, файла или поиска он раскроется автоматически.'
-        : 'Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.';
+        ? 'Блок скрыт. Он откроется автоматически.'
+        : 'Разделы слева, результаты в центре.';
     }
     try {
       window.localStorage.setItem(WORKSPACE_STORAGE_KEY, state.workspaceCollapsed ? '1' : '0');
@@ -153,8 +202,8 @@
     }
     if (els.workspaceCopy) {
       els.workspaceCopy.textContent = state.catalogMode
-        ? 'Включен режим каталога: витрина скрыта, оставлена только рабочая область для поиска, разделов и карточек файлов.'
-        : 'Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.';
+        ? 'Включен режим каталога.'
+        : 'Разделы слева, результаты в центре.';
     }
     try {
       window.localStorage.setItem(CATALOG_MODE_STORAGE_KEY, state.catalogMode ? '1' : '0');
@@ -212,7 +261,7 @@
         query: 'мастер бренд',
         badge: 'Брендбук',
         tone: 'tone-master',
-        text: 'Опорный брендбук с правилами, носителями и системой постоянных элементов.',
+        text: 'Главный брендбук и правила.',
       },
       {
         number: '02',
@@ -221,7 +270,7 @@
         query: 'ямал 100',
         badge: 'Брендбук',
         tone: 'tone-anniversary',
-        text: 'Юбилейная линия со своим знаком, праздничными логотипами и отдельным набором материалов.',
+        text: 'Юбилейная линия.',
       },
       {
         number: '03',
@@ -230,7 +279,7 @@
         query: 'салехард',
         badge: 'Иерархия',
         tone: 'tone-city',
-        text: 'Линии для Салехарда, Нового Уренгоя и Ноябрьска с самостоятельными вариантами логотипов.',
+        text: 'Салехард, Новый Уренгой, Ноябрьск.',
       },
       {
         number: '04',
@@ -239,7 +288,7 @@
         query: 'логотип',
         badge: 'Стандарт',
         tone: 'tone-logo',
-        text: 'Основной логотип, охранные поля, угловые версии и рабочие экспортные форматы.',
+        text: 'Основные версии и форматы.',
       },
       {
         number: '05',
@@ -248,7 +297,7 @@
         query: 'фирменный знак',
         badge: 'Стандарт',
         tone: 'tone-mark',
-        text: 'Знак Ямала и версии со словесной частью для самостоятельного применения.',
+        text: 'Знак и комбинированные версии.',
       },
        {
         number: '06',
@@ -257,7 +306,7 @@
         query: 'паттерн',
         badge: 'Система',
         tone: 'tone-pattern',
-        text: 'Цветовые сочетания, графические поверхности и паттерны для среды и носителей.',
+        text: 'Цвет и паттерны.',
       },
       {
         number: '07',
@@ -266,7 +315,7 @@
         query: 'шрифт',
         badge: 'Система',
         tone: 'tone-type',
-        text: 'Шрифтовые материалы и типографическая основа для деловой и презентационной верстки.',
+        text: 'Шрифтовая система.',
       },
       {
         number: '08',
@@ -275,7 +324,7 @@
         query: 'иллюстрации svg',
         badge: 'Графика',
         tone: 'tone-graphics',
-        text: 'SVG, иллюстрации и дополнительные фирменные элементы для носителей и цифровых макетов.',
+        text: 'SVG и графические элементы.',
       },
     ];
 
@@ -284,14 +333,12 @@
       const action = section ? 'open-folder' : 'search-chip';
       const target = section ? section.id : item.query;
       const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
-      const helper = section ? section.relativePath || section.name : `Запрос: ${item.query}`;
       return `
         <button type="button" class="brand-route-card ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
           <span class="brand-route-number">${escapeHtml(item.number)}</span>
           <span class="brand-route-badge">${escapeHtml(item.badge)}</span>
           <strong>${escapeHtml(item.label)}</strong>
           <span class="brand-route-text">${escapeHtml(item.text)}</span>
-          <span class="brand-route-helper">${escapeHtml(helper)}</span>
         </button>
       `;
     }).join('');
@@ -315,7 +362,7 @@
           source: 'Фирменный знак',
           fit: 'contain',
         },
-        text: 'Основной брендбук с правилами применения логотипа, знака, графики и системы носителей.',
+        text: 'Главный брендбук и базовые правила.',
       },
       {
         badge: 'Логотип',
@@ -332,7 +379,7 @@
           source: 'Основной логотип',
           fit: 'contain',
         },
-        text: 'Основной логотип, охранные поля и рабочие SVG/PDF/AI-версии для макетов и производства.',
+        text: 'Логотипы и рабочие форматы.',
       },
       {
         badge: 'Города',
@@ -349,7 +396,7 @@
           source: 'Салехард, Новый Уренгой, Ноябрьск',
           fit: 'contain',
         },
-        text: 'Салехард, Новый Уренгой и Ноябрьск вынесены в отдельный блок с самостоятельной навигацией.',
+        text: 'Городские версии бренда.',
       },
       {
         badge: 'Носители',
@@ -366,7 +413,7 @@
           source: 'Сувениры и цифровые материалы',
           fit: 'contain',
         },
-        text: 'Рабочая витрина носителей, мерча, полиграфии и цифровых материалов для ежедневного использования.',
+        text: 'Сувениры, полиграфия, диджитал.',
       },
     ];
 
@@ -376,7 +423,6 @@
         ...item,
         action: section ? 'open-folder' : 'search-chip',
         target: section ? section.id : item.query,
-        helper: section ? (section.relativePath || section.name) : `Запрос: ${item.query}`,
         preview: item.defaultPreview,
       };
     });
@@ -407,9 +453,6 @@
             <span class="feature-badge">${escapeHtml(item.badge)}</span>
             <strong>${escapeHtml(item.title)}</strong>
             <p>${escapeHtml(item.text)}</p>
-          </div>
-          <div class="feature-foot">
-            <span class="feature-helper">${escapeHtml(item.helper)}</span>
           </div>
         </button>
       `;
@@ -469,19 +512,18 @@
     const rootSections = Array.isArray(sections) ? sections.length : 0;
     const brandbooks = (sections || []).filter((item) => /брендбук/i.test(String(item && item.name || ''))).length;
     const cards = [
-      ['Материалы', stats.totalAssets, 'Все файлы и папки каталога', '01', 'tone-accent'],
-      ['Файлы', stats.files, 'Готовые материалы для скачивания', '02', 'tone-teal'],
-      ['Разделы', rootSections, 'Основные точки входа в каталог', '03', 'tone-slate'],
-      ['Брендбуки', brandbooks, 'Ключевые руководства по системе бренда', '04', 'tone-soft'],
+      ['Материалы', stats.totalAssets, '01', 'tone-accent'],
+      ['Файлы', stats.files, '02', 'tone-teal'],
+      ['Разделы', rootSections, '03', 'tone-slate'],
+      ['Брендбуки', brandbooks, '04', 'tone-soft'],
     ];
-    els.statsGrid.innerHTML = cards.map(([label, value, note, icon, tone]) => `
+    els.statsGrid.innerHTML = cards.map(([label, value, icon, tone]) => `
       <article class="surface stat-card ${tone}">
         <div class="stat-top">
           <p class="stat-label">${escapeHtml(label)}</p>
           <span class="stat-icon">${escapeHtml(icon)}</span>
         </div>
         <p class="stat-value">${escapeHtml(formatNumber(value))}</p>
-        <p class="stat-note">${escapeHtml(note)}</p>
       </article>
     `).join('');
   }
@@ -491,7 +533,7 @@
       els.rootSections.innerHTML = `
         <div class="panel-empty">
           <strong>Разделы появятся позже</strong>
-          <span>Как только каталог прогрузится, здесь появится корневое меню.</span>
+          <span>Каталог еще загружается.</span>
         </div>
       `;
       return;
@@ -513,7 +555,7 @@
       els.favoritesList.innerHTML = `
         <div class="panel-empty">
           <strong>Избранное пока пустое</strong>
-          <span>Здесь появятся материалы, к которым возвращаются чаще всего.</span>
+          <span>Список появится после первых открытий.</span>
         </div>
       `;
       return;
@@ -556,7 +598,8 @@
   }
 
   function itemCard(item) {
-    const secondary = item.relativePath && item.relativePath !== item.label ? item.relativePath : item.kindLabel;
+    const secondary = buildItemSecondary(item);
+    const pills = buildItemPills(item);
     const actions = item.type === 'folder'
       ? `<button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(item.id)}">Открыть</button>`
       : `<button type="button" class="item-action" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
@@ -568,15 +611,12 @@
           <span class="card-icon">${escapeHtml(item.icon)}</span>
           <div class="card-copy">
             <strong>${escapeHtml(item.label)}</strong>
-            <span>${escapeHtml(secondary || '')}</span>
+            ${secondary ? `<span>${escapeHtml(secondary)}</span>` : ''}
           </div>
         </div>
         <div class="item-meta">
-          <span class="meta-pill">${escapeHtml(item.kindLabel)}</span>
-          ${item.sizeLabel ? `<span class="meta-pill">${escapeHtml(item.sizeLabel)}</span>` : ''}
-          ${item.extension ? `<span class="meta-pill">${escapeHtml(item.extension.toUpperCase())}</span>` : ''}
+          ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
         </div>
-        <p class="result-path">${escapeHtml(item.relativePath || item.name || '')}</p>
         <div class="item-actions">${actions}</div>
       </article>
     `;
@@ -589,7 +629,7 @@
           <div class="empty-mark" aria-hidden="true">○</div>
           <div>
             <h3>${escapeHtml(emptyText || 'Пусто')}</h3>
-            <p class="detail-empty">Попробуй другой запрос или вернись в меню разделов.</p>
+            <p class="detail-empty">Попробуй другой запрос или открой раздел.</p>
           </div>
         </div>
       `;
@@ -618,7 +658,7 @@
     state.current = { kind: 'folder', payload };
     els.contentMode.textContent = payload.root ? 'Главная' : 'Раздел';
     els.contentTitle.textContent = payload.folder.label || payload.folder.name;
-    els.contentHint.textContent = payload.hint || 'Открой нужную папку или скачай файл.';
+    els.contentHint.textContent = payload.hint || 'Открой раздел или файл.';
     renderBreadcrumbs(payload.breadcrumbs || []);
     renderItems(payload.items || [], 'Раздел пуст');
     renderPagination(payload);
@@ -627,10 +667,10 @@
   function renderSearch(payload) {
     state.current = { kind: 'search', payload };
     els.contentMode.textContent = 'Поиск';
-    els.contentTitle.textContent = payload.query ? `Результаты: ${payload.query}` : 'Поиск';
+    els.contentTitle.textContent = payload.query ? `Поиск: ${payload.query}` : 'Поиск';
     els.contentHint.textContent = payload.total
-      ? `Найдено ${formatNumber(payload.total)} элементов. Открой файл или раздел прямо из списка.`
-      : 'Совпадений не нашлось. Попробуй другой запрос, город, формат или название брендбука.';
+      ? `${formatNumber(payload.total)} результатов`
+      : 'Ничего не найдено.';
     els.breadcrumbs.innerHTML = '';
     renderItems(payload.items || [], payload.emptyState || 'Пусто');
     els.pagination.innerHTML = '';
@@ -638,17 +678,27 @@
 
   function renderDetail(payload) {
     state.detail = payload;
-    const breadcrumb = (payload.breadcrumbs || []).map((item) => escapeHtml(item.name)).join(' › ');
+    const detailTitle = payload.label || payload.name;
+    const originalName = payload.name && payload.name !== detailTitle ? payload.name : '';
+    const detailTrail = buildDetailTrail(payload.breadcrumbs || []);
+    const pills = [];
+    if (payload.sizeLabel) {
+      pills.push(payload.sizeLabel);
+    }
+    if (payload.extension) {
+      const extensionLabel = formatExtension(payload.extension);
+      if (!labelIncludesToken(detailTitle, extensionLabel)) {
+        pills.push(extensionLabel);
+      }
+    }
     els.detailPanel.innerHTML = `
       <article class="detail-card">
-        <p class="eyebrow">${escapeHtml(payload.kindLabel)}</p>
-        <h3 class="detail-title">${escapeHtml(payload.name)}</h3>
+        <h3 class="detail-title">${escapeHtml(detailTitle)}</h3>
         <div class="item-meta">
-          ${payload.sizeLabel ? `<span class="meta-pill">${escapeHtml(payload.sizeLabel)}</span>` : ''}
-          ${payload.extension ? `<span class="meta-pill">${escapeHtml(payload.extension.toUpperCase())}</span>` : ''}
+          ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
         </div>
-        <p class="meta-row">${escapeHtml(breadcrumb)}</p>
-        <p class="detail-path">${escapeHtml(payload.pathLabel || payload.relativePath || '')}</p>
+        ${originalName ? `<p class="meta-row">${escapeHtml(originalName)}</p>` : ''}
+        ${detailTrail ? `<p class="meta-row">${escapeHtml(detailTrail)}</p>` : ''}
         <div class="item-actions">
           <a class="link-button" href="${escapeHtml(payload.downloadUrl)}">Скачать</a>
           <button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(payload.parentId)}">К разделу</button>
@@ -661,8 +711,8 @@
   function renderDetailPlaceholder() {
     els.detailPanel.innerHTML = `
       <div class="panel-empty">
-        <strong>Карточка файла</strong>
-        <span>Выберите файл, чтобы увидеть путь, формат, размер и ссылку на скачивание.</span>
+        <strong>Файл</strong>
+        <span>Выберите материал.</span>
       </div>
     `;
   }
