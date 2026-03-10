@@ -13,6 +13,7 @@
     bootstrap: null,
     current: null,
     detail: null,
+    activeRouteId: '',
     workspaceCollapsed: false,
     catalogMode: false,
     inspectorOpen: false,
@@ -236,6 +237,17 @@
     els.workspaceShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function setActiveRoute(routeId) {
+    const nextValue = String(routeId || '');
+    if (state.activeRouteId === nextValue) {
+      return;
+    }
+    state.activeRouteId = nextValue;
+    if (state.bootstrap) {
+      renderBrandRoutes(state.bootstrap);
+    }
+  }
+
   function renderSetupBanner(message) {
     if (!message) {
       els.setupBanner.style.display = 'none';
@@ -322,8 +334,9 @@
       const action = section ? 'open-folder' : 'search-chip';
       const target = section ? section.id : item.query;
       const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
+      const isActive = section && state.activeRouteId === section.id;
       return `
-        <button type="button" class="brand-route-card ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
+        <button type="button" class="brand-route-card ${escapeHtml(item.tone)}${isActive ? ' active' : ''}" data-action="${action}" data-route-id="${section ? escapeHtml(section.id) : ''}" ${attr}${isActive ? ' aria-current="page"' : ''}>
           <span class="brand-route-icon" aria-hidden="true">${escapeHtml(item.mark)}</span>
           <strong>${escapeHtml(item.label)}</strong>
           <span class="brand-route-arrow" aria-hidden="true">↗</span>
@@ -669,6 +682,7 @@
   async function openRoot() {
     setLoading('Главное меню');
     setInspectorOpen(false);
+    setActiveRoute('');
     renderDetailPlaceholder();
     const payload = await api('folder');
     renderFolder(payload);
@@ -683,12 +697,15 @@
     setInspectorOpen(false);
     renderDetailPlaceholder();
     const payload = await api('folder', { id, page: page || 0 });
+    const topRouteId = payload.root ? '' : (payload.breadcrumbs && payload.breadcrumbs[1] ? payload.breadcrumbs[1].id : payload.folder.id);
+    setActiveRoute(topRouteId);
     renderFolder(payload);
   }
 
   async function search(query) {
     setLoading('Поиск', 'Ищу материалы по запросу.');
     setInspectorOpen(false);
+    setActiveRoute('');
     renderDetailPlaceholder();
     const payload = await api('search', { q: query || '' });
     renderSearch(payload);

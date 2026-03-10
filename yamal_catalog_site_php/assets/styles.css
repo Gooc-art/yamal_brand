@@ -599,9 +599,15 @@ input[type="search"]:focus {
   margin-bottom: 18px;
 }
 
+.showcase-block {
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(249, 244, 237, 0.94), rgba(244, 238, 230, 0.92));
+  box-shadow: 0 14px 36px rgba(24, 42, 49, 0.05);
+}
+
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -612,13 +618,13 @@ input[type="search"]:focus {
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 14px;
-  min-height: 340px;
-  padding: 18px;
+  min-height: 282px;
+  padding: 16px;
   text-align: left;
   border: 1px solid rgba(24, 42, 49, 0.08);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--feature-soft), rgba(255, 255, 255, 0.88) 78%);
-  box-shadow: var(--shadow-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(248, 242, 235, 0.94));
+  box-shadow: 0 10px 24px rgba(24, 42, 49, 0.05);
   overflow: hidden;
 }
 
@@ -656,8 +662,8 @@ input[type="search"]:focus {
 .feature-visual-frame {
   display: grid;
   place-items: center;
-  min-height: 150px;
-  padding: 18px;
+  min-height: 126px;
+  padding: 16px;
   border-radius: calc(var(--radius-lg) - 6px);
   border: 1px solid rgba(24, 42, 49, 0.08);
   background:
@@ -726,8 +732,8 @@ input[type="search"]:focus {
 }
 
 .feature-panel strong {
-  font-size: 25px;
-  line-height: 1.04;
+  font-size: 22px;
+  line-height: 1.06;
 }
 
 .feature-panel p {
@@ -790,6 +796,10 @@ input[type="search"]:focus {
   box-shadow: var(--shadow-soft);
 }
 
+.brand-route-card:hover {
+  border-color: rgba(24, 42, 49, 0.16);
+}
+
 .brand-route-card::before {
   content: "";
   position: absolute;
@@ -822,6 +832,22 @@ input[type="search"]:focus {
   justify-self: end;
   color: var(--route-accent);
   font-size: 18px;
+}
+
+.brand-route-card.active {
+  border-color: rgba(24, 42, 49, 0.18);
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.98), rgba(245, 238, 229, 0.96));
+  box-shadow: 0 20px 44px rgba(24, 42, 49, 0.1);
+  transform: translateY(-2px);
+}
+
+.brand-route-card.active .brand-route-icon {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(24, 42, 49, 0.08), 0 8px 18px rgba(24, 42, 49, 0.08);
+}
+
+.brand-route-card.active .brand-route-arrow {
+  transform: translateX(2px);
 }
 
 .brand-route-card.tone-master {
