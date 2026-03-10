@@ -28,6 +28,7 @@ $config = site_config();
           <div class="hero-actions">
             <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Открыть брендбуки</button>
             <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Перейти к логотипам</button>
+            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>Скачать SVG логотип</a>
           </div>
           <div class="hero-briefing">
@@ -165,6 +166,7 @@ $config = site_config();
             <p id="workspace-copy" class="workspace-copy">Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.</p>
           </div>
           <div class="workspace-actions">
+            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
             <button type="button" id="workspace-toggle" class="ghost-button" data-action="toggle-workspace">Скрыть рабочую область</button>
           </div>
         </div>
@@ -216,7 +218,9 @@ $config = site_config();
     <script>
       window.YAMAL_SITE = {
         apiBase: 'api.php?action=',
-        downloadBase: 'download.php?id='
+        downloadBase: 'download.php?id=',
+        brandLogoAsset: '<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>',
+        brandMarkAsset: '<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>'
       };
     </script>
     <script src="<?= htmlspecialchars(asset_url('assets/app.js'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"></script>

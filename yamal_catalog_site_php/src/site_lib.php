@@ -1437,16 +1437,18 @@ class SiteCatalogService
         ];
     }
 
-    public function search(string $query): array
+    public function search(string $query, bool $track = true, bool $includeFolders = true): array
     {
         $variants = build_query_variants($query);
         if ($variants === []) {
-            $this->state->logSearch($query, 0);
+            if ($track) {
+                $this->state->logSearch($query, 0);
+            }
             return ['query' => $query, 'total' => 0, 'items' => [], 'emptyState' => 'Пупупу....пусто'];
         }
 
-        $direct = $this->db->searchByVariants($variants, true, $this->config['page_size'] * 3);
-        $fuzzy = rank_search_rows($query, $this->db->allSearchCandidates(true, 2500), $this->config['page_size'] * 3);
+        $direct = $this->db->searchByVariants($variants, $includeFolders, $this->config['page_size'] * 3);
+        $fuzzy = rank_search_rows($query, $this->db->allSearchCandidates($includeFolders, 2500), $this->config['page_size'] * 3);
         $merged = [];
         foreach (array_merge($direct, $fuzzy) as $row) {
             $id = (string) ($row['id'] ?? '');
@@ -1466,7 +1468,9 @@ class SiteCatalogService
             $items[] = present_item($decorated[0] ?? $item);
         }
 
-        $this->state->logSearch($query, count($items));
+        if ($track) {
+            $this->state->logSearch($query, count($items));
+        }
         return [
             'query' => $query,
             'total' => count($items),
@@ -1487,7 +1491,7 @@ class SiteCatalogService
         return $payload;
     }
 
-    public function resolveDownload(string $fileId): ?array
+    public function resolveDownload(string $fileId, bool $track = true): ?array
     {
         $item = $this->db->getById($fileId);
         if ($item === null || ($item['type'] ?? '') !== 'file') {
@@ -1500,7 +1504,9 @@ class SiteCatalogService
         if ($fullPath === false || $rootReal === false || !str_starts_with($fullPath, $rootReal)) {
             return null;
         }
-        $this->state->trackItemEvent($item, 'send_file');
+        if ($track) {
+            $this->state->trackItemEvent($item, 'send_file');
+        }
         return [
             'item' => $item,
             'fullPath' => $fullPath,

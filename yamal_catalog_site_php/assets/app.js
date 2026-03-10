@@ -1,16 +1,25 @@
 (function () {
-  const siteConfig = window.YAMAL_SITE || { apiBase: 'api.php?action=', downloadBase: 'download.php?id=' };
+  const siteConfig = window.YAMAL_SITE || {
+    apiBase: 'api.php?action=',
+    downloadBase: 'download.php?id=',
+    brandLogoAsset: '',
+    brandMarkAsset: '',
+  };
   const fallbackTopSearches = ['логотип', 'брендбук', 'паттерны', 'салехард', 'наклейка', 'svg'];
   const WORKSPACE_STORAGE_KEY = 'yamal-site-workspace-collapsed';
+  const CATALOG_MODE_STORAGE_KEY = 'yamal-site-catalog-mode';
 
   const state = {
     bootstrap: null,
     current: null,
     detail: null,
     workspaceCollapsed: false,
+    catalogMode: false,
+    featurePanels: [],
   };
 
   const els = {
+    pageShell: document.querySelector('.page-shell'),
     siteTitle: document.querySelector('#site-title'),
     brandRoutes: document.querySelector('#brand-routes'),
     featuredShelves: document.querySelector('#featured-shelves'),
@@ -32,6 +41,7 @@
     workspaceGrid: document.querySelector('#workspace-grid'),
     workspaceToggle: document.querySelector('#workspace-toggle'),
     workspaceCopy: document.querySelector('#workspace-copy'),
+    catalogModeButtons: Array.from(document.querySelectorAll('.catalog-mode-toggle')),
   };
 
   function escapeHtml(value) {
@@ -45,6 +55,26 @@
 
   function formatNumber(value) {
     return new Intl.NumberFormat('ru-RU').format(Number(value || 0));
+  }
+
+  function formatExtension(extension) {
+    return String(extension || '').trim().toUpperCase() || 'Файл';
+  }
+
+  function trimPreviewLabel(value) {
+    const source = String(value || '').trim();
+    if (!source) return '';
+    const clean = source.replace(/\s*•\s*[A-Z0-9]+$/u, '').trim();
+    return clean.length > 48 ? `${clean.slice(0, 45).trim()}...` : clean;
+  }
+
+  function isPreviewableImage(extension) {
+    return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(String(extension || '').toLowerCase());
+  }
+
+  function toInlineDownloadUrl(downloadUrl) {
+    if (!downloadUrl) return '';
+    return `${downloadUrl}${downloadUrl.includes('?') ? '&' : '?'}inline=1`;
   }
 
   function actionUrl(action, params) {
@@ -101,6 +131,30 @@
     }
     try {
       window.localStorage.setItem(WORKSPACE_STORAGE_KEY, state.workspaceCollapsed ? '1' : '0');
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+
+  function setCatalogMode(nextValue) {
+    state.catalogMode = Boolean(nextValue);
+    if (els.pageShell) {
+      els.pageShell.classList.toggle('catalog-mode', state.catalogMode);
+    }
+    els.catalogModeButtons.forEach((button) => {
+      button.textContent = state.catalogMode ? 'Вернуть витрину' : 'Только каталог';
+    });
+    if (state.catalogMode) {
+      setWorkspaceCollapsed(false);
+      els.workspaceShell?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (els.workspaceCopy) {
+      els.workspaceCopy.textContent = state.catalogMode
+        ? 'Включен режим каталога: витрина скрыта, оставлена только рабочая область для поиска, разделов и карточек файлов.'
+        : 'Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.';
+    }
+    try {
+      window.localStorage.setItem(CATALOG_MODE_STORAGE_KEY, state.catalogMode ? '1' : '0');
     } catch (error) {
       console.warn(error);
     }
@@ -227,8 +281,7 @@
     }).join('');
   }
 
-  function renderFeaturePanels(bootstrap) {
-    if (!els.featuredShelves) return;
+  function buildFeaturePanels(bootstrap) {
     const sections = bootstrap.sections || [];
     const panels = [
       {
@@ -236,7 +289,16 @@
         title: 'Мастер-бренд',
         sectionName: 'Брендбук ЯМАЛ Мастер бренд',
         query: 'брендбук ямал мастер pdf',
+        previewQuery: 'фирменный знак svg',
         tone: 'tone-master',
+        defaultPreview: {
+          kind: 'asset',
+          src: siteConfig.brandMarkAsset || siteConfig.brandLogoAsset,
+          alt: 'Фирменный знак Ямала',
+          label: 'SVG',
+          source: 'Фирменный знак',
+          fit: 'contain',
+        },
         text: 'Основной брендбук с правилами применения логотипа, знака, графики и системы носителей.',
       },
       {
@@ -244,7 +306,16 @@
         title: 'Базовые версии',
         sectionName: 'Логотип',
         query: 'главный логотип svg',
+        previewQuery: 'главный логотип svg',
         tone: 'tone-logo',
+        defaultPreview: {
+          kind: 'asset',
+          src: siteConfig.brandLogoAsset,
+          alt: 'Основной логотип Ямала',
+          label: 'SVG',
+          source: 'Основной логотип',
+          fit: 'contain',
+        },
         text: 'Основной логотип, охранные поля и рабочие SVG/PDF/AI-версии для макетов и производства.',
       },
       {
@@ -252,7 +323,16 @@
         title: 'Региональные линии',
         sectionName: 'Логотипы городов',
         query: 'салехард логотип',
+        previewQuery: 'салехард логотип svg',
         tone: 'tone-city',
+        defaultPreview: {
+          kind: 'asset',
+          src: siteConfig.brandLogoAsset,
+          alt: 'Городские версии бренда Ямала',
+          label: 'Города',
+          source: 'Салехард, Новый Уренгой, Ноябрьск',
+          fit: 'contain',
+        },
         text: 'Салехард, Новый Уренгой и Ноябрьск вынесены в отдельный блок с самостоятельной навигацией.',
       },
       {
@@ -260,26 +340,113 @@
         title: 'Сувениры и диджитал',
         sectionName: 'Каталог сувенирной продукции',
         query: 'наклейка',
+        previewQuery: 'наклейка png',
         tone: 'tone-digital',
+        defaultPreview: {
+          kind: 'asset',
+          src: siteConfig.brandMarkAsset || siteConfig.brandLogoAsset,
+          alt: 'Каталог носителей',
+          label: 'Каталог',
+          source: 'Сувениры и цифровые материалы',
+          fit: 'contain',
+        },
         text: 'Рабочая витрина носителей, мерча, полиграфии и цифровых материалов для ежедневного использования.',
       },
     ];
 
-    els.featuredShelves.innerHTML = panels.map((item) => {
+    return panels.map((item) => {
       const section = findSectionByName(sections, item.sectionName);
-      const action = section ? 'open-folder' : 'search-chip';
-      const target = section ? section.id : item.query;
-      const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
-      const helper = section ? (section.relativePath || section.name) : `Запрос: ${item.query}`;
+      return {
+        ...item,
+        action: section ? 'open-folder' : 'search-chip',
+        target: section ? section.id : item.query,
+        helper: section ? (section.relativePath || section.name) : `Запрос: ${item.query}`,
+        preview: item.defaultPreview,
+      };
+    });
+  }
+
+  function renderFeaturePanels(panels) {
+    if (!els.featuredShelves) return;
+    els.featuredShelves.innerHTML = (panels || []).map((item) => {
+      const attr = item.action === 'open-folder'
+        ? `data-id="${escapeHtml(item.target)}"`
+        : `data-query="${escapeHtml(item.target)}"`;
+      const preview = item.preview || {};
+      const imageMarkup = preview.src
+        ? `<img class="feature-preview-image${preview.fit === 'contain' ? ' contain' : ''}" src="${escapeHtml(preview.src)}" alt="${escapeHtml(preview.alt || item.title)}" loading="lazy" />`
+        : `<span class="feature-preview-sigil">${escapeHtml(item.badge)}</span>`;
       return `
-        <button type="button" class="feature-panel ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
-          <span class="feature-badge">${escapeHtml(item.badge)}</span>
-          <strong>${escapeHtml(item.title)}</strong>
-          <p>${escapeHtml(item.text)}</p>
-          <span class="feature-helper">${escapeHtml(helper)}</span>
+        <button type="button" class="feature-panel ${escapeHtml(item.tone)}" data-action="${escapeHtml(item.action)}" ${attr}>
+          <div class="feature-visual ${escapeHtml(preview.kind || 'asset')}">
+            <div class="feature-visual-frame">
+              ${imageMarkup}
+            </div>
+            <div class="feature-preview-chips">
+              ${preview.label ? `<span class="feature-preview-chip">${escapeHtml(preview.label)}</span>` : ''}
+              ${preview.source ? `<span class="feature-preview-chip muted">${escapeHtml(preview.source)}</span>` : ''}
+            </div>
+          </div>
+          <div class="feature-copy">
+            <span class="feature-badge">${escapeHtml(item.badge)}</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.text)}</p>
+          </div>
+          <div class="feature-foot">
+            <span class="feature-helper">${escapeHtml(item.helper)}</span>
+          </div>
         </button>
       `;
     }).join('');
+  }
+
+  function pickFeaturePreview(panel, items) {
+    const files = (items || []).filter((item) => item && item.type === 'file');
+    const image = files.find((item) => isPreviewableImage(item.extension));
+    if (image) {
+      return {
+        kind: 'image',
+        src: toInlineDownloadUrl(image.downloadUrl),
+        alt: image.label || panel.title,
+        label: formatExtension(image.extension),
+        source: trimPreviewLabel(image.label || image.name),
+        fit: image.extension === 'svg' ? 'contain' : 'cover',
+      };
+    }
+
+    const preferred = files.find((item) => item.extension === 'pdf') || files[0];
+    if (preferred) {
+      return {
+        kind: 'asset',
+        src: panel.defaultPreview?.src || siteConfig.brandLogoAsset || siteConfig.brandMarkAsset || '',
+        alt: preferred.label || panel.title,
+        label: formatExtension(preferred.extension),
+        source: trimPreviewLabel(preferred.label || preferred.name),
+        fit: 'contain',
+      };
+    }
+
+    return panel.defaultPreview || null;
+  }
+
+  async function hydrateFeaturePanels() {
+    if (!state.featurePanels.length) return;
+    const tasks = state.featurePanels.map(async (panel, index) => {
+      if (!panel.previewQuery) return;
+      try {
+        const payload = await api('preview-search', { q: panel.previewQuery });
+        const preview = pickFeaturePreview(panel, payload.items || []);
+        if (!preview) return;
+        state.featurePanels[index] = {
+          ...panel,
+          preview,
+        };
+        renderFeaturePanels(state.featurePanels);
+      } catch (error) {
+        console.warn(error);
+      }
+    });
+    await Promise.allSettled(tasks);
   }
 
   function renderStats(stats, sections) {
@@ -499,11 +666,13 @@
     els.siteTitle.textContent = payload.title;
     renderSetupBanner(payload.setupMessage || '');
     renderBrandRoutes(payload);
-    renderFeaturePanels(payload);
+    state.featurePanels = buildFeaturePanels(payload);
+    renderFeaturePanels(state.featurePanels);
     renderStats(payload.stats || {}, payload.sections || []);
     renderRootSections(payload.sections || []);
     renderFavorites(payload.favorites || []);
     renderTopSearches(payload.topSearches || []);
+    void hydrateFeaturePanels();
   }
 
   async function openRoot() {
@@ -555,6 +724,10 @@
       setWorkspaceCollapsed(!state.workspaceCollapsed);
       return;
     }
+    if (action === 'toggle-catalog-mode') {
+      setCatalogMode(!state.catalogMode);
+      return;
+    }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
       ensureWorkspaceVisible();
     }
@@ -578,6 +751,12 @@
 
   try {
     setWorkspaceCollapsed(window.localStorage.getItem(WORKSPACE_STORAGE_KEY) === '1');
+  } catch (error) {
+    console.warn(error);
+  }
+
+  try {
+    setCatalogMode(window.localStorage.getItem(CATALOG_MODE_STORAGE_KEY) === '1');
   } catch (error) {
     console.warn(error);
   }

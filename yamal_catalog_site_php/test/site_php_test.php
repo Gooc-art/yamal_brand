@@ -17,6 +17,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-brief
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'dossier-grid'), 'index contains dossier grid');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'featured-shelves'), 'index contains featured shelves scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-note'), 'index contains brand note block');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
@@ -36,7 +37,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ri
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-briefing'), 'styles contain hero briefing classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.dossier-grid'), 'styles contain dossier grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-visual'), 'styles contain feature visual classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell'), 'styles contain workspace shell classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-badge'), 'styles removed old hero badge classes');
 
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
@@ -44,7 +47,12 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderFeaturePanels'), 'frontend contains featured shelf renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-number'), 'frontend renders route numbering');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'WORKSPACE_STORAGE_KEY'), 'frontend persists workspace collapse state');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CATALOG_MODE_STORAGE_KEY'), 'frontend persists catalog mode state');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'preview-search'), 'frontend loads preview search data');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderHeroBrief'), 'frontend removed old hero summary renderer');
+
+$downloadTemplate = file_get_contents(dirname(__DIR__) . '/download.php');
+assert_true($downloadTemplate !== false && str_contains($downloadTemplate, 'inline'), 'download supports inline mode');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
@@ -137,13 +145,31 @@ assert_true($folder['items'][0]['label'] === 'Основной • PDF', 'file l
 $search = $service->search('логотеп');
 assert_true($search['total'] >= 1, 'fuzzy search returns result');
 
+$previewSearch = $service->search('логотип', false);
+assert_true($previewSearch['total'] >= 1, 'preview search returns result without analytics side effect');
+
+$runtimeStats = (new RuntimeDb($runtimeDb))->stats();
+assert_true((int) ($runtimeStats['total_searches'] ?? 0) === 1, 'preview search does not increment search analytics');
+
+$previewFilesOnly = $service->search('логотип', false, false);
+assert_true(($previewFilesOnly['items'][0]['type'] ?? '') === 'file', 'preview search can be restricted to files only');
+
 $file = $service->getFile('file1');
 assert_true($file !== null, 'file details exist');
 assert_true($file['downloadUrl'] === 'download.php?id=file1', 'download url format');
 
+$previewDownload = $service->resolveDownload('file1', false);
+assert_true($previewDownload !== null, 'preview download resolves without tracking');
+
+$runtimeStats = (new RuntimeDb($runtimeDb))->stats();
+assert_true((int) ($runtimeStats['total_item_events'] ?? 0) === 1, 'preview download does not increment item analytics');
+
 $download = $service->resolveDownload('file1');
 assert_true($download !== null, 'download resolves');
 assert_true(is_file($download['fullPath']), 'download file exists');
+
+$runtimeStats = (new RuntimeDb($runtimeDb))->stats();
+assert_true((int) ($runtimeStats['total_item_events'] ?? 0) === 2, 'real download increments item analytics');
 
 mkdir($base . '/missing-files', 0777, true);
 mkdir($base . '/missing-files/Макеты1', 0777, true);
