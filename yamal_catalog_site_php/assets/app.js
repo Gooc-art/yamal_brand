@@ -8,6 +8,9 @@
   const fallbackTopSearches = ['логотип', 'брендбук', 'паттерны', 'салехард', 'наклейка', 'svg'];
   const WORKSPACE_STORAGE_KEY = 'yamal-site-workspace-collapsed';
   const CATALOG_MODE_STORAGE_KEY = 'yamal-site-catalog-mode';
+  const EXAMPLE_AUTOPLAY_DELAY = 5200;
+  let exampleAutoplayTimer = null;
+  let exampleAutoplayPaused = false;
 
   const state = {
     bootstrap: null,
@@ -16,6 +19,7 @@
     activeRouteId: '',
     exampleTab: 'good',
     exampleIndex: { good: 0, debate: 0 },
+    exampleAutoplay: true,
     workspaceCollapsed: false,
     catalogMode: false,
     inspectorOpen: false,
@@ -25,6 +29,7 @@
   const els = {
     pageShell: document.querySelector('.page-shell'),
     heroStats: document.querySelector('#hero-stats'),
+    heroExamples: document.querySelector('.hero-examples'),
     heroExampleTabs: document.querySelector('#hero-example-tabs'),
     heroExampleStage: document.querySelector('#hero-example-stage'),
     brandRoutes: document.querySelector('#brand-routes'),
@@ -140,12 +145,53 @@
     return examples[state.exampleTab] || [];
   }
 
+  function buildExampleSummary(item) {
+    const parts = [];
+    const title = String(item?.title || '').trim();
+    const label = String(item?.label || '').trim();
+    const context = compactRelativePath(item?.relativePath, 'file');
+    if (label && label !== title) {
+      parts.push(label);
+    }
+    if (context && !parts.includes(context)) {
+      parts.push(context);
+    }
+    return parts.slice(0, 2).join(' • ');
+  }
+
   function ensureExampleIndex(tab) {
     const examples = normalizeHeroExamples(state.bootstrap?.examples);
     const items = examples[tab] || [];
     const maxIndex = Math.max(0, items.length - 1);
     state.exampleIndex[tab] = Math.min(Math.max(Number(state.exampleIndex[tab] || 0), 0), maxIndex);
     return state.exampleIndex[tab];
+  }
+
+  function stopExampleAutoplay() {
+    if (exampleAutoplayTimer) {
+      window.clearTimeout(exampleAutoplayTimer);
+      exampleAutoplayTimer = null;
+    }
+  }
+
+  function scheduleExampleAutoplay() {
+    stopExampleAutoplay();
+    const items = activeExampleItems();
+    if (!state.exampleAutoplay || exampleAutoplayPaused || items.length <= 1) {
+      return;
+    }
+    exampleAutoplayTimer = window.setTimeout(() => {
+      if (document.hidden) {
+        scheduleExampleAutoplay();
+        return;
+      }
+      shiftExample(1, true);
+    }, EXAMPLE_AUTOPLAY_DELAY);
+  }
+
+  function setExampleAutoplay(nextValue) {
+    state.exampleAutoplay = Boolean(nextValue);
+    renderHeroExamples();
   }
 
   function renderHeroExamples() {
@@ -173,6 +219,7 @@
 
     const items = activeExampleItems();
     if (!items.length) {
+      stopExampleAutoplay();
       const label = state.exampleTab === 'debate' ? 'Спорные примеры' : 'Хорошие примеры';
       const hint = state.exampleTab === 'debate'
         ? 'Пока не найдены. Если добавишь папку со словом "Спорные", фото появятся здесь автоматически.'
@@ -181,6 +228,7 @@
         <div class="hero-example-empty">
           <strong>${escapeHtml(label)}</strong>
           <p>${escapeHtml(hint)}</p>
+          ${state.exampleTab === 'debate' ? '<button type="button" class="ghost-button" data-action="examples-tab" data-tab="good">Показать хорошие</button>' : ''}
         </div>
       `;
       return;
@@ -188,54 +236,88 @@
 
     const currentIndex = ensureExampleIndex(state.exampleTab);
     const item = items[currentIndex];
+    const thumbWindow = Math.min(items.length, 5);
+    const thumbStart = Math.max(0, Math.min(currentIndex - 2, items.length - thumbWindow));
+    const thumbs = items.slice(thumbStart, thumbStart + thumbWindow);
     els.heroExampleStage.innerHTML = `
       <div class="hero-example-shell">
-        <button
-          type="button"
-          class="hero-example-nav"
-          data-action="examples-shift"
-          data-direction="-1"
-          aria-label="Предыдущий пример"
-          ${items.length <= 1 ? 'disabled' : ''}
-        >←</button>
         <article class="hero-example-card">
-          <div class="hero-example-media">
-            <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || item.label || 'Пример внедрения бренда')}" loading="lazy" />
+          <div class="hero-example-frame">
+            <button
+              type="button"
+              class="hero-example-nav hero-example-nav-prev"
+              data-action="examples-shift"
+              data-direction="-1"
+              aria-label="Предыдущий пример"
+              ${items.length <= 1 ? 'disabled' : ''}
+            >←</button>
+            <div class="hero-example-media">
+              <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || item.label || 'Пример внедрения бренда')}" loading="lazy" />
+              <div class="hero-example-overlay">
+                <span class="hero-example-badge">${escapeHtml(state.exampleTab === 'debate' ? 'Для обсуждения' : 'Хороший пример')}</span>
+                <strong>${escapeHtml(item.title || item.label || 'Пример')}</strong>
+                ${item.subtitle ? `<p>${escapeHtml(item.subtitle)}</p>` : ''}
+              </div>
+            </div>
+            <button
+              type="button"
+              class="hero-example-nav hero-example-nav-next"
+              data-action="examples-shift"
+              data-direction="1"
+              aria-label="Следующий пример"
+              ${items.length <= 1 ? 'disabled' : ''}
+            >→</button>
           </div>
           <div class="hero-example-copy">
-            <span class="hero-example-badge">${escapeHtml(state.exampleTab === 'debate' ? 'Для обсуждения' : 'Кейс')}</span>
-            <strong>${escapeHtml(item.title || item.label || 'Пример')}</strong>
-            ${item.subtitle ? `<p>${escapeHtml(item.subtitle)}</p>` : ''}
+            <div class="hero-example-toolbar">
+              <div class="hero-example-pager">
+                <span>${escapeHtml(formatNumber(currentIndex + 1))} / ${escapeHtml(formatNumber(items.length))}</span>
+                <div class="hero-example-dots">
+                  ${items.map((_, index) => `
+                    <button
+                      type="button"
+                      class="hero-example-dot${index === currentIndex ? ' active' : ''}"
+                      data-action="examples-jump"
+                      data-index="${index}"
+                      aria-label="Перейти к примеру ${index + 1}"
+                    ></button>
+                  `).join('')}
+                </div>
+              </div>
+              <button
+                type="button"
+                class="hero-example-autoplay${state.exampleAutoplay ? ' active' : ''}"
+                data-action="toggle-example-autoplay"
+                aria-pressed="${state.exampleAutoplay ? 'true' : 'false'}"
+              >${state.exampleAutoplay ? 'Пауза' : 'Авто'}</button>
+            </div>
+            ${buildExampleSummary(item) ? `<p class="hero-example-summary">${escapeHtml(buildExampleSummary(item))}</p>` : ''}
             <div class="hero-example-actions">
               <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Открыть</button>
               <a class="link-button" href="${escapeHtml(item.downloadUrl)}">Скачать</a>
             </div>
+            <div class="hero-example-thumbs" role="tablist" aria-label="Миниатюры примеров">
+              ${thumbs.map((thumb, index) => {
+                const realIndex = thumbStart + index;
+                return `
+                  <button
+                    type="button"
+                    class="hero-example-thumb${realIndex === currentIndex ? ' active' : ''}"
+                    data-action="examples-jump"
+                    data-index="${realIndex}"
+                    aria-label="Открыть пример ${escapeHtml(thumb.title || thumb.label || `#${realIndex + 1}`)}"
+                  >
+                    <img src="${escapeHtml(thumb.imageUrl)}" alt="" loading="lazy" />
+                    <span>${escapeHtml(trimPanelTitle(thumb.title || thumb.label || `Пример ${realIndex + 1}`))}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
           </div>
         </article>
-        <button
-          type="button"
-          class="hero-example-nav"
-          data-action="examples-shift"
-          data-direction="1"
-          aria-label="Следующий пример"
-          ${items.length <= 1 ? 'disabled' : ''}
-        >→</button>
-      </div>
-      <div class="hero-example-pager">
-        <span>${escapeHtml(formatNumber(currentIndex + 1))} / ${escapeHtml(formatNumber(items.length))}</span>
-        <div class="hero-example-dots">
-          ${items.map((_, index) => `
-            <button
-              type="button"
-              class="hero-example-dot${index === currentIndex ? ' active' : ''}"
-              data-action="examples-jump"
-              data-index="${index}"
-              aria-label="Перейти к примеру ${index + 1}"
-            ></button>
-          `).join('')}
-        </div>
       </div>
     `;
+    scheduleExampleAutoplay();
   }
 
   function setExampleTab(tab) {
@@ -245,7 +327,7 @@
     renderHeroExamples();
   }
 
-  function shiftExample(direction) {
+  function shiftExample(direction, fromAutoplay = false) {
     const items = activeExampleItems();
     if (items.length <= 1) {
       return;
@@ -255,6 +337,9 @@
     const nextIndex = (currentIndex + delta + items.length) % items.length;
     state.exampleIndex[state.exampleTab] = nextIndex;
     renderHeroExamples();
+    if (!fromAutoplay) {
+      scheduleExampleAutoplay();
+    }
   }
 
   function pluralizeRu(value, one, few, many) {
@@ -957,6 +1042,10 @@
       renderHeroExamples();
       return;
     }
+    if (action === 'toggle-example-autoplay') {
+      setExampleAutoplay(!state.exampleAutoplay);
+      return;
+    }
     if (action === 'close-inspector') {
       setInspectorOpen(false);
       return;
@@ -984,9 +1073,39 @@
   });
 
   document.addEventListener('keydown', (event) => {
+    const targetTag = String(event.target?.tagName || '').toLowerCase();
+    const typingContext = ['input', 'textarea', 'select'].includes(targetTag) || event.target?.isContentEditable;
     if (event.key === 'Escape' && state.inspectorOpen) {
       setInspectorOpen(false);
     }
+    if (typingContext) {
+      return;
+    }
+    if (event.key === 'ArrowLeft' && document.activeElement && els.heroExamples?.contains(document.activeElement)) {
+      shiftExample(-1);
+    }
+    if (event.key === 'ArrowRight' && document.activeElement && els.heroExamples?.contains(document.activeElement)) {
+      shiftExample(1);
+    }
+  });
+
+  if (els.heroExamples) {
+    els.heroExamples.addEventListener('mouseenter', () => {
+      exampleAutoplayPaused = true;
+      stopExampleAutoplay();
+    });
+    els.heroExamples.addEventListener('mouseleave', () => {
+      exampleAutoplayPaused = false;
+      scheduleExampleAutoplay();
+    });
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopExampleAutoplay();
+      return;
+    }
+    scheduleExampleAutoplay();
   });
 
   try {

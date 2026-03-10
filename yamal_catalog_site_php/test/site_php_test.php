@@ -18,6 +18,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'visually-h
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-stats'), 'index contains hero stats scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-example-tabs'), 'index contains hero examples tabs scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-example-stage'), 'index contains hero examples stage scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-examples-note'), 'index contains hero examples note');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'featured-shelves'), 'index contains featured shelves scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Под рукой'), 'index contains softened showcase heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Все брендбуки'), 'index contains showcase quick action');
@@ -47,6 +48,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ri
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-stats'), 'styles contain hero stats classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-tabs'), 'styles contain hero examples tabs classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-card'), 'styles contain hero example card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-overlay'), 'styles contain hero example overlay classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-thumbs'), 'styles contain hero example thumbnails classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-autoplay'), 'styles contain hero autoplay control classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.showcase-block'), 'styles contain subdued showcase block');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.visually-hidden'), 'styles contain visually hidden utility');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
@@ -67,6 +71,10 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderFeaturePanels'), 'frontend contains featured shelf renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroExamples'), 'frontend contains hero examples renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'examples-tab'), 'frontend supports hero example tabs');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-example-autoplay'), 'frontend supports hero example autoplay toggle');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scheduleExampleAutoplay'), 'frontend supports hero example autoplay scheduling');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildExampleSummary'), 'frontend compacts hero example summary');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'hero-example-thumb'), 'frontend renders hero example thumbnails');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildFeaturePanelFromItem'), 'frontend builds featured shelf items from runtime data');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-icon'), 'frontend renders simplified route icons');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroStats'), 'frontend renders hero stats');

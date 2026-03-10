@@ -36,6 +36,7 @@ $config = site_config();
               <div>
                 <p class="eyebrow">Примеры внедрения бренда</p>
                 <h2>Примеры внедрения бренда</h2>
+                <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром и переключением.</p>
               </div>
               <div id="hero-example-tabs" class="hero-example-tabs"></div>
             </div>
