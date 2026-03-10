@@ -1,16 +1,19 @@
 (function () {
   const siteConfig = window.YAMAL_SITE || { apiBase: 'api.php?action=', downloadBase: 'download.php?id=' };
   const fallbackTopSearches = ['логотип', 'брендбук', 'паттерны', 'салехард', 'наклейка', 'svg'];
+  const WORKSPACE_STORAGE_KEY = 'yamal-site-workspace-collapsed';
 
   const state = {
     bootstrap: null,
     current: null,
     detail: null,
+    workspaceCollapsed: false,
   };
 
   const els = {
     siteTitle: document.querySelector('#site-title'),
     brandRoutes: document.querySelector('#brand-routes'),
+    featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
     statsGrid: document.querySelector('#stats-grid'),
     rootSections: document.querySelector('#root-sections'),
@@ -25,6 +28,10 @@
     detailPanel: document.querySelector('#detail-panel'),
     searchForm: document.querySelector('#search-form'),
     searchInput: document.querySelector('#search-input'),
+    workspaceShell: document.querySelector('#workspace-shell'),
+    workspaceGrid: document.querySelector('#workspace-grid'),
+    workspaceToggle: document.querySelector('#workspace-toggle'),
+    workspaceCopy: document.querySelector('#workspace-copy'),
   };
 
   function escapeHtml(value) {
@@ -74,6 +81,35 @@
       </div>
     `;
     els.pagination.innerHTML = '';
+  }
+
+  function setWorkspaceCollapsed(nextValue) {
+    state.workspaceCollapsed = Boolean(nextValue);
+    if (els.workspaceShell) {
+      els.workspaceShell.classList.toggle('collapsed', state.workspaceCollapsed);
+    }
+    if (els.workspaceGrid) {
+      els.workspaceGrid.hidden = state.workspaceCollapsed;
+    }
+    if (els.workspaceToggle) {
+      els.workspaceToggle.textContent = state.workspaceCollapsed ? 'Показать рабочую область' : 'Скрыть рабочую область';
+    }
+    if (els.workspaceCopy) {
+      els.workspaceCopy.textContent = state.workspaceCollapsed
+        ? 'Рабочий блок свернут. При открытии раздела, файла или поиска он раскроется автоматически.'
+        : 'Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.';
+    }
+    try {
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEY, state.workspaceCollapsed ? '1' : '0');
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+
+  function ensureWorkspaceVisible() {
+    if (state.workspaceCollapsed) {
+      setWorkspaceCollapsed(false);
+    }
   }
 
   function renderSetupBanner(message) {
@@ -186,6 +222,61 @@
           <strong>${escapeHtml(item.label)}</strong>
           <span class="brand-route-text">${escapeHtml(item.text)}</span>
           <span class="brand-route-helper">${escapeHtml(helper)}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  function renderFeaturePanels(bootstrap) {
+    if (!els.featuredShelves) return;
+    const sections = bootstrap.sections || [];
+    const panels = [
+      {
+        badge: 'Брендбук',
+        title: 'Мастер-бренд',
+        sectionName: 'Брендбук ЯМАЛ Мастер бренд',
+        query: 'брендбук ямал мастер pdf',
+        tone: 'tone-master',
+        text: 'Основной брендбук с правилами применения логотипа, знака, графики и системы носителей.',
+      },
+      {
+        badge: 'Логотип',
+        title: 'Базовые версии',
+        sectionName: 'Логотип',
+        query: 'главный логотип svg',
+        tone: 'tone-logo',
+        text: 'Основной логотип, охранные поля и рабочие SVG/PDF/AI-версии для макетов и производства.',
+      },
+      {
+        badge: 'Города',
+        title: 'Региональные линии',
+        sectionName: 'Логотипы городов',
+        query: 'салехард логотип',
+        tone: 'tone-city',
+        text: 'Салехард, Новый Уренгой и Ноябрьск вынесены в отдельный блок с самостоятельной навигацией.',
+      },
+      {
+        badge: 'Носители',
+        title: 'Сувениры и диджитал',
+        sectionName: 'Каталог сувенирной продукции',
+        query: 'наклейка',
+        tone: 'tone-digital',
+        text: 'Рабочая витрина носителей, мерча, полиграфии и цифровых материалов для ежедневного использования.',
+      },
+    ];
+
+    els.featuredShelves.innerHTML = panels.map((item) => {
+      const section = findSectionByName(sections, item.sectionName);
+      const action = section ? 'open-folder' : 'search-chip';
+      const target = section ? section.id : item.query;
+      const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
+      const helper = section ? (section.relativePath || section.name) : `Запрос: ${item.query}`;
+      return `
+        <button type="button" class="feature-panel ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
+          <span class="feature-badge">${escapeHtml(item.badge)}</span>
+          <strong>${escapeHtml(item.title)}</strong>
+          <p>${escapeHtml(item.text)}</p>
+          <span class="feature-helper">${escapeHtml(helper)}</span>
         </button>
       `;
     }).join('');
@@ -408,6 +499,7 @@
     els.siteTitle.textContent = payload.title;
     renderSetupBanner(payload.setupMessage || '');
     renderBrandRoutes(payload);
+    renderFeaturePanels(payload);
     renderStats(payload.stats || {}, payload.sections || []);
     renderRootSections(payload.sections || []);
     renderFavorites(payload.favorites || []);
@@ -459,6 +551,13 @@
     const target = event.target.closest('[data-action]');
     if (!target) return;
     const action = target.dataset.action;
+    if (action === 'toggle-workspace') {
+      setWorkspaceCollapsed(!state.workspaceCollapsed);
+      return;
+    }
+    if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
+      ensureWorkspaceVisible();
+    }
     if (action === 'open-folder') openFolder(target.dataset.id, 0);
     if (action === 'open-folder-page') openFolder(target.dataset.id, Number.parseInt(target.dataset.page || '0', 10));
     if (action === 'open-file') openFile(target.dataset.id);
@@ -473,8 +572,15 @@
 
   els.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
+    ensureWorkspaceVisible();
     search(els.searchInput.value.trim());
   });
+
+  try {
+    setWorkspaceCollapsed(window.localStorage.getItem(WORKSPACE_STORAGE_KEY) === '1');
+  } catch (error) {
+    console.warn(error);
+  }
 
   loadBootstrap()
     .then(openRoot)

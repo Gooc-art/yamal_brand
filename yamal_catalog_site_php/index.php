@@ -144,9 +144,32 @@ $config = site_config();
         <div id="brand-routes" class="brand-route-grid"></div>
       </section>
 
+      <section class="surface showcase-block">
+        <div class="block-head showcase-head">
+          <div>
+            <p class="eyebrow">Ключевые материалы</p>
+            <h2>Отдельные входы для брендбуков, логотипов и графики</h2>
+          </div>
+          <button type="button" class="ghost-button" data-action="search-chip" data-query="брендбук ямал мастер pdf">Открыть PDF брендбука</button>
+        </div>
+        <div id="featured-shelves" class="feature-grid"></div>
+      </section>
+
       <section id="stats-grid" class="stats-grid"></section>
 
-      <main class="layout-grid">
+      <section id="workspace-shell" class="workspace-shell">
+        <div class="surface workspace-header">
+          <div>
+            <p class="eyebrow">Рабочая область</p>
+            <h2>Главное меню, разделы и карточка файла</h2>
+            <p id="workspace-copy" class="workspace-copy">Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.</p>
+          </div>
+          <div class="workspace-actions">
+            <button type="button" id="workspace-toggle" class="ghost-button" data-action="toggle-workspace">Скрыть рабочую область</button>
+          </div>
+        </div>
+
+      <main id="workspace-grid" class="layout-grid">
         <aside class="surface sidebar-block">
           <div class="block-head">
             <h2>Разделы</h2>
@@ -187,6 +210,7 @@ $config = site_config();
           </div>
         </aside>
       </main>
+      </section>
     </div>
 
     <script>
