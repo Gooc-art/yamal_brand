@@ -632,6 +632,105 @@ function file_ext(string $name): string
     return strtolower((string) $ext);
 }
 
+function previewable_image_extensions(): array
+{
+    return ['png', 'jpg', 'jpeg', 'webp'];
+}
+
+function is_previewable_image_file(array $item): bool
+{
+    return in_array(file_ext((string) ($item['name'] ?? '')), previewable_image_extensions(), true);
+}
+
+function inline_download_url(string $downloadUrl): string
+{
+    if ($downloadUrl === '') {
+        return '';
+    }
+    return $downloadUrl . (str_contains($downloadUrl, '?') ? '&' : '?') . 'inline=1';
+}
+
+function normalized_contains_any(string $value, array $needles): bool
+{
+    $source = normalize_text($value);
+    if ($source === '') {
+        return false;
+    }
+    foreach ($needles as $needle) {
+        $normalized = normalize_text((string) $needle);
+        if ($normalized !== '' && str_contains($source, $normalized)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function root_menu_labels(): array
+{
+    static $labels = null;
+    if ($labels !== null) {
+        return $labels;
+    }
+    $labels = [];
+    foreach (root_menu_folders() as $config) {
+        $labels[(string) $config['folderName']] = (string) $config['label'];
+    }
+    return $labels;
+}
+
+function display_section_label(string $value): string
+{
+    return root_menu_labels()[$value] ?? cleanup_folder_label($value);
+}
+
+function example_skip_segments(): array
+{
+    return [
+        'макеты1', 'файлы', 'макеты', 'логотипы', 'логотип', 'основные логотипы',
+        'анимированный логотип', 'анимированные логотипы', 'юбилейные логотипы',
+        'юбилейный логотип', '1 cmyk для печати', '2 color', '3 black', '4 white',
+        'color', 'black', 'white', 'png', 'jpg', 'jpeg', 'webp',
+    ];
+}
+
+function example_context_from_path(string $relativePath, string $fileName): array
+{
+    $parts = array_values(array_filter(explode('/', str_replace('\\', '/', $relativePath))));
+    if ($parts !== []) {
+        array_pop($parts);
+    }
+
+    $displayParts = array_map(static fn(string $part): string => cleanup_folder_label($part), $parts);
+    $filtered = [];
+    foreach ($displayParts as $part) {
+        $normalized = normalize_text($part);
+        if ($normalized === '' || in_array($normalized, example_skip_segments(), true)) {
+            continue;
+        }
+        $filtered[] = $part;
+    }
+
+    $title = $filtered !== [] ? end($filtered) : cleanup_file_stem($fileName);
+    $top = $filtered[0] ?? '';
+    $top = $top !== '' ? display_section_label($top) : '';
+
+    $subtitleParts = [];
+    if ($top !== '' && $top !== $title) {
+        $subtitleParts[] = $top;
+    }
+    if (count($filtered) >= 2) {
+        $secondary = $filtered[count($filtered) - 2];
+        if ($secondary !== '' && $secondary !== $title && $secondary !== $top) {
+            $subtitleParts[] = $secondary;
+        }
+    }
+
+    return [
+        'title' => $title !== '' ? $title : cleanup_file_stem($fileName),
+        'subtitle' => implode(' • ', array_slice($subtitleParts, 0, 2)),
+    ];
+}
+
 function cleanup_file_label(array $item, string $parentName, string $ext): string
 {
     $stem = cleanup_file_stem((string) ($item['name'] ?? ''));
@@ -1342,6 +1441,118 @@ class SiteCatalogService
         return resolve_root_menu_folders($folders);
     }
 
+    private function imageCandidates(): array
+    {
+        return array_values(array_filter(
+            $this->db->allSearchCandidates(false, 8000),
+            static fn(array $item): bool => is_previewable_image_file($item)
+        ));
+    }
+
+    private function examplePayload(array $item, string $group): array
+    {
+        $presented = present_item($item);
+        $context = example_context_from_path((string) ($item['relative_path'] ?? ''), (string) ($item['name'] ?? ''));
+        return [
+            'id' => (string) ($presented['id'] ?? ''),
+            'title' => $context['title'],
+            'subtitle' => $context['subtitle'],
+            'group' => $group,
+            'label' => (string) ($presented['label'] ?? ''),
+            'imageUrl' => inline_download_url((string) ($presented['downloadUrl'] ?? '')),
+            'downloadUrl' => (string) ($presented['downloadUrl'] ?? ''),
+            'extension' => (string) ($presented['extension'] ?? ''),
+            'relativePath' => (string) ($presented['relativePath'] ?? ''),
+        ];
+    }
+
+    private function explicitExamples(array $items, array $keywords, int $limit): array
+    {
+        $matches = [];
+        foreach ($items as $item) {
+            $path = (string) ($item['relative_path'] ?? '');
+            if (!normalized_contains_any($path, $keywords)) {
+                continue;
+            }
+            $matches[] = $item;
+            if (count($matches) >= $limit) {
+                break;
+            }
+        }
+        return $matches;
+    }
+
+    private function fallbackGoodExamples(array $items, int $limit): array
+    {
+        $scored = [];
+        $priorityWords = [
+            'фирменная одежда', 'автобус', 'самолет', 'самолёт', 'рекламный щит', 'городская навигация',
+            'фотозона', 'бумажный стаканчик', 'коробка для завтрака', 'шатер', 'шатёр', 'ролл ап',
+            'баннер', 'футболка', 'худи', 'свитшот', 'зонт', 'термокружка', 'рюкзак', 'шоппер',
+        ];
+        $demoteWords = ['логотип', 'знак', 'иллюстрации', 'svg элементы', 'англ', 'black', 'white', 'color'];
+        foreach ($items as $item) {
+            $path = normalize_text((string) ($item['relative_path'] ?? ''));
+            $score = 0;
+            if (str_contains($path, normalize_text('файлы макеты'))) {
+                $score += 120;
+            }
+            if (str_contains($path, normalize_text('каталог сувенирной продукции'))) {
+                $score += 80;
+            }
+            if (normalized_contains_any($path, $priorityWords)) {
+                $score += 40;
+            }
+            if (normalized_contains_any($path, $demoteWords)) {
+                $score -= 60;
+            }
+            if ($score <= 0) {
+                continue;
+            }
+            $item['__example_score'] = $score;
+            $scored[] = $item;
+        }
+
+        usort($scored, static function (array $left, array $right): int {
+            if (($right['__example_score'] ?? 0) !== ($left['__example_score'] ?? 0)) {
+                return ($right['__example_score'] ?? 0) <=> ($left['__example_score'] ?? 0);
+            }
+            return strnatcasecmp((string) ($left['relative_path'] ?? ''), (string) ($right['relative_path'] ?? ''));
+        });
+
+        $out = [];
+        $seenTitles = [];
+        foreach ($scored as $item) {
+            $context = example_context_from_path((string) ($item['relative_path'] ?? ''), (string) ($item['name'] ?? ''));
+            $key = normalize_text(($context['title'] ?? '') . ' ' . ($context['subtitle'] ?? ''));
+            if ($key === '' || isset($seenTitles[$key])) {
+                continue;
+            }
+            $seenTitles[$key] = true;
+            $out[] = $item;
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+        return $out;
+    }
+
+    public function getHeroExamples(): array
+    {
+        $items = $this->imageCandidates();
+        $good = $this->explicitExamples($items, ['хорошие примеры', 'хороший пример', 'good'], 8);
+        if ($good === []) {
+            $good = $this->fallbackGoodExamples($items, 8);
+        }
+
+        $debate = $this->explicitExamples($items, ['спорные примеры', 'спорный пример', 'антипример', 'ошибка', 'неправильно', 'обсуждение'], 8);
+
+        return [
+            'good' => array_map(fn(array $item): array => $this->examplePayload($item, 'good'), $good),
+            'debate' => array_map(fn(array $item): array => $this->examplePayload($item, 'debate'), $debate),
+        ];
+    }
+
     public function getFavorites(): array
     {
         $records = $this->state->getTopItems($this->config['favorites_limit'] * 3);
@@ -1389,6 +1600,7 @@ class SiteCatalogService
                 'emptySearches' => (int) ($runtimeStats['empty_searches'] ?? 0),
             ],
             'sections' => array_map(static fn(array $item): array => present_item($item), $this->getRootFolders()),
+            'examples' => $this->getHeroExamples(),
             'favorites' => $this->getFavorites(),
             'topSearches' => array_map(static fn(array $row): array => ['query' => $row['sample_query'], 'uses' => (int) $row['uses']], $this->state->getTopSearches(8)),
         ];

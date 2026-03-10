@@ -16,7 +16,8 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-ribbo
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Официальная библиотека фирменного стиля'), 'index contains official library ribbon text');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'visually-hidden'), 'index keeps hidden h1 for semantics');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-stats'), 'index contains hero stats scaffold');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'dossier-grid'), 'index contains dossier grid');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-example-tabs'), 'index contains hero examples tabs scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-example-stage'), 'index contains hero examples stage scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'featured-shelves'), 'index contains featured shelves scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Под рукой'), 'index contains softened showcase heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Все брендбуки'), 'index contains showcase quick action');
@@ -39,15 +40,15 @@ assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'brand-pri
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-summary'), 'index removed old hero summary scaffold');
 
 $stylesTemplate = file_get_contents(dirname(__DIR__) . '/assets/styles.css');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-lockup'), 'styles contain brand lockup classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-grid'), 'styles contain brand route classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-icon'), 'styles contain simplified route icon class');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-card.active'), 'styles contain active route state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ribbon'), 'styles contain hero ribbon classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-stats'), 'styles contain hero stats classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-tabs'), 'styles contain hero examples tabs classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-card'), 'styles contain hero example card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.showcase-block'), 'styles contain subdued showcase block');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.visually-hidden'), 'styles contain visually hidden utility');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.dossier-grid'), 'styles contain dossier grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-visual'), 'styles contain feature visual classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-panel.tone-mark'), 'styles contain extended feature tones');
@@ -64,6 +65,8 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-b
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderFeaturePanels'), 'frontend contains featured shelf renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroExamples'), 'frontend contains hero examples renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'examples-tab'), 'frontend supports hero example tabs');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildFeaturePanelFromItem'), 'frontend builds featured shelf items from runtime data');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-icon'), 'frontend renders simplified route icons');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroStats'), 'frontend renders hero stats');
@@ -121,6 +124,12 @@ function create_catalog_db(string $path): void
         [$rootId, '', 'folder', 'Макеты1', '.', '', 0, '', null, '', '2026-03-09T00:00:00Z', 'макеты1', '.', 'макеты1', 1, 0],
         ['logo', $rootId, 'folder', 'Логотип', 'Логотип', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'логотип', 'логотип', 'логотип logo sign', 1, 0],
         ['master', $rootId, 'folder', 'Брендбук ЯМАЛ Мастер бренд', 'Брендбук ЯМАЛ Мастер бренд', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'брендбук ямал мастер бренд', 'брендбук ямал мастер бренд', 'брендбук мастер бренд guide', 1, 0],
+        ['mockups', 'master', 'folder', 'Файлы', 'Брендбук ЯМАЛ Мастер бренд/Файлы', 'Брендбук ЯМАЛ Мастер бренд', 2, '', null, '', '2026-03-09T00:00:00Z', 'файлы', 'брендбук ямал мастер бренд файлы', 'файлы макеты', 1, 0],
+        ['mockups-inner', 'mockups', 'folder', 'Макеты', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты', 'Брендбук ЯМАЛ Мастер бренд/Файлы', 3, '', null, '', '2026-03-09T00:00:00Z', 'макеты', 'брендбук ямал мастер бренд файлы макеты', 'макеты внедрение', 1, 0],
+        ['bus-folder', 'mockups-inner', 'folder', 'Автобус', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты', 4, '', null, '', '2026-03-09T00:00:00Z', 'автобус', 'брендбук ямал мастер бренд файлы макеты автобус', 'автобус макет пример', 1, 0],
+        ['good-example', 'bus-folder', 'file', 'Автобус пример.png', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 5, 'png', 4096, 'image/png', '2026-03-09T00:00:00Z', 'автобус пример', 'брендбук ямал мастер бренд файлы макеты автобус автобус пример png', 'автобус пример png', 1, 0],
+        ['debate-root', $rootId, 'folder', 'Спорные примеры', 'Спорные примеры', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'спорные примеры', 'спорные примеры обсуждение', 1, 0],
+        ['debate-file', 'debate-root', 'file', 'Плохой щит.jpg', 'Спорные примеры/Плохой щит.jpg', 'Спорные примеры', 2, 'jpg', 2048, 'image/jpeg', '2026-03-09T00:00:00Z', 'плохой щит', 'спорные примеры плохой щит jpg', 'плохой щит jpg спорный пример', 1, 0],
         ['file1', 'logo', 'file', 'Логотип основной вариант для печати финальный.pdf', 'Логотип/Логотип основной вариант для печати финальный.pdf', 'Логотип', 2, 'pdf', 2048, 'application/pdf', '2026-03-09T00:00:00Z', 'логотип основной вариант для печати финальный', 'логотип логотип основной вариант для печати финальный pdf', 'логотип основной вариант pdf', 1, 0],
     ];
 
@@ -135,16 +144,22 @@ mkdir($base, 0777, true);
 mkdir($base . '/upload', 0777, true);
 mkdir($base . '/upload/Макеты1', 0777, true);
 mkdir($base . '/upload/Макеты1/Логотип', 0777, true);
+mkdir($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 0777, true);
+mkdir($base . '/upload/Макеты1/Спорные примеры', 0777, true);
 file_put_contents($base . '/upload/Макеты1/Логотип/Логотип основной вариант для печати финальный.pdf', 'pdf');
+file_put_contents($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', 'png');
+file_put_contents($base . '/upload/Макеты1/Спорные примеры/Плохой щит.jpg', 'jpg');
 
 $detectedRoot = detect_catalog_source_root($base . '/upload');
 assert_true($detectedRoot === $base . '/upload/Макеты1', 'detect nested source root');
 
 $builtRows = build_catalog_rows($detectedRoot);
-assert_true(count($builtRows) === 3, 'scan returns root folder, child folder and file');
+assert_true(count($builtRows) >= 9, 'scan returns extended catalog structure');
 assert_true($builtRows[0]['id'] === root_id(), 'root id is stable');
-assert_true($builtRows[2]['relative_path'] === 'Логотип/Логотип основной вариант для печати финальный.pdf', 'relative path built');
-assert_true(str_contains((string) $builtRows[2]['search_text'], 'логотип'), 'search text includes normalized file words');
+$builtRelativePaths = array_column($builtRows, 'relative_path');
+assert_true(in_array('Логотип/Логотип основной вариант для печати финальный.pdf', $builtRelativePaths, true), 'scan includes logo pdf path');
+assert_true(in_array('Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', $builtRelativePaths, true), 'scan includes good example image path');
+assert_true(str_contains(implode(' ', array_column($builtRows, 'search_text')), 'логотип'), 'search text includes normalized file words');
 
 if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     fwrite(STDOUT, "skipped: pdo_sqlite not available in local PHP CLI; pure scan checks passed\n");
@@ -169,6 +184,8 @@ $bootstrap = $service->getBootstrap();
 assert_true($bootstrap['title'] === 'Test Site', 'bootstrap title');
 assert_true(count($bootstrap['sections']) >= 2, 'root sections exist');
 assert_true($bootstrap['setupMessage'] === '', 'setup message empty when db exists');
+assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
+assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
 
 $folder = $service->getFolder('logo', 0);
 assert_true($folder !== null, 'logo folder exists');

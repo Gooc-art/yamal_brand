@@ -31,25 +31,16 @@ $config = site_config();
         </div>
 
         <div class="hero-column hero-column-side">
-          <div class="hero-dossier">
-            <div class="brand-lockup">
-              <img class="brand-logo" src="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="Логотип Бренд Ямал" />
-              <div class="brand-lockup-copy">
-                <span class="brand-lockup-tag">Мастер-бренд Ямал</span>
-                <span class="brand-lockup-subtitle">Основной логотип и знак региона.</span>
+          <section class="hero-examples surface">
+            <div class="block-head compact hero-examples-head">
+              <div>
+                <p class="eyebrow">Примеры внедрения бренда</p>
+                <h2>Примеры внедрения бренда</h2>
               </div>
+              <div id="hero-example-tabs" class="hero-example-tabs"></div>
             </div>
-            <div class="dossier-grid">
-              <article class="dossier-item">
-                <span>Материалы</span>
-                <strong>Логотипы, брендбуки, SVG</strong>
-              </article>
-              <article class="dossier-item">
-                <span>Действия</span>
-                <strong>Поиск, разделы, скачивание</strong>
-              </article>
-            </div>
-          </div>
+            <div id="hero-example-stage" class="hero-example-stage"></div>
+          </section>
 
           <form id="search-form" class="search-panel">
             <label class="search-label" for="search-input">Поиск</label>

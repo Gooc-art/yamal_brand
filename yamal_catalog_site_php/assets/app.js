@@ -14,6 +14,8 @@
     current: null,
     detail: null,
     activeRouteId: '',
+    exampleTab: 'good',
+    exampleIndex: { good: 0, debate: 0 },
     workspaceCollapsed: false,
     catalogMode: false,
     inspectorOpen: false,
@@ -23,6 +25,8 @@
   const els = {
     pageShell: document.querySelector('.page-shell'),
     heroStats: document.querySelector('#hero-stats'),
+    heroExampleTabs: document.querySelector('#hero-example-tabs'),
+    heroExampleStage: document.querySelector('#hero-example-stage'),
     brandRoutes: document.querySelector('#brand-routes'),
     featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
@@ -122,6 +126,135 @@
       .map((item) => item.name)
       .filter(Boolean);
     return folders.join(' / ');
+  }
+
+  function normalizeHeroExamples(examples) {
+    return {
+      good: Array.isArray(examples?.good) ? examples.good : [],
+      debate: Array.isArray(examples?.debate) ? examples.debate : [],
+    };
+  }
+
+  function activeExampleItems() {
+    const examples = normalizeHeroExamples(state.bootstrap?.examples);
+    return examples[state.exampleTab] || [];
+  }
+
+  function ensureExampleIndex(tab) {
+    const examples = normalizeHeroExamples(state.bootstrap?.examples);
+    const items = examples[tab] || [];
+    const maxIndex = Math.max(0, items.length - 1);
+    state.exampleIndex[tab] = Math.min(Math.max(Number(state.exampleIndex[tab] || 0), 0), maxIndex);
+    return state.exampleIndex[tab];
+  }
+
+  function renderHeroExamples() {
+    if (!els.heroExampleStage || !els.heroExampleTabs) return;
+    const examples = normalizeHeroExamples(state.bootstrap?.examples);
+    const goodCount = examples.good.length;
+    const debateCount = examples.debate.length;
+    const tabMeta = [
+      ['good', 'Хорошие примеры', goodCount],
+      ['debate', 'Спорные примеры', debateCount],
+    ];
+
+    els.heroExampleTabs.innerHTML = tabMeta.map(([tab, label, count]) => `
+      <button
+        type="button"
+        class="hero-example-tab${state.exampleTab === tab ? ' active' : ''}"
+        data-action="examples-tab"
+        data-tab="${escapeHtml(tab)}"
+        aria-pressed="${state.exampleTab === tab ? 'true' : 'false'}"
+      >
+        <span>${escapeHtml(label)}</span>
+        <small>${escapeHtml(formatNumber(count))}</small>
+      </button>
+    `).join('');
+
+    const items = activeExampleItems();
+    if (!items.length) {
+      const label = state.exampleTab === 'debate' ? 'Спорные примеры' : 'Хорошие примеры';
+      const hint = state.exampleTab === 'debate'
+        ? 'Пока не найдены. Если добавишь папку со словом "Спорные", фото появятся здесь автоматически.'
+        : 'Пока не найдены изображения кейсов.';
+      els.heroExampleStage.innerHTML = `
+        <div class="hero-example-empty">
+          <strong>${escapeHtml(label)}</strong>
+          <p>${escapeHtml(hint)}</p>
+        </div>
+      `;
+      return;
+    }
+
+    const currentIndex = ensureExampleIndex(state.exampleTab);
+    const item = items[currentIndex];
+    els.heroExampleStage.innerHTML = `
+      <div class="hero-example-shell">
+        <button
+          type="button"
+          class="hero-example-nav"
+          data-action="examples-shift"
+          data-direction="-1"
+          aria-label="Предыдущий пример"
+          ${items.length <= 1 ? 'disabled' : ''}
+        >←</button>
+        <article class="hero-example-card">
+          <div class="hero-example-media">
+            <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || item.label || 'Пример внедрения бренда')}" loading="lazy" />
+          </div>
+          <div class="hero-example-copy">
+            <span class="hero-example-badge">${escapeHtml(state.exampleTab === 'debate' ? 'Для обсуждения' : 'Кейс')}</span>
+            <strong>${escapeHtml(item.title || item.label || 'Пример')}</strong>
+            ${item.subtitle ? `<p>${escapeHtml(item.subtitle)}</p>` : ''}
+            <div class="hero-example-actions">
+              <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Открыть</button>
+              <a class="link-button" href="${escapeHtml(item.downloadUrl)}">Скачать</a>
+            </div>
+          </div>
+        </article>
+        <button
+          type="button"
+          class="hero-example-nav"
+          data-action="examples-shift"
+          data-direction="1"
+          aria-label="Следующий пример"
+          ${items.length <= 1 ? 'disabled' : ''}
+        >→</button>
+      </div>
+      <div class="hero-example-pager">
+        <span>${escapeHtml(formatNumber(currentIndex + 1))} / ${escapeHtml(formatNumber(items.length))}</span>
+        <div class="hero-example-dots">
+          ${items.map((_, index) => `
+            <button
+              type="button"
+              class="hero-example-dot${index === currentIndex ? ' active' : ''}"
+              data-action="examples-jump"
+              data-index="${index}"
+              aria-label="Перейти к примеру ${index + 1}"
+            ></button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function setExampleTab(tab) {
+    const nextTab = tab === 'debate' ? 'debate' : 'good';
+    state.exampleTab = nextTab;
+    ensureExampleIndex(nextTab);
+    renderHeroExamples();
+  }
+
+  function shiftExample(direction) {
+    const items = activeExampleItems();
+    if (items.length <= 1) {
+      return;
+    }
+    const currentIndex = ensureExampleIndex(state.exampleTab);
+    const delta = Number(direction || 0);
+    const nextIndex = (currentIndex + delta + items.length) % items.length;
+    state.exampleIndex[state.exampleTab] = nextIndex;
+    renderHeroExamples();
   }
 
   function pluralizeRu(value, one, few, many) {
@@ -740,6 +873,9 @@
     state.bootstrap = payload;
     document.title = `${payload.title} — каталог`;
     renderSetupBanner(payload.setupMessage || '');
+    state.exampleIndex = { good: 0, debate: 0 };
+    state.exampleTab = (payload.examples && Array.isArray(payload.examples.good) && payload.examples.good.length) ? 'good' : 'debate';
+    renderHeroExamples();
     renderBrandRoutes(payload);
     state.featurePanels = buildFeaturePanels(payload);
     renderFeaturePanels(state.featurePanels);
@@ -806,6 +942,19 @@
     }
     if (action === 'toggle-catalog-mode') {
       setCatalogMode(!state.catalogMode);
+      return;
+    }
+    if (action === 'examples-tab') {
+      setExampleTab(target.dataset.tab || 'good');
+      return;
+    }
+    if (action === 'examples-shift') {
+      shiftExample(Number(target.dataset.direction || '0'));
+      return;
+    }
+    if (action === 'examples-jump') {
+      state.exampleIndex[state.exampleTab] = Math.max(0, Number.parseInt(target.dataset.index || '0', 10));
+      renderHeroExamples();
       return;
     }
     if (action === 'close-inspector') {
