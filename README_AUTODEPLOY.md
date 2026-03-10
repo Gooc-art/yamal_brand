@@ -92,6 +92,10 @@ For the public REG.RU website there is a separate archive-import workflow:
 - pass a direct `zip` or `tar.gz` URL with the `Макеты1` files
 - the workflow downloads the archive, backs up current `data/files`, uploads new files to `брендямал.рф`, deletes `max_catalog.db` and triggers automatic rebuild
 
+For PHP code updates of the public REG.RU catalog site there is a separate workflow:
+- GitHub -> `Actions` -> `Deploy REG.RU PHP Catalog Site` -> `Run workflow`
+- it uploads `index.php`, `api.php`, `download.php`, `assets/`, `src/` and keeps `data/` untouched
+
 To inspect the real catalog structure on the production runner:
 - GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.
 

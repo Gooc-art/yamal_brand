@@ -1,5 +1,6 @@
 (function () {
   const siteConfig = window.YAMAL_SITE || { apiBase: 'api.php?action=', downloadBase: 'download.php?id=' };
+  const fallbackTopSearches = ['логотип', 'брендбук', 'паттерны', 'салехард', 'наклейка', 'svg'];
 
   const state = {
     bootstrap: null,
@@ -9,6 +10,7 @@
 
   const els = {
     siteTitle: document.querySelector('#site-title'),
+    heroBrief: document.querySelector('#hero-brief'),
     setupBanner: document.querySelector('#setup-banner'),
     statsGrid: document.querySelector('#stats-grid'),
     rootSections: document.querySelector('#root-sections'),
@@ -32,6 +34,10 @@
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;');
+  }
+
+  function formatNumber(value) {
+    return new Intl.NumberFormat('ru-RU').format(Number(value || 0));
   }
 
   function actionUrl(action, params) {
@@ -58,7 +64,15 @@
     els.contentMode.textContent = 'Каталог';
     els.contentTitle.textContent = title;
     els.contentHint.textContent = hint || 'Загрузка...';
-    els.contentItems.innerHTML = '<div class="empty-state"><p>Загрузка...</p></div>';
+    els.contentItems.innerHTML = `
+      <div class="empty-state loading-state">
+        <div class="loading-mark" aria-hidden="true"></div>
+        <div>
+          <h3>Загрузка</h3>
+          <p class="detail-empty">Подтягиваю данные раздела и готовлю карточки.</p>
+        </div>
+      </div>
+    `;
     els.pagination.innerHTML = '';
   }
 
@@ -69,50 +83,124 @@
       return;
     }
     els.setupBanner.style.display = 'block';
-    els.setupBanner.innerHTML = `<strong>Подготовка каталога.</strong> ${escapeHtml(message)}`;
+    els.setupBanner.innerHTML = `
+      <div class="setup-banner-copy">
+        <p class="eyebrow">Статус каталога</p>
+        <strong>Каталог готовится к публикации</strong>
+        <span>${escapeHtml(message)}</span>
+      </div>
+    `;
+  }
+
+  function renderHeroBrief(bootstrap) {
+    const stats = bootstrap.stats || {};
+    const sections = bootstrap.sections || [];
+    const topSearches = (bootstrap.topSearches || []).map((item) => item.query).filter(Boolean);
+    const cards = [
+      {
+        label: 'Статус',
+        title: bootstrap.setupMessage ? 'Каталог собирается' : 'Каталог готов',
+        text: bootstrap.setupMessage || `${formatNumber(stats.files)} файлов доступны для скачивания прямо сейчас.`,
+      },
+      {
+        label: 'Маршруты',
+        title: `${formatNumber(sections.length)} стартовых разделов`,
+        text: 'Логотипы, брендбуки, паттерны, города и сувенирная продукция собраны в одном меню.',
+      },
+      {
+        label: 'Поиск',
+        title: topSearches.length ? topSearches.slice(0, 2).join(' • ') : 'Умный поиск',
+        text: topSearches.length
+          ? 'Популярные запросы вынесены в быстрый доступ под поисковой строкой.'
+          : 'Поиск работает по названиям, путям и близким совпадениям.',
+      },
+    ];
+
+    els.heroBrief.innerHTML = cards.map((card) => `
+      <article class="brief-card">
+        <p class="brief-label">${escapeHtml(card.label)}</p>
+        <strong>${escapeHtml(card.title)}</strong>
+        <span>${escapeHtml(card.text)}</span>
+      </article>
+    `).join('');
   }
 
   function renderStats(stats) {
     const cards = [
-      ['Всего', stats.totalAssets],
-      ['Файлы', stats.files],
-      ['Папки', stats.folders],
-      ['Поиски', stats.searches],
-      ['Пустые', stats.emptySearches],
+      ['Активы', stats.totalAssets, 'Все файлы и папки каталога', '01', 'tone-accent'],
+      ['Файлы', stats.files, 'Готовые материалы для скачивания', '02', 'tone-teal'],
+      ['Папки', stats.folders, 'Разделы и вложенные маршруты', '03', 'tone-gold'],
+      ['Поиски', stats.searches, 'История обращений к поиску', '04', 'tone-slate'],
+      ['Пустые', stats.emptySearches, 'Запросы без совпадений', '05', 'tone-soft'],
     ];
-    els.statsGrid.innerHTML = cards.map(([label, value]) => `
-      <article class="surface stat-card">
-        <p class="stat-label">${escapeHtml(label)}</p>
-        <p class="stat-value">${escapeHtml(value)}</p>
+    els.statsGrid.innerHTML = cards.map(([label, value, note, icon, tone]) => `
+      <article class="surface stat-card ${tone}">
+        <div class="stat-top">
+          <p class="stat-label">${escapeHtml(label)}</p>
+          <span class="stat-icon">${escapeHtml(icon)}</span>
+        </div>
+        <p class="stat-value">${escapeHtml(formatNumber(value))}</p>
+        <p class="stat-note">${escapeHtml(note)}</p>
       </article>
     `).join('');
   }
 
   function renderRootSections(items) {
+    if (!items.length) {
+      els.rootSections.innerHTML = `
+        <div class="panel-empty">
+          <strong>Разделы появятся позже</strong>
+          <span>Как только каталог прогрузится, здесь появится корневое меню.</span>
+        </div>
+      `;
+      return;
+    }
     els.rootSections.innerHTML = items.map((item) => `
-      <button class="nav-card" data-action="open-folder" data-id="${item.id}">
-        <strong>${escapeHtml(item.icon)} ${escapeHtml(item.label)}</strong>
-        <span>${escapeHtml(item.kindLabel)}</span>
+      <button type="button" class="nav-card" data-action="open-folder" data-id="${escapeHtml(item.id)}">
+        <span class="card-icon">${escapeHtml(item.icon)}</span>
+        <span class="card-copy">
+          <strong>${escapeHtml(item.label)}</strong>
+          <span>${escapeHtml(item.kindLabel)}</span>
+        </span>
+        <span class="card-arrow">→</span>
       </button>
     `).join('');
   }
 
   function renderFavorites(items) {
+    if (!items.length) {
+      els.favoritesList.innerHTML = `
+        <div class="panel-empty">
+          <strong>Избранное пока пустое</strong>
+          <span>Список начнет собираться по реальным открытиям и скачиваниям.</span>
+        </div>
+      `;
+      return;
+    }
     els.favoritesList.innerHTML = items.map((item) => {
       const action = item.type === 'folder' ? 'open-folder' : 'open-file';
+      const meta = item.uses ? `${item.kindLabel} • ${item.uses} использ.` : item.kindLabel;
       return `
-        <button class="favorite-card" data-action="${action}" data-id="${item.id}">
-          <strong>${escapeHtml(item.icon)} ${escapeHtml(item.label)}</strong>
-          <span>${escapeHtml(item.kindLabel)}${item.uses ? ` • ${item.uses} использ.` : ''}</span>
+        <button type="button" class="favorite-card" data-action="${action}" data-id="${escapeHtml(item.id)}">
+          <span class="card-icon">${escapeHtml(item.icon)}</span>
+          <span class="card-copy">
+            <strong>${escapeHtml(item.label)}</strong>
+            <span>${escapeHtml(meta)}</span>
+          </span>
+          <span class="card-arrow">↗</span>
         </button>
       `;
     }).join('');
   }
 
   function renderTopSearches(items) {
-    els.topSearches.innerHTML = items.map((item) => `
-      <button type="button" class="chip" data-action="search-chip" data-query="${escapeHtml(item.query)}">
-        ${escapeHtml(item.query)}
+    const normalized = (items && items.length ? items : fallbackTopSearches.map((query) => ({ query })))
+      .map((item) => typeof item === 'string' ? item : item.query)
+      .filter(Boolean)
+      .slice(0, 6);
+    els.topSearches.innerHTML = normalized.map((query) => `
+      <button type="button" class="chip" data-action="search-chip" data-query="${escapeHtml(query)}">
+        ${escapeHtml(query)}
       </button>
     `).join('');
   }
@@ -120,29 +208,34 @@
   function renderBreadcrumbs(items) {
     els.breadcrumbs.innerHTML = items.map((item, index) => {
       if (index === items.length - 1 || item.type !== 'folder') {
-        return `<span>${escapeHtml(item.name)}</span>`;
+        return `<span class="breadcrumb current">${escapeHtml(item.name)}</span>`;
       }
-      return `<button type="button" class="breadcrumb" data-action="open-folder" data-id="${item.id}">${escapeHtml(item.name)}</button>`;
-    }).join('<span>›</span>');
+      return `<button type="button" class="breadcrumb" data-action="open-folder" data-id="${escapeHtml(item.id)}">${escapeHtml(item.name)}</button>`;
+    }).join('<span class="breadcrumb-sep">•</span>');
   }
 
   function itemCard(item) {
+    const secondary = item.relativePath && item.relativePath !== item.label ? item.relativePath : item.kindLabel;
     const actions = item.type === 'folder'
-      ? `<button class="item-action" data-action="open-folder" data-id="${item.id}">Открыть</button>`
-      : `<button class="item-action" data-action="open-file" data-id="${item.id}">Подробнее</button>
-         <a class="link-button" href="${item.downloadUrl}">Скачать</a>`;
+      ? `<button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(item.id)}">Открыть</button>`
+      : `<button type="button" class="item-action" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
+         <a class="link-button" href="${escapeHtml(item.downloadUrl)}">Скачать</a>`;
 
     return `
       <article class="result-card ${escapeHtml(item.type)}">
-        <div>
-          <strong>${escapeHtml(item.icon)} ${escapeHtml(item.label)}</strong>
-          <span>${escapeHtml(item.relativePath || '')}</span>
+        <div class="result-head">
+          <span class="card-icon">${escapeHtml(item.icon)}</span>
+          <div class="card-copy">
+            <strong>${escapeHtml(item.label)}</strong>
+            <span>${escapeHtml(secondary || '')}</span>
+          </div>
         </div>
         <div class="item-meta">
           <span class="meta-pill">${escapeHtml(item.kindLabel)}</span>
           ${item.sizeLabel ? `<span class="meta-pill">${escapeHtml(item.sizeLabel)}</span>` : ''}
           ${item.extension ? `<span class="meta-pill">${escapeHtml(item.extension.toUpperCase())}</span>` : ''}
         </div>
+        <p class="result-path">${escapeHtml(item.relativePath || item.name || '')}</p>
         <div class="item-actions">${actions}</div>
       </article>
     `;
@@ -152,6 +245,7 @@
     if (!items.length) {
       els.contentItems.innerHTML = `
         <div class="empty-state">
+          <div class="empty-mark" aria-hidden="true">○</div>
           <div>
             <h3>${escapeHtml(emptyText || 'Пусто')}</h3>
             <p class="detail-empty">Попробуй другой запрос или вернись в меню разделов.</p>
@@ -170,11 +264,11 @@
     }
     const buttons = [];
     if (payload.page > 0) {
-      buttons.push(`<button class="ghost-button" data-action="open-folder-page" data-id="${payload.folder.id}" data-page="${payload.page - 1}">◀ Назад</button>`);
+      buttons.push(`<button type="button" class="ghost-button" data-action="open-folder-page" data-id="${escapeHtml(payload.folder.id)}" data-page="${payload.page - 1}">◀ Назад</button>`);
     }
     buttons.push(`<span class="meta-pill">Страница ${payload.page + 1} / ${payload.maxPage + 1}</span>`);
     if (payload.page < payload.maxPage) {
-      buttons.push(`<button class="ghost-button" data-action="open-folder-page" data-id="${payload.folder.id}" data-page="${payload.page + 1}">Вперед ▶</button>`);
+      buttons.push(`<button type="button" class="ghost-button" data-action="open-folder-page" data-id="${escapeHtml(payload.folder.id)}" data-page="${payload.page + 1}">Вперед ▶</button>`);
     }
     els.pagination.innerHTML = buttons.join('');
   }
@@ -193,7 +287,9 @@
     state.current = { kind: 'search', payload };
     els.contentMode.textContent = 'Поиск';
     els.contentTitle.textContent = payload.query ? `Результаты: ${payload.query}` : 'Поиск';
-    els.contentHint.textContent = payload.total ? `Найдено ${payload.total} элементов.` : 'Пупупу....пусто';
+    els.contentHint.textContent = payload.total
+      ? `Найдено ${formatNumber(payload.total)} элементов. Открой файл или раздел прямо из списка.`
+      : 'Совпадений не нашлось. Попробуй другой запрос, город, формат или название брендбука.';
     els.breadcrumbs.innerHTML = '';
     renderItems(payload.items || [], payload.emptyState || 'Пусто');
     els.pagination.innerHTML = '';
@@ -213,15 +309,20 @@
         <p class="meta-row">${escapeHtml(breadcrumb)}</p>
         <p class="detail-path">${escapeHtml(payload.pathLabel || payload.relativePath || '')}</p>
         <div class="item-actions">
-          <a class="link-button" href="${payload.downloadUrl}">Скачать</a>
-          <button class="item-action" data-action="open-folder" data-id="${payload.parentId}">К разделу</button>
+          <a class="link-button" href="${escapeHtml(payload.downloadUrl)}">Скачать</a>
+          <button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(payload.parentId)}">К разделу</button>
         </div>
       </article>
     `;
   }
 
   function renderDetailPlaceholder() {
-    els.detailPanel.innerHTML = '<p class="detail-empty">Выберите файл, чтобы увидеть путь, размер и скачать его.</p>';
+    els.detailPanel.innerHTML = `
+      <div class="panel-empty">
+        <strong>Карточка файла</strong>
+        <span>Выберите файл, чтобы увидеть путь, формат, размер и ссылку на скачивание.</span>
+      </div>
+    `;
   }
 
   async function refreshFavorites() {
@@ -236,9 +337,10 @@
   async function loadBootstrap() {
     const payload = await api('bootstrap');
     state.bootstrap = payload;
-    document.title = payload.title;
+    document.title = `${payload.title} — каталог`;
     els.siteTitle.textContent = payload.title;
     renderSetupBanner(payload.setupMessage || '');
+    renderHeroBrief(payload);
     renderStats(payload.stats || {});
     renderRootSections(payload.sections || []);
     renderFavorites(payload.favorites || []);
@@ -313,6 +415,14 @@
       console.error(error);
       els.contentTitle.textContent = 'Ошибка запуска';
       els.contentHint.textContent = 'Не удалось загрузить данные сайта.';
-      els.contentItems.innerHTML = `<div class="empty-state"><p>${escapeHtml(error.message)}</p></div>`;
+      els.contentItems.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-mark" aria-hidden="true">!</div>
+          <div>
+            <h3>Ошибка запуска</h3>
+            <p class="detail-empty">${escapeHtml(error.message)}</p>
+          </div>
+        </div>
+      `;
     });
 })();

@@ -8,6 +8,7 @@ PHP + SQLite версия сайта для shared hosting, в первую оч
 - `Избранное` по runtime-статистике
 - карточка файла
 - прямое скачивание
+- обновленный публичный интерфейс: hero-блок, быстрые запросы, выразительные карточки и sticky-панели
 - понятный экран даже если база и файлы еще не загружены
 - автосборка `max_catalog.db` из `data/files/`, если база еще не создана
 
@@ -70,6 +71,7 @@ php /root/projects/yamal_brand/yamal_catalog_site_php/test/site_php_test.php
 Готовый скрипт:
 - [deploy_regru_php_site.sh](/root/projects/yamal_brand/scripts/deploy_regru_php_site.sh)
 - [import_regru_archive.sh](/root/projects/yamal_brand/scripts/import_regru_archive.sh)
+- [deploy_regru_php_site.yml](/root/projects/yamal_brand/.github/workflows/deploy_regru_php_site.yml)
 
 Пример:
 
@@ -88,6 +90,11 @@ SSH_PORT=22 \
 - не трогает `data/` и `_backup/`
 - умеет работать через парольный `SSH`, если передать `SSH_PASSWORD`
 - создает рабочий `.env` с путями под текущий веб-корень, если файла еще нет
+
+Можно запускать и без локального SSH-доступа через GitHub Actions:
+- открой `Deploy REG.RU PHP Catalog Site`
+- workflow использует уже сохраненные `REGRU_HOST`, `REGRU_USER`, `REGRU_TARGET_DIR`, `REGRU_PASSWORD`
+- выкладывает только код PHP-сайта, не трогая `data/` с каталогом
 
 ## Импорт каталога по прямой ссылке
 

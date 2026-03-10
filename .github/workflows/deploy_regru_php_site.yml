@@ -1,0 +1,32 @@
+name: Deploy REG.RU PHP Catalog Site
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-regru-php-site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      REMOTE_HOST: ${{ secrets.REGRU_HOST }}
+      REMOTE_USER: ${{ secrets.REGRU_USER }}
+      REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
+      SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
+      SSH_PORT: 22
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deploy dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
+
+      - name: Deploy PHP catalog site to REG.RU
+        run: |
+          chmod +x scripts/deploy_regru_php_site.sh
+          ./scripts/deploy_regru_php_site.sh

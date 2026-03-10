@@ -11,6 +11,15 @@ function assert_true(bool $condition, string $message): void
     }
 }
 
+$indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-brief'), 'index contains hero summary scaffold');
+
+$stylesTemplate = file_get_contents(dirname(__DIR__) . '/assets/styles.css');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-badge'), 'styles contain refreshed hero classes');
+
+$frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroBrief'), 'frontend contains hero summary renderer');
+
 function create_catalog_db(string $path): void
 {
     $pdo = new PDO('sqlite:' . $path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);

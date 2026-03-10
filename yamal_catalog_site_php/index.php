@@ -14,30 +14,67 @@ $config = site_config();
   <body>
     <div class="page-shell">
       <header class="hero surface">
-        <div>
-          <p class="eyebrow">Веб-версия каталога</p>
+        <div class="hero-main">
+          <p class="eyebrow">Открытый бренд-каталог</p>
           <h1 id="site-title"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
           <p class="hero-copy">
-            Сайт на PHP и SQLite для REG.RU-хостинга: разделы, поиск, избранное и прямое скачивание.
+            Быстрый доступ к логотипам, брендбукам, паттернам, SVG и готовым материалам Ямала.
+            Поиск понимает близкие совпадения, а карточки сразу ведут к скачиванию.
           </p>
-        </div>
-        <form id="search-form" class="search-panel">
-          <label class="search-label" for="search-input">Поиск по каталогу</label>
-          <div class="search-row">
-            <input
-              id="search-input"
-              name="q"
-              type="search"
-              placeholder="Например: логотип, брендбук, наклейка, салехард"
-              autocomplete="off"
-            />
-            <button type="submit" class="accent-button">Найти</button>
+          <div class="hero-badges">
+            <span class="hero-badge">Публичный доступ</span>
+            <span class="hero-badge">Умный поиск</span>
+            <span class="hero-badge">Прямые скачивания</span>
+            <span class="hero-badge">PHP + SQLite</span>
           </div>
-          <div id="top-searches" class="chip-row"></div>
-        </form>
+          <div id="hero-brief" class="hero-brief">
+            <article class="brief-card">
+              <p class="brief-label">Статус</p>
+              <strong>Подключаю каталог…</strong>
+              <span>Проверяю разделы и доступные файлы.</span>
+            </article>
+            <article class="brief-card">
+              <p class="brief-label">Маршруты</p>
+              <strong>Собираю меню</strong>
+              <span>Скоро появятся главные разделы и быстрые переходы.</span>
+            </article>
+            <article class="brief-card">
+              <p class="brief-label">Поиск</p>
+              <strong>Готовлю подсказки</strong>
+              <span>Популярные запросы и быстрый старт отрисуются после загрузки.</span>
+            </article>
+          </div>
+        </div>
+        <div class="hero-side">
+          <form id="search-form" class="search-panel">
+            <label class="search-label" for="search-input">Поиск по каталогу</label>
+            <div class="search-row">
+              <input
+                id="search-input"
+                name="q"
+                type="search"
+                placeholder="Например: логотип, брендбук, наклейка, салехард"
+                autocomplete="off"
+              />
+              <button type="submit" class="accent-button">Найти</button>
+            </div>
+            <div class="search-suggestions">
+              <p class="search-meta">Быстрые запросы</p>
+              <div id="top-searches" class="chip-row"></div>
+            </div>
+          </form>
+          <div class="hero-note">
+            <p class="eyebrow">Как пользоваться</p>
+            <div class="hero-steps">
+              <p><strong>1.</strong> Выбери раздел или запусти поиск по названию файла.</p>
+              <p><strong>2.</strong> Открой карточку, чтобы увидеть формат, путь и размер.</p>
+              <p><strong>3.</strong> Скачай нужный макет напрямую, без лишних переходов.</p>
+            </div>
+          </div>
+        </div>
       </header>
 
-      <section id="setup-banner" class="surface" style="display:none; margin-top:18px; padding:18px 20px;"></section>
+      <section id="setup-banner" class="surface setup-banner"></section>
       <section id="stats-grid" class="stats-grid"></section>
 
       <main class="layout-grid">
