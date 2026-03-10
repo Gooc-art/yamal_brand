@@ -162,7 +162,7 @@ $config = site_config();
         <div class="surface workspace-header">
           <div>
             <p class="eyebrow">Рабочая область</p>
-            <h2>Главное меню, разделы и карточка файла</h2>
+            <h2>Навигатор, каталог и инспектор файла</h2>
             <p id="workspace-copy" class="workspace-copy">Оставь этот блок открытым для ежедневной работы с каталогом или сверни его, чтобы главная страница была чище.</p>
           </div>
           <div class="workspace-actions">
@@ -171,17 +171,35 @@ $config = site_config();
           </div>
         </div>
 
-      <main id="workspace-grid" class="layout-grid">
-        <aside class="surface sidebar-block">
-          <div class="block-head">
-            <h2>Разделы</h2>
-            <button type="button" class="ghost-button" data-action="go-root">Главная</button>
-          </div>
-          <div id="root-sections" class="section-list"></div>
+      <main id="workspace-grid" class="workspace-composition">
+        <aside class="workspace-rail">
+          <section class="surface rail-panel rail-panel-sections">
+            <div class="block-head rail-head">
+              <div>
+                <p class="eyebrow">Навигатор</p>
+                <h2>Разделы</h2>
+              </div>
+              <button type="button" class="ghost-button" data-action="go-root">Главная</button>
+            </div>
+            <p class="rail-copy">Быстрые входы в структуру бренда без длинной цепочки переходов.</p>
+            <div id="root-sections" class="section-list"></div>
+          </section>
+
+          <section class="surface rail-panel rail-panel-favorites">
+            <div class="block-head rail-head compact">
+              <div>
+                <p class="eyebrow">Под рукой</p>
+                <h2>Избранное</h2>
+              </div>
+              <button type="button" class="ghost-button" data-action="refresh-favorites">Обновить</button>
+            </div>
+            <p class="rail-copy">Материалы и разделы, к которым возвращаются чаще всего.</p>
+            <div id="favorites-list" class="favorite-list"></div>
+          </section>
         </aside>
 
-        <section class="surface content-block">
-          <div class="block-head">
+        <section class="surface content-block workspace-stage">
+          <div class="block-head stage-head">
             <div>
               <p class="eyebrow" id="content-mode">Каталог</p>
               <h2 id="content-title">Загрузка...</h2>
@@ -197,16 +215,14 @@ $config = site_config();
           <div id="pagination" class="pagination"></div>
         </section>
 
-        <aside class="surface sidepane-block">
-          <div class="block-head">
-            <h2>Избранное</h2>
-            <button type="button" class="ghost-button" data-action="refresh-favorites">Обновить</button>
+        <aside class="surface workspace-inspector">
+          <div class="block-head compact inspector-head">
+            <div>
+              <p class="eyebrow">Инспектор</p>
+              <h2>Карточка файла</h2>
+            </div>
           </div>
-          <div id="favorites-list" class="favorite-list"></div>
-          <hr class="divider" />
-          <div class="block-head compact">
-            <h2>Карточка файла</h2>
-          </div>
+          <p class="rail-copy inspector-copy">Путь, формат, размер и скачивание без перехода в отдельный экран.</p>
           <div id="detail-panel" class="detail-panel">
             <p class="detail-empty">Выберите файл, чтобы увидеть путь, размер и скачать его.</p>
           </div>

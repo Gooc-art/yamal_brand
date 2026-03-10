@@ -19,6 +19,9 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'featured-s
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-composition'), 'index contains workspace composition scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-rail'), 'index contains workspace rail scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-inspector'), 'index contains workspace inspector scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-note'), 'index contains brand note block');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
@@ -39,6 +42,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.dossier
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-visual'), 'styles contain feature visual classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell'), 'styles contain workspace shell classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-composition'), 'styles contain workspace composition classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-rail'), 'styles contain workspace rail classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-badge'), 'styles removed old hero badge classes');
 
