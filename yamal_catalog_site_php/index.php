@@ -17,9 +17,9 @@ $config = site_config();
         <div class="hero-column hero-column-main">
           <div class="hero-ribbon">
             <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
-            <span>Ямал</span>
+            <span>Официальная библиотека фирменного стиля</span>
           </div>
-          <h1 id="site-title">Официальная библиотека фирменного стиля</h1>
+          <h1 id="site-title" class="visually-hidden"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
           <p class="hero-copy">Логотипы, брендбуки, SVG, шрифты и материалы региона в одном каталоге.</p>
           <div class="hero-actions">
             <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Брендбуки</button>

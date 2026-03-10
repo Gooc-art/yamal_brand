@@ -21,7 +21,6 @@
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
-    siteTitle: document.querySelector('#site-title'),
     brandRoutes: document.querySelector('#brand-routes'),
     featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
