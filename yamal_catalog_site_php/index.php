@@ -86,10 +86,10 @@ $config = site_config();
       <section class="surface showcase-block">
         <div class="block-head showcase-head">
           <div>
-            <p class="eyebrow">Быстро</p>
+            <p class="eyebrow">Часто</p>
             <h2>Под рукой</h2>
           </div>
-          <button type="button" class="ghost-button" data-action="search-chip" data-query="брендбук ямал мастер pdf">Открыть PDF</button>
+          <button type="button" class="ghost-button" data-action="search-chip" data-query="брендбук">Все брендбуки</button>
         </div>
         <div id="featured-shelves" class="feature-grid"></div>
       </section>

@@ -19,6 +19,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-stats
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'dossier-grid'), 'index contains dossier grid');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'featured-shelves'), 'index contains featured shelves scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Под рукой'), 'index contains softened showcase heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Все брендбуки'), 'index contains showcase quick action');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
@@ -49,6 +50,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.visuall
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.dossier-grid'), 'styles contain dossier grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-visual'), 'styles contain feature visual classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-panel.tone-mark'), 'styles contain extended feature tones');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell'), 'styles contain workspace shell classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-composition'), 'styles contain workspace composition classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
@@ -62,9 +64,11 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-b
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderFeaturePanels'), 'frontend contains featured shelf renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildFeaturePanelFromItem'), 'frontend builds featured shelf items from runtime data');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-icon'), 'frontend renders simplified route icons');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroStats'), 'frontend renders hero stats');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setActiveRoute'), 'frontend tracks active main menu route');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'bootstrap.favorites'), 'frontend uses bootstrap favorites for featured shelf');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'WORKSPACE_STORAGE_KEY'), 'frontend persists workspace collapse state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CATALOG_MODE_STORAGE_KEY'), 'frontend persists catalog mode state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'preview-search'), 'frontend loads preview search data');
@@ -198,6 +202,10 @@ assert_true(is_file($download['fullPath']), 'download file exists');
 
 $runtimeStats = (new RuntimeDb($runtimeDb))->stats();
 assert_true((int) ($runtimeStats['total_item_events'] ?? 0) === 2, 'real download increments item analytics');
+
+$bootstrapAfterUsage = $service->getBootstrap();
+assert_true(($bootstrapAfterUsage['favorites'][0]['id'] ?? '') === 'file1', 'favorites prefer recent real item activity');
+assert_true((int) ($bootstrapAfterUsage['favorites'][0]['uses'] ?? 0) === 1, 'favorites expose usage count');
 
 mkdir($base . '/missing-files', 0777, true);
 mkdir($base . '/missing-files/Макеты1', 0777, true);
