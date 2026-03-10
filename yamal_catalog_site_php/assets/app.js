@@ -26,8 +26,6 @@
     featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
     statsGrid: document.querySelector('#stats-grid'),
-    rootSections: document.querySelector('#root-sections'),
-    favoritesList: document.querySelector('#favorites-list'),
     topSearches: document.querySelector('#top-searches'),
     contentMode: document.querySelector('#content-mode'),
     contentTitle: document.querySelector('#content-title'),
@@ -179,7 +177,7 @@
     if (els.workspaceCopy) {
       els.workspaceCopy.textContent = state.workspaceCollapsed
         ? 'Блок скрыт. Он откроется автоматически.'
-        : 'Разделы слева, результаты в центре.';
+        : 'Все разделы и файлы в одном потоке.';
     }
     try {
       window.localStorage.setItem(WORKSPACE_STORAGE_KEY, state.workspaceCollapsed ? '1' : '0');
@@ -203,7 +201,7 @@
     if (els.workspaceCopy) {
       els.workspaceCopy.textContent = state.catalogMode
         ? 'Включен режим каталога.'
-        : 'Разделы слева, результаты в центре.';
+        : 'Все разделы и файлы в одном потоке.';
     }
     try {
       window.localStorage.setItem(CATALOG_MODE_STORAGE_KEY, state.catalogMode ? '1' : '0');
@@ -229,6 +227,14 @@
     if (state.workspaceCollapsed) {
       setWorkspaceCollapsed(false);
     }
+  }
+
+  function focusWorkspace(target) {
+    if (!els.workspaceShell) return;
+    if (target && target.closest && target.closest('#workspace-shell')) {
+      return;
+    }
+    els.workspaceShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function renderSetupBanner(message) {
@@ -528,54 +534,6 @@
     `).join('');
   }
 
-  function renderRootSections(items) {
-    if (!items.length) {
-      els.rootSections.innerHTML = `
-        <div class="panel-empty">
-          <strong>Разделы появятся позже</strong>
-          <span>Каталог еще загружается.</span>
-        </div>
-      `;
-      return;
-    }
-    els.rootSections.innerHTML = items.map((item) => `
-      <button type="button" class="nav-card" data-action="open-folder" data-id="${escapeHtml(item.id)}">
-        <span class="card-icon">${escapeHtml(item.icon)}</span>
-        <span class="card-copy">
-          <strong>${escapeHtml(item.label)}</strong>
-          <span>${escapeHtml(item.kindLabel)}</span>
-        </span>
-        <span class="card-arrow">→</span>
-      </button>
-    `).join('');
-  }
-
-  function renderFavorites(items) {
-    if (!items.length) {
-      els.favoritesList.innerHTML = `
-        <div class="panel-empty">
-          <strong>Избранное пока пустое</strong>
-          <span>Список появится после первых открытий.</span>
-        </div>
-      `;
-      return;
-    }
-    els.favoritesList.innerHTML = items.map((item) => {
-      const action = item.type === 'folder' ? 'open-folder' : 'open-file';
-      const meta = item.uses ? `${item.kindLabel} • ${item.uses} использ.` : item.kindLabel;
-      return `
-        <button type="button" class="favorite-card" data-action="${action}" data-id="${escapeHtml(item.id)}">
-          <span class="card-icon">${escapeHtml(item.icon)}</span>
-          <span class="card-copy">
-            <strong>${escapeHtml(item.label)}</strong>
-            <span>${escapeHtml(meta)}</span>
-          </span>
-          <span class="card-arrow">↗</span>
-        </button>
-      `;
-    }).join('');
-  }
-
   function renderTopSearches(items) {
     const normalized = (items && items.length ? items : fallbackTopSearches.map((query) => ({ query })))
       .map((item) => typeof item === 'string' ? item : item.query)
@@ -717,15 +675,6 @@
     `;
   }
 
-  async function refreshFavorites() {
-    try {
-      const payload = await api('favorites');
-      renderFavorites(payload.items || []);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async function loadBootstrap() {
     const payload = await api('bootstrap');
     state.bootstrap = payload;
@@ -736,8 +685,6 @@
     state.featurePanels = buildFeaturePanels(payload);
     renderFeaturePanels(state.featurePanels);
     renderStats(payload.stats || {}, payload.sections || []);
-    renderRootSections(payload.sections || []);
-    renderFavorites(payload.favorites || []);
     renderTopSearches(payload.topSearches || []);
     void hydrateFeaturePanels();
   }
@@ -760,7 +707,6 @@
     renderDetailPlaceholder();
     const payload = await api('folder', { id, page: page || 0 });
     renderFolder(payload);
-    await refreshFavorites();
   }
 
   async function search(query) {
@@ -769,7 +715,6 @@
     renderDetailPlaceholder();
     const payload = await api('search', { q: query || '' });
     renderSearch(payload);
-    await refreshFavorites();
   }
 
   async function openFile(id) {
@@ -806,6 +751,7 @@
     }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
       ensureWorkspaceVisible();
+      focusWorkspace(target);
     }
     if (action === 'open-folder') openFolder(target.dataset.id, 0);
     if (action === 'open-folder-page') openFolder(target.dataset.id, Number.parseInt(target.dataset.page || '0', 10));
@@ -816,12 +762,12 @@
     }
     if (action === 'go-root') openRoot();
     if (action === 'back') goBack();
-    if (action === 'refresh-favorites') refreshFavorites();
   });
 
   els.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
     ensureWorkspaceVisible();
+    focusWorkspace(els.searchForm);
     search(els.searchInput.value.trim());
   });
 

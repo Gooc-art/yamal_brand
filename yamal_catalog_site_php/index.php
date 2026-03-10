@@ -104,7 +104,7 @@ $config = site_config();
           <div>
             <p class="eyebrow">Каталог</p>
             <h2>Разделы и файлы</h2>
-            <p id="workspace-copy" class="workspace-copy">Разделы слева, результаты в центре.</p>
+            <p id="workspace-copy" class="workspace-copy">Все разделы и файлы в одном потоке.</p>
           </div>
           <div class="workspace-actions">
             <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
@@ -113,28 +113,6 @@ $config = site_config();
         </div>
 
       <main id="workspace-grid" class="workspace-composition">
-        <aside class="workspace-rail">
-          <section class="surface rail-panel rail-panel-sections">
-            <div class="block-head rail-head">
-              <div>
-                <h2>Разделы</h2>
-              </div>
-              <button type="button" class="ghost-button" data-action="go-root">Главная</button>
-            </div>
-            <div id="root-sections" class="section-list"></div>
-          </section>
-
-          <section class="surface rail-panel rail-panel-favorites">
-            <div class="block-head rail-head compact">
-              <div>
-                <h2>Избранное</h2>
-              </div>
-              <button type="button" class="ghost-button" data-action="refresh-favorites">Обновить</button>
-            </div>
-            <div id="favorites-list" class="favorite-list"></div>
-          </section>
-        </aside>
-
         <section class="surface content-block workspace-stage">
           <div class="block-head stage-head">
             <div>

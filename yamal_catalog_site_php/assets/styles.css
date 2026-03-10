@@ -136,8 +136,6 @@ img {
 .hero,
 .stat-card,
 .content-block,
-.nav-card,
-.favorite-card,
 .result-card,
 .detail-card,
 .brand-route-card,
@@ -297,8 +295,6 @@ h3,
 .link-button,
 .item-action,
 .chip,
-.nav-card,
-.favorite-card,
 .brand-route-card {
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
@@ -358,8 +354,6 @@ h3,
 .link-button:hover,
 .item-action:hover,
 .chip:hover,
-.nav-card:hover,
-.favorite-card:hover,
 .result-card:hover,
 .brand-route-card:hover {
   transform: translateY(-2px);
@@ -374,8 +368,7 @@ h3,
 .stat-card,
 .detail-card,
 .result-card,
-.nav-card,
-.favorite-card {
+.feature-panel {
   position: relative;
   overflow: hidden;
 }
@@ -938,20 +931,11 @@ input[type="search"]:focus {
 
 .workspace-composition {
   display: grid;
-  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
-.workspace-rail {
-  position: sticky;
-  top: 18px;
-  display: grid;
-  gap: 18px;
-}
-
-.rail-panel,
 .content-block,
 .workspace-inspector {
   position: relative;
@@ -959,17 +943,12 @@ input[type="search"]:focus {
   padding: 22px;
 }
 
-.rail-panel::before,
 .workspace-inspector::before,
 .content-block::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.rail-panel::before {
-  background: linear-gradient(180deg, rgba(180, 36, 61, 0.04), transparent 40%);
 }
 
 .workspace-inspector::before {
@@ -1002,14 +981,6 @@ input[type="search"]:focus {
   transition: transform 220ms ease, opacity 220ms ease;
 }
 
-.rail-panel-sections {
-  background: linear-gradient(180deg, rgba(255, 251, 246, 0.97), rgba(246, 240, 233, 0.95));
-}
-
-.rail-panel-favorites {
-  background: linear-gradient(180deg, rgba(251, 247, 240, 0.97), rgba(242, 235, 226, 0.95));
-}
-
 .block-head {
   display: flex;
   align-items: start;
@@ -1022,47 +993,15 @@ input[type="search"]:focus {
   margin-bottom: 14px;
 }
 
-.rail-head,
 .stage-head,
 .inspector-head {
   position: relative;
   z-index: 1;
 }
-
-.rail-copy {
-  position: relative;
-  z-index: 1;
-  margin: -4px 0 18px;
-  color: var(--muted);
-  line-height: 1.68;
-}
-
-.section-list,
-.favorite-list,
 .detail-panel,
 .card-grid {
   display: grid;
   gap: 12px;
-}
-
-.nav-card,
-.favorite-card {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 16px 18px;
-  text-align: left;
-  border: 1px solid rgba(24, 42, 49, 0.08);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.rail-panel .nav-card,
-.rail-panel .favorite-card {
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 10px 24px rgba(24, 42, 49, 0.05);
 }
 
 .card-icon,
@@ -1317,10 +1256,6 @@ input[type="search"]:focus {
   .card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .workspace-composition {
-    grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 1120px) {
@@ -1340,10 +1275,6 @@ input[type="search"]:focus {
 
   .workspace-composition {
     grid-template-columns: 1fr;
-  }
-
-  .workspace-rail {
-    position: static;
   }
 
   .workspace-inspector {
@@ -1393,7 +1324,6 @@ input[type="search"]:focus {
   .hero,
   .brand-routes-block,
   .showcase-block,
-  .rail-panel,
   .content-block,
   .stat-card,
   .workspace-header {
@@ -1457,14 +1387,10 @@ input[type="search"]:focus {
     flex-direction: column;
   }
 
-  .nav-card,
-  .favorite-card,
   .result-head {
     grid-template-columns: auto 1fr;
   }
 
-  .nav-card,
-  .favorite-card,
   .result-card,
   .detail-card,
   .feature-panel {
