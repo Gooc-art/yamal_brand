@@ -12,24 +12,32 @@ function assert_true(bool $condition, string $message): void
 }
 
 $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-ribbon'), 'index contains hero ribbon block');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-briefing'), 'index contains hero briefing grid');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'dossier-grid'), 'index contains dossier grid');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-note'), 'index contains brand note block');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/styles.css')"), 'index uses versioned stylesheet url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/app.js')"), 'index uses versioned app script url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-routes'), 'index contains brand routes scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-principles'), 'index contains brand principles scaffold');
-assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-brief'), 'index removed old hero brief scaffold');
+assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-summary'), 'index removed old hero summary scaffold');
 
 $stylesTemplate = file_get_contents(dirname(__DIR__) . '/assets/styles.css');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-principles'), 'styles contain brand principles classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-lockup'), 'styles contain brand lockup classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-grid'), 'styles contain brand route classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-number'), 'styles contain brand route numbering');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ribbon'), 'styles contain hero ribbon classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-briefing'), 'styles contain hero briefing classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.dossier-grid'), 'styles contain dossier grid classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-badge'), 'styles removed old hero badge classes');
 
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-number'), 'frontend renders route numbering');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'tone-digital'), 'frontend removed old digital route tone');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderHeroBrief'), 'frontend removed old hero summary renderer');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');

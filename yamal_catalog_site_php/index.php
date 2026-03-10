@@ -14,31 +14,70 @@ $config = site_config();
   <body>
     <div class="page-shell">
       <header class="hero surface">
-        <div class="hero-main">
-          <div class="brand-lockup">
-            <img class="brand-logo" src="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="Логотип Бренд Ямал" />
-            <div class="brand-lockup-copy">
-              <span class="brand-lockup-tag">Мастер-бренд Ямал</span>
-              <span class="brand-lockup-subtitle">Основной логотип и постоянный элемент фирменного стиля Ямала.</span>
-            </div>
+        <div class="hero-column hero-column-main">
+          <div class="hero-ribbon">
+            <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
+            <span>Официальная библиотека фирменного стиля</span>
           </div>
-          <p class="eyebrow">Руководство по использованию фирменного стиля</p>
+          <p class="eyebrow">Рабочий каталог бренда Ямала</p>
           <h1 id="site-title"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
           <p class="hero-copy">
-            Каталог бренд-материалов Ямала: логотип, фирменный знак, брендбуки, городские версии,
-            паттерны, шрифты и цифровые материалы. Все собрано в понятную структуру и готово к скачиванию.
+            Единая точка доступа к логотипам, брендбукам, городским версиям, паттернам, шрифтам и цифровым материалам.
+            Интерфейс собран как рабочее продолжение брендбука: сначала понятная система, затем быстрый путь к файлу.
           </p>
           <div class="hero-actions">
             <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Открыть брендбуки</button>
-            <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="логотип">Перейти к логотипам</button>
+            <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Перейти к логотипам</button>
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>Скачать SVG логотип</a>
           </div>
-          <div class="brand-note">
-            <strong>Принцип из брендбука:</strong>
-            <span>постоянные элементы фирменного стиля используются без произвольных изменений и служат опорой для всех носителей.</span>
+          <div class="hero-briefing">
+            <article class="briefing-card">
+              <span class="briefing-kicker">Система</span>
+              <strong>Мастер-бренд, юбилейная линия и города не смешиваются между собой.</strong>
+              <p>Каталог ведет по иерархии бренда, а не по техническим названиям папок.</p>
+            </article>
+            <article class="briefing-card">
+              <span class="briefing-kicker">Доступ</span>
+              <strong>Файл находится через маршруты, поиск, популярные запросы и избранное.</strong>
+              <p>Поддерживаются бытовые формулировки, опечатки и запросы без точного знания названия.</p>
+            </article>
+            <article class="briefing-card">
+              <span class="briefing-kicker">Практика</span>
+              <strong>Сайт заточен под работу: открыть раздел, проверить формат и сразу скачать.</strong>
+              <p>Без лишних переходов, лишнего декора и ручного поиска по структуре хранения.</p>
+            </article>
           </div>
         </div>
-        <div class="hero-side">
+
+        <div class="hero-column hero-column-side">
+          <div class="hero-dossier">
+            <div class="brand-lockup">
+              <img class="brand-logo" src="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="Логотип Бренд Ямал" />
+              <div class="brand-lockup-copy">
+                <span class="brand-lockup-tag">Мастер-бренд Ямал</span>
+                <span class="brand-lockup-subtitle">Основной логотип и постоянный элемент фирменного стиля Ямала.</span>
+              </div>
+            </div>
+            <div class="dossier-grid">
+              <article class="dossier-item">
+                <span>Опора</span>
+                <strong>Логотип, фирменный знак, брендбук</strong>
+              </article>
+              <article class="dossier-item">
+                <span>Контур</span>
+                <strong>Города, паттерны, типографика, SVG</strong>
+              </article>
+              <article class="dossier-item">
+                <span>Формат</span>
+                <strong>Файл, путь, размер и скачивание в одном месте</strong>
+              </article>
+            </div>
+            <div class="brand-note">
+              <strong>Принцип из брендбука</strong>
+              <span>Постоянные элементы фирменного стиля используются без произвольных изменений и задают единый визуальный порядок для всех носителей.</span>
+            </div>
+          </div>
+
           <form id="search-form" class="search-panel">
             <label class="search-label" for="search-input">Поиск по каталогу</label>
             <div class="search-row">
@@ -56,52 +95,55 @@ $config = site_config();
               <div id="top-searches" class="chip-row"></div>
             </div>
           </form>
-          <div class="hero-summary">
-            <p class="eyebrow">Основа брендбука</p>
-            <ul class="hero-summary-list">
-              <li>Логотип, фирменный знак и правила использования.</li>
-              <li>Мастер-бренд, юбилейная линия и брендбуки городов.</li>
-              <li>Паттерны, шрифты, SVG и цифровые материалы.</li>
-            </ul>
-          </div>
         </div>
       </header>
 
       <section id="setup-banner" class="surface setup-banner"></section>
+
       <section class="surface brand-principles">
-        <article class="principle-card">
-          <span class="principle-number">01</span>
-          <div>
-            <h2>Единая система</h2>
-            <p>Логотип, знак, цвет, шрифт и графические элементы работают как одна система, а не как отдельные файлы.</p>
-          </div>
-        </article>
-        <article class="principle-card">
-          <span class="principle-number">02</span>
-          <div>
-            <h2>Понятная иерархия</h2>
-            <p>Мастер-бренд, юбилейная линия и региональные версии разделены, чтобы не смешивать разные уровни идентичности.</p>
-          </div>
-        </article>
-        <article class="principle-card">
-          <span class="principle-number">03</span>
-          <div>
-            <h2>Рабочий каталог</h2>
-            <p>Сначала понятный путь к материалу, потом скачивание. Без лишних лозунгов, случайных визуальных жестов и шумных блоков.</p>
-          </div>
-        </article>
+        <div class="section-heading">
+          <p class="eyebrow">Как устроен каталог</p>
+          <h2>Редакционный интерфейс для ежедневной работы с бренд-системой</h2>
+        </div>
+        <div class="principle-grid">
+          <article class="principle-card">
+            <span class="principle-number">01</span>
+            <div>
+              <h2>Четкий вход</h2>
+              <p>Главная страница показывает не случайные блоки, а основные сценарии работы: брендбук, логотип, городские версии, паттерны и материалы для цифры.</p>
+            </div>
+          </article>
+          <article class="principle-card">
+            <span class="principle-number">02</span>
+            <div>
+              <h2>Понятная иерархия</h2>
+              <p>Маршруты построены по системе бренда: мастер-бренд, юбилей, города, знак, цвет, типографика и графика отделены и не спорят друг с другом.</p>
+            </div>
+          </article>
+          <article class="principle-card">
+            <span class="principle-number">03</span>
+            <div>
+              <h2>Рабочий ритм</h2>
+              <p>Пользователь видит сначала смысл раздела, затем карточку файла, формат и размер, после чего скачивает материал без лишнего шага.</p>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section class="surface brand-routes-block">
         <div class="block-head brand-routes-head">
           <div>
-            <p class="eyebrow">Стандарты бренда Ямала</p>
-            <h2>Навигация по разделам брендбука</h2>
+            <p class="eyebrow">Маршруты к материалам</p>
+            <h2>Основные линии бренд-системы</h2>
           </div>
-          <button type="button" class="ghost-button" data-action="search-chip" data-query="мастер бренд">Мастер-бренд</button>
+          <div class="route-actions">
+            <button type="button" class="ghost-button" data-action="search-chip" data-query="мастер бренд">Мастер-бренд</button>
+            <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Логотип</button>
+          </div>
         </div>
         <div id="brand-routes" class="brand-route-grid"></div>
       </section>
+
       <section id="stats-grid" class="stats-grid"></section>
 
       <main class="layout-grid">
