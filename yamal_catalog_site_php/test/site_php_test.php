@@ -128,6 +128,11 @@ function create_catalog_db(string $path): void
         ['mockups-inner', 'mockups', 'folder', 'Макеты', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты', 'Брендбук ЯМАЛ Мастер бренд/Файлы', 3, '', null, '', '2026-03-09T00:00:00Z', 'макеты', 'брендбук ямал мастер бренд файлы макеты', 'макеты внедрение', 1, 0],
         ['bus-folder', 'mockups-inner', 'folder', 'Автобус', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты', 4, '', null, '', '2026-03-09T00:00:00Z', 'автобус', 'брендбук ямал мастер бренд файлы макеты автобус', 'автобус макет пример', 1, 0],
         ['good-example', 'bus-folder', 'file', 'Автобус пример.png', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', 'Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 5, 'png', 4096, 'image/png', '2026-03-09T00:00:00Z', 'автобус пример', 'брендбук ямал мастер бренд файлы макеты автобус автобус пример png', 'автобус пример png', 1, 0],
+        ['examples-root', $rootId, 'folder', 'Примеры внедрения бренда территории', 'Примеры внедрения бренда территории', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'примеры внедрения бренда территории', 'примеры внедрения бренда территории', 'примеры внедрения бренда территории', 1, 0],
+        ['examples-good-root', 'examples-root', 'folder', 'Хорошие примеры', 'Примеры внедрения бренда территории/Хорошие примеры', 'Примеры внедрения бренда территории', 2, '', null, '', '2026-03-09T00:00:00Z', 'хорошие примеры', 'примеры внедрения бренда территории хорошие примеры', 'хорошие примеры кейсы', 1, 0],
+        ['examples-good-file', 'examples-good-root', 'file', 'Автобус на маршруте.png', 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'Примеры внедрения бренда территории/Хорошие примеры', 3, 'png', 4096, 'image/png', '2026-03-09T00:00:00Z', 'автобус на маршруте', 'примеры внедрения бренда территории хорошие примеры автобус на маршруте png', 'автобус на маршруте png хороший пример', 1, 0],
+        ['examples-debate-root', 'examples-root', 'folder', 'Спорные примеры', 'Примеры внедрения бренда территории/Спорные примеры', 'Примеры внедрения бренда территории', 2, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'примеры внедрения бренда территории спорные примеры', 'спорные примеры обсуждение', 1, 0],
+        ['examples-debate-file', 'examples-debate-root', 'file', 'Перегруженный баннер.jpg', 'Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'Примеры внедрения бренда территории/Спорные примеры', 3, 'jpg', 2048, 'image/jpeg', '2026-03-09T00:00:00Z', 'перегруженный баннер', 'примеры внедрения бренда территории спорные примеры перегруженный баннер jpg', 'перегруженный баннер jpg спорный пример', 1, 0],
         ['debate-root', $rootId, 'folder', 'Спорные примеры', 'Спорные примеры', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'спорные примеры', 'спорные примеры обсуждение', 1, 0],
         ['debate-file', 'debate-root', 'file', 'Плохой щит.jpg', 'Спорные примеры/Плохой щит.jpg', 'Спорные примеры', 2, 'jpg', 2048, 'image/jpeg', '2026-03-09T00:00:00Z', 'плохой щит', 'спорные примеры плохой щит jpg', 'плохой щит jpg спорный пример', 1, 0],
         ['file1', 'logo', 'file', 'Логотип основной вариант для печати финальный.pdf', 'Логотип/Логотип основной вариант для печати финальный.pdf', 'Логотип', 2, 'pdf', 2048, 'application/pdf', '2026-03-09T00:00:00Z', 'логотип основной вариант для печати финальный', 'логотип логотип основной вариант для печати финальный pdf', 'логотип основной вариант pdf', 1, 0],
@@ -145,9 +150,13 @@ mkdir($base . '/upload', 0777, true);
 mkdir($base . '/upload/Макеты1', 0777, true);
 mkdir($base . '/upload/Макеты1/Логотип', 0777, true);
 mkdir($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Хорошие примеры', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Спорные примеры', 0777, true);
 mkdir($base . '/upload/Макеты1/Спорные примеры', 0777, true);
 file_put_contents($base . '/upload/Макеты1/Логотип/Логотип основной вариант для печати финальный.pdf', 'pdf');
 file_put_contents($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', 'png');
+file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'png');
+file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'jpg');
 file_put_contents($base . '/upload/Макеты1/Спорные примеры/Плохой щит.jpg', 'jpg');
 
 $detectedRoot = detect_catalog_source_root($base . '/upload');
@@ -159,6 +168,8 @@ assert_true($builtRows[0]['id'] === root_id(), 'root id is stable');
 $builtRelativePaths = array_column($builtRows, 'relative_path');
 assert_true(in_array('Логотип/Логотип основной вариант для печати финальный.pdf', $builtRelativePaths, true), 'scan includes logo pdf path');
 assert_true(in_array('Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', $builtRelativePaths, true), 'scan includes good example image path');
+assert_true(in_array('Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', $builtRelativePaths, true), 'scan includes dedicated good example path');
+assert_true(in_array('Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', $builtRelativePaths, true), 'scan includes dedicated debate example path');
 assert_true(str_contains(implode(' ', array_column($builtRows, 'search_text')), 'логотип'), 'search text includes normalized file words');
 
 if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
@@ -186,6 +197,8 @@ assert_true(count($bootstrap['sections']) >= 2, 'root sections exist');
 assert_true($bootstrap['setupMessage'] === '', 'setup message empty when db exists');
 assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
+assert_true(($bootstrap['examples']['good'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'dedicated good examples are prioritized');
+assert_true(($bootstrap['examples']['debate'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'dedicated debate examples are prioritized');
 
 $folder = $service->getFolder('logo', 0);
 assert_true($folder !== null, 'logo folder exists');

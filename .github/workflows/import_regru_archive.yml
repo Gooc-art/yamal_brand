@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       archive_url:
-        description: Direct URL to zip/tar/tar.gz archive with Макеты1
+        description: Direct URL to zip/tar/tar.gz/tar.xz archive with Макеты1
         required: true
         type: string
 
@@ -26,7 +26,7 @@ jobs:
       - name: Install import dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y sshpass rsync unzip
+          sudo apt-get install -y sshpass rsync unzip xz-utils
 
       - name: Import archive to REG.RU hosting
         run: |

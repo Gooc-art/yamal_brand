@@ -683,12 +683,32 @@ function display_section_label(string $value): string
     return root_menu_labels()[$value] ?? cleanup_folder_label($value);
 }
 
+function dedicated_examples_roots(): array
+{
+    return [
+        'примеры внедрения бренда территории',
+        'примеры внедрения бренда',
+    ];
+}
+
+function good_example_keywords(): array
+{
+    return ['хорошие примеры', 'хороший пример', 'good'];
+}
+
+function debate_example_keywords(): array
+{
+    return ['спорные примеры', 'спорный пример', 'антипример', 'антипримеры', 'ошибка', 'неправильно', 'обсуждение'];
+}
+
 function example_skip_segments(): array
 {
     return [
         'макеты1', 'файлы', 'макеты', 'логотипы', 'логотип', 'основные логотипы',
         'анимированный логотип', 'анимированные логотипы', 'юбилейные логотипы',
         'юбилейный логотип', '1 cmyk для печати', '2 color', '3 black', '4 white',
+        'примеры внедрения бренда территории', 'примеры внедрения бренда',
+        'хорошие примеры', 'спорные примеры', 'антипримеры', 'антипример',
         'color', 'black', 'white', 'png', 'jpg', 'jpeg', 'webp',
     ];
 }
@@ -1482,6 +1502,47 @@ class SiteCatalogService
         return $matches;
     }
 
+    private function examplesFromDedicatedFolder(array $items, string $group, int $limit): array
+    {
+        $scoped = array_values(array_filter(
+            $items,
+            static fn(array $item): bool => normalized_contains_any((string) ($item['relative_path'] ?? ''), dedicated_examples_roots())
+        ));
+        if ($scoped === []) {
+            return [];
+        }
+
+        $matches = [];
+        $fallback = [];
+        foreach ($scoped as $item) {
+            $path = (string) ($item['relative_path'] ?? '');
+            $isDebate = normalized_contains_any($path, debate_example_keywords());
+            $isGood = normalized_contains_any($path, good_example_keywords());
+
+            if ($group === 'debate') {
+                if ($isDebate) {
+                    $matches[] = $item;
+                }
+                continue;
+            }
+
+            if ($isDebate) {
+                continue;
+            }
+            if ($isGood) {
+                $matches[] = $item;
+            } else {
+                $fallback[] = $item;
+            }
+        }
+
+        if ($group === 'good' && $fallback !== []) {
+            $matches = array_merge($matches, $fallback);
+        }
+
+        return array_slice($matches, 0, $limit);
+    }
+
     private function fallbackGoodExamples(array $items, int $limit): array
     {
         $scored = [];
@@ -1540,12 +1601,18 @@ class SiteCatalogService
     public function getHeroExamples(): array
     {
         $items = $this->imageCandidates();
-        $good = $this->explicitExamples($items, ['хорошие примеры', 'хороший пример', 'good'], 8);
+        $good = $this->examplesFromDedicatedFolder($items, 'good', 8);
+        if ($good === []) {
+            $good = $this->explicitExamples($items, good_example_keywords(), 8);
+        }
         if ($good === []) {
             $good = $this->fallbackGoodExamples($items, 8);
         }
 
-        $debate = $this->explicitExamples($items, ['спорные примеры', 'спорный пример', 'антипример', 'ошибка', 'неправильно', 'обсуждение'], 8);
+        $debate = $this->examplesFromDedicatedFolder($items, 'debate', 8);
+        if ($debate === []) {
+            $debate = $this->explicitExamples($items, debate_example_keywords(), 8);
+        }
 
         return [
             'good' => array_map(fn(array $item): array => $this->examplePayload($item, 'good'), $good),

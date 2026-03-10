@@ -52,6 +52,9 @@ case "${archive_path,,}" in
   *.tar.gz|*.tgz)
     tar -xzf "${archive_path}" -C "${WORK_DIR}/extract"
     ;;
+  *.tar.xz|*.txz)
+    tar -xJf "${archive_path}" -C "${WORK_DIR}/extract"
+    ;;
   *.tar)
     tar -xf "${archive_path}" -C "${WORK_DIR}/extract"
     ;;
@@ -95,4 +98,3 @@ echo "[import] forcing catalog rebuild on next request"
 echo "[import] warming up public site"
 bootstrap_json="$(curl -fsSL --retry 3 --retry-delay 2 "${REMOTE_SITE_URL%/}/api.php?action=bootstrap")"
 echo "${bootstrap_json}"
-

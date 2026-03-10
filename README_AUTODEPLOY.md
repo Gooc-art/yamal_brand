@@ -89,7 +89,7 @@ Push to `main` or run workflow manually:
 
 For the public REG.RU website there is a separate archive-import workflow:
 - GitHub -> `Actions` -> `Import REG.RU Catalog Archive` -> `Run workflow`
-- pass a direct `zip` or `tar.gz` URL with the `Макеты1` files
+- pass a direct `zip`, `tar`, `tar.gz`, or `tar.xz` URL with the `Макеты1` files
 - the workflow downloads the archive, backs up current `data/files`, uploads new files to `брендямал.рф`, deletes `max_catalog.db` and triggers automatic rebuild
 
 For PHP code updates of the public REG.RU catalog site there is a separate workflow:
