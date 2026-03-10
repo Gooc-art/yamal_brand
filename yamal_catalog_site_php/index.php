@@ -27,6 +27,7 @@ $config = site_config();
             <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
           </div>
+          <div id="hero-stats" class="hero-stats"></div>
         </div>
 
         <div class="hero-column hero-column-side">
@@ -76,11 +77,7 @@ $config = site_config();
         <div class="block-head brand-routes-head">
           <div>
             <p class="eyebrow">Разделы</p>
-            <h2>Маршруты</h2>
-          </div>
-          <div class="route-actions">
-            <button type="button" class="ghost-button" data-action="search-chip" data-query="мастер бренд">Мастер-бренд</button>
-            <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Логотип</button>
+            <h2>Главное меню</h2>
           </div>
         </div>
         <div id="brand-routes" class="brand-route-grid"></div>
@@ -96,8 +93,6 @@ $config = site_config();
         </div>
         <div id="featured-shelves" class="feature-grid"></div>
       </section>
-
-      <section id="stats-grid" class="stats-grid"></section>
 
       <section id="workspace-shell" class="workspace-shell">
         <div class="surface workspace-header">

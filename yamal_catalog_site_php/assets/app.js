@@ -21,10 +21,10 @@
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
+    heroStats: document.querySelector('#hero-stats'),
     brandRoutes: document.querySelector('#brand-routes'),
     featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
-    statsGrid: document.querySelector('#stats-grid'),
     topSearches: document.querySelector('#top-searches'),
     contentMode: document.querySelector('#content-mode'),
     contentTitle: document.querySelector('#content-title'),
@@ -260,76 +260,60 @@
     const sections = bootstrap.sections || [];
     const blueprints = [
       {
-        number: '01',
+        mark: '✳',
         label: 'Мастер-бренд',
         sectionName: 'Брендбук ЯМАЛ Мастер бренд',
         query: 'мастер бренд',
-        badge: 'Брендбук',
         tone: 'tone-master',
-        text: 'Главный брендбук и правила.',
       },
       {
-        number: '02',
+        mark: '100',
         label: 'ЯМАЛ 100',
         sectionName: 'Брендбук ЯМАЛ 100',
         query: 'ямал 100',
-        badge: 'Брендбук',
         tone: 'tone-anniversary',
-        text: 'Юбилейная линия.',
       },
       {
-        number: '03',
+        mark: '🏙',
         label: 'Городские версии',
         sectionName: 'Логотипы городов',
         query: 'салехард',
-        badge: 'Иерархия',
         tone: 'tone-city',
-        text: 'Салехард, Новый Уренгой, Ноябрьск.',
       },
       {
-        number: '04',
+        mark: 'Я',
         label: 'Логотип',
         sectionName: 'Логотип',
         query: 'логотип',
-        badge: 'Стандарт',
         tone: 'tone-logo',
-        text: 'Основные версии и форматы.',
       },
       {
-        number: '05',
+        mark: '◉',
         label: 'Фирменный знак',
         sectionName: 'Фирменный знак',
         query: 'фирменный знак',
-        badge: 'Стандарт',
         tone: 'tone-mark',
-        text: 'Знак и комбинированные версии.',
       },
        {
-        number: '06',
+        mark: '▦',
         label: 'Цвет и паттерны',
         sectionName: 'Паттерны',
         query: 'паттерн',
-        badge: 'Система',
         tone: 'tone-pattern',
-        text: 'Цвет и паттерны.',
       },
       {
-        number: '07',
+        mark: 'Aa',
         label: 'Типографика',
         sectionName: 'Шрифт',
         query: 'шрифт',
-        badge: 'Система',
         tone: 'tone-type',
-        text: 'Шрифтовая система.',
       },
       {
-        number: '08',
+        mark: 'SVG',
         label: 'Графические элементы',
         sectionName: 'Иллюстрации мастер-бренда SVG-элементы',
         query: 'иллюстрации svg',
-        badge: 'Графика',
         tone: 'tone-graphics',
-        text: 'SVG и графические элементы.',
       },
     ];
 
@@ -340,10 +324,9 @@
       const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
       return `
         <button type="button" class="brand-route-card ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
-          <span class="brand-route-number">${escapeHtml(item.number)}</span>
-          <span class="brand-route-badge">${escapeHtml(item.badge)}</span>
+          <span class="brand-route-icon" aria-hidden="true">${escapeHtml(item.mark)}</span>
           <strong>${escapeHtml(item.label)}</strong>
-          <span class="brand-route-text">${escapeHtml(item.text)}</span>
+          <span class="brand-route-arrow" aria-hidden="true">↗</span>
         </button>
       `;
     }).join('');
@@ -513,22 +496,18 @@
     await Promise.allSettled(tasks);
   }
 
-  function renderStats(stats, sections) {
+  function renderHeroStats(stats, sections) {
+    if (!els.heroStats) return;
     const rootSections = Array.isArray(sections) ? sections.length : 0;
-    const brandbooks = (sections || []).filter((item) => /брендбук/i.test(String(item && item.name || ''))).length;
     const cards = [
-      ['Материалы', stats.totalAssets, '01', 'tone-accent'],
-      ['Файлы', stats.files, '02', 'tone-teal'],
-      ['Разделы', rootSections, '03', 'tone-slate'],
-      ['Брендбуки', brandbooks, '04', 'tone-soft'],
+      ['Файлов', formatNumber(stats.files)],
+      ['Папок', formatNumber(stats.folders)],
+      ['Входов', formatNumber(rootSections)],
     ];
-    els.statsGrid.innerHTML = cards.map(([label, value, icon, tone]) => `
-      <article class="surface stat-card ${tone}">
-        <div class="stat-top">
-          <p class="stat-label">${escapeHtml(label)}</p>
-          <span class="stat-icon">${escapeHtml(icon)}</span>
-        </div>
-        <p class="stat-value">${escapeHtml(formatNumber(value))}</p>
+    els.heroStats.innerHTML = cards.map(([label, value]) => `
+      <article class="hero-stat">
+        <strong>${escapeHtml(value)}</strong>
+        <span>${escapeHtml(label)}</span>
       </article>
     `).join('');
   }
@@ -682,7 +661,7 @@
     renderBrandRoutes(payload);
     state.featurePanels = buildFeaturePanels(payload);
     renderFeaturePanels(state.featurePanels);
-    renderStats(payload.stats || {}, payload.sections || []);
+    renderHeroStats(payload.stats || {}, payload.sections || []);
     renderTopSearches(payload.topSearches || []);
     void hydrateFeaturePanels();
   }

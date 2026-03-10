@@ -104,7 +104,7 @@ img {
 .page-shell.catalog-mode .hero,
 .page-shell.catalog-mode .brand-routes-block,
 .page-shell.catalog-mode .showcase-block,
-.page-shell.catalog-mode .stats-grid {
+.page-shell.catalog-mode .hero-stats {
   display: none;
 }
 
@@ -146,7 +146,6 @@ img {
 }
 
 .hero,
-.stat-card,
 .content-block,
 .result-card,
 .detail-card,
@@ -282,7 +281,6 @@ h3,
 .search-meta,
 .panel-empty span,
 .search-label,
-.brand-route-text,
 .brand-lockup-subtitle,
 .dossier-item span {
   color: var(--muted);
@@ -296,7 +294,6 @@ h3,
 }
 
 .hero-actions,
-.route-actions,
 .toolbar,
 .item-actions,
 .pagination,
@@ -358,6 +355,35 @@ h3,
   font-weight: 700;
 }
 
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-stat {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.hero-stat strong {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 0.96;
+}
+
+.hero-stat span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .chip {
   padding: 8px 12px;
   border: 1px solid rgba(180, 36, 61, 0.14);
@@ -381,7 +407,6 @@ h3,
 .setup-banner,
 .brand-routes-block,
 .content-block,
-.stat-card,
 .detail-card,
 .result-card,
 .feature-panel {
@@ -403,8 +428,7 @@ h3,
 .hero-dossier::before,
 .search-panel::before,
 .brand-routes-block::before,
-.content-block::before,
-.stat-card::before {
+.content-block::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -473,9 +497,7 @@ h3,
 
 .search-label,
 .search-meta,
-.stat-label,
-.brand-route-number,
-.brand-route-badge,
+.brand-route-icon,
 .card-copy span,
 .meta-pill,
 .meta-row,
@@ -569,10 +591,6 @@ input[type="search"]:focus {
   align-items: end;
   gap: 16px;
   margin-bottom: 18px;
-}
-
-.route-actions {
-  justify-content: flex-end;
 }
 
 .showcase-head {
@@ -751,7 +769,7 @@ input[type="search"]:focus {
 
 .brand-route-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -760,10 +778,11 @@ input[type="search"]:focus {
   --route-soft: rgba(180, 36, 61, 0.08);
   position: relative;
   display: grid;
-  align-content: start;
-  gap: 10px;
-  min-height: 186px;
-  padding: 20px;
+  grid-template-rows: auto 1fr auto;
+  align-content: stretch;
+  gap: 14px;
+  min-height: 176px;
+  padding: 22px;
   text-align: left;
   border: 1px solid rgba(24, 42, 49, 0.08);
   border-radius: var(--radius-lg);
@@ -779,32 +798,30 @@ input[type="search"]:focus {
   background: var(--route-accent);
 }
 
-.brand-route-number {
-  color: var(--route-accent);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.brand-route-badge {
+.brand-route-icon {
   display: inline-flex;
-  width: fit-content;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(24, 42, 49, 0.06);
-  color: var(--muted);
-  font-size: 11px;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--route-accent);
+  font-size: 18px;
   font-weight: 700;
-  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(24, 42, 49, 0.06);
 }
 
 .brand-route-card strong {
-  font-size: 22px;
-  line-height: 1.08;
+  max-width: 11ch;
+  font-size: 28px;
+  line-height: 0.98;
 }
 
-.brand-route-text {
-  line-height: 1.5;
+.brand-route-arrow {
+  justify-self: end;
+  color: var(--route-accent);
+  font-size: 18px;
 }
 
 .brand-route-card.tone-master {
@@ -852,13 +869,6 @@ input[type="search"]:focus {
   --route-soft: rgba(75, 93, 106, 0.08);
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 20px;
-}
-
 .workspace-shell {
   margin-top: 20px;
   display: grid;
@@ -894,55 +904,6 @@ input[type="search"]:focus {
 .workspace-shell.collapsed .workspace-header {
   border-color: rgba(180, 36, 61, 0.16);
   background: linear-gradient(180deg, rgba(255, 247, 248, 0.96), rgba(248, 239, 241, 0.96));
-}
-
-.stat-card {
-  display: grid;
-  gap: 10px;
-  min-height: 138px;
-  padding: 20px;
-}
-
-.stat-card::before {
-  background: radial-gradient(circle at right bottom, rgba(24, 42, 49, 0.08), transparent 40%);
-}
-
-.stat-card.tone-accent::before {
-  background: radial-gradient(circle at right bottom, rgba(180, 36, 61, 0.18), transparent 40%);
-}
-
-.stat-card.tone-teal::before {
-  background: radial-gradient(circle at right bottom, rgba(29, 103, 112, 0.18), transparent 40%);
-}
-
-.stat-card.tone-slate::before {
-  background: radial-gradient(circle at right bottom, rgba(24, 42, 49, 0.12), transparent 40%);
-}
-
-.stat-card.tone-soft::before {
-  background: radial-gradient(circle at right bottom, rgba(158, 111, 45, 0.16), transparent 40%);
-}
-
-.stat-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.stat-label,
-.stat-icon {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.stat-value {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(42px, 4vw, 58px);
-  line-height: 0.92;
-  letter-spacing: -0.04em;
 }
 
 .workspace-composition {
@@ -1266,9 +1227,9 @@ input[type="search"]:focus {
 }
 
 @media (max-width: 1340px) {
+  .hero-stats,
   .brand-route-grid,
   .feature-grid,
-  .stats-grid,
   .card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1311,7 +1272,7 @@ input[type="search"]:focus {
     transform: none;
   }
 
-  .stats-grid,
+  .hero-stats,
   .brand-route-grid,
   .feature-grid,
   .card-grid {
@@ -1341,7 +1302,6 @@ input[type="search"]:focus {
   .brand-routes-block,
   .showcase-block,
   .content-block,
-  .stat-card,
   .workspace-header {
     padding: 20px;
   }
@@ -1373,9 +1333,9 @@ input[type="search"]:focus {
     font-size: 16px;
   }
 
+  .hero-stats,
   .brand-route-grid,
   .feature-grid,
-  .stats-grid,
   .card-grid {
     grid-template-columns: 1fr;
   }
@@ -1396,7 +1356,6 @@ input[type="search"]:focus {
     align-items: stretch;
   }
 
-  .route-actions,
   .toolbar,
   .hero-actions,
   .pagination {

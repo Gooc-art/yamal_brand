@@ -15,6 +15,7 @@ $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-ribbon'), 'index contains hero ribbon block');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Официальная библиотека фирменного стиля'), 'index contains official library ribbon text');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'visually-hidden'), 'index keeps hidden h1 for semantics');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-stats'), 'index contains hero stats scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'dossier-grid'), 'index contains dossier grid');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'featured-shelves'), 'index contains featured shelves scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
@@ -38,8 +39,9 @@ assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-summ
 $stylesTemplate = file_get_contents(dirname(__DIR__) . '/assets/styles.css');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-lockup'), 'styles contain brand lockup classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-grid'), 'styles contain brand route classes');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-number'), 'styles contain brand route numbering');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-icon'), 'styles contain simplified route icon class');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ribbon'), 'styles contain hero ribbon classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-stats'), 'styles contain hero stats classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.visually-hidden'), 'styles contain visually hidden utility');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.dossier-grid'), 'styles contain dossier grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
@@ -57,7 +59,8 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-b
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderFeaturePanels'), 'frontend contains featured shelf renderer');
-assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-number'), 'frontend renders route numbering');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'brand-route-icon'), 'frontend renders simplified route icons');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroStats'), 'frontend renders hero stats');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'WORKSPACE_STORAGE_KEY'), 'frontend persists workspace collapse state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CATALOG_MODE_STORAGE_KEY'), 'frontend persists catalog mode state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'preview-search'), 'frontend loads preview search data');
@@ -67,6 +70,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'comp
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildItemPills'), 'frontend builds compact meta pills');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'siteTitle:'), 'frontend no longer tracks visible hero title');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-helper'), 'frontend removed route helper duplication');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-number'), 'frontend removed route numbering');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'result-path'), 'frontend removed full path line from result cards');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderFavorites'), 'frontend removed left rail favorites renderer');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderHeroBrief'), 'frontend removed old hero summary renderer');
