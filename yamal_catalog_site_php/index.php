@@ -19,42 +19,23 @@ $config = site_config();
             <img class="brand-logo" src="assets/brand-logo-main.svg" alt="Логотип Бренд Ямал" />
             <div class="brand-lockup-copy">
               <span class="brand-lockup-tag">Мастер-бренд Ямал</span>
-              <span class="brand-lockup-subtitle">Официальный логотип и знак встроены прямо из каталога бренд-материалов.</span>
+              <span class="brand-lockup-subtitle">Основной логотип и постоянный элемент фирменного стиля Ямала.</span>
             </div>
           </div>
-          <p class="eyebrow">Открытый бренд-каталог</p>
+          <p class="eyebrow">Руководство по использованию фирменного стиля</p>
           <h1 id="site-title"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
           <p class="hero-copy">
-            Быстрый доступ к логотипам, брендбукам, паттернам, SVG и готовым материалам Ямала.
-            Поиск понимает близкие совпадения, а карточки сразу ведут к скачиванию.
+            Каталог бренд-материалов Ямала: логотип, фирменный знак, брендбуки, городские версии,
+            паттерны, шрифты и цифровые материалы. Все собрано в понятную структуру и готово к скачиванию.
           </p>
           <div class="hero-actions">
-            <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Брендбуки</button>
-            <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="логотип">Логотипы</button>
-            <a class="link-button" href="assets/brand-logo-main.svg" download>SVG логотип</a>
+            <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Открыть брендбуки</button>
+            <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="логотип">Перейти к логотипам</button>
+            <a class="link-button" href="assets/brand-logo-main.svg" download>Скачать SVG логотип</a>
           </div>
-          <div class="hero-badges">
-            <span class="hero-badge">Публичный доступ</span>
-            <span class="hero-badge">Умный поиск</span>
-            <span class="hero-badge">Прямые скачивания</span>
-            <span class="hero-badge">PHP + SQLite</span>
-          </div>
-          <div id="hero-brief" class="hero-brief">
-            <article class="brief-card">
-              <p class="brief-label">Статус</p>
-              <strong>Подключаю каталог…</strong>
-              <span>Проверяю разделы и доступные файлы.</span>
-            </article>
-            <article class="brief-card">
-              <p class="brief-label">Маршруты</p>
-              <strong>Собираю меню</strong>
-              <span>Скоро появятся главные разделы и быстрые переходы.</span>
-            </article>
-            <article class="brief-card">
-              <p class="brief-label">Поиск</p>
-              <strong>Готовлю подсказки</strong>
-              <span>Популярные запросы и быстрый старт отрисуются после загрузки.</span>
-            </article>
+          <div class="brand-note">
+            <strong>Принцип из брендбука:</strong>
+            <span>постоянные элементы фирменного стиля используются без произвольных изменений и служат опорой для всех носителей.</span>
           </div>
         </div>
         <div class="hero-side">
@@ -75,66 +56,53 @@ $config = site_config();
               <div id="top-searches" class="chip-row"></div>
             </div>
           </form>
-          <div class="hero-note">
-            <div class="hero-note-mark" aria-hidden="true">
-              <img src="assets/brand-mark.svg" alt="" />
-            </div>
-            <p class="eyebrow">Как пользоваться</p>
-            <div class="hero-steps">
-              <p><strong>1.</strong> Выбери раздел или запусти поиск по названию файла.</p>
-              <p><strong>2.</strong> Открой карточку, чтобы увидеть формат, путь и размер.</p>
-              <p><strong>3.</strong> Скачай нужный макет напрямую, без лишних переходов.</p>
-            </div>
+          <div class="hero-summary">
+            <p class="eyebrow">Основа брендбука</p>
+            <ul class="hero-summary-list">
+              <li>Логотип, фирменный знак и правила использования.</li>
+              <li>Мастер-бренд, юбилейная линия и брендбуки городов.</li>
+              <li>Паттерны, шрифты, SVG и цифровые материалы.</li>
+            </ul>
           </div>
         </div>
       </header>
 
       <section id="setup-banner" class="surface setup-banner"></section>
-      <section id="stats-grid" class="stats-grid"></section>
-      <section class="brand-stage">
-        <section class="surface brand-manifesto">
-          <div class="brand-manifesto-copy">
-            <p class="eyebrow">Дизайн-система Ямала</p>
-            <h2>Сайт теперь ведет не только по папкам, но и по сценариям бренда.</h2>
-            <p class="brand-manifesto-text">
-              Мастер-бренд, юбилейная линия, городские идентичности, логотипы, SVG-элементы и паттерны
-              собраны как отдельные входы. Это делает каталог ближе к бренд-платформе, а не к файловому архиву.
-            </p>
-            <div class="hero-actions">
-              <button type="button" class="accent-button" data-action="search-chip" data-query="мастер бренд">Мастер-бренд</button>
-              <button type="button" class="ghost-button brand-action" data-action="search-chip" data-query="салехард">Городские версии</button>
-            </div>
+      <section class="surface brand-principles">
+        <article class="principle-card">
+          <span class="principle-number">01</span>
+          <div>
+            <h2>Единая система</h2>
+            <p>Логотип, знак, цвет, шрифт и графические элементы работают как одна система, а не как отдельные файлы.</p>
           </div>
-          <div class="brand-manifesto-art" aria-hidden="true">
-            <img src="assets/brand-mark.svg" alt="" />
+        </article>
+        <article class="principle-card">
+          <span class="principle-number">02</span>
+          <div>
+            <h2>Понятная иерархия</h2>
+            <p>Мастер-бренд, юбилейная линия и региональные версии разделены, чтобы не смешивать разные уровни идентичности.</p>
           </div>
-          <div id="brand-metrics" class="brand-metric-row">
-            <article class="brand-metric">
-              <span>Брендбуки</span>
-              <strong>Считаю…</strong>
-            </article>
-            <article class="brand-metric">
-              <span>Города</span>
-              <strong>Считаю…</strong>
-            </article>
-            <article class="brand-metric">
-              <span>SVG</span>
-              <strong>Считаю…</strong>
-            </article>
+        </article>
+        <article class="principle-card">
+          <span class="principle-number">03</span>
+          <div>
+            <h2>Рабочий каталог</h2>
+            <p>Сначала понятный путь к материалу, потом скачивание. Без лишних лозунгов, случайных визуальных жестов и шумных блоков.</p>
           </div>
-        </section>
-
-        <section class="surface brand-routes-block">
-          <div class="block-head brand-routes-head">
-            <div>
-              <p class="eyebrow">Бренд-маршруты</p>
-              <h2>Быстрые входы в материалы</h2>
-            </div>
-            <button type="button" class="ghost-button" data-action="search-chip" data-query="svg">Открыть SVG</button>
-          </div>
-          <div id="brand-routes" class="brand-route-grid"></div>
-        </section>
+        </article>
       </section>
+
+      <section class="surface brand-routes-block">
+        <div class="block-head brand-routes-head">
+          <div>
+            <p class="eyebrow">Стандарты бренда Ямала</p>
+            <h2>Навигация по разделам брендбука</h2>
+          </div>
+          <button type="button" class="ghost-button" data-action="search-chip" data-query="мастер бренд">Мастер-бренд</button>
+        </div>
+        <div id="brand-routes" class="brand-route-grid"></div>
+      </section>
+      <section id="stats-grid" class="stats-grid"></section>
 
       <main class="layout-grid">
         <aside class="surface sidebar-block">

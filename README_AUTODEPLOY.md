@@ -95,6 +95,7 @@ For the public REG.RU website there is a separate archive-import workflow:
 For PHP code updates of the public REG.RU catalog site there is a separate workflow:
 - GitHub -> `Actions` -> `Deploy REG.RU PHP Catalog Site` -> `Run workflow`
 - it uploads `index.php`, `api.php`, `download.php`, `assets/`, `src/` and keeps `data/` untouched
+- this workflow is used for visual refinements too, including the current restrained white layout aligned with the Yamal brandbook structure
 
 To inspect the real catalog structure on the production runner:
 - GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.

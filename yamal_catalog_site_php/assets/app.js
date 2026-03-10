@@ -10,8 +10,6 @@
 
   const els = {
     siteTitle: document.querySelector('#site-title'),
-    heroBrief: document.querySelector('#hero-brief'),
-    brandMetrics: document.querySelector('#brand-metrics'),
     brandRoutes: document.querySelector('#brand-routes'),
     setupBanner: document.querySelector('#setup-banner'),
     statsGrid: document.querySelector('#stats-grid'),
@@ -65,13 +63,13 @@
   function setLoading(title, hint) {
     els.contentMode.textContent = 'Каталог';
     els.contentTitle.textContent = title;
-    els.contentHint.textContent = hint || 'Загрузка...';
+    els.contentHint.textContent = hint || 'Загрузка раздела.';
     els.contentItems.innerHTML = `
       <div class="empty-state loading-state">
         <div class="loading-mark" aria-hidden="true"></div>
         <div>
           <h3>Загрузка</h3>
-          <p class="detail-empty">Подтягиваю данные раздела и готовлю карточки.</p>
+          <p class="detail-empty">Содержимое раздела скоро появится.</p>
         </div>
       </div>
     `;
@@ -94,123 +92,93 @@
     `;
   }
 
-  function renderHeroBrief(bootstrap) {
-    const stats = bootstrap.stats || {};
-    const sections = bootstrap.sections || [];
-    const topSearches = (bootstrap.topSearches || []).map((item) => item.query).filter(Boolean);
-    const cards = [
-      {
-        label: 'Статус',
-        title: bootstrap.setupMessage ? 'Каталог собирается' : 'Каталог готов',
-        text: bootstrap.setupMessage || `${formatNumber(stats.files)} файлов доступны для скачивания прямо сейчас.`,
-      },
-      {
-        label: 'Маршруты',
-        title: `${formatNumber(sections.length)} стартовых разделов`,
-        text: 'Логотипы, брендбуки, паттерны, города и сувенирная продукция собраны в одном меню.',
-      },
-      {
-        label: 'Поиск',
-        title: topSearches.length ? topSearches.slice(0, 2).join(' • ') : 'Умный поиск',
-        text: topSearches.length
-          ? 'Популярные запросы вынесены в быстрый доступ под поисковой строкой.'
-          : 'Поиск работает по названиям, путям и близким совпадениям.',
-      },
-    ];
-
-    els.heroBrief.innerHTML = cards.map((card) => `
-      <article class="brief-card">
-        <p class="brief-label">${escapeHtml(card.label)}</p>
-        <strong>${escapeHtml(card.title)}</strong>
-        <span>${escapeHtml(card.text)}</span>
-      </article>
-    `).join('');
-  }
-
   function findSectionByName(sections, sectionName) {
     return (sections || []).find((item) => item && item.name === sectionName) || null;
-  }
-
-  function renderBrandMetrics(bootstrap) {
-    const sections = bootstrap.sections || [];
-    const brandbookCount = sections.filter((item) => item.name && item.name.includes('Брендбук')).length;
-    const cityCount = sections.filter((item) => item.name && (
-      item.name.includes('Салехард') ||
-      item.name.includes('Новый Уренгой') ||
-      item.name.includes('Ноябрьск')
-    )).length;
-    const svgCount = Math.max(4, Math.round(Number(bootstrap.stats?.files || 0) * 0.15));
-    const cards = [
-      ['Брендбуки', `${formatNumber(brandbookCount)}`, 'Мастер-бренд, ЯМАЛ 100 и городские линии'],
-      ['Города', `${formatNumber(cityCount)}`, 'Отдельные идентичности для ключевых городов'],
-      ['SVG', `${formatNumber(svgCount)}+`, 'Векторные логотипы, знаки и элементы'],
-    ];
-
-    els.brandMetrics.innerHTML = cards.map(([label, value, text]) => `
-      <article class="brand-metric">
-        <span>${escapeHtml(label)}</span>
-        <strong>${escapeHtml(value)}</strong>
-        <small>${escapeHtml(text)}</small>
-      </article>
-    `).join('');
   }
 
   function renderBrandRoutes(bootstrap) {
     const sections = bootstrap.sections || [];
     const blueprints = [
       {
+        number: '02',
         label: 'Мастер-бренд',
         sectionName: 'Брендбук ЯМАЛ Мастер бренд',
         query: 'мастер бренд',
-        badge: 'Основа',
+        badge: 'Брендбук',
         tone: 'tone-master',
-        icon: 'Я',
-        text: 'Основная система логотипа, фирменный знак, правила и базовые носители.',
+        text: 'Полное руководство по системе бренда, носителям и примерам применения.',
       },
       {
+        number: '02',
         label: 'ЯМАЛ 100',
         sectionName: 'Брендбук ЯМАЛ 100',
         query: 'ямал 100',
-        badge: 'Юбилей',
+        badge: 'Брендбук',
         tone: 'tone-anniversary',
-        icon: '100',
         text: 'Юбилейная линия с отдельным знаком и праздничными логотипами.',
       },
       {
-        label: 'Логотипы',
-        sectionName: 'Логотип',
-        query: 'логотип svg',
-        badge: 'База',
-        tone: 'tone-logo',
-        icon: 'L',
-        text: 'Быстрый вход в основные логотипы, охранные поля и готовые форматы.',
-      },
-      {
+        number: '03',
         label: 'Городские версии',
         sectionName: 'Логотипы городов',
         query: 'салехард',
-        badge: 'Города',
+        badge: 'Иерархия',
         tone: 'tone-city',
-        icon: '3',
-        text: 'Салехард, Новый Уренгой и Ноябрьск как отдельные бренд-маршруты.',
+        text: 'Отдельные линии для Салехарда, Нового Уренгоя и Ноябрьска.',
       },
       {
-        label: 'Паттерны и SVG',
+        number: '04',
+        label: 'Логотип',
+        sectionName: 'Логотип',
+        query: 'логотип',
+        badge: 'Стандарт',
+        tone: 'tone-logo',
+        text: 'Основной логотип, охранные поля и базовые форматы использования.',
+      },
+      {
+        number: '04',
+        label: 'Фирменный знак',
+        sectionName: 'Фирменный знак',
+        query: 'фирменный знак',
+        badge: 'Стандарт',
+        tone: 'tone-mark',
+        text: 'Знак Ямала и связанные варианты для самостоятельного применения.',
+      },
+      {
+        number: '05',
+        label: 'Цвет и паттерны',
         sectionName: 'Паттерны',
-        query: 'паттерн svg',
-        badge: 'Графика',
+        query: 'паттерн',
+        badge: 'Система',
         tone: 'tone-pattern',
-        icon: 'SVG',
-        text: 'Декоративные элементы, паттерны и графические поверхности для интерфейсов и носителей.',
+        text: 'Цветовые сочетания, паттерны и графические поверхности бренда.',
       },
       {
-        label: 'Брендбук Салехард',
-        sectionName: 'Брендбук Салехард',
-        query: 'салехард брендбук',
-        badge: 'Фокус',
-        tone: 'tone-salekhard',
-        icon: 'СХ',
-        text: 'Отдельный сценарий для городской версии бренда с собственным логотипом.',
+        number: '06',
+        label: 'Типографика',
+        sectionName: 'Шрифт',
+        query: 'шрифт',
+        badge: 'Система',
+        tone: 'tone-type',
+        text: 'Шрифтовые материалы и связанные элементы набора.',
+      },
+      {
+        number: '07',
+        label: 'Графические элементы',
+        sectionName: 'Иллюстрации мастер-бренда SVG-элементы',
+        query: 'иллюстрации svg',
+        badge: 'Графика',
+        tone: 'tone-graphics',
+        text: 'SVG, иллюстрации и дополнительные фирменные элементы.',
+      },
+      {
+        number: '08',
+        label: 'Цифровые материалы',
+        sectionName: 'Цифровые материалы',
+        query: 'цифровые материалы',
+        badge: 'Цифра',
+        tone: 'tone-digital',
+        text: 'Материалы для экранных форматов, презентаций и цифровых носителей.',
       },
     ];
 
@@ -219,11 +187,11 @@
       const action = section ? 'open-folder' : 'search-chip';
       const target = section ? section.id : item.query;
       const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
-      const helper = section ? section.relativePath || section.name : `Поиск: ${item.query}`;
+      const helper = section ? section.relativePath || section.name : `Запрос: ${item.query}`;
       return `
         <button type="button" class="brand-route-card ${escapeHtml(item.tone)}" data-action="${action}" ${attr}>
+          <span class="brand-route-number">${escapeHtml(item.number)}</span>
           <span class="brand-route-badge">${escapeHtml(item.badge)}</span>
-          <span class="brand-route-icon">${escapeHtml(item.icon)}</span>
           <strong>${escapeHtml(item.label)}</strong>
           <span class="brand-route-text">${escapeHtml(item.text)}</span>
           <span class="brand-route-helper">${escapeHtml(helper)}</span>
@@ -232,13 +200,14 @@
     }).join('');
   }
 
-  function renderStats(stats) {
+  function renderStats(stats, sections) {
+    const rootSections = Array.isArray(sections) ? sections.length : 0;
+    const brandbooks = (sections || []).filter((item) => /брендбук/i.test(String(item && item.name || ''))).length;
     const cards = [
-      ['Активы', stats.totalAssets, 'Все файлы и папки каталога', '01', 'tone-accent'],
+      ['Материалы', stats.totalAssets, 'Все файлы и папки каталога', '01', 'tone-accent'],
       ['Файлы', stats.files, 'Готовые материалы для скачивания', '02', 'tone-teal'],
-      ['Папки', stats.folders, 'Разделы и вложенные маршруты', '03', 'tone-gold'],
-      ['Поиски', stats.searches, 'История обращений к поиску', '04', 'tone-slate'],
-      ['Пустые', stats.emptySearches, 'Запросы без совпадений', '05', 'tone-soft'],
+      ['Разделы', rootSections, 'Основные точки входа в каталог', '03', 'tone-slate'],
+      ['Брендбуки', brandbooks, 'Ключевые руководства по системе бренда', '04', 'tone-soft'],
     ];
     els.statsGrid.innerHTML = cards.map(([label, value, note, icon, tone]) => `
       <article class="surface stat-card ${tone}">
@@ -279,7 +248,7 @@
       els.favoritesList.innerHTML = `
         <div class="panel-empty">
           <strong>Избранное пока пустое</strong>
-          <span>Список начнет собираться по реальным открытиям и скачиваниям.</span>
+          <span>Здесь появятся материалы, к которым возвращаются чаще всего.</span>
         </div>
       `;
       return;
@@ -447,10 +416,8 @@
     document.title = `${payload.title} — каталог`;
     els.siteTitle.textContent = payload.title;
     renderSetupBanner(payload.setupMessage || '');
-    renderHeroBrief(payload);
-    renderBrandMetrics(payload);
     renderBrandRoutes(payload);
-    renderStats(payload.stats || {});
+    renderStats(payload.stats || {}, payload.sections || []);
     renderRootSections(payload.sections || []);
     renderFavorites(payload.favorites || []);
     renderTopSearches(payload.topSearches || []);
@@ -475,7 +442,7 @@
   }
 
   async function search(query) {
-    setLoading('Поиск', 'Подбираю совпадения по файлам и папкам...');
+    setLoading('Поиск', 'Ищу материалы по запросу.');
     const payload = await api('search', { q: query || '' });
     renderSearch(payload);
     await refreshFavorites();
