@@ -87,6 +87,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-aut
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-actions > *'), 'styles contain tablet hero action grid');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.chip-row > *'), 'styles contain responsive quick search grid');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-actions > *'), 'styles contain mobile workspace action grid');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.toolbar > [data-action="copy-current-link"]'), 'styles contain mobile toolbar spanning copy action');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.result-card.file .item-actions'), 'styles contain mobile file action grid');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-stats'), 'styles removed hero stats block');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.brand-principles'), 'styles removed brand principles classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-briefing'), 'styles removed hero briefing classes');

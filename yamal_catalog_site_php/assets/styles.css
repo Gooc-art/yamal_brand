@@ -2091,10 +2091,40 @@ input[type="search"]:focus {
 
   .workspace-inspector {
     width: 100vw;
-    max-height: 86vh;
+    max-height: 88vh;
     right: 0;
     left: 0;
     border-radius: 26px 26px 0 0;
+    padding: 18px 16px 22px;
+  }
+
+  .workspace-shell {
+    margin-top: 16px;
+    gap: 14px;
+  }
+
+  .workspace-header {
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .workspace-header > div {
+    gap: 6px;
+  }
+
+  .workspace-copy {
+    font-size: 14px;
+  }
+
+  .workspace-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .workspace-actions > * {
+    width: 100%;
+    min-width: 0;
   }
 
   .hero::before {
@@ -2134,6 +2164,11 @@ input[type="search"]:focus {
     align-items: stretch;
   }
 
+  .stage-head,
+  .inspector-head {
+    gap: 12px;
+  }
+
   .brand-routes-actions,
   .brand-routes-toggle {
     width: 100%;
@@ -2153,6 +2188,35 @@ input[type="search"]:focus {
   .toolbar,
   .pagination {
     flex-direction: column;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .toolbar > [data-action="copy-current-link"] {
+    grid-column: 1 / -1;
+  }
+
+  .breadcrumbs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .breadcrumbs::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .content-hint {
+    margin-bottom: 14px;
+    font-size: 13px;
   }
 
   .hero-actions {
@@ -2217,7 +2281,7 @@ input[type="search"]:focus {
   .result-card,
   .detail-card,
   .feature-panel {
-    padding: 16px;
+    padding: 14px;
   }
 
   .detail-preview-pdf iframe {
@@ -2235,6 +2299,29 @@ input[type="search"]:focus {
       "head"
       "meta"
       "actions";
+    row-gap: 10px;
+  }
+
+  .result-card .item-actions {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .result-card.file .item-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .result-card.file .item-actions > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .result-card.folder .item-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .feature-visual-frame {
