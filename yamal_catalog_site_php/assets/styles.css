@@ -1437,7 +1437,7 @@ input[type="search"]:focus {
   top: 16px;
   right: 16px;
   z-index: 60;
-  width: min(392px, calc(100vw - 32px));
+  width: min(560px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   overflow: auto;
   background: linear-gradient(180deg, rgba(252, 249, 243, 0.98), rgba(244, 238, 230, 0.96));
@@ -1490,20 +1490,28 @@ input[type="search"]:focus {
 
 .card-copy {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
 .card-copy strong {
-  font-size: 22px;
-  line-height: 1.04;
+  font-size: 24px;
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
-.card-copy span {
+.card-kicker {
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.card-context {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .card-arrow {
@@ -1568,8 +1576,8 @@ input[type="search"]:focus {
   grid-template-areas:
     "head actions"
     "meta actions";
-  column-gap: 16px;
-  row-gap: 12px;
+  column-gap: 18px;
+  row-gap: 14px;
   align-items: center;
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
@@ -1615,7 +1623,7 @@ input[type="search"]:focus {
   gap: 10px;
   margin-top: auto;
   justify-self: end;
-  align-self: center;
+  align-self: start;
 }
 
 .result-card:hover {
@@ -1799,6 +1807,44 @@ input[type="search"]:focus {
   text-wrap: balance;
 }
 
+@media (min-width: 1121px) {
+  .workspace-stage {
+    min-height: 820px;
+  }
+
+  .workspace-inspector {
+    width: min(560px, calc(100vw - 40px));
+    padding: 26px;
+  }
+
+  .workspace-shell.inspector-open .workspace-stage {
+    transform: translateX(-10px);
+  }
+
+  .result-card,
+  .detail-card {
+    padding: 22px;
+  }
+
+  .detail-copy {
+    gap: 16px;
+  }
+
+  .detail-preview,
+  .detail-preview img,
+  .detail-preview iframe {
+    min-height: 280px;
+  }
+
+  .detail-preview-pdf iframe {
+    min-height: 460px;
+  }
+
+  .detail-title {
+    font-size: 32px;
+  }
+}
+
 .inspector-copy {
   margin-bottom: 18px;
 }
@@ -1819,7 +1865,7 @@ input[type="search"]:focus {
 
 .workspace-shell.inspector-open .workspace-stage {
   box-shadow: 0 20px 60px rgba(24, 42, 49, 0.08);
-  transform: translateX(-6px);
+  transform: translateX(-10px);
 }
 
 .divider {

@@ -561,17 +561,29 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return item.type === 'folder' ? item.kindLabel : '';
   }
 
-  function buildItemPills(item) {
+  function buildItemHeading(item) {
+    const extensionLabel = item.type === 'file' && item.extension ? formatExtension(item.extension) : '';
+    return splitDetailHeading(item.label || item.name, extensionLabel);
+  }
+
+  function buildItemPills(item, heading = null) {
+    const resolvedHeading = heading || buildItemHeading(item);
     const pills = [];
     if (item.type === 'folder') {
       pills.push(item.kindLabel);
       return pills;
     }
+    resolvedHeading.suffix.forEach((pill) => {
+      if (pill && !pills.includes(pill)) {
+        pills.push(pill);
+      }
+    });
     if (item.sizeLabel) {
       pills.push(item.sizeLabel);
     }
     const extensionLabel = formatExtension(item.extension);
-    if (item.extension && !labelIncludesToken(item.label, extensionLabel)) {
+    const labelSource = resolvedHeading.title || item.label || item.name;
+    if (item.extension && !pills.includes(extensionLabel) && !labelIncludesToken(labelSource, extensionLabel)) {
       pills.push(extensionLabel);
     }
     return pills;
@@ -1348,8 +1360,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function itemCard(item) {
+    const heading = buildItemHeading(item);
+    const title = heading.title || item.label || item.name;
     const secondary = buildItemSecondary(item);
-    const pills = buildItemPills(item);
+    const pills = buildItemPills(item, heading);
     const actions = item.type === 'folder'
       ? `<button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(item.id)}">Открыть</button>`
       : `<button type="button" class="item-action" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
@@ -1360,13 +1374,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         <div class="result-head">
           <span class="card-icon">${escapeHtml(item.icon)}</span>
           <div class="card-copy">
-            <strong>${escapeHtml(item.label)}</strong>
-            ${secondary ? `<span>${escapeHtml(secondary)}</span>` : ''}
+            <span class="card-kicker">${escapeHtml(item.kindLabel || (item.type === 'folder' ? 'Раздел' : 'Файл'))}</span>
+            <strong>${escapeHtml(title)}</strong>
+            ${secondary ? `<p class="card-context">${escapeHtml(secondary)}</p>` : ''}
           </div>
         </div>
-        <div class="item-meta">
-          ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
-        </div>
+        ${pills.length ? `
+          <div class="item-meta">
+            ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
+          </div>
+        ` : ''}
         <div class="item-actions">${actions}</div>
       </article>
     `;
