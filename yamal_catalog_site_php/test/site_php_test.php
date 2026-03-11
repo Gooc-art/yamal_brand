@@ -24,6 +24,9 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Под р�
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Все брендбуки'), 'index contains showcase quick action');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'copy-current-link'), 'index contains copy current link control');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-column-media'), 'index contains dedicated hero media column');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'scroll-rail'), 'index contains horizontal rail controls');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-composition'), 'index contains workspace composition scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-inspector'), 'index contains workspace inspector scaffold');
@@ -53,6 +56,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ex
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-autoplay'), 'styles contain hero autoplay control classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.showcase-block'), 'styles contain subdued showcase block');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.visually-hidden'), 'styles contain visually hidden utility');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-column-media'), 'styles contain hero media column classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.rail-actions'), 'styles contain rail action classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.rail-button'), 'styles contain rail button classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-grid'), 'styles contain feature grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-visual'), 'styles contain feature visual classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature-panel.tone-mark'), 'styles contain extended feature tones');
@@ -61,6 +67,10 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspa
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspector-backdrop'), 'styles contain inspector backdrop classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell.inspector-open'), 'styles contain inspector open state classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-success'), 'styles contain copy success state');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-error'), 'styles contain copy error state');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-auto-flow: column'), 'styles contain horizontal rail flow');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.brand-principles'), 'styles removed brand principles classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-briefing'), 'styles removed hero briefing classes');
@@ -82,6 +92,11 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setA
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'bootstrap.favorites'), 'frontend uses bootstrap favorites for featured shelf');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'WORKSPACE_STORAGE_KEY'), 'frontend persists workspace collapse state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CATALOG_MODE_STORAGE_KEY'), 'frontend persists catalog mode state');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'copy-current-link'), 'frontend supports copy current link action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'navigator.clipboard'), 'frontend uses clipboard api when available');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "document.execCommand('copy')"), 'frontend keeps clipboard fallback');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scrollRailById'), 'frontend supports horizontal rail controls');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'enhanceHorizontalRail'), 'frontend enhances horizontal rails for mouse wheel');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'preview-search'), 'frontend loads preview search data');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setInspectorOpen'), 'frontend controls inspector drawer state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
@@ -139,8 +154,17 @@ function create_catalog_db(string $path): void
         ['examples-root', $rootId, 'folder', 'Примеры внедрения бренда территории', 'Примеры внедрения бренда территории', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'примеры внедрения бренда территории', 'примеры внедрения бренда территории', 'примеры внедрения бренда территории', 1, 0],
         ['examples-good-root', 'examples-root', 'folder', 'Хорошие примеры', 'Примеры внедрения бренда территории/Хорошие примеры', 'Примеры внедрения бренда территории', 2, '', null, '', '2026-03-09T00:00:00Z', 'хорошие примеры', 'примеры внедрения бренда территории хорошие примеры', 'хорошие примеры кейсы', 1, 0],
         ['examples-good-file', 'examples-good-root', 'file', 'Автобус на маршруте.png', 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'Примеры внедрения бренда территории/Хорошие примеры', 3, 'png', 4096, 'image/png', '2026-03-09T00:00:00Z', 'автобус на маршруте', 'примеры внедрения бренда территории хорошие примеры автобус на маршруте png', 'автобус на маршруте png хороший пример', 1, 0],
+        ['examples-archive-root', 'examples-root', 'folder', 'Архив', 'Примеры внедрения бренда территории/Архив', 'Примеры внедрения бренда территории', 2, '', null, '', '2026-03-09T00:00:00Z', 'архив', 'примеры внедрения бренда территории архив', 'архив кейсы', 1, 0],
+        ['examples-archive-file', 'examples-archive-root', 'file', 'Павильон.png', 'Примеры внедрения бренда территории/Архив/Павильон.png', 'Примеры внедрения бренда территории/Архив', 3, 'png', 3072, 'image/png', '2026-03-09T00:00:00Z', 'павильон', 'примеры внедрения бренда территории архив павильон png', 'павильон png архив кейс', 1, 0],
         ['examples-debate-root', 'examples-root', 'folder', 'Спорные примеры', 'Примеры внедрения бренда территории/Спорные примеры', 'Примеры внедрения бренда территории', 2, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'примеры внедрения бренда территории спорные примеры', 'спорные примеры обсуждение', 1, 0],
         ['examples-debate-file', 'examples-debate-root', 'file', 'Перегруженный баннер.jpg', 'Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'Примеры внедрения бренда территории/Спорные примеры', 3, 'jpg', 2048, 'image/jpeg', '2026-03-09T00:00:00Z', 'перегруженный баннер', 'примеры внедрения бренда территории спорные примеры перегруженный баннер jpg', 'перегруженный баннер jpg спорный пример', 1, 0],
+        ['examples-review-root', 'examples-root', 'folder', 'Обсуждение', 'Примеры внедрения бренда территории/Обсуждение', 'Примеры внедрения бренда территории', 2, '', null, '', '2026-03-09T00:00:00Z', 'обсуждение', 'примеры внедрения бренда территории обсуждение', 'обсуждение спорный кейс', 1, 0],
+        ['examples-review-file', 'examples-review-root', 'file', 'Черновой щит.jpg', 'Примеры внедрения бренда территории/Обсуждение/Черновой щит.jpg', 'Примеры внедрения бренда территории/Обсуждение', 3, 'jpg', 3072, 'image/jpeg', '2026-03-09T00:00:00Z', 'черновой щит', 'примеры внедрения бренда территории обсуждение черновой щит jpg', 'черновой щит jpg обсуждение', 1, 0],
+        ['examples-generic-root', $rootId, 'folder', 'Примеры внедрения бренда', 'Примеры внедрения бренда', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'примеры внедрения бренда', 'примеры внедрения бренда', 'примеры внедрения бренда', 1, 0],
+        ['examples-generic-good-root', 'examples-generic-root', 'folder', 'Хорошие примеры', 'Примеры внедрения бренда/Хорошие примеры', 'Примеры внедрения бренда', 2, '', null, '', '2026-03-09T00:00:00Z', 'хорошие примеры', 'примеры внедрения бренда хорошие примеры', 'хорошие примеры generic', 1, 0],
+        ['examples-generic-good-file', 'examples-generic-good-root', 'file', 'Старая витрина.png', 'Примеры внедрения бренда/Хорошие примеры/Старая витрина.png', 'Примеры внедрения бренда/Хорошие примеры', 3, 'png', 1024, 'image/png', '2026-03-09T00:00:00Z', 'старая витрина', 'примеры внедрения бренда хорошие примеры старая витрина png', 'старая витрина png', 1, 0],
+        ['examples-generic-debate-root', 'examples-generic-root', 'folder', 'Спорные примеры', 'Примеры внедрения бренда/Спорные примеры', 'Примеры внедрения бренда', 2, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'примеры внедрения бренда спорные примеры', 'спорные примеры generic', 1, 0],
+        ['examples-generic-debate-file', 'examples-generic-debate-root', 'file', 'Старый баннер.jpg', 'Примеры внедрения бренда/Спорные примеры/Старый баннер.jpg', 'Примеры внедрения бренда/Спорные примеры', 3, 'jpg', 1024, 'image/jpeg', '2026-03-09T00:00:00Z', 'старый баннер', 'примеры внедрения бренда спорные примеры старый баннер jpg', 'старый баннер jpg', 1, 0],
         ['debate-root', $rootId, 'folder', 'Спорные примеры', 'Спорные примеры', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'спорные примеры', 'спорные примеры обсуждение', 1, 0],
         ['debate-file', 'debate-root', 'file', 'Плохой щит.jpg', 'Спорные примеры/Плохой щит.jpg', 'Спорные примеры', 2, 'jpg', 2048, 'image/jpeg', '2026-03-09T00:00:00Z', 'плохой щит', 'спорные примеры плохой щит jpg', 'плохой щит jpg спорный пример', 1, 0],
         ['file1', 'logo', 'file', 'Логотип основной вариант для печати финальный.pdf', 'Логотип/Логотип основной вариант для печати финальный.pdf', 'Логотип', 2, 'pdf', 2048, 'application/pdf', '2026-03-09T00:00:00Z', 'логотип основной вариант для печати финальный', 'логотип логотип основной вариант для печати финальный pdf', 'логотип основной вариант pdf', 1, 0],
@@ -158,13 +182,22 @@ mkdir($base . '/upload', 0777, true);
 mkdir($base . '/upload/Макеты1', 0777, true);
 mkdir($base . '/upload/Макеты1/Логотип', 0777, true);
 mkdir($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда/Хорошие примеры', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда/Спорные примеры', 0777, true);
 mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Хорошие примеры', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Архив', 0777, true);
 mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Спорные примеры', 0777, true);
+mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Обсуждение', 0777, true);
 mkdir($base . '/upload/Макеты1/Спорные примеры', 0777, true);
 file_put_contents($base . '/upload/Макеты1/Логотип/Логотип основной вариант для печати финальный.pdf', 'pdf');
 file_put_contents($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', 'png');
+file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда/Хорошие примеры/Старая витрина.png', 'png');
+file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда/Спорные примеры/Старый баннер.jpg', 'jpg');
 file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'png');
+file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Архив/Павильон.png', 'png');
 file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'jpg');
+file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Обсуждение/Черновой щит.jpg', 'jpg');
 file_put_contents($base . '/upload/Макеты1/Спорные примеры/Плохой щит.jpg', 'jpg');
 
 $detectedRoot = detect_catalog_source_root($base . '/upload');
@@ -207,6 +240,22 @@ assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good ex
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
 assert_true(($bootstrap['examples']['good'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'dedicated good examples are prioritized');
 assert_true(($bootstrap['examples']['debate'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'dedicated debate examples are prioritized');
+assert_true(
+    array_reduce(
+        $bootstrap['examples']['good'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry && str_starts_with((string) ($item['relativePath'] ?? ''), 'Примеры внедрения бренда территории/Хорошие примеры/'),
+        true
+    ),
+    'good examples stay inside territory dedicated good folder when it exists'
+);
+assert_true(
+    array_reduce(
+        $bootstrap['examples']['debate'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry && str_starts_with((string) ($item['relativePath'] ?? ''), 'Примеры внедрения бренда территории/Спорные примеры/'),
+        true
+    ),
+    'debate examples stay inside territory dedicated debate folder when it exists'
+);
 
 $folder = $service->getFolder('logo', 0);
 assert_true($folder !== null, 'logo folder exists');

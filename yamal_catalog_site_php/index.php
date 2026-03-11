@@ -14,6 +14,20 @@ $config = site_config();
   <body>
     <div class="page-shell">
       <header class="hero surface">
+        <div class="hero-column hero-column-media">
+          <section class="hero-examples surface">
+            <div class="block-head compact hero-examples-head">
+              <div>
+                <p class="eyebrow">Примеры внедрения бренда</p>
+                <h2>Примеры внедрения бренда</h2>
+                <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром и переключением.</p>
+              </div>
+              <div id="hero-example-tabs" class="hero-example-tabs"></div>
+            </div>
+            <div id="hero-example-stage" class="hero-example-stage"></div>
+          </section>
+        </div>
+
         <div class="hero-column hero-column-main">
           <div class="hero-ribbon">
             <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
@@ -28,22 +42,8 @@ $config = site_config();
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
           </div>
           <div id="hero-stats" class="hero-stats"></div>
-        </div>
 
-        <div class="hero-column hero-column-side">
-          <section class="hero-examples surface">
-            <div class="block-head compact hero-examples-head">
-              <div>
-                <p class="eyebrow">Примеры внедрения бренда</p>
-                <h2>Примеры внедрения бренда</h2>
-                <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром и переключением.</p>
-              </div>
-              <div id="hero-example-tabs" class="hero-example-tabs"></div>
-            </div>
-            <div id="hero-example-stage" class="hero-example-stage"></div>
-          </section>
-
-          <form id="search-form" class="search-panel">
+          <form id="search-form" class="search-panel hero-search-panel">
             <label class="search-label" for="search-input">Поиск</label>
             <div class="search-row">
               <input
@@ -71,6 +71,10 @@ $config = site_config();
             <p class="eyebrow">Разделы</p>
             <h2>Главное меню</h2>
           </div>
+          <div class="rail-actions" aria-label="Прокрутка главного меню">
+            <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="brand-routes" data-direction="-1" aria-label="Прокрутить главное меню влево">←</button>
+            <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="brand-routes" data-direction="1" aria-label="Прокрутить главное меню вправо">→</button>
+          </div>
         </div>
         <div id="brand-routes" class="brand-route-grid"></div>
       </section>
@@ -81,7 +85,13 @@ $config = site_config();
             <p class="eyebrow">Часто</p>
             <h2>Под рукой</h2>
           </div>
-          <button type="button" class="ghost-button" data-action="search-chip" data-query="брендбук">Все брендбуки</button>
+          <div class="showcase-actions">
+            <button type="button" class="ghost-button" data-action="search-chip" data-query="брендбук">Все брендбуки</button>
+            <div class="rail-actions" aria-label="Прокрутка витрины">
+              <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="featured-shelves" data-direction="-1" aria-label="Прокрутить витрину влево">←</button>
+              <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="featured-shelves" data-direction="1" aria-label="Прокрутить витрину вправо">→</button>
+            </div>
+          </div>
         </div>
         <div id="featured-shelves" class="feature-grid"></div>
       </section>
@@ -109,6 +119,7 @@ $config = site_config();
             <div class="toolbar">
               <button type="button" class="ghost-button" data-action="back">Назад</button>
               <button type="button" class="ghost-button" data-action="go-root">Меню</button>
+              <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
             </div>
           </div>
           <div id="breadcrumbs" class="breadcrumbs"></div>

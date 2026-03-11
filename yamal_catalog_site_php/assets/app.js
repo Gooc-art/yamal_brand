@@ -1,4 +1,85 @@
-(function () {
+const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file'];
+
+function clampRoutePage(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function normalizeRoute(route) {
+  const view = route?.view === 'folder' ? 'folder' : route?.view === 'search' ? 'search' : 'root';
+  const folderId = String(route?.folderId || route?.id || '').trim();
+  const query = String(route?.query || route?.q || '').trim();
+  const fileId = String(route?.fileId || route?.file || '').trim();
+  const page = clampRoutePage(route?.page);
+
+  if (view === 'folder' && folderId) {
+    return { view, folderId, query: '', page, fileId };
+  }
+  if (view === 'search' && query) {
+    return { view, folderId: '', query, page: 0, fileId };
+  }
+  return { view: 'root', folderId: '', query: '', page: 0, fileId };
+}
+
+function routeFromUrl(inputUrl) {
+  const url = new URL(String(inputUrl || 'http://localhost/'), 'http://localhost');
+  const params = url.searchParams;
+  const view = params.get('view');
+  if (view === 'folder' || params.get('folder')) {
+    return normalizeRoute({
+      view: 'folder',
+      folderId: params.get('folder') || '',
+      page: params.get('page') || '0',
+      fileId: params.get('file') || '',
+    });
+  }
+  if (view === 'search' || params.get('q')) {
+    return normalizeRoute({
+      view: 'search',
+      query: params.get('q') || '',
+      fileId: params.get('file') || '',
+    });
+  }
+  return normalizeRoute({
+    view: 'root',
+    fileId: params.get('file') || '',
+  });
+}
+
+function buildRouteUrl(inputUrl, route) {
+  const url = new URL(String(inputUrl || 'http://localhost/'), 'http://localhost');
+  YAMAL_ROUTE_QUERY_KEYS.forEach((key) => url.searchParams.delete(key));
+
+  const normalized = normalizeRoute(route);
+  if (normalized.view === 'folder') {
+    url.searchParams.set('view', 'folder');
+    url.searchParams.set('folder', normalized.folderId);
+    if (normalized.page > 0) {
+      url.searchParams.set('page', String(normalized.page));
+    }
+  } else if (normalized.view === 'search') {
+    url.searchParams.set('view', 'search');
+    url.searchParams.set('q', normalized.query);
+  }
+
+  if (normalized.fileId) {
+    url.searchParams.set('file', normalized.fileId);
+  }
+
+  url.hash = '';
+  return url.toString();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    normalizeRoute,
+    routeFromUrl,
+    buildRouteUrl,
+  };
+}
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  (function () {
   const siteConfig = window.YAMAL_SITE || {
     apiBase: 'api.php?action=',
     downloadBase: 'download.php?id=',
@@ -9,6 +90,7 @@
   const WORKSPACE_STORAGE_KEY = 'yamal-site-workspace-collapsed';
   const CATALOG_MODE_STORAGE_KEY = 'yamal-site-catalog-mode';
   const EXAMPLE_AUTOPLAY_DELAY = 5200;
+  const COPY_FEEDBACK_DELAY = 1600;
   let exampleAutoplayTimer = null;
   let exampleAutoplayPaused = false;
 
@@ -53,6 +135,196 @@
     inspectorBackdrop: document.querySelector('#inspector-backdrop'),
     catalogModeButtons: Array.from(document.querySelectorAll('.catalog-mode-toggle')),
   };
+
+  function catalogTitle() {
+    return state.bootstrap?.title || 'Бренд Ямал';
+  }
+
+  function setDocumentTitle(section) {
+    const suffix = catalogTitle();
+    document.title = section ? `${section} — ${suffix}` : `${suffix} — каталог`;
+  }
+
+  function syncDocumentTitleToCurrentState() {
+    if (state.inspectorOpen && state.detail) {
+      setDocumentTitle(state.detail.label || state.detail.name || 'Файл');
+      return;
+    }
+    if (state.current?.kind === 'search') {
+      setDocumentTitle(state.current.payload?.query ? `Поиск: ${state.current.payload.query}` : 'Поиск');
+      return;
+    }
+    if (state.current?.kind === 'folder' && !state.current.payload?.root) {
+      setDocumentTitle(state.current.payload?.folder?.label || state.current.payload?.folder?.name || 'Раздел');
+      return;
+    }
+    setDocumentTitle('');
+  }
+
+  function currentRoute() {
+    const base = { view: 'root' };
+    if (state.current?.kind === 'folder') {
+      if (state.current.payload?.root) {
+        return normalizeRoute({
+          ...base,
+          fileId: state.inspectorOpen ? state.detail?.id : '',
+        });
+      }
+      return normalizeRoute({
+        view: 'folder',
+        folderId: state.current.payload?.folder?.id || '',
+        page: state.current.payload?.page || 0,
+        fileId: state.inspectorOpen ? state.detail?.id : '',
+      });
+    }
+    if (state.current?.kind === 'search') {
+      return normalizeRoute({
+        view: 'search',
+        query: state.current.payload?.query || '',
+        fileId: state.inspectorOpen ? state.detail?.id : '',
+      });
+    }
+    return normalizeRoute({
+      ...base,
+      fileId: state.inspectorOpen ? state.detail?.id : '',
+    });
+  }
+
+  function syncRouteWithState(mode = 'push') {
+    if (!window.history?.pushState) {
+      return;
+    }
+    const currentUrl = buildRouteUrl(window.location.href, routeFromUrl(window.location.href));
+    const nextUrl = buildRouteUrl(window.location.href, currentRoute());
+    if (currentUrl === nextUrl) {
+      return;
+    }
+    const historyMethod = mode === 'replace' ? 'replaceState' : 'pushState';
+    window.history[historyMethod](null, '', nextUrl);
+  }
+
+  function currentShareUrl() {
+    return buildRouteUrl(window.location.href, currentRoute());
+  }
+
+  function scrollRailById(id, direction) {
+    const rail = document.getElementById(String(id || ''));
+    if (!rail) {
+      return;
+    }
+    const delta = Math.max(180, Math.round(rail.clientWidth * 0.82)) * Number(direction || 0);
+    rail.scrollBy({ left: delta, behavior: 'smooth' });
+  }
+
+  function enhanceHorizontalRail(element) {
+    if (!element) {
+      return;
+    }
+    element.addEventListener('wheel', (event) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || element.scrollWidth <= element.clientWidth) {
+        return;
+      }
+      event.preventDefault();
+      element.scrollBy({ left: event.deltaY, behavior: 'auto' });
+    }, { passive: false });
+  }
+
+  async function copyTextToClipboard(value) {
+    const text = String(value || '');
+    if (!text) {
+      return false;
+    }
+
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const probe = document.createElement('textarea');
+    probe.value = text;
+    probe.setAttribute('readonly', 'readonly');
+    probe.style.position = 'fixed';
+    probe.style.opacity = '0';
+    probe.style.pointerEvents = 'none';
+    document.body.appendChild(probe);
+    probe.focus();
+    probe.select();
+    try {
+      return document.execCommand('copy');
+    } finally {
+      probe.remove();
+    }
+  }
+
+  function setCopyButtonFeedback(button, label, tone = '') {
+    if (!button) {
+      return;
+    }
+    const defaultLabel = button.dataset.defaultLabel || String(button.textContent || '').trim() || 'Скопировать ссылку';
+    if (!button.dataset.defaultLabel) {
+      button.dataset.defaultLabel = defaultLabel;
+    }
+    if (button._copyFeedbackTimer) {
+      window.clearTimeout(button._copyFeedbackTimer);
+    }
+    button.textContent = label;
+    button.classList.toggle('copy-success', tone === 'success');
+    button.classList.toggle('copy-error', tone === 'error');
+    button._copyFeedbackTimer = window.setTimeout(() => {
+      button.textContent = button.dataset.defaultLabel || defaultLabel;
+      button.classList.remove('copy-success', 'copy-error');
+    }, COPY_FEEDBACK_DELAY);
+  }
+
+  async function handleCopyCurrentLink(button) {
+    try {
+      const copied = await copyTextToClipboard(currentShareUrl());
+      setCopyButtonFeedback(button, copied ? 'Ссылка скопирована' : 'Не удалось скопировать', copied ? 'success' : 'error');
+    } catch (error) {
+      console.warn(error);
+      setCopyButtonFeedback(button, 'Не удалось скопировать', 'error');
+    }
+  }
+
+  function closeInspector(mode = 'replace') {
+    if (!state.inspectorOpen) {
+      return;
+    }
+    setInspectorOpen(false);
+    syncDocumentTitleToCurrentState();
+    if (mode !== 'none') {
+      syncRouteWithState(mode);
+    }
+  }
+
+  async function restoreRouteFromLocation() {
+    const route = routeFromUrl(window.location.href);
+    const shouldRevealWorkspace = route.view !== 'root' || Boolean(route.fileId);
+    if (shouldRevealWorkspace) {
+      ensureWorkspaceVisible();
+    }
+
+    if (route.view === 'folder' && route.folderId) {
+      await openFolder(route.folderId, route.page, { history: 'none' });
+    } else if (route.view === 'search' && route.query) {
+      await search(route.query, { history: 'none' });
+    } else {
+      await openRoot({ history: 'none' });
+    }
+
+    if (route.fileId) {
+      try {
+        await openFile(route.fileId, { history: 'none' });
+      } catch (error) {
+        console.warn(error);
+        syncRouteWithState('replace');
+      }
+    }
+
+    if (shouldRevealWorkspace) {
+      focusWorkspace();
+    }
+  }
 
   function escapeHtml(value) {
     return String(value || '')
@@ -317,6 +589,11 @@
         </article>
       </div>
     `;
+    window.requestAnimationFrame(() => {
+      els.heroExampleStage
+        ?.querySelector('.hero-example-thumb.active')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    });
     scheduleExampleAutoplay();
   }
 
@@ -704,6 +981,11 @@
         </button>
       `;
     }).join('');
+    window.requestAnimationFrame(() => {
+      els.brandRoutes
+        ?.querySelector('.brand-route-card.active')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    });
   }
 
   function buildFeaturePanels(bootstrap) {
@@ -892,16 +1174,19 @@
 
   function renderFolder(payload) {
     state.current = { kind: 'folder', payload };
+    state.detail = null;
     els.contentMode.textContent = payload.root ? 'Главная' : 'Раздел';
     els.contentTitle.textContent = payload.folder.label || payload.folder.name;
     els.contentHint.textContent = payload.hint || 'Открой раздел или файл.';
     renderBreadcrumbs(payload.breadcrumbs || []);
     renderItems(payload.items || [], 'Раздел пуст');
     renderPagination(payload);
+    setDocumentTitle(payload.root ? '' : (payload.folder.label || payload.folder.name));
   }
 
   function renderSearch(payload) {
     state.current = { kind: 'search', payload };
+    state.detail = null;
     els.contentMode.textContent = 'Поиск';
     els.contentTitle.textContent = payload.query ? `Поиск: ${payload.query}` : 'Поиск';
     els.contentHint.textContent = payload.total
@@ -910,6 +1195,7 @@
     els.breadcrumbs.innerHTML = '';
     renderItems(payload.items || [], payload.emptyState || 'Пусто');
     els.pagination.innerHTML = '';
+    setDocumentTitle(payload.query ? `Поиск: ${payload.query}` : 'Поиск');
   }
 
   function renderDetail(payload) {
@@ -936,15 +1222,18 @@
         ${originalName ? `<p class="meta-row">${escapeHtml(originalName)}</p>` : ''}
         ${detailTrail ? `<p class="meta-row">${escapeHtml(detailTrail)}</p>` : ''}
         <div class="item-actions">
+          <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
           <a class="link-button" href="${escapeHtml(payload.downloadUrl)}">Скачать</a>
           <button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(payload.parentId)}">К разделу</button>
         </div>
       </article>
     `;
     setInspectorOpen(true);
+    setDocumentTitle(detailTitle);
   }
 
   function renderDetailPlaceholder() {
+    state.detail = null;
     els.detailPanel.innerHTML = `
       <div class="panel-empty">
         <strong>Файл</strong>
@@ -956,7 +1245,7 @@
   async function loadBootstrap() {
     const payload = await api('bootstrap');
     state.bootstrap = payload;
-    document.title = `${payload.title} — каталог`;
+    setDocumentTitle('');
     renderSetupBanner(payload.setupMessage || '');
     state.exampleIndex = { good: 0, debate: 0 };
     state.exampleTab = (payload.examples && Array.isArray(payload.examples.good) && payload.examples.good.length) ? 'good' : 'debate';
@@ -969,18 +1258,24 @@
     void hydrateFeaturePanels();
   }
 
-  async function openRoot() {
+  async function openRoot(options = {}) {
     setLoading('Главное меню');
     setInspectorOpen(false);
     setActiveRoute('');
     renderDetailPlaceholder();
     const payload = await api('folder');
     renderFolder(payload);
+    if (els.searchInput) {
+      els.searchInput.value = '';
+    }
+    if (options.history !== 'none') {
+      syncRouteWithState(options.history || 'push');
+    }
   }
 
-  async function openFolder(id, page) {
+  async function openFolder(id, page, options = {}) {
     if (!id) {
-      await openRoot();
+      await openRoot(options);
       return;
     }
     setLoading('Открываю раздел');
@@ -990,20 +1285,40 @@
     const topRouteId = payload.root ? '' : (payload.breadcrumbs && payload.breadcrumbs[1] ? payload.breadcrumbs[1].id : payload.folder.id);
     setActiveRoute(topRouteId);
     renderFolder(payload);
+    if (els.searchInput) {
+      els.searchInput.value = '';
+    }
+    if (options.history !== 'none') {
+      syncRouteWithState(options.history || 'push');
+    }
   }
 
-  async function search(query) {
+  async function search(query, options = {}) {
+    const normalizedQuery = String(query || '').trim();
+    if (!normalizedQuery) {
+      await openRoot(options);
+      return;
+    }
     setLoading('Поиск', 'Ищу материалы по запросу.');
     setInspectorOpen(false);
     setActiveRoute('');
     renderDetailPlaceholder();
-    const payload = await api('search', { q: query || '' });
+    const payload = await api('search', { q: normalizedQuery });
     renderSearch(payload);
+    if (els.searchInput) {
+      els.searchInput.value = payload.query || normalizedQuery;
+    }
+    if (options.history !== 'none') {
+      syncRouteWithState(options.history || 'push');
+    }
   }
 
-  async function openFile(id) {
+  async function openFile(id, options = {}) {
     const payload = await api('file', { id });
     renderDetail(payload);
+    if (options.history !== 'none') {
+      syncRouteWithState(options.history || 'push');
+    }
   }
 
   function goBack() {
@@ -1047,7 +1362,15 @@
       return;
     }
     if (action === 'close-inspector') {
-      setInspectorOpen(false);
+      closeInspector('replace');
+      return;
+    }
+    if (action === 'copy-current-link') {
+      void handleCopyCurrentLink(target);
+      return;
+    }
+    if (action === 'scroll-rail') {
+      scrollRailById(target.dataset.target, Number(target.dataset.direction || '0'));
       return;
     }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
@@ -1076,7 +1399,7 @@
     const targetTag = String(event.target?.tagName || '').toLowerCase();
     const typingContext = ['input', 'textarea', 'select'].includes(targetTag) || event.target?.isContentEditable;
     if (event.key === 'Escape' && state.inspectorOpen) {
-      setInspectorOpen(false);
+      closeInspector('replace');
     }
     if (typingContext) {
       return;
@@ -1100,12 +1423,21 @@
     });
   }
 
+  enhanceHorizontalRail(els.brandRoutes);
+  enhanceHorizontalRail(els.featuredShelves);
+
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stopExampleAutoplay();
       return;
     }
     scheduleExampleAutoplay();
+  });
+
+  window.addEventListener('popstate', () => {
+    restoreRouteFromLocation().catch((error) => {
+      console.error(error);
+    });
   });
 
   try {
@@ -1123,7 +1455,7 @@
   setInspectorOpen(false);
 
   loadBootstrap()
-    .then(openRoot)
+    .then(restoreRouteFromLocation)
     .catch((error) => {
       console.error(error);
       els.contentTitle.textContent = 'Ошибка запуска';
@@ -1138,4 +1470,5 @@
         </div>
       `;
     });
-})();
+  })();
+}

@@ -665,6 +665,44 @@ function normalized_contains_any(string $value, array $needles): bool
     return false;
 }
 
+function normalized_path_segments(string $value): array
+{
+    $parts = explode('/', str_replace('\\', '/', $value));
+    $normalized = [];
+    foreach ($parts as $part) {
+        $token = normalize_text($part);
+        if ($token !== '') {
+            $normalized[] = $token;
+        }
+    }
+    return $normalized;
+}
+
+function normalized_path_has_prefix(string $value, string $prefix): bool
+{
+    $pathParts = normalized_path_segments($value);
+    $prefixParts = normalized_path_segments($prefix);
+    if ($pathParts === [] || $prefixParts === [] || count($pathParts) <= count($prefixParts)) {
+        return false;
+    }
+    foreach ($prefixParts as $index => $token) {
+        if (($pathParts[$index] ?? null) !== $token) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function normalized_path_has_any_prefix(string $value, array $prefixes): bool
+{
+    foreach ($prefixes as $prefix) {
+        if (normalized_path_has_prefix($value, (string) $prefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function root_menu_labels(): array
 {
     static $labels = null;
@@ -689,6 +727,15 @@ function dedicated_examples_roots(): array
         'примеры внедрения бренда территории',
         'примеры внедрения бренда',
     ];
+}
+
+function dedicated_example_folders(string $group): array
+{
+    $groupFolder = $group === 'debate' ? 'спорные примеры' : 'хорошие примеры';
+    return array_map(
+        static fn(string $root): string => trim($root, '/') . '/' . $groupFolder,
+        dedicated_examples_roots()
+    );
 }
 
 function good_example_keywords(): array
@@ -1504,10 +1551,26 @@ class SiteCatalogService
 
     private function examplesFromDedicatedFolder(array $items, string $group, int $limit): array
     {
-        $scoped = array_values(array_filter(
-            $items,
-            static fn(array $item): bool => normalized_contains_any((string) ($item['relative_path'] ?? ''), dedicated_examples_roots())
-        ));
+        foreach (dedicated_example_folders($group) as $folder) {
+            $strictMatches = array_values(array_filter(
+                $items,
+                static fn(array $item): bool => normalized_path_has_prefix((string) ($item['relative_path'] ?? ''), $folder)
+            ));
+            if ($strictMatches !== []) {
+                return array_slice($strictMatches, 0, $limit);
+            }
+        }
+
+        $scoped = [];
+        foreach (dedicated_examples_roots() as $root) {
+            $scoped = array_values(array_filter(
+                $items,
+                static fn(array $item): bool => normalized_path_has_prefix((string) ($item['relative_path'] ?? ''), $root)
+            ));
+            if ($scoped !== []) {
+                break;
+            }
+        }
         if ($scoped === []) {
             return [];
         }
