@@ -164,7 +164,7 @@ $config = site_config();
 
       <div id="consultant-backdrop" class="consultant-backdrop" data-action="close-consultant" hidden></div>
 
-      <aside id="consultant-panel" class="surface consultant-panel" hidden aria-hidden="true">
+      <aside id="consultant-panel" class="surface consultant-panel" hidden aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="consultant-title" aria-describedby="consultant-copy">
         <div class="block-head compact consultant-head">
           <div>
             <p class="eyebrow">Навигатор</p>
@@ -178,6 +178,12 @@ $config = site_config();
         <div class="consultant-body">
           <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, отвечает на вопросы применения, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
           <div id="consultant-intents" class="consultant-intents"></div>
+          <div id="consultant-result" class="consultant-result" role="log" aria-live="polite" aria-relevant="additions text">
+            <div class="panel-empty">
+              <strong>С чего начать</strong>
+              <span>Выберите сценарий выше или напишите короткий запрос, а потом уточняйте следующими сообщениями про цвет, пропорции, фото, подрядчика или согласование.</span>
+            </div>
+          </div>
           <form id="consultant-form" class="consultant-form">
             <label class="search-label" for="consultant-input">Запрос</label>
             <div class="consultant-row">
@@ -185,18 +191,12 @@ $config = site_config();
                 id="consultant-input"
                 name="consultant_q"
                 type="search"
-                placeholder="Например: нужен логотип в SVG"
+                placeholder="Например: нужен логотип в SVG, можно ли менять цвет"
                 autocomplete="off"
               />
               <button type="submit" class="accent-button">Подобрать</button>
             </div>
           </form>
-          <div id="consultant-result" class="consultant-result">
-            <div class="panel-empty">
-              <strong>С чего начать</strong>
-              <span>Выберите сценарий выше или напишите короткий запрос, а потом уточняйте следующими сообщениями про цвет, пропорции, фото, подрядчика или согласование.</span>
-            </div>
-          </div>
         </div>
       </aside>
     </div>

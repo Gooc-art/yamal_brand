@@ -9,6 +9,7 @@ const {
   buildBrandRoutesSummary,
   computeRevealScrollLeft,
   initialWorkspaceCollapsed,
+  isWorkspaceNavigationAction,
   splitDetailHeading,
   normalizeConsultantIntents,
   buildConsultantResultTitle,
@@ -107,6 +108,14 @@ test('initialWorkspaceCollapsed defaults to hidden state until user overrides it
   assert.equal(initialWorkspaceCollapsed(''), true);
   assert.equal(initialWorkspaceCollapsed('1'), true);
   assert.equal(initialWorkspaceCollapsed('0'), true);
+});
+
+test('isWorkspaceNavigationAction keeps assistant navigation logic explicit', () => {
+  assert.equal(isWorkspaceNavigationAction('open-folder'), true);
+  assert.equal(isWorkspaceNavigationAction('open-folder-page'), true);
+  assert.equal(isWorkspaceNavigationAction('open-file'), true);
+  assert.equal(isWorkspaceNavigationAction('search-chip'), true);
+  assert.equal(isWorkspaceNavigationAction('toggle-consultant'), false);
 });
 
 test('computeRevealScrollLeft keeps horizontal reveal local to the rail', () => {

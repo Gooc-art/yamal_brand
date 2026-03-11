@@ -34,6 +34,9 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Помощник по каталогу'), 'index contains consultant heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-clear-button'), 'index contains consultant clear control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'цвет, пропорции, фото, подрядчика или согласование'), 'index mentions extended consultant follow-up scenarios');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'role="dialog"'), 'index exposes consultant dialog semantics');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'role="log" aria-live="polite"'), 'index exposes consultant live transcript region');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'нужен логотип в SVG, можно ли менять цвет'), 'index contains richer consultant placeholder');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/styles.css')"), 'index uses versioned stylesheet url');
@@ -80,6 +83,11 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspect
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell.inspector-open'), 'styles contain inspector open state classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-toggle'), 'styles contain consultant toggle classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-panel'), 'styles contain consultant panel classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'width: min(720px, calc(100vw - 32px))'), 'styles widen consultant dialog for desktop');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'height: min(82vh, 860px)'), 'styles give consultant dialog full desktop height');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-template-rows: auto minmax(0, 1fr);'), 'styles structure consultant dialog as header plus conversation area');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'background: transparent;'), 'styles keep consultant backdrop non-blocking on desktop');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-result::-webkit-scrollbar'), 'styles contain consultant result scrollbar styling');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-intent'), 'styles contain consultant intent classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-section-card'), 'styles contain consultant section cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-understanding'), 'styles contain consultant understanding chips');
@@ -141,6 +149,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setI
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setWorkspaceVisible'), 'frontend controls full workspace visibility state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'runConsultant'), 'frontend contains consultant runner');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-consultant'), 'frontend contains consultant toggle action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isWorkspaceNavigationAction'), 'frontend centralizes workspace navigation actions for consultant flow');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scrollConsultantResultToLatest'), 'frontend keeps consultant transcript scrolled to the latest answer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantIntents'), 'frontend normalizes consultant intents');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantFollowUps'), 'frontend normalizes consultant follow-up cards');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantContext'), 'frontend normalizes consultant memory context');

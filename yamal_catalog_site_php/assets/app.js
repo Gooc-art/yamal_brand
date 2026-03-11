@@ -1,6 +1,7 @@
 const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file'];
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
+const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
   { id: 'brandbook', label: 'Нужен брендбук', summary: 'Брендбуки', description: 'Брендбук региона или города.', prompt: 'брендбук Салехард' },
@@ -196,6 +197,10 @@ function initialWorkspaceCollapsed() {
   return DEFAULT_WORKSPACE_COLLAPSED;
 }
 
+function isWorkspaceNavigationAction(action) {
+  return WORKSPACE_NAVIGATION_ACTIONS.has(String(action || '').trim());
+}
+
 function splitDetailHeading(label, suffixToken = '') {
   const rawLabel = String(label || '').trim();
   const rawSuffix = String(suffixToken || '').trim();
@@ -337,6 +342,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildBrandRoutesSummary,
     computeRevealScrollLeft,
     initialWorkspaceCollapsed,
+    isWorkspaceNavigationAction,
     splitDetailHeading,
     normalizeConsultantIntents,
     buildConsultantResultTitle,
@@ -1136,6 +1142,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «можно ли менять цвет?», «можно ли растягивать?» или «можно ли ставить поверх фото?».</span>
       </div>
     `;
+    els.consultantResult.scrollTop = 0;
   }
 
   function clearConsultantConversation(activeIntentId = '') {
@@ -1151,6 +1158,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
   function renderConsultantLoading(label = '') {
     renderConsultantConversation({ loadingLabel: label });
+  }
+
+  function scrollConsultantResultToLatest() {
+    if (!els.consultantResult) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      els.consultantResult.scrollTop = els.consultantResult.scrollHeight;
+    });
   }
 
   function consultantSectionCard(section) {
@@ -1371,6 +1387,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         ` : ''}
       </div>
     `;
+    scrollConsultantResultToLatest();
   }
 
   function renderConsultantResponse(payload) {
@@ -2079,10 +2096,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       void runConsultant(nextQuery, '');
       return;
     }
-    if (['open-folder', 'open-folder-page', 'open-file', 'search-chip'].includes(action)) {
-      if (state.consultantOpen) {
-        setConsultantOpen(false);
-      }
+    if (isWorkspaceNavigationAction(action)) {
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
       }
@@ -2161,16 +2175,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return;
     }
     setBrandRoutesOpen(false);
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!state.consultantOpen) {
-      return;
-    }
-    if (event.target.closest('#consultant-toggle') || event.target.closest('#consultant-panel')) {
-      return;
-    }
-    setConsultantOpen(false);
   });
 
   document.addEventListener('visibilitychange', () => {
