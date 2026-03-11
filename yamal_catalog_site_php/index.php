@@ -41,7 +41,6 @@ $config = site_config();
             <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
           </div>
-          <div id="hero-stats" class="hero-stats"></div>
 
           <form id="search-form" class="search-panel hero-search-panel">
             <label class="search-label" for="search-input">Поиск</label>

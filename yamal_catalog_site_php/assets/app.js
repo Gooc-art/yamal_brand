@@ -257,7 +257,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
-    heroStats: document.querySelector('#hero-stats'),
     heroExamples: document.querySelector('.hero-examples'),
     heroExampleTabs: document.querySelector('#hero-example-tabs'),
     heroExampleStage: document.querySelector('#hero-example-stage'),
@@ -1312,22 +1311,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     await Promise.allSettled(tasks);
   }
 
-  function renderHeroStats(stats, sections) {
-    if (!els.heroStats) return;
-    const rootSections = Array.isArray(sections) ? sections.length : 0;
-    const cards = [
-      ['Файлов', formatNumber(stats.files)],
-      ['Папок', formatNumber(stats.folders)],
-      ['Входов', formatNumber(rootSections)],
-    ];
-    els.heroStats.innerHTML = cards.map(([label, value]) => `
-      <article class="hero-stat">
-        <strong>${escapeHtml(value)}</strong>
-        <span>${escapeHtml(label)}</span>
-      </article>
-    `).join('');
-  }
-
   function renderTopSearches(items) {
     const normalized = (items && items.length ? items : fallbackTopSearches.map((query) => ({ query })))
       .map((item) => typeof item === 'string' ? item : item.query)
@@ -1537,7 +1520,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     renderBrandRoutes(payload);
     state.featurePanels = buildFeaturePanels(payload);
     renderFeaturePanels(state.featurePanels);
-    renderHeroStats(payload.stats || {}, payload.sections || []);
     renderTopSearches(payload.topSearches || []);
     void hydrateFeaturePanels();
   }
