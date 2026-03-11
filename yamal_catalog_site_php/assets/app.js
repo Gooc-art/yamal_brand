@@ -299,6 +299,7 @@ function normalizeConsultantContext(context) {
     formats,
     medium: String(context?.medium || '').trim(),
     sourceMode: String(context?.sourceMode || '').trim(),
+    applicationFocus: String(context?.applicationFocus || '').trim(),
     memoryApplied: Boolean(context?.memoryApplied),
   };
 }
@@ -1033,9 +1034,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const payload = state.bootstrap?.consultant || {};
     const title = String(payload.title || '').trim() || 'Помощник по каталогу';
     const description = String(payload.description || '').trim()
-      || 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.';
+      || 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала, отвечает на вопросы применения и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.';
     const placeholder = String(payload.placeholder || '').trim()
-      || 'Например: нужен логотип в SVG, а потом можно спросить: а для печати?';
+      || 'Например: нужен логотип в SVG, можно ли его на тёмный фон, что отправить подрядчику?';
     return {
       title,
       description,
@@ -1131,7 +1132,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.consultantResult.innerHTML = `
       <div class="panel-empty consultant-empty">
         <strong>С чего начать</strong>
-        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «а для печати?» или «нужен исходник».</span>
+        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «можно ли на тёмном фоне?» или «что отправить подрядчику?».</span>
       </div>
     `;
   }

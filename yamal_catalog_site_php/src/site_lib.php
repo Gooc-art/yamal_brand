@@ -811,8 +811,8 @@ function consultant_bootstrap(): array
 {
     return [
         'title' => 'Помощник по каталогу',
-        'description' => 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.',
-        'placeholder' => 'Например: нужен логотип в SVG, а потом можно спросить: а для печати?',
+        'description' => 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала, отвечает на вопросы применения и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.',
+        'placeholder' => 'Например: нужен логотип в SVG, можно ли его на тёмный фон, что отправить подрядчику?',
         'intents' => array_map(
             static fn(array $intent): array => [
                 'id' => (string) ($intent['id'] ?? ''),
@@ -925,6 +925,24 @@ function consultant_source_mode_definitions(): array
     ];
 }
 
+function consultant_application_focus_definitions(): array
+{
+    return [
+        'dark_background' => [
+            'label' => 'Тёмный фон',
+            'aliases' => ['темный фон', 'тёмный фон', 'темном фоне', 'тёмном фоне', 'черном фоне', 'чёрном фоне', 'dark background'],
+        ],
+        'contractor_handoff' => [
+            'label' => 'Передача подрядчику',
+            'aliases' => ['подрядчик', 'подрядчику', 'типография', 'в типографию', 'дизайнеру', 'производству', 'что отдать', 'что отправить подрядчику'],
+        ],
+        'approval_handoff' => [
+            'label' => 'Согласование',
+            'aliases' => ['согласование', 'на согласование', 'согласовать', 'заказчику', 'руководству', 'на утверждение', 'на соглас'],
+        ],
+    ];
+}
+
 function detect_consultant_formats(string $query): array
 {
     $source = normalize_text($query);
@@ -1002,6 +1020,32 @@ function detect_consultant_source_mode(string $query): string
     return $bestKey;
 }
 
+function detect_consultant_application_focus(string $query): string
+{
+    $source = normalize_text($query);
+    if ($source === '') {
+        return '';
+    }
+
+    $bestKey = '';
+    $bestScore = 0;
+    foreach (consultant_application_focus_definitions() as $focus => $config) {
+        $score = 0;
+        foreach (($config['aliases'] ?? []) as $alias) {
+            $needle = normalize_text((string) $alias);
+            if ($needle !== '' && str_contains($source, $needle)) {
+                $score += mb_strlen($needle, 'UTF-8') >= 7 ? 4 : 2;
+            }
+        }
+        if ($score > $bestScore) {
+            $bestScore = $score;
+            $bestKey = $focus;
+        }
+    }
+
+    return $bestKey;
+}
+
 function consultant_format_labels(array $formats): array
 {
     $labels = [];
@@ -1022,6 +1066,11 @@ function consultant_medium_label(string $medium): string
 function consultant_source_mode_label(string $mode): string
 {
     return (string) (consultant_source_mode_definitions()[$mode]['label'] ?? '');
+}
+
+function consultant_application_focus_label(string $focus): string
+{
+    return (string) (consultant_application_focus_definitions()[$focus]['label'] ?? '');
 }
 
 function consultant_intent_by_id(string $intentId): ?array
@@ -1050,6 +1099,7 @@ function detect_consultant_intent(string $query, string $intentId = ''): ?array
     $formats = detect_consultant_formats($query);
     $medium = detect_consultant_medium($query);
     $city = detect_consultant_city($query);
+    $applicationFocus = detect_consultant_application_focus($query);
     $bestIntent = null;
     $bestScore = 0;
     foreach (consultant_intent_definitions() as $intent) {
@@ -1079,6 +1129,25 @@ function detect_consultant_intent(string $query, string $intentId = ''): ?array
         }
         if ($intentKey === 'merch' && in_array($medium, ['merch', 'navigation'], true)) {
             $score += 8;
+        }
+        if ($applicationFocus === 'dark_background') {
+            if ($intentKey === 'logo') {
+                $score += 10;
+            }
+            if ($intentKey === 'graphics') {
+                $score += 4;
+            }
+        }
+        if (in_array($applicationFocus, ['contractor_handoff', 'approval_handoff'], true)) {
+            if ($intentKey === 'brandbook') {
+                $score += 10;
+            }
+            if ($intentKey === 'logo') {
+                $score += 8;
+            }
+            if ($intentKey === 'merch' && in_array($medium, ['merch', 'navigation'], true)) {
+                $score += 4;
+            }
         }
 
         if ($score > $bestScore) {
@@ -1117,6 +1186,13 @@ function consultant_query_is_follow_up(string $query): bool
         'нужен исходник',
         'для печати',
         'для экрана',
+        'можно ли',
+        'на темном фоне',
+        'на тёмном фоне',
+        'что отправить',
+        'что отдать',
+        'подрядчику',
+        'на согласование',
     ]);
 }
 
@@ -1161,12 +1237,18 @@ function normalize_consultant_memory_context(array $memory): array
         $sourceMode = '';
     }
 
+    $applicationFocus = trim((string) ($memory['applicationFocus'] ?? $memory['focus'] ?? ''));
+    if (!isset(consultant_application_focus_definitions()[$applicationFocus])) {
+        $applicationFocus = '';
+    }
+
     return [
         'intent' => $intent,
         'city' => $city,
         'formats' => $formats,
         'medium' => $medium,
         'sourceMode' => $sourceMode,
+        'applicationFocus' => $applicationFocus,
     ];
 }
 
@@ -1177,6 +1259,7 @@ function build_consultant_context(string $query, string $intentId = '', array $m
     $medium = detect_consultant_medium($trimmed);
     $sourceMode = detect_consultant_source_mode($trimmed);
     $city = detect_consultant_city($trimmed);
+    $applicationFocus = detect_consultant_application_focus($trimmed);
     $intent = detect_consultant_intent($trimmed, $intentId);
     $memoryContext = normalize_consultant_memory_context($memory);
     $memoryIntent = $memoryContext['intent'] ?? null;
@@ -1209,6 +1292,10 @@ function build_consultant_context(string $query, string $intentId = '', array $m
             $sourceMode = (string) $memoryContext['sourceMode'];
             $memoryApplied = true;
         }
+        if (!$intentChanged && $applicationFocus === '' && (string) ($memoryContext['applicationFocus'] ?? '') !== '') {
+            $applicationFocus = (string) $memoryContext['applicationFocus'];
+            $memoryApplied = true;
+        }
     }
 
     return [
@@ -1218,6 +1305,7 @@ function build_consultant_context(string $query, string $intentId = '', array $m
         'formats' => $formats,
         'medium' => $medium,
         'sourceMode' => $sourceMode,
+        'applicationFocus' => $applicationFocus,
         'memoryApplied' => $memoryApplied,
     ];
 }
@@ -1249,6 +1337,11 @@ function consultant_understanding_labels(array $context): array
         $labels[] = $sourceModeLabel;
     }
 
+    $applicationFocusLabel = consultant_application_focus_label((string) ($context['applicationFocus'] ?? ''));
+    if ($applicationFocusLabel !== '') {
+        $labels[] = $applicationFocusLabel;
+    }
+
     return array_values(array_filter($labels));
 }
 
@@ -1257,6 +1350,7 @@ function consultant_follow_up_suggestions(array $context): array
     $intentId = (string) (($context['intent']['id'] ?? ''));
     $city = (string) ($context['city'] ?? '');
     $formats = $context['formats'] ?? [];
+    $applicationFocus = (string) ($context['applicationFocus'] ?? '');
     $followUps = [];
     $seen = [];
     $add = static function (string $label, string $query, string $reason = '') use (&$followUps, &$seen): void {
@@ -1289,8 +1383,10 @@ function consultant_follow_up_suggestions(array $context): array
     if ($intentId === 'logo' && $formats === []) {
         $add('SVG', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип svg'), 'Для вектора и веба');
         $add('PDF', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип pdf'), 'Для печати и согласования');
-        $add('PNG', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип png'), 'Для быстрой выдачи на экран');
-        $add('Исходник AI', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип ai исходник'), 'Если нужен редактируемый файл');
+        if ($applicationFocus === '') {
+            $add('Тёмный фон', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип на темном фоне'), 'Какой вариант брать на тёмный фон');
+            $add('Подрядчику', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'какой логотип отправить подрядчику'), 'Что отдавать в работу');
+        }
     }
 
     if ($intentId === 'graphics' && $formats === []) {
@@ -1308,6 +1404,9 @@ function consultant_follow_up_suggestions(array $context): array
 
     if ($intentId === 'brandbook' && $city !== '' && !in_array('pdf', $formats, true)) {
         $add('PDF брендбук', 'брендбук ' . consultant_city_display_name($city) . ' pdf', 'Открыть готовый PDF');
+        if ($applicationFocus === '') {
+            $add('На согласование', 'что отправить на согласование ' . consultant_city_display_name($city), 'Какой пакет показать без исходников');
+        }
     }
 
     if ($intentId === 'fonts' && array_intersect($formats, ['ttf', 'otf']) === []) {
@@ -1327,9 +1426,22 @@ function detect_consultant_brandbook_topic(array $context): string
     $formats = $context['formats'] ?? [];
     $medium = (string) ($context['medium'] ?? '');
     $sourceMode = (string) ($context['sourceMode'] ?? '');
+    $applicationFocus = (string) ($context['applicationFocus'] ?? '');
 
     if ($intentId === 'fonts' || normalized_contains_any($source, ['шрифт', 'гарнитур', 'ttf', 'otf', 'font'])) {
         return 'fonts';
+    }
+
+    if ($applicationFocus === 'dark_background') {
+        return 'background_usage';
+    }
+
+    if ($applicationFocus === 'contractor_handoff') {
+        return 'contractor_handoff';
+    }
+
+    if ($applicationFocus === 'approval_handoff') {
+        return 'approval_handoff';
     }
 
     if ($intentId === 'graphics' || normalized_contains_any($source, ['цвет', 'палитр', 'паттер', 'иллюстра', 'орнамент', 'фон'])) {
@@ -1414,6 +1526,46 @@ function consultant_brandbook_advice(array $context, array $sections): array
     ];
 
     switch ($topic) {
+        case 'background_usage':
+            $advice['title'] = 'По брендбуку: логотип на фоне';
+            $advice['summary'] = 'На тёмном или сложном фоне лучше брать уже подготовленную контрастную версию, а не перекрашивать логотип вручную.';
+            $advice['bullets'] = array_values(array_filter([
+                'Сначала ищите светлую, белую или одноцветную версию в разделе логотипов или фирменного знака.',
+                'Если читаемость падает, лучше взять знак или упрощённую версию, чем добавлять тени, обводки и эффекты.',
+                $cityLabel !== '' ? 'Для ' . $cityLabel . ' проверьте именно городские варианты, а не общий региональный файл.' : 'Перед публикацией сверьте выбранный вариант с PDF брендбука.',
+            ]));
+            $advice['nextStep'] = $logoSection !== ''
+                ? 'Откройте раздел «' . $logoSection . '» и проверьте светлые или одноцветные версии.'
+                : 'Сначала откройте раздел с логотипами и проверьте контрастные варианты.';
+            break;
+
+        case 'contractor_handoff':
+            $advice['title'] = 'По брендбуку: что отдавать подрядчику';
+            $advice['summary'] = 'Подрядчику лучше отдавать пакет под задачу: готовый PDF для проверки и исходник только если он будет адаптировать макет.';
+            $advice['bullets'] = [
+                'Для типографии и производства обычно нужны PDF и векторный исходник AI, EPS или CDR.',
+                'Для веб-разработчика или подрядчика без правок чаще достаточно SVG, PNG или готового PDF.',
+                'Если подрядчик собирает носитель с нуля, добавьте брендбук или ссылку на профильный раздел, а не только один файл.',
+            ];
+            $workSection = $logoSection !== '' ? $logoSection : ($carrierSection !== '' ? $carrierSection : 'профильный раздел');
+            $advice['nextStep'] = $brandbookSection !== ''
+                ? 'Сначала откройте «' . $brandbookSection . '», затем выберите рабочий файл в разделе «' . $workSection . '».'
+                : 'Откройте брендбук и профильный раздел с логотипом или носителем, затем соберите пакет для подрядчика.';
+            break;
+
+        case 'approval_handoff':
+            $advice['title'] = 'По брендбуку: что отправлять на согласование';
+            $advice['summary'] = 'На согласование лучше отправлять понятный пакет: брендбук, готовый PDF и превью, а не сырые исходники.';
+            $advice['bullets'] = [
+                'Для согласования удобнее PDF брендбука и готовый PDF-макет или логотип.',
+                'Исходники AI, EPS и CDR обычно не нужны на этапе утверждения.',
+                'Если нужно быстро показать вариант, дайте превью PNG или PDF и ссылку на полный раздел каталога.',
+            ];
+            $advice['nextStep'] = $brandbookSection !== ''
+                ? 'Откройте «' . $brandbookSection . '» и соберите PDF-пакет для согласования.'
+                : 'Сначала откройте брендбук и выберите готовые PDF-файлы для согласования.';
+            break;
+
         case 'city_brandbook':
             $advice['title'] = $cityLabel !== '' ? 'По брендбуку: ' . $cityLabel : 'По брендбуку: городская версия';
             $advice['summary'] = 'Для городских материалов сначала сверяйтесь с городским брендбуком, а уже потом выбирайте логотипы и носители.';
@@ -2548,6 +2700,7 @@ class SiteCatalogService
         $formats = $context['formats'] ?? [];
         $medium = (string) ($context['medium'] ?? '');
         $sourceMode = (string) ($context['sourceMode'] ?? '');
+        $applicationFocus = (string) ($context['applicationFocus'] ?? '');
         $queries = [];
         $seen = [];
         $add = static function (string $value) use (&$queries, &$seen): void {
@@ -2589,6 +2742,26 @@ class SiteCatalogService
             }
             $add('логотип');
             $add('фирменный знак');
+
+            if ($applicationFocus === 'dark_background') {
+                if ($cityLabel !== '') {
+                    $add($cityLabel . ' white');
+                    $add($cityLabel . ' black');
+                }
+                $add('логотип white');
+                $add('логотип black');
+            }
+
+            if ($applicationFocus === 'contractor_handoff') {
+                $add('логотип pdf');
+                $add('логотип ai');
+                $add('логотип eps');
+            }
+
+            if ($applicationFocus === 'approval_handoff') {
+                $add('логотип pdf');
+                $add('фирменный знак pdf');
+            }
         }
 
         if ($intentId === 'brandbook') {
@@ -2606,6 +2779,13 @@ class SiteCatalogService
             }
             $add('брендбук');
             $add('мастер бренд');
+
+            if (in_array($applicationFocus, ['contractor_handoff', 'approval_handoff'], true)) {
+                $add('брендбук pdf');
+                if ($cityLabel !== '') {
+                    $add('брендбук ' . $cityLabel . ' pdf');
+                }
+            }
         }
 
         if ($intentId === 'city') {
@@ -2655,6 +2835,23 @@ class SiteCatalogService
             }
         }
 
+        if ($intentId === '' && $applicationFocus === 'contractor_handoff') {
+            $add('брендбук pdf');
+            $add('логотип pdf');
+            $add('логотип ai');
+        }
+
+        if ($intentId === '' && $applicationFocus === 'dark_background') {
+            $add('логотип white');
+            $add('логотип black');
+            $add('фирменный знак white');
+        }
+
+        if ($intentId === '' && $applicationFocus === 'approval_handoff') {
+            $add('брендбук pdf');
+            $add('логотип pdf');
+        }
+
         foreach (($intent['queries'] ?? []) as $candidate) {
             $add((string) $candidate);
         }
@@ -2697,6 +2894,7 @@ class SiteCatalogService
         $cityBrandbook = consultant_city_brandbook_name($city);
         $formats = $context['formats'] ?? [];
         $medium = (string) ($context['medium'] ?? '');
+        $applicationFocus = (string) ($context['applicationFocus'] ?? '');
         $score = 0;
 
         if ($intentId === 'logo') {
@@ -2763,6 +2961,21 @@ class SiteCatalogService
         }
         if (in_array($medium, ['navigation', 'digital'], true) && str_contains($source, normalize_text('сувенир'))) {
             $score += 26;
+        }
+        if ($applicationFocus === 'dark_background' && (str_contains($source, normalize_text('логотип')) || str_contains($source, normalize_text('знак')))) {
+            $score += 34;
+        }
+        if ($applicationFocus === 'dark_background' && str_contains($source, normalize_text('брендбук'))) {
+            $score += 18;
+        }
+        if (in_array($applicationFocus, ['contractor_handoff', 'approval_handoff'], true) && str_contains($source, normalize_text('брендбук'))) {
+            $score += 34;
+        }
+        if (in_array($applicationFocus, ['contractor_handoff', 'approval_handoff'], true) && (str_contains($source, normalize_text('логотип')) || str_contains($source, normalize_text('знак')))) {
+            $score += 24;
+        }
+        if ($applicationFocus === 'contractor_handoff' && str_contains($source, normalize_text('сувенир'))) {
+            $score += 20;
         }
 
         foreach (build_query_variants((string) ($context['query'] ?? '')) as $variant) {
@@ -2843,6 +3056,7 @@ class SiteCatalogService
         $formats = $context['formats'] ?? [];
         $medium = (string) ($context['medium'] ?? '');
         $sourceMode = (string) ($context['sourceMode'] ?? '');
+        $applicationFocus = (string) ($context['applicationFocus'] ?? '');
         $relativePath = (string) ($item['relativePath'] ?? '');
         $haystack = normalize_text(implode(' ', [
             (string) ($item['label'] ?? ''),
@@ -2948,6 +3162,23 @@ class SiteCatalogService
         }
         if ($sourceMode === 'ready' && in_array($extension, ['pdf', 'png', 'jpg', 'jpeg'], true)) {
             $score += 18;
+        }
+
+        if ($applicationFocus === 'dark_background') {
+            if (normalized_contains_any($haystack, ['white', 'black', 'бел', 'черн', 'чёрн'])) {
+                $score += 42;
+            }
+            if (in_array($extension, ['svg', 'pdf', 'png'], true)) {
+                $score += 16;
+            }
+        }
+
+        if ($applicationFocus === 'contractor_handoff' && in_array($extension, ['pdf', 'ai', 'eps', 'cdr', 'svg'], true)) {
+            $score += 32;
+        }
+
+        if ($applicationFocus === 'approval_handoff' && in_array($extension, ['pdf', 'png', 'jpg', 'jpeg'], true)) {
+            $score += 26;
         }
 
         if (normalized_contains_any($haystack, ['спорные примеры', 'хорошие примеры', 'примеры внедрения'])) {
@@ -3117,10 +3348,21 @@ class SiteCatalogService
         $firstSection = (string) ($sections[0]['label'] ?? $sections[0]['name'] ?? '');
         $intentId = (string) ($intent['id'] ?? '');
         $city = (string) ($context['city'] ?? '');
+        $applicationFocus = (string) ($context['applicationFocus'] ?? '');
         $understanding = consultant_understanding_labels($context);
         $lead = ($context['memoryApplied'] ?? false) ? 'Учел контекст прошлого шага. ' : '';
         if ($understanding !== []) {
             $lead .= 'Я понял запрос как: ' . implode(', ', $understanding) . '. ';
+        }
+
+        if ($applicationFocus === 'dark_background') {
+            return $lead . 'Ниже собраны подходящие варианты и совет по использованию логотипа на тёмном фоне.';
+        }
+        if ($applicationFocus === 'contractor_handoff') {
+            return $lead . 'Ниже собран рабочий пакет и совет, что лучше отдавать подрядчику под задачу.';
+        }
+        if ($applicationFocus === 'approval_handoff') {
+            return $lead . 'Ниже собран спокойный пакет для согласования без лишних исходников.';
         }
 
         if ($intentId === 'city' && $city !== '') {
@@ -3176,6 +3418,7 @@ class SiteCatalogService
                 'formats' => array_values($context['formats'] ?? []),
                 'medium' => (string) ($context['medium'] ?? ''),
                 'sourceMode' => (string) ($context['sourceMode'] ?? ''),
+                'applicationFocus' => (string) ($context['applicationFocus'] ?? ''),
                 'memoryApplied' => (bool) ($context['memoryApplied'] ?? false),
             ],
             'advice' => $advice,

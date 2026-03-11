@@ -176,7 +176,7 @@ $config = site_config();
           </div>
         </div>
         <div class="consultant-body">
-          <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
+          <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, отвечает на вопросы применения, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
           <div id="consultant-intents" class="consultant-intents"></div>
           <form id="consultant-form" class="consultant-form">
             <label class="search-label" for="consultant-input">Запрос</label>
@@ -194,7 +194,7 @@ $config = site_config();
           <div id="consultant-result" class="consultant-result">
             <div class="panel-empty">
               <strong>С чего начать</strong>
-              <span>Выберите сценарий выше или напишите короткий запрос, а потом уточняйте следующими сообщениями.</span>
+              <span>Выберите сценарий выше или напишите короткий запрос, а потом уточняйте следующими сообщениями про фон, подрядчика или согласование.</span>
             </div>
           </div>
         </div>
