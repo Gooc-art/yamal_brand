@@ -65,6 +65,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell'), 'styles contain workspace shell classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-composition'), 'styles contain workspace composition classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'width: min(600px, calc(100vw - 24px))'), 'styles widen inspector for desktop edge fit');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'appearance: none'), 'styles normalize button appearance');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scrollbar-width: none'), 'styles hide inspector scrollbar visuals');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-ms-overflow-style: none'), 'styles hide legacy inspector scrollbar visuals');
@@ -78,6 +79,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-path-card'), 'styles contain detail path card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > *'), 'styles contain equal-width detail action buttons');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > .link-button'), 'styles unify detail action button visuals');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'white-space: normal'), 'styles allow detail action buttons to wrap cleanly');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.detail-facts'), 'styles removed detail fact tiles');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-kicker'), 'styles contain list card kicker classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-context'), 'styles contain list card context classes');
