@@ -1191,7 +1191,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return;
     }
     window.requestAnimationFrame(() => {
-      els.consultantResult.scrollTop = els.consultantResult.scrollHeight;
+      const turns = Array.from(els.consultantResult.querySelectorAll('.consultant-turn.assistant'));
+      const latestTurn = turns[turns.length - 1];
+      if (!latestTurn) {
+        els.consultantResult.scrollTop = 0;
+        return;
+      }
+      const topOffset = Math.max(0, latestTurn.offsetTop - 12);
+      els.consultantResult.scrollTop = topOffset;
     });
   }
 

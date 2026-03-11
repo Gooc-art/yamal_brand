@@ -154,6 +154,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'runC
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-consultant'), 'frontend contains consultant toggle action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isWorkspaceNavigationAction'), 'frontend centralizes workspace navigation actions for consultant flow');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scrollConsultantResultToLatest'), 'frontend keeps consultant transcript scrolled to the latest answer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "querySelectorAll('.consultant-turn.assistant')"), 'frontend aligns transcript to the top of the latest assistant turn');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantIntents'), 'frontend normalizes consultant intents');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConsultantStarterQueries'), 'frontend builds consultant starter prompts inside dialog');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantFollowUps'), 'frontend normalizes consultant follow-up cards');
