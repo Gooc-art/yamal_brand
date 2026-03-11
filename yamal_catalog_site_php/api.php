@@ -50,6 +50,7 @@ try {
                 'formats' => trim((string) ($_GET['memory_formats'] ?? '')),
                 'medium' => trim((string) ($_GET['memory_medium'] ?? '')),
                 'sourceMode' => trim((string) ($_GET['memory_source'] ?? '')),
+                'applicationFocus' => trim((string) ($_GET['memory_focus'] ?? '')),
             ];
             echo json_encode($service->consult($query, $intent, $memory), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;

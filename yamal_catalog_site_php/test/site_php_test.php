@@ -33,7 +33,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-panel'), 'index contains consultant panel scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Помощник по каталогу'), 'index contains consultant heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-clear-button'), 'index contains consultant clear control');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'подрядчика или согласование'), 'index mentions practical consultant follow-up scenarios');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'цвет, пропорции, фото, подрядчика или согласование'), 'index mentions extended consultant follow-up scenarios');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/styles.css')"), 'index uses versioned stylesheet url');
@@ -150,7 +150,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'cons
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantHistory'), 'frontend tracks consultant transcript history');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'clear-consultant'), 'frontend handles consultant clear action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantAdviceBlock'), 'frontend renders consultant advice block');
-assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'можно ли его на тёмный фон'), 'frontend mentions practical consultant placeholder examples');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'можно ли менять цвет'), 'frontend mentions consultant color-rule examples');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'можно ли ставить поверх фото'), 'frontend mentions consultant photo-rule examples');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSectionSwitcher'), 'frontend renders workspace section switcher');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'compactRelativePath'), 'frontend compacts path context in cards');
@@ -183,6 +184,7 @@ assert_true($downloadTemplate !== false && str_contains($downloadTemplate, 'inli
 $apiTemplate = file_get_contents(dirname(__DIR__) . '/api.php');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'consult'"), 'api exposes consult action');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_intent'), 'api accepts consultant memory parameters');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_focus'), 'api accepts consultant memory focus parameter');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
@@ -209,6 +211,14 @@ $backgroundFollowUpContext = build_consultant_context('можно ли на тё
 assert_true(($backgroundFollowUpContext['intent']['id'] ?? '') === 'logo', 'consultant keeps previous logo intent for background follow-up');
 assert_true(($backgroundFollowUpContext['city'] ?? '') === 'салехард', 'consultant keeps previous city for background follow-up');
 assert_true(($backgroundFollowUpContext['applicationFocus'] ?? '') === 'dark_background', 'consultant detects dark background usage focus');
+$colorFollowUpContext = build_consultant_context('можно ли менять цвет', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($colorFollowUpContext['applicationFocus'] ?? '') === 'color_change', 'consultant detects color change usage focus');
+$distortionFollowUpContext = build_consultant_context('можно ли растягивать', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($distortionFollowUpContext['applicationFocus'] ?? '') === 'distortion', 'consultant detects distortion usage focus');
+$photoFollowUpContext = build_consultant_context('можно ли ставить поверх фото', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($photoFollowUpContext['applicationFocus'] ?? '') === 'photo_overlay', 'consultant detects photo overlay usage focus');
+$mediumAfterFocusContext = build_consultant_context('а для печати', '', ['intentId' => 'logo', 'city' => 'салехард', 'applicationFocus' => 'color_change']);
+assert_true(($mediumAfterFocusContext['applicationFocus'] ?? '') === '', 'consultant does not leak previous usage-focus into unrelated follow-up');
 $switchedTopicContext = build_consultant_context('а брендбук', '', ['intentId' => 'logo', 'city' => 'салехард', 'formats' => ['svg']]);
 assert_true(($switchedTopicContext['intent']['id'] ?? '') === 'brandbook', 'consultant can switch intent inside follow-up dialogue');
 assert_true(($switchedTopicContext['city'] ?? '') === 'салехард', 'consultant keeps city when follow-up switches to brandbook');
@@ -217,6 +227,12 @@ $brandbookTopic = detect_consultant_brandbook_topic(build_consultant_context('к
 assert_true($brandbookTopic === 'colors_patterns', 'consultant detects brandbook color and pattern topic');
 $backgroundTopic = detect_consultant_brandbook_topic(build_consultant_context('можно ли логотип на тёмном фоне'));
 assert_true($backgroundTopic === 'background_usage', 'consultant detects dark background usage topic');
+$colorTopic = detect_consultant_brandbook_topic(build_consultant_context('можно ли менять цвет логотипа'));
+assert_true($colorTopic === 'color_change', 'consultant detects color change usage topic');
+$distortionTopic = detect_consultant_brandbook_topic(build_consultant_context('можно ли растягивать логотип'));
+assert_true($distortionTopic === 'distortion', 'consultant detects distortion usage topic');
+$photoTopic = detect_consultant_brandbook_topic(build_consultant_context('можно ли ставить логотип поверх фото'));
+assert_true($photoTopic === 'photo_overlay', 'consultant detects photo overlay usage topic');
 $contractorTopic = detect_consultant_brandbook_topic(build_consultant_context('что отправить подрядчику'));
 assert_true($contractorTopic === 'contractor_handoff', 'consultant detects contractor handoff topic');
 $brandbookAdvice = consultant_brandbook_advice(build_consultant_context('нужен логотип svg'), [['label' => 'Логотип', 'name' => 'Логотип']]);
@@ -226,6 +242,15 @@ assert_true(count($brandbookAdvice['bullets'] ?? []) >= 2, 'consultant advice ex
 $backgroundAdvice = consultant_brandbook_advice(build_consultant_context('можно ли логотип на тёмном фоне'), [['label' => 'Логотип', 'name' => 'Логотип']]);
 assert_true(($backgroundAdvice['topic'] ?? '') === 'background_usage', 'consultant returns background usage advice');
 assert_true(str_contains((string) ($backgroundAdvice['summary'] ?? ''), 'тёмн'), 'consultant background advice references dark background');
+$colorAdvice = consultant_brandbook_advice(build_consultant_context('можно ли менять цвет логотипа'), [['label' => 'Брендбук ЯМАЛ Мастер бренд', 'name' => 'Брендбук ЯМАЛ Мастер бренд'], ['label' => 'Логотип', 'name' => 'Логотип']]);
+assert_true(($colorAdvice['topic'] ?? '') === 'color_change', 'consultant returns color change advice');
+assert_true(str_contains((string) ($colorAdvice['title'] ?? ''), 'цвет'), 'consultant color change advice exposes color title');
+$distortionAdvice = consultant_brandbook_advice(build_consultant_context('можно ли растягивать логотип'), [['label' => 'Брендбук ЯМАЛ Мастер бренд', 'name' => 'Брендбук ЯМАЛ Мастер бренд'], ['label' => 'Логотип', 'name' => 'Логотип']]);
+assert_true(($distortionAdvice['topic'] ?? '') === 'distortion', 'consultant returns distortion advice');
+assert_true(str_contains((string) ($distortionAdvice['summary'] ?? ''), 'пропорц'), 'consultant distortion advice references proportions');
+$photoAdvice = consultant_brandbook_advice(build_consultant_context('можно ли ставить логотип поверх фото'), [['label' => 'Логотип', 'name' => 'Логотип']]);
+assert_true(($photoAdvice['topic'] ?? '') === 'photo_overlay', 'consultant returns photo overlay advice');
+assert_true(str_contains((string) ($photoAdvice['summary'] ?? ''), 'фото'), 'consultant photo overlay advice references photo placement');
 $contractorAdvice = consultant_brandbook_advice(build_consultant_context('что отправить подрядчику'), [['label' => 'Брендбук ЯМАЛ Мастер бренд', 'name' => 'Брендбук ЯМАЛ Мастер бренд'], ['label' => 'Логотип', 'name' => 'Логотип']]);
 assert_true(($contractorAdvice['topic'] ?? '') === 'contractor_handoff', 'consultant returns contractor handoff advice');
 assert_true(str_contains((string) ($contractorAdvice['title'] ?? ''), 'подрядчику'), 'consultant contractor advice exposes handoff title');
@@ -440,6 +465,18 @@ $backgroundConsult = $service->consult('можно ли на тёмном фон
 assert_true(($backgroundConsult['context']['memoryApplied'] ?? false) === true, 'consult background follow-up reuses dialogue memory');
 assert_true(($backgroundConsult['context']['applicationFocus'] ?? '') === 'dark_background', 'consult exposes dark background focus in context');
 assert_true(($backgroundConsult['advice']['topic'] ?? '') === 'background_usage', 'consult returns dark background advice');
+
+$colorConsult = $service->consult('можно ли менять цвет', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($colorConsult['context']['applicationFocus'] ?? '') === 'color_change', 'consult exposes color change focus in context');
+assert_true(($colorConsult['advice']['topic'] ?? '') === 'color_change', 'consult returns color change advice');
+
+$distortionConsult = $service->consult('можно ли растягивать', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($distortionConsult['context']['applicationFocus'] ?? '') === 'distortion', 'consult exposes distortion focus in context');
+assert_true(($distortionConsult['advice']['topic'] ?? '') === 'distortion', 'consult returns distortion advice');
+
+$photoConsult = $service->consult('можно ли ставить поверх фото', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($photoConsult['context']['applicationFocus'] ?? '') === 'photo_overlay', 'consult exposes photo overlay focus in context');
+assert_true(($photoConsult['advice']['topic'] ?? '') === 'photo_overlay', 'consult returns photo overlay advice');
 
 $contractorConsult = $service->consult('что отправить подрядчику', '', ['intentId' => 'logo', 'city' => 'салехард']);
 assert_true(($contractorConsult['context']['applicationFocus'] ?? '') === 'contractor_handoff', 'consult exposes contractor handoff focus in context');

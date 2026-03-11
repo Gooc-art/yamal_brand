@@ -312,6 +312,7 @@ function buildConsultantMemoryPayload(context) {
     memory_formats: normalized.formats.join(','),
     memory_medium: normalized.medium,
     memory_source: normalized.sourceMode,
+    memory_focus: normalized.applicationFocus,
   };
 }
 
@@ -1036,7 +1037,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const description = String(payload.description || '').trim()
       || 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала, отвечает на вопросы применения и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.';
     const placeholder = String(payload.placeholder || '').trim()
-      || 'Например: нужен логотип в SVG, можно ли его на тёмный фон, что отправить подрядчику?';
+      || 'Например: нужен логотип в SVG, можно ли менять цвет, можно ли ставить поверх фото?';
     return {
       title,
       description,
@@ -1132,7 +1133,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.consultantResult.innerHTML = `
       <div class="panel-empty consultant-empty">
         <strong>С чего начать</strong>
-        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «можно ли на тёмном фоне?» или «что отправить подрядчику?».</span>
+        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «можно ли менять цвет?», «можно ли растягивать?» или «можно ли ставить поверх фото?».</span>
       </div>
     `;
   }

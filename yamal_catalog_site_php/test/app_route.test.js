@@ -233,6 +233,7 @@ test('buildConsultantMemoryPayload serializes previous context for API follow-up
       formats: ['svg', 'pdf'],
       medium: 'print',
       sourceMode: 'editable',
+      applicationFocus: 'photo_overlay',
     }),
     {
       memory_intent: 'logo',
@@ -240,6 +241,7 @@ test('buildConsultantMemoryPayload serializes previous context for API follow-up
       memory_formats: 'svg,pdf',
       memory_medium: 'print',
       memory_source: 'editable',
+      memory_focus: 'photo_overlay',
     },
   );
 });

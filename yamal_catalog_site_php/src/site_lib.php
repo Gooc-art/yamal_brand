@@ -812,7 +812,7 @@ function consultant_bootstrap(): array
     return [
         'title' => 'Помощник по каталогу',
         'description' => 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала, отвечает на вопросы применения и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.',
-        'placeholder' => 'Например: нужен логотип в SVG, можно ли его на тёмный фон, что отправить подрядчику?',
+        'placeholder' => 'Например: нужен логотип в SVG, можно ли менять цвет, можно ли ставить поверх фото?',
         'intents' => array_map(
             static fn(array $intent): array => [
                 'id' => (string) ($intent['id'] ?? ''),
@@ -931,6 +931,18 @@ function consultant_application_focus_definitions(): array
         'dark_background' => [
             'label' => 'Тёмный фон',
             'aliases' => ['темный фон', 'тёмный фон', 'темном фоне', 'тёмном фоне', 'черном фоне', 'чёрном фоне', 'dark background'],
+        ],
+        'color_change' => [
+            'label' => 'Изменение цвета',
+            'aliases' => ['менять цвет', 'изменить цвет', 'сменить цвет', 'перекрасить', 'другого цвета', 'другим цветом', 'инвертировать цвет', 'цвет логотипа'],
+        ],
+        'distortion' => [
+            'label' => 'Искажение',
+            'aliases' => ['растягивать', 'растянуть', 'сжать', 'деформировать', 'искажать', 'исказить', 'менять пропорции', 'пропорции логотипа'],
+        ],
+        'photo_overlay' => [
+            'label' => 'Поверх фото',
+            'aliases' => ['поверх фото', 'на фото', 'на фотографии', 'поверх фотографии', 'на изображении', 'на картинке', 'на сложном фоне'],
         ],
         'contractor_handoff' => [
             'label' => 'Передача подрядчику',
@@ -1138,6 +1150,17 @@ function detect_consultant_intent(string $query, string $intentId = ''): ?array
                 $score += 4;
             }
         }
+        if (in_array($applicationFocus, ['color_change', 'distortion', 'photo_overlay'], true)) {
+            if ($intentKey === 'logo') {
+                $score += 10;
+            }
+            if ($intentKey === 'brandbook') {
+                $score += 8;
+            }
+            if ($intentKey === 'graphics') {
+                $score += 3;
+            }
+        }
         if (in_array($applicationFocus, ['contractor_handoff', 'approval_handoff'], true)) {
             if ($intentKey === 'brandbook') {
                 $score += 10;
@@ -1193,6 +1216,10 @@ function consultant_query_is_follow_up(string $query): bool
         'что отдать',
         'подрядчику',
         'на согласование',
+        'менять цвет',
+        'растягивать',
+        'на фото',
+        'поверх фото',
     ]);
 }
 
@@ -1292,10 +1319,6 @@ function build_consultant_context(string $query, string $intentId = '', array $m
             $sourceMode = (string) $memoryContext['sourceMode'];
             $memoryApplied = true;
         }
-        if (!$intentChanged && $applicationFocus === '' && (string) ($memoryContext['applicationFocus'] ?? '') !== '') {
-            $applicationFocus = (string) $memoryContext['applicationFocus'];
-            $memoryApplied = true;
-        }
     }
 
     return [
@@ -1387,6 +1410,22 @@ function consultant_follow_up_suggestions(array $context): array
             $add('Тёмный фон', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип на темном фоне'), 'Какой вариант брать на тёмный фон');
             $add('Подрядчику', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'какой логотип отправить подрядчику'), 'Что отдавать в работу');
         }
+        if ($applicationFocus === 'dark_background') {
+            $add('Поверх фото', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип поверх фото'), 'Какой вариант брать на фотографии');
+            $add('Менять цвет', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'можно ли менять цвет логотипа'), 'Что делать с цветом логотипа');
+        }
+        if ($applicationFocus === 'photo_overlay') {
+            $add('Тёмный фон', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип на темном фоне'), 'Если фон станет ещё темнее');
+            $add('Менять цвет', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'можно ли менять цвет логотипа'), 'Можно ли перекрасить логотип под фото');
+        }
+        if ($applicationFocus === 'color_change') {
+            $add('Поверх фото', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип поверх фото'), 'Как вести себя на фото без перекраски');
+            $add('Тёмный фон', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'логотип на темном фоне'), 'Какой вариант брать на тёмный фон');
+        }
+        if ($applicationFocus === 'distortion') {
+            $add('Подрядчику', trim(($city !== '' ? consultant_city_display_name($city) . ' ' : '') . 'что отправить подрядчику'), 'Какой файл отдать без ручных деформаций');
+            $add('PDF брендбук', trim(($city !== '' ? 'брендбук ' . consultant_city_display_name($city) . ' pdf' : 'брендбук pdf')), 'Проверить правила применения');
+        }
     }
 
     if ($intentId === 'graphics' && $formats === []) {
@@ -1434,6 +1473,18 @@ function detect_consultant_brandbook_topic(array $context): string
 
     if ($applicationFocus === 'dark_background') {
         return 'background_usage';
+    }
+
+    if ($applicationFocus === 'color_change') {
+        return 'color_change';
+    }
+
+    if ($applicationFocus === 'distortion') {
+        return 'distortion';
+    }
+
+    if ($applicationFocus === 'photo_overlay') {
+        return 'photo_overlay';
     }
 
     if ($applicationFocus === 'contractor_handoff') {
@@ -1537,6 +1588,45 @@ function consultant_brandbook_advice(array $context, array $sections): array
             $advice['nextStep'] = $logoSection !== ''
                 ? 'Откройте раздел «' . $logoSection . '» и проверьте светлые или одноцветные версии.'
                 : 'Сначала откройте раздел с логотипами и проверьте контрастные варианты.';
+            break;
+
+        case 'color_change':
+            $advice['title'] = 'По брендбуку: можно ли менять цвет';
+            $advice['summary'] = 'Логотип лучше не перекрашивать под задачу вручную, а брать уже предусмотренный вариант из брендбука.';
+            $advice['bullets'] = array_values(array_filter([
+                'Если нужен другой контраст, сначала ищите готовую светлую, тёмную или одноцветную версию.',
+                'Подгонять логотип под фон случайным цветом хуже, чем выбрать правильный фон или официальную версию.',
+                $cityLabel !== '' ? 'Для ' . $cityLabel . ' сверяйтесь именно с городским брендбуком и городскими версиями.' : 'Если есть сомнение, ориентируйтесь на PDF брендбука, а не на отдельный макет.',
+            ]));
+            $advice['nextStep'] = $brandbookSection !== ''
+                ? 'Откройте «' . $brandbookSection . '» и проверьте допустимые версии цвета, затем перейдите в «' . ($logoSection !== '' ? $logoSection : 'логотипы') . '».'
+                : 'Сначала откройте брендбук, затем возьмите официальную цветовую версию логотипа.';
+            break;
+
+        case 'distortion':
+            $advice['title'] = 'По брендбуку: можно ли растягивать логотип';
+            $advice['summary'] = 'Логотип лучше не деформировать и не менять пропорции. Если не помещается, меняйте компоновку, а не сам знак.';
+            $advice['bullets'] = [
+                'Не растягивайте и не сжимайте логотип по одной стороне: это ломает форму и узнаваемость.',
+                'Если места мало, лучше выбрать другой вариант логотипа, знак без подписи или пересобрать композицию.',
+                'Для передачи подрядчику отдавайте векторный или PDF-файл, а не вручную искажённое изображение.',
+            ];
+            $advice['nextStep'] = $brandbookSection !== ''
+                ? 'Откройте «' . $brandbookSection . '» и проверьте правила применения, затем используйте исходный файл из раздела «' . ($logoSection !== '' ? $logoSection : 'логотипы') . '».'
+                : 'Сначала проверьте брендбук и возьмите исходный логотип без ручных деформаций.';
+            break;
+
+        case 'photo_overlay':
+            $advice['title'] = 'По брендбуку: логотип поверх фото';
+            $advice['summary'] = 'Ставить логотип поверх фотографии можно только если он остаётся читаемым и не спорит с изображением.';
+            $advice['bullets'] = [
+                'На пёстром фото лучше использовать светлую или тёмную официальную версию, а не перекрашивать логотип под снимок.',
+                'Если фото слишком активное, лучше добавить спокойную подложку, увеличить чистое поле или выбрать другой кадр.',
+                'Если читаемость не держится, лучше перенести логотип на более спокойный участок или вынести его из фото.',
+            ];
+            $advice['nextStep'] = $logoSection !== ''
+                ? 'Откройте раздел «' . $logoSection . '» и проверьте контрастные варианты для размещения поверх фото.'
+                : 'Сначала откройте раздел с логотипами и выберите контрастную официальную версию.';
             break;
 
         case 'contractor_handoff':
@@ -2752,6 +2842,34 @@ class SiteCatalogService
                 $add('логотип black');
             }
 
+            if ($applicationFocus === 'photo_overlay') {
+                if ($cityLabel !== '') {
+                    $add($cityLabel . ' white');
+                    $add($cityLabel . ' pdf');
+                }
+                $add('логотип white');
+                $add('логотип pdf');
+                $add('фирменный знак white');
+            }
+
+            if ($applicationFocus === 'color_change') {
+                $add('брендбук pdf');
+                if ($cityLabel !== '') {
+                    $add('брендбук ' . $cityLabel . ' pdf');
+                }
+                $add('логотип pdf');
+                $add('фирменный знак pdf');
+            }
+
+            if ($applicationFocus === 'distortion') {
+                $add('брендбук pdf');
+                if ($cityLabel !== '') {
+                    $add('брендбук ' . $cityLabel . ' pdf');
+                }
+                $add('логотип svg');
+                $add('логотип pdf');
+            }
+
             if ($applicationFocus === 'contractor_handoff') {
                 $add('логотип pdf');
                 $add('логотип ai');
@@ -2968,6 +3086,12 @@ class SiteCatalogService
         if ($applicationFocus === 'dark_background' && str_contains($source, normalize_text('брендбук'))) {
             $score += 18;
         }
+        if (in_array($applicationFocus, ['color_change', 'distortion', 'photo_overlay'], true) && (str_contains($source, normalize_text('логотип')) || str_contains($source, normalize_text('знак')))) {
+            $score += 34;
+        }
+        if (in_array($applicationFocus, ['color_change', 'distortion', 'photo_overlay'], true) && str_contains($source, normalize_text('брендбук'))) {
+            $score += 18;
+        }
         if (in_array($applicationFocus, ['contractor_handoff', 'approval_handoff'], true) && str_contains($source, normalize_text('брендбук'))) {
             $score += 34;
         }
@@ -3173,6 +3297,19 @@ class SiteCatalogService
             }
         }
 
+        if ($applicationFocus === 'photo_overlay') {
+            if (normalized_contains_any($haystack, ['white', 'black', 'бел', 'черн', 'чёрн'])) {
+                $score += 32;
+            }
+            if (in_array($extension, ['svg', 'pdf', 'png'], true)) {
+                $score += 18;
+            }
+        }
+
+        if (in_array($applicationFocus, ['color_change', 'distortion'], true) && in_array($extension, ['pdf', 'svg'], true)) {
+            $score += 16;
+        }
+
         if ($applicationFocus === 'contractor_handoff' && in_array($extension, ['pdf', 'ai', 'eps', 'cdr', 'svg'], true)) {
             $score += 32;
         }
@@ -3357,6 +3494,15 @@ class SiteCatalogService
 
         if ($applicationFocus === 'dark_background') {
             return $lead . 'Ниже собраны подходящие варианты и совет по использованию логотипа на тёмном фоне.';
+        }
+        if ($applicationFocus === 'color_change') {
+            return $lead . 'Ниже собран совет по цвету логотипа и материалы, от которых безопасно отталкиваться.';
+        }
+        if ($applicationFocus === 'distortion') {
+            return $lead . 'Ниже собран совет по пропорциям логотипа и файлы, которые лучше использовать без деформаций.';
+        }
+        if ($applicationFocus === 'photo_overlay') {
+            return $lead . 'Ниже собраны варианты и совет, как размещать логотип поверх фотографии без потери читаемости.';
         }
         if ($applicationFocus === 'contractor_handoff') {
             return $lead . 'Ниже собран рабочий пакет и совет, что лучше отдавать подрядчику под задачу.';
