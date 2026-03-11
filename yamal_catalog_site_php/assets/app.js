@@ -156,6 +156,31 @@ function buildBrandRoutesSummary(sections, activeRouteId = '') {
   };
 }
 
+function computeRevealScrollLeft({
+  currentScrollLeft = 0,
+  maxScrollLeft = 0,
+  containerLeft = 0,
+  containerRight = 0,
+  itemLeft = 0,
+  itemRight = 0,
+  padding = 0,
+}) {
+  const safeMax = Math.max(0, Number(maxScrollLeft) || 0);
+  const current = Math.max(0, Math.min(safeMax, Number(currentScrollLeft) || 0));
+  const leftEdge = Number(containerLeft) + Math.max(0, Number(padding) || 0);
+  const rightEdge = Number(containerRight) - Math.max(0, Number(padding) || 0);
+  const left = Number(itemLeft) || 0;
+  const right = Number(itemRight) || 0;
+
+  if (left < leftEdge) {
+    return Math.max(0, current - (leftEdge - left));
+  }
+  if (right > rightEdge) {
+    return Math.min(safeMax, current + (right - rightEdge));
+  }
+  return current;
+}
+
 function initialWorkspaceCollapsed() {
   return DEFAULT_WORKSPACE_COLLAPSED;
 }
@@ -167,6 +192,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildRouteUrl,
     buildBrandRouteCards,
     buildBrandRoutesSummary,
+    computeRevealScrollLeft,
     initialWorkspaceCollapsed,
   };
 }
@@ -328,6 +354,32 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       event.preventDefault();
       element.scrollBy({ left: event.deltaY, behavior: 'auto' });
     }, { passive: false });
+  }
+
+  function revealItemInHorizontalContainer(container, item, behavior = 'smooth') {
+    if (!container || !item) {
+      return;
+    }
+    const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+    if (maxScrollLeft <= 0) {
+      return;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    const padding = Math.max(12, Math.round(container.clientWidth * 0.04));
+    const nextScrollLeft = computeRevealScrollLeft({
+      currentScrollLeft: container.scrollLeft,
+      maxScrollLeft,
+      containerLeft: containerRect.left,
+      containerRight: containerRect.right,
+      itemLeft: itemRect.left,
+      itemRight: itemRect.right,
+      padding,
+    });
+    if (Math.abs(nextScrollLeft - container.scrollLeft) < 1) {
+      return;
+    }
+    container.scrollTo({ left: nextScrollLeft, behavior });
   }
 
   async function copyTextToClipboard(value) {
@@ -691,9 +743,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       </div>
     `;
     window.requestAnimationFrame(() => {
-      els.heroExampleStage
-        ?.querySelector('.hero-example-thumb.active')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      const thumbsRail = els.heroExampleStage?.querySelector('.hero-example-thumbs');
+      const activeThumb = thumbsRail?.querySelector('.hero-example-thumb.active');
+      revealItemInHorizontalContainer(thumbsRail, activeThumb);
     });
     scheduleExampleAutoplay();
   }
@@ -996,8 +1048,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       window.requestAnimationFrame(() => {
         const activeCard = els.brandRoutes?.querySelector('.brand-route-card.active');
         const firstCard = els.brandRoutes?.querySelector('.brand-route-card');
-        (activeCard || firstCard)?.focus?.();
-        (activeCard || firstCard)?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        const targetCard = activeCard || firstCard;
+        if (targetCard?.focus) {
+          try {
+            targetCard.focus({ preventScroll: true });
+          } catch (error) {
+            targetCard.focus();
+          }
+        }
+        revealItemInHorizontalContainer(els.brandRoutes, targetCard);
       });
     }
   }
@@ -1060,9 +1119,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }).join('');
     if (state.brandRoutesOpen) {
       window.requestAnimationFrame(() => {
-        els.brandRoutes
-          ?.querySelector('.brand-route-card.active')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        const activeCard = els.brandRoutes?.querySelector('.brand-route-card.active');
+        revealItemInHorizontalContainer(els.brandRoutes, activeCard);
       });
     }
   }

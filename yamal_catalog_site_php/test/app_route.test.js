@@ -7,6 +7,7 @@ const {
   buildRouteUrl,
   buildBrandRouteCards,
   buildBrandRoutesSummary,
+  computeRevealScrollLeft,
   initialWorkspaceCollapsed,
 } = require('../assets/app.js');
 
@@ -92,4 +93,36 @@ test('initialWorkspaceCollapsed defaults to hidden state until user overrides it
   assert.equal(initialWorkspaceCollapsed(''), true);
   assert.equal(initialWorkspaceCollapsed('1'), true);
   assert.equal(initialWorkspaceCollapsed('0'), true);
+});
+
+test('computeRevealScrollLeft keeps horizontal reveal local to the rail', () => {
+  assert.equal(computeRevealScrollLeft({
+    currentScrollLeft: 120,
+    maxScrollLeft: 600,
+    containerLeft: 100,
+    containerRight: 500,
+    itemLeft: 80,
+    itemRight: 160,
+    padding: 20,
+  }), 80);
+
+  assert.equal(computeRevealScrollLeft({
+    currentScrollLeft: 120,
+    maxScrollLeft: 600,
+    containerLeft: 100,
+    containerRight: 500,
+    itemLeft: 430,
+    itemRight: 540,
+    padding: 20,
+  }), 180);
+
+  assert.equal(computeRevealScrollLeft({
+    currentScrollLeft: 120,
+    maxScrollLeft: 600,
+    containerLeft: 100,
+    containerRight: 500,
+    itemLeft: 160,
+    itemRight: 320,
+    padding: 20,
+  }), 120);
 });
