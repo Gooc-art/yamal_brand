@@ -558,6 +558,77 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return folders.join(' / ');
   }
 
+  function formatDateLabel(value) {
+    if (!value) {
+      return '';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
+  }
+
+  function inferDetailPreviewKind(payload) {
+    const explicitKind = String(payload?.previewKind || '').trim();
+    if (explicitKind) {
+      return explicitKind;
+    }
+    const extension = String(payload?.extension || '').toLowerCase();
+    if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(extension)) {
+      return 'image';
+    }
+    if (extension === 'pdf') {
+      return 'pdf';
+    }
+    return '';
+  }
+
+  function buildDetailFacts(payload, detailTrail) {
+    const facts = [
+      ['Тип', payload.kindLabel || 'Файл'],
+      ['Формат', payload.extension ? formatExtension(payload.extension) : 'Файл'],
+      ['Размер', payload.sizeLabel || 'Без размера'],
+      ['Обновлено', formatDateLabel(payload.modifiedUtc) || 'Дата неизвестна'],
+    ];
+    if (detailTrail) {
+      facts.push(['Раздел', detailTrail]);
+    }
+    return facts.filter(([, value]) => String(value || '').trim() !== '');
+  }
+
+  function buildDetailPreview(payload, detailTitle) {
+    const inlineUrl = payload.inlineUrl || toInlineDownloadUrl(payload.downloadUrl);
+    const previewKind = inferDetailPreviewKind(payload);
+    if (previewKind === 'image' && inlineUrl) {
+      return `
+        <div class="detail-preview detail-preview-image">
+          <img src="${escapeHtml(inlineUrl)}" alt="${escapeHtml(detailTitle)}" loading="lazy" />
+        </div>
+      `;
+    }
+    if (previewKind === 'pdf' && inlineUrl) {
+      return `
+        <div class="detail-preview detail-preview-pdf">
+          <iframe src="${escapeHtml(`${inlineUrl}#view=FitH`)}" title="${escapeHtml(detailTitle)}" loading="lazy"></iframe>
+        </div>
+      `;
+    }
+
+    const fallbackLabel = payload.extension ? formatExtension(payload.extension) : 'Файл';
+    return `
+      <div class="detail-preview detail-preview-fallback">
+        <span class="detail-preview-sigil">${escapeHtml(fallbackLabel)}</span>
+        <strong>Предпросмотр недоступен</strong>
+        <p>Этот тип файла лучше открыть отдельно или скачать.</p>
+      </div>
+    `;
+  }
+
   function normalizeHeroExamples(examples) {
     return {
       good: Array.isArray(examples?.good) ? examples.good : [],
@@ -1340,6 +1411,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const detailTitle = payload.label || payload.name;
     const originalName = payload.name && payload.name !== detailTitle ? payload.name : '';
     const detailTrail = buildDetailTrail(payload.breadcrumbs || []);
+    const detailFacts = buildDetailFacts(payload, detailTrail);
+    const inlineUrl = payload.inlineUrl || toInlineDownloadUrl(payload.downloadUrl);
     const pills = [];
     if (payload.sizeLabel) {
       pills.push(payload.sizeLabel);
@@ -1352,16 +1425,36 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     els.detailPanel.innerHTML = `
       <article class="detail-card">
-        <h3 class="detail-title">${escapeHtml(detailTitle)}</h3>
-        <div class="item-meta">
-          ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
-        </div>
-        ${originalName ? `<p class="meta-row">${escapeHtml(originalName)}</p>` : ''}
-        ${detailTrail ? `<p class="meta-row">${escapeHtml(detailTrail)}</p>` : ''}
-        <div class="item-actions">
-          <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
-          <a class="link-button" href="${escapeHtml(payload.downloadUrl)}">Скачать</a>
-          <button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(payload.parentId)}">К разделу</button>
+        ${buildDetailPreview(payload, detailTitle)}
+        <div class="detail-copy">
+          <div class="detail-headline">
+            <span class="detail-kicker">${escapeHtml(payload.kindLabel || 'Файл')}</span>
+            <h3 class="detail-title">${escapeHtml(detailTitle)}</h3>
+            ${originalName ? `<p class="detail-original-name">${escapeHtml(originalName)}</p>` : ''}
+          </div>
+          <div class="item-meta">
+            ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
+          </div>
+          <div class="detail-facts">
+            ${detailFacts.map(([label, value]) => `
+              <div class="detail-fact">
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(value)}</strong>
+              </div>
+            `).join('')}
+          </div>
+          ${payload.pathLabel ? `
+            <div class="detail-section">
+              <span class="detail-section-label">Путь в каталоге</span>
+              <p class="detail-path">${escapeHtml(payload.pathLabel)}</p>
+            </div>
+          ` : ''}
+          <div class="item-actions detail-actions">
+            ${inlineUrl ? `<a class="ghost-button" href="${escapeHtml(inlineUrl)}" target="_blank" rel="noopener">Открыть</a>` : ''}
+            <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
+            <a class="link-button" href="${escapeHtml(payload.downloadUrl)}">Скачать</a>
+            <button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(payload.parentId)}">К разделу</button>
+          </div>
         </div>
       </article>
     `;

@@ -276,6 +276,9 @@ assert_true(($previewFilesOnly['items'][0]['type'] ?? '') === 'file', 'preview s
 $file = $service->getFile('file1');
 assert_true($file !== null, 'file details exist');
 assert_true($file['downloadUrl'] === 'download.php?id=file1', 'download url format');
+assert_true(($file['inlineUrl'] ?? '') === 'download.php?id=file1&inline=1', 'file details expose inline url');
+assert_true(($file['previewKind'] ?? '') === 'pdf', 'file details expose preview kind');
+assert_true(($file['mimeType'] ?? '') === 'application/pdf', 'file details expose mime type');
 
 $previewDownload = $service->resolveDownload('file1', false);
 assert_true($previewDownload !== null, 'preview download resolves without tracking');

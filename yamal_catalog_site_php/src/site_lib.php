@@ -642,6 +642,18 @@ function is_previewable_image_file(array $item): bool
     return in_array(file_ext((string) ($item['name'] ?? '')), previewable_image_extensions(), true);
 }
 
+function inline_preview_kind(array $item): string
+{
+    $ext = file_ext((string) ($item['name'] ?? ''));
+    if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'], true)) {
+        return 'image';
+    }
+    if ($ext === 'pdf') {
+        return 'pdf';
+    }
+    return '';
+}
+
 function inline_download_url(string $downloadUrl): string
 {
     if ($downloadUrl === '') {
@@ -1830,6 +1842,9 @@ class SiteCatalogService
         $payload = present_item($item);
         $payload['breadcrumbs'] = build_breadcrumbs($item, $this->db);
         $payload['pathLabel'] = $item['relative_path'];
+        $payload['mimeType'] = (string) ($item['mime_type'] ?? '');
+        $payload['inlineUrl'] = inline_download_url((string) ($payload['downloadUrl'] ?? ''));
+        $payload['previewKind'] = inline_preview_kind($item);
         return $payload;
     }
 
