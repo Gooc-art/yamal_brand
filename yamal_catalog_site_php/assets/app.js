@@ -238,6 +238,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     exampleTab: 'good',
     exampleIndex: { good: 0, debate: 0 },
     exampleAutoplay: true,
+    workspaceVisible: false,
     workspaceCollapsed: DEFAULT_WORKSPACE_COLLAPSED,
     catalogMode: false,
     inspectorOpen: false,
@@ -886,6 +887,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
   }
 
+  function setWorkspaceVisible(nextValue) {
+    state.workspaceVisible = Boolean(nextValue);
+    if (els.workspaceShell) {
+      els.workspaceShell.hidden = !state.workspaceVisible;
+    }
+    if (!state.workspaceVisible) {
+      setInspectorOpen(false);
+    }
+  }
+
   function setCatalogMode(nextValue) {
     state.catalogMode = Boolean(nextValue);
     if (els.pageShell) {
@@ -896,6 +907,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     });
     if (state.catalogMode) {
       setBrandRoutesOpen(false);
+      setWorkspaceVisible(true);
       setWorkspaceCollapsed(false);
       els.workspaceShell?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -920,13 +932,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function ensureWorkspaceVisible() {
+    if (!state.workspaceVisible) {
+      setWorkspaceVisible(true);
+    }
     if (state.workspaceCollapsed) {
       setWorkspaceCollapsed(false);
     }
   }
 
   function focusWorkspace(target) {
-    if (!els.workspaceShell) return;
+    if (!els.workspaceShell || !state.workspaceVisible) return;
     if (target && target.closest && target.closest('#workspace-shell')) {
       return;
     }
@@ -1284,8 +1299,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       els.searchInput.value = '';
     }
     if (keepWorkspace) {
+      setWorkspaceVisible(true);
       ensureWorkspaceVisible();
     } else {
+      setWorkspaceVisible(false);
       setWorkspaceCollapsed(true);
     }
     setBrandRoutesOpen(revealMenu, { focus: revealMenu });

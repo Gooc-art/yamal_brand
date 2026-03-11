@@ -25,6 +25,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-colum
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-composition'), 'index contains workspace composition scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-inspector'), 'index contains workspace inspector scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-shell collapsed" hidden'), 'index hides workspace shell by default');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'inspector-backdrop'), 'index contains inspector backdrop scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'close-inspector'), 'index contains inspector close action');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
@@ -118,6 +119,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'copy
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'navigator.clipboard'), 'frontend uses clipboard api when available');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "document.execCommand('copy')"), 'frontend keeps clipboard fallback');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setInspectorOpen'), 'frontend controls inspector drawer state');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setWorkspaceVisible'), 'frontend controls full workspace visibility state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'compactRelativePath'), 'frontend compacts path context in cards');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildItemPills'), 'frontend builds compact meta pills');

@@ -100,7 +100,7 @@ $config = site_config();
         </div>
       </section>
 
-      <section id="workspace-shell" class="workspace-shell collapsed">
+      <section id="workspace-shell" class="workspace-shell collapsed" hidden>
         <div class="surface workspace-header">
           <div>
             <p class="eyebrow">Рабочая область</p>
