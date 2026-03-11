@@ -35,9 +35,11 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Помощ
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-clear-button'), 'index contains consultant clear control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Опишите задачу одним сообщением'), 'index starts consultant from dialog copy');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'можно продолжать уточнениями прямо в этом же диалоге'), 'index keeps consultant guidance inside dialog');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'более глубокий ответ'), 'index mentions deeper consultant answer');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'role="dialog"'), 'index exposes consultant dialog semantics');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'role="log" aria-live="polite"'), 'index exposes consultant live transcript region');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'логотип SVG для Салехарда, можно ли менять цвет'), 'index contains richer consultant placeholder');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'что делать на тёмном фоне'), 'index contains deeper consultant starter example');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'consultant-intents'), 'index removed top consultant intent grid');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
@@ -94,6 +96,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consult
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-response-home'), 'styles contain consultant home dialog classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-section-card'), 'styles contain consultant section cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-understanding'), 'styles contain consultant understanding chips');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-deep-answer'), 'styles contain consultant deep-answer group classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-deep-answer-card'), 'styles contain consultant deep-answer card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-deep-answer-note'), 'styles contain consultant deep-answer note classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-followup'), 'styles contain consultant follow-up cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-chat'), 'styles contain consultant transcript classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-user-turn'), 'styles contain consultant user bubble classes');
@@ -161,11 +166,15 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'norm
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantContext'), 'frontend normalizes consultant memory context');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConsultantMemoryPayload'), 'frontend serializes consultant memory payload');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantAdvice'), 'frontend normalizes consultant advice');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantDeepAnswer'), 'frontend normalizes consultant deep answer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultant-understanding'), 'frontend renders consultant understanding section');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantHistory'), 'frontend tracks consultant transcript history');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'clear-consultant'), 'frontend handles consultant clear action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantAdviceBlock'), 'frontend renders consultant advice block');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantDeepAnswerBlock'), 'frontend renders consultant deep answer block');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'payload?.deepAnswer'), 'frontend reads consultant deep answer payload');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'можно ли менять цвет'), 'frontend mentions consultant color-rule examples');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'что делать на тёмном фоне'), 'frontend mentions deeper consultant follow-up examples');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'что отправить подрядчику'), 'frontend mentions consultant follow-up examples inside dialog');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'consultant-intent'), 'frontend removed top consultant intent action flow');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSectionSwitcher'), 'frontend renders workspace section switcher');
@@ -201,6 +210,20 @@ $apiTemplate = file_get_contents(dirname(__DIR__) . '/api.php');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'consult'"), 'api exposes consult action');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_intent'), 'api accepts consultant memory parameters');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_focus'), 'api accepts consultant memory focus parameter');
+
+$envExampleTemplate = file_get_contents(dirname(__DIR__) . '/.env.example');
+assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'CONSULTANT_LLM_ENABLED=0'), 'env example exposes consultant llm flag');
+assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'OPENAI_API_KEY='), 'env example exposes openai api key');
+assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'OPENAI_MODEL=gpt-5'), 'env example exposes openai model');
+
+$deployScriptTemplate = file_get_contents(dirname(__DIR__, 2) . '/scripts/deploy_regru_php_site.sh');
+assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'OPENAI_API_KEY'), 'deploy script forwards openai key');
+assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'CONSULTANT_LLM_ENABLED'), 'deploy script forwards consultant llm toggle');
+assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'upsert_remote_env'), 'deploy script upserts remote env values');
+
+$deployWorkflowTemplate = file_get_contents(dirname(__DIR__, 2) . '/.github/workflows/deploy_regru_php_site.yml');
+assert_true($deployWorkflowTemplate !== false && str_contains($deployWorkflowTemplate, 'OPENAI_API_KEY'), 'deploy workflow exposes openai key secret');
+assert_true($deployWorkflowTemplate !== false && str_contains($deployWorkflowTemplate, 'CONSULTANT_LLM_ENABLED'), 'deploy workflow exposes consultant llm secret');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
@@ -406,8 +429,11 @@ assert_true(count($bootstrap['sections']) >= 2, 'root sections exist');
 assert_true($bootstrap['setupMessage'] === '', 'setup message empty when db exists');
 assert_true(($bootstrap['consultant']['title'] ?? '') === 'Помощник по каталогу', 'bootstrap exposes consultant title');
 assert_true(str_contains((string) ($bootstrap['consultant']['description'] ?? ''), 'одним сообщением'), 'bootstrap exposes dialog-first consultant description');
+assert_true(str_contains((string) ($bootstrap['consultant']['description'] ?? ''), 'глубокий ответ'), 'bootstrap exposes deeper consultant description');
 assert_true(($bootstrap['consultant']['placeholder'] ?? '') === 'Например: логотип SVG для Салехарда, можно ли менять цвет', 'bootstrap exposes dialog-first consultant placeholder');
 assert_true(count($bootstrap['consultant']['intents'] ?? []) >= 6, 'bootstrap exposes consultant scenarios');
+assert_true(array_key_exists('smartMode', $bootstrap['consultant'] ?? []), 'bootstrap exposes consultant smart mode metadata');
+assert_true(is_bool($bootstrap['consultant']['smartMode']['enabled'] ?? null), 'bootstrap smart mode flag is boolean');
 assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
 assert_true(($bootstrap['examples']['good'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'dedicated good examples are prioritized');
@@ -460,6 +486,7 @@ assert_true(($logoConsult['items'][0]['id'] ?? '') === 'file1', 'consult logo su
 assert_true(in_array('Логотип и фирменный знак', $logoConsult['understanding'] ?? [], true), 'consult logo exposes understanding labels');
 assert_true(count($logoConsult['followUps'] ?? []) >= 1, 'consult logo exposes follow-up clarifications');
 assert_true(str_contains((string) ($logoConsult['advice']['title'] ?? ''), 'брендбук') || str_contains((string) ($logoConsult['advice']['title'] ?? ''), 'логотип'), 'consult logo exposes brandbook advice title');
+assert_true(($logoConsult['deepAnswer'] ?? null) === null, 'consult keeps deep answer empty when llm is disabled');
 
 $brandbookConsult = $service->consult('брендбук', '');
 assert_true(($brandbookConsult['intent']['id'] ?? '') === 'brandbook', 'consult detects brandbook intent from query');
@@ -499,6 +526,51 @@ $contractorConsult = $service->consult('что отправить подрядч
 assert_true(($contractorConsult['context']['applicationFocus'] ?? '') === 'contractor_handoff', 'consult exposes contractor handoff focus in context');
 assert_true(($contractorConsult['advice']['topic'] ?? '') === 'contractor_handoff', 'consult returns contractor handoff advice');
 assert_true(count($contractorConsult['items'] ?? []) >= 1, 'consult contractor handoff returns working files');
+
+$hybridService = new SiteCatalogService([
+    'title' => 'Hybrid Test Site',
+    'catalog_db_path' => $catalogDb,
+    'runtime_db_path' => $base . '/hybrid_runtime.db',
+    'catalog_root_path' => $base . '/upload',
+    'page_size' => 12,
+    'favorites_limit' => 5,
+    'public_base' => '',
+    'consultant_llm' => [
+        'enabled' => true,
+        'api_key' => 'test-key',
+        'model' => 'gpt-5',
+        'reasoning_effort' => 'high',
+        'max_output_tokens' => 1600,
+        'timeout_seconds' => 10,
+        'base_url' => 'https://api.openai.com/v1',
+        'organization' => '',
+        'project' => '',
+    ],
+], null, null, static function (array $request, array $settings): array {
+    assert_true(($request['model'] ?? '') === 'gpt-5', 'hybrid consult uses configured llm model');
+    assert_true(($settings['api_key'] ?? '') === 'test-key', 'hybrid consult receives configured llm settings');
+    assert_true(($request['text']['format']['type'] ?? '') === 'json_schema', 'hybrid consult requests structured json schema output');
+    return [
+        'output_text' => json_encode([
+            'mode' => 'general',
+            'title' => 'Что отдать подрядчику первым',
+            'answer' => 'Начните с готового PDF для проверки и добавьте векторный исходник только если подрядчик будет адаптировать макет.',
+            'bullets' => [
+                'PDF удобен для согласования и быстрой проверки.',
+                'SVG, AI или EPS отдавайте только под реальную адаптацию.',
+            ],
+            'follow_up' => 'Нужен пакет для печати или только для согласования?',
+            'note' => 'Общая рекомендация опирается на типовые рабочие сценарии и подтвержденные разделы каталога.',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ];
+});
+
+$hybridConsult = $hybridService->consult('что отправить подрядчику', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($hybridConsult['deepAnswer']['provider'] ?? '') === 'openai', 'consult hybrid mode exposes llm provider');
+assert_true(($hybridConsult['deepAnswer']['mode'] ?? '') === 'general', 'consult hybrid mode exposes llm answer mode');
+assert_true(str_contains((string) ($hybridConsult['deepAnswer']['answer'] ?? ''), 'PDF'), 'consult hybrid mode exposes deeper answer text');
+assert_true(count($hybridConsult['deepAnswer']['bullets'] ?? []) >= 2, 'consult hybrid mode exposes deeper answer bullets');
+assert_true(str_contains((string) ($hybridConsult['deepAnswer']['followUp'] ?? ''), 'печати'), 'consult hybrid mode exposes next follow-up question');
 
 $file = $service->getFile('file1');
 assert_true($file !== null, 'file details exist');

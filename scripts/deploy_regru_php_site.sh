@@ -11,6 +11,15 @@ SSH_OPTS=( -o StrictHostKeyChecking=no -o ConnectTimeout=15 )
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 SITE_TITLE="${SITE_TITLE:-Бренд Ямал}"
 SSH_PASSWORD="${SSH_PASSWORD:-}"
+CONSULTANT_LLM_ENABLED="${CONSULTANT_LLM_ENABLED:-}"
+OPENAI_API_KEY="${OPENAI_API_KEY:-}"
+OPENAI_MODEL="${OPENAI_MODEL:-}"
+OPENAI_REASONING_EFFORT="${OPENAI_REASONING_EFFORT:-}"
+OPENAI_MAX_OUTPUT_TOKENS="${OPENAI_MAX_OUTPUT_TOKENS:-}"
+OPENAI_TIMEOUT_SECONDS="${OPENAI_TIMEOUT_SECONDS:-}"
+OPENAI_BASE_URL="${OPENAI_BASE_URL:-}"
+OPENAI_ORG_ID="${OPENAI_ORG_ID:-}"
+OPENAI_PROJECT_ID="${OPENAI_PROJECT_ID:-}"
 
 if ! command -v rsync >/dev/null 2>&1; then
   echo "rsync is required" >&2
@@ -30,6 +39,22 @@ if [[ -n "${SSH_PASSWORD}" ]]; then
 fi
 
 REMOTE_TARGET="${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/"
+
+remote_quote() {
+  printf "%s" "$1" | sed "s/'/'\\\\''/g"
+}
+
+upsert_remote_env() {
+  local key="$1"
+  local value="$2"
+  if [[ -z "${value}" ]]; then
+    return 0
+  fi
+  local quoted
+  quoted="$(remote_quote "${value}")"
+  "${SSH_CMD[@]}" "${REMOTE_USER}@${REMOTE_HOST}" \
+    "ENV_FILE='${REMOTE_DIR}/.env'; TMP_FILE=\"\$ENV_FILE.tmp\"; grep -v '^${key}=' \"\$ENV_FILE\" > \"\$TMP_FILE\" 2>/dev/null || true; printf '%s=%s\n' '${key}' '${quoted}' >> \"\$TMP_FILE\"; mv \"\$TMP_FILE\" \"\$ENV_FILE\""
+}
 
 "${SSH_CMD[@]}" "${REMOTE_USER}@${REMOTE_HOST}" \
   "mkdir -p '${REMOTE_DIR}/_backup/${TIMESTAMP}' '${REMOTE_DIR}/data/files'; for item in index.html index.php api.php download.php .env assets src; do if [ -e '${REMOTE_DIR}/'\$item ]; then cp -a '${REMOTE_DIR}/'\$item '${REMOTE_DIR}/_backup/${TIMESTAMP}/'; fi; done"
@@ -53,7 +78,19 @@ CATALOG_ROOT_PATH=${REMOTE_DIR}/data/files
 PAGE_SIZE=18
 FAVORITES_LIMIT=8
 PUBLIC_BASE=
+CONSULTANT_LLM_ENABLED=0
 EOF
 fi"
+
+upsert_remote_env "SITE_TITLE" "${SITE_TITLE}"
+upsert_remote_env "CONSULTANT_LLM_ENABLED" "${CONSULTANT_LLM_ENABLED}"
+upsert_remote_env "OPENAI_API_KEY" "${OPENAI_API_KEY}"
+upsert_remote_env "OPENAI_MODEL" "${OPENAI_MODEL}"
+upsert_remote_env "OPENAI_REASONING_EFFORT" "${OPENAI_REASONING_EFFORT}"
+upsert_remote_env "OPENAI_MAX_OUTPUT_TOKENS" "${OPENAI_MAX_OUTPUT_TOKENS}"
+upsert_remote_env "OPENAI_TIMEOUT_SECONDS" "${OPENAI_TIMEOUT_SECONDS}"
+upsert_remote_env "OPENAI_BASE_URL" "${OPENAI_BASE_URL}"
+upsert_remote_env "OPENAI_ORG_ID" "${OPENAI_ORG_ID}"
+upsert_remote_env "OPENAI_PROJECT_ID" "${OPENAI_PROJECT_ID}"
 
 echo "Deployed to ${REMOTE_HOST}:${REMOTE_DIR}"

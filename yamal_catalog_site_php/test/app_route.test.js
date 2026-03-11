@@ -18,6 +18,7 @@ const {
   normalizeConsultantContext,
   buildConsultantMemoryPayload,
   normalizeConsultantAdvice,
+  normalizeConsultantDeepAnswer,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -244,6 +245,29 @@ test('normalizeConsultantContext keeps compact dialog memory for the next step',
       sourceMode: 'editable',
       applicationFocus: 'dark_background',
       memoryApplied: true,
+    },
+  );
+});
+
+test('normalizeConsultantDeepAnswer keeps structured hybrid response compact and predictable', () => {
+  assert.deepEqual(
+    normalizeConsultantDeepAnswer({
+      provider: 'openai',
+      mode: 'general',
+      title: 'Что лучше отдать в типографию',
+      answer: 'Для типографии обычно нужен PDF и векторный исходник.',
+      bullets: ['PDF для проверки', 'AI или EPS для адаптации', '', 'PDF для проверки'],
+      follow_up: 'Нужна печать или только согласование?',
+      note: 'Общая рекомендация.',
+    }),
+    {
+      provider: 'openai',
+      mode: 'general',
+      title: 'Что лучше отдать в типографию',
+      answer: 'Для типографии обычно нужен PDF и векторный исходник.',
+      bullets: ['PDF для проверки', 'AI или EPS для адаптации'],
+      followUp: 'Нужна печать или только согласование?',
+      note: 'Общая рекомендация.',
     },
   );
 });

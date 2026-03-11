@@ -2054,6 +2054,69 @@ input[type="search"]:focus {
   border-top-color: rgba(180, 36, 61, 0.12);
 }
 
+.consultant-deep-answer {
+  border-top-color: rgba(24, 42, 49, 0.12);
+}
+
+.consultant-deep-answer-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(180, 36, 61, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 243, 238, 0.96));
+}
+
+.consultant-deep-answer-card.mode-brandbook {
+  border-color: rgba(180, 36, 61, 0.12);
+}
+
+.consultant-deep-answer-card.mode-general {
+  border-color: rgba(29, 103, 112, 0.14);
+  background:
+    radial-gradient(circle at top right, rgba(29, 103, 112, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(242, 248, 248, 0.96));
+}
+
+.consultant-deep-answer-title {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.consultant-deep-answer-copy,
+.consultant-deep-answer-note,
+.consultant-deep-answer-followup {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.consultant-deep-answer-copy {
+  color: var(--ink);
+}
+
+.consultant-deep-answer-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.consultant-deep-answer-list li {
+  line-height: 1.45;
+}
+
+.consultant-deep-answer-note {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.consultant-deep-answer-followup {
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+
 .consultant-advice-card {
   display: grid;
   gap: 10px;

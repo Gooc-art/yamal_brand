@@ -352,6 +352,29 @@ function normalizeConsultantAdvice(advice) {
   };
 }
 
+function normalizeConsultantDeepAnswer(answer) {
+  const mode = String(answer?.mode || '').trim().toLowerCase();
+  const bullets = [];
+  if (Array.isArray(answer?.bullets)) {
+    answer.bullets.forEach((item) => {
+      const text = String(item || '').trim();
+      if (!text || bullets.includes(text)) {
+        return;
+      }
+      bullets.push(text);
+    });
+  }
+  return {
+    provider: String(answer?.provider || '').trim(),
+    mode: ['catalog', 'brandbook', 'general'].includes(mode) ? mode : 'catalog',
+    title: String(answer?.title || '').trim(),
+    answer: String(answer?.answer || '').trim(),
+    bullets: bullets.slice(0, 4),
+    followUp: String(answer?.followUp || answer?.follow_up || '').trim(),
+    note: String(answer?.note || '').trim(),
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -370,6 +393,7 @@ if (typeof module !== 'undefined' && module.exports) {
     normalizeConsultantContext,
     buildConsultantMemoryPayload,
     normalizeConsultantAdvice,
+    normalizeConsultantDeepAnswer,
   };
 }
 
@@ -1162,7 +1186,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
                   </div>
                 </section>
               ` : ''}
-              <p class="consultant-home-note">После первого ответа можно продолжать короткими сообщениями: «а для печати», «можно ли менять цвет», «что отправить подрядчику».</p>
+              <p class="consultant-home-note">После первого ответа можно продолжать короткими сообщениями: «а для печати», «можно ли менять цвет», «что делать на тёмном фоне», «что отправить подрядчику».</p>
             </div>
           </div>
         </div>
@@ -1265,6 +1289,40 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
+  function consultantDeepAnswerBlock(payload, { compact = false } = {}) {
+    const deepAnswer = normalizeConsultantDeepAnswer(payload?.deepAnswer);
+    if (!deepAnswer.title && !deepAnswer.answer && !deepAnswer.bullets.length && !deepAnswer.followUp && !deepAnswer.note) {
+      return '';
+    }
+
+    const modeLabel = deepAnswer.mode === 'general'
+      ? 'Общий взгляд'
+      : deepAnswer.mode === 'brandbook'
+        ? 'Разбор по брендбуку'
+        : 'Глубже по задаче';
+    const bullets = compact ? deepAnswer.bullets.slice(0, 2) : deepAnswer.bullets;
+
+    return `
+      <section class="consultant-group consultant-deep-answer">
+        <div class="consultant-group-head">
+          <strong>${escapeHtml(modeLabel)}</strong>
+          ${deepAnswer.provider ? `<span>${escapeHtml(deepAnswer.provider === 'openai' ? 'умный режим' : deepAnswer.provider)}</span>` : ''}
+        </div>
+        <div class="consultant-deep-answer-card mode-${escapeHtml(deepAnswer.mode)}">
+          ${deepAnswer.title ? `<strong class="consultant-deep-answer-title">${escapeHtml(deepAnswer.title)}</strong>` : ''}
+          ${deepAnswer.answer ? `<p class="consultant-deep-answer-copy">${escapeHtml(deepAnswer.answer)}</p>` : ''}
+          ${bullets.length ? `
+            <ul class="consultant-deep-answer-list">
+              ${bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          ` : ''}
+          ${!compact && deepAnswer.note ? `<p class="consultant-deep-answer-note">${escapeHtml(deepAnswer.note)}</p>` : ''}
+          ${!compact && deepAnswer.followUp ? `<p class="consultant-deep-answer-followup">${escapeHtml(deepAnswer.followUp)}</p>` : ''}
+        </div>
+      </section>
+    `;
+  }
+
   function consultantAssistantTurnMarkup(payload, { compact = false } = {}) {
     const title = buildConsultantResultTitle(payload);
     const message = String(payload?.message || '').trim();
@@ -1274,13 +1332,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const followUps = normalizeConsultantFollowUps(payload?.followUps, payload?.suggestedQueries);
     const primarySection = sections[0] || null;
     const searchQuery = String(payload?.searchQuery || payload?.query || '').trim();
+    const deepAnswerMarkup = consultantDeepAnswerBlock(payload, { compact });
     const adviceMarkup = consultantAdviceBlock(payload);
     const stats = [];
     if (sections.length) stats.push(`Разделы: ${sections.length}`);
     if (items.length) stats.push(`Файлы: ${items.length}`);
     if (followUps.length) stats.push(`Уточнения: ${followUps.length}`);
 
-    if (!sections.length && !items.length && !followUps.length && !adviceMarkup) {
+    if (!sections.length && !items.length && !followUps.length && !adviceMarkup && !deepAnswerMarkup) {
       return `
         <div class="consultant-turn assistant">
           <div class="panel-empty consultant-empty consultant-assistant-turn">
@@ -1310,6 +1369,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             </div>
           </section>
         ` : ''}
+        ${deepAnswerMarkup}
         ${adviceMarkup}
         ${compact ? `
           ${stats.length ? `<p class="consultant-turn-summary">${escapeHtml(stats.join(' • '))}</p>` : ''}

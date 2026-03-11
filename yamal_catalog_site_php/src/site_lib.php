@@ -34,6 +34,109 @@ function load_env_file(string $path): void
 
 load_env_file(dirname(__DIR__) . '/.env');
 
+function env_flag(string $name, bool $default = false): bool
+{
+    $raw = getenv($name);
+    if ($raw === false) {
+        return $default;
+    }
+
+    $normalized = strtolower(trim((string) $raw));
+    if ($normalized === '') {
+        return $default;
+    }
+    if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
+        return true;
+    }
+    if (in_array($normalized, ['0', 'false', 'no', 'off'], true)) {
+        return false;
+    }
+    return $default;
+}
+
+function consultant_llm_settings_from_env(): array
+{
+    $apiKey = trim((string) (getenv('OPENAI_API_KEY') ?: ''));
+    $model = trim((string) (getenv('OPENAI_MODEL') ?: 'gpt-5'));
+    $effort = strtolower(trim((string) (getenv('OPENAI_REASONING_EFFORT') ?: 'high')));
+    if (!in_array($effort, ['low', 'medium', 'high'], true)) {
+        $effort = 'high';
+    }
+    $maxOutputTokens = max(600, (int) (getenv('OPENAI_MAX_OUTPUT_TOKENS') ?: 2200));
+    $timeoutSeconds = max(5, min(60, (int) (getenv('OPENAI_TIMEOUT_SECONDS') ?: 25)));
+    $baseUrl = rtrim(trim((string) (getenv('OPENAI_BASE_URL') ?: 'https://api.openai.com/v1')), '/');
+
+    return [
+        'enabled' => env_flag('CONSULTANT_LLM_ENABLED', $apiKey !== ''),
+        'api_key' => $apiKey,
+        'model' => $model !== '' ? $model : 'gpt-5',
+        'reasoning_effort' => $effort,
+        'max_output_tokens' => $maxOutputTokens,
+        'timeout_seconds' => $timeoutSeconds,
+        'base_url' => $baseUrl !== '' ? $baseUrl : 'https://api.openai.com/v1',
+        'organization' => trim((string) (getenv('OPENAI_ORG_ID') ?: '')),
+        'project' => trim((string) (getenv('OPENAI_PROJECT_ID') ?: '')),
+    ];
+}
+
+function consultant_llm_enabled(?array $config = null): bool
+{
+    $settings = $config['consultant_llm'] ?? consultant_llm_settings_from_env();
+    return (bool) ($settings['enabled'] ?? false) && trim((string) ($settings['api_key'] ?? '')) !== '';
+}
+
+function openai_response_output_text(array $payload): string
+{
+    $explicit = trim((string) ($payload['output_text'] ?? ''));
+    if ($explicit !== '') {
+        return $explicit;
+    }
+
+    foreach (($payload['output'] ?? []) as $entry) {
+        foreach (($entry['content'] ?? []) as $content) {
+            $type = (string) ($content['type'] ?? '');
+            if ($type === 'output_text' || $type === 'text') {
+                $text = trim((string) ($content['text'] ?? ''));
+                if ($text !== '') {
+                    return $text;
+                }
+            }
+            if ($type === 'refusal') {
+                $refusal = trim((string) ($content['refusal'] ?? ''));
+                if ($refusal !== '') {
+                    return '';
+                }
+            }
+        }
+    }
+
+    return '';
+}
+
+function consultant_llm_response_schema(): array
+{
+    return [
+        'type' => 'object',
+        'properties' => [
+            'mode' => [
+                'type' => 'string',
+                'enum' => ['catalog', 'brandbook', 'general'],
+            ],
+            'title' => ['type' => 'string'],
+            'answer' => ['type' => 'string'],
+            'bullets' => [
+                'type' => 'array',
+                'items' => ['type' => 'string'],
+                'maxItems' => 4,
+            ],
+            'follow_up' => ['type' => 'string'],
+            'note' => ['type' => 'string'],
+        ],
+        'required' => ['mode', 'title', 'answer', 'bullets', 'follow_up', 'note'],
+        'additionalProperties' => false,
+    ];
+}
+
 function site_config(): array
 {
     static $config = null;
@@ -51,6 +154,7 @@ function site_config(): array
         'page_size' => max(1, (int) (getenv('PAGE_SIZE') ?: 18)),
         'favorites_limit' => max(1, (int) (getenv('FAVORITES_LIMIT') ?: 8)),
         'public_base' => rtrim((string) (getenv('PUBLIC_BASE') ?: ''), '/'),
+        'consultant_llm' => consultant_llm_settings_from_env(),
     ];
     return $config;
 }
@@ -807,11 +911,13 @@ function consultant_intent_definitions(): array
     ];
 }
 
-function consultant_bootstrap(): array
+function consultant_bootstrap(?array $config = null): array
 {
+    $resolvedConfig = is_array($config) ? $config : site_config();
+    $smartModeEnabled = consultant_llm_enabled($resolvedConfig);
     return [
         'title' => 'Помощник по каталогу',
-        'description' => 'Опишите задачу одним сообщением. Помощник сам разберет формат, город и тип материала, подберет реальные разделы и файлы каталога, а потом поможет уточнениями по брендбуку.',
+        'description' => 'Опишите задачу одним сообщением. Помощник сам разберет формат, город и тип материала, подберет реальные разделы и файлы каталога, а затем даст более глубокий ответ по брендбуку и применению.',
         'placeholder' => 'Например: логотип SVG для Салехарда, можно ли менять цвет',
         'intents' => array_map(
             static fn(array $intent): array => [
@@ -823,6 +929,11 @@ function consultant_bootstrap(): array
             ],
             consultant_intent_definitions()
         ),
+        'smartMode' => [
+            'enabled' => $smartModeEnabled,
+            'provider' => $smartModeEnabled ? 'openai' : '',
+            'label' => $smartModeEnabled ? 'Глубокий ответ' : 'Grounded',
+        ],
     ];
 }
 
@@ -2538,12 +2649,14 @@ class SiteCatalogService
     private CatalogDb $db;
     private RuntimeDb $state;
     private array $config;
+    private $consultantLlmTransport;
 
-    public function __construct(?array $config = null, ?CatalogDb $db = null, ?RuntimeDb $state = null)
+    public function __construct(?array $config = null, ?CatalogDb $db = null, ?RuntimeDb $state = null, $consultantLlmTransport = null)
     {
         $this->config = $config ?? site_config();
         $this->db = $db ?? new CatalogDb($this->config['catalog_db_path'], $this->config['catalog_root_path']);
         $this->state = $state ?? new RuntimeDb($this->config['runtime_db_path']);
+        $this->consultantLlmTransport = is_callable($consultantLlmTransport) ? $consultantLlmTransport : null;
     }
 
     public function getRootFolders(): array
@@ -2776,7 +2889,7 @@ class SiteCatalogService
             ],
             'sections' => array_map(static fn(array $item): array => present_item($item), $this->getRootFolders()),
             'examples' => $this->getHeroExamples(),
-            'consultant' => consultant_bootstrap(),
+            'consultant' => consultant_bootstrap($this->config),
             'favorites' => $this->getFavorites(),
             'topSearches' => array_map(static fn(array $row): array => ['query' => $row['sample_query'], 'uses' => (int) $row['uses']], $this->state->getTopSearches(8)),
         ];
@@ -3532,6 +3645,324 @@ class SiteCatalogService
         return $lead . 'Сформулируйте запрос чуть точнее: например, «логотип svg», «брендбук Салехард», «шрифт otf» или «сувенирка».';
     }
 
+    private function consultantLlmSettings(): array
+    {
+        $settings = $this->config['consultant_llm'] ?? consultant_llm_settings_from_env();
+        return is_array($settings) ? $settings : consultant_llm_settings_from_env();
+    }
+
+    private function consultantLlmStringList(array $items, int $limit = 4): array
+    {
+        $out = [];
+        foreach ($items as $item) {
+            $text = trim((string) $item);
+            if ($text === '' || in_array($text, $out, true)) {
+                continue;
+            }
+            $out[] = $text;
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+        return $out;
+    }
+
+    private function consultantLlmSystemPrompt(): string
+    {
+        return implode("\n", [
+            'Ты встроенный помощник каталога бренд-материалов Ямала.',
+            'Отвечай только на русском языке.',
+            'Ты получаешь уже найденные реальные разделы, реальные файлы и rule-based совет по брендбуку.',
+            'Никогда не выдумывай названия файлов, разделов, форматов, ссылок, правил брендбука или фактов о содержимом каталога.',
+            'Если опираешься на общую дизайнерскую практику, а не на конкретные материалы каталога, явно помечай это как общую рекомендацию.',
+            'Если grounding недостаточен, не притворяйся, что видел файл или страницу брендбука; лучше честно скажи об ограничении и предложи следующий шаг.',
+            'Пиши компактно и по делу: один понятный ответ, до четырех коротких буллетов и один следующий вопрос.',
+            'В поле note оставляй пустую строку, если дополнительных оговорок нет.',
+        ]);
+    }
+
+    private function buildConsultantLlmRequestPayload(
+        array $context,
+        array $sections,
+        array $items,
+        array $followUps,
+        array $advice,
+        string $title,
+        string $message,
+        array $understanding
+    ): array {
+        $settings = $this->consultantLlmSettings();
+        $grounding = [
+            'user_query' => (string) ($context['query'] ?? ''),
+            'recognized_context' => [
+                'intent_id' => (string) (($context['intent']['id'] ?? '')),
+                'intent_label' => (string) (($context['intent']['label'] ?? '')),
+                'city' => (string) ($context['city'] ?? ''),
+                'formats' => array_values($context['formats'] ?? []),
+                'medium' => (string) ($context['medium'] ?? ''),
+                'source_mode' => (string) ($context['sourceMode'] ?? ''),
+                'application_focus' => (string) ($context['applicationFocus'] ?? ''),
+                'memory_applied' => (bool) ($context['memoryApplied'] ?? false),
+            ],
+            'grounded_response' => [
+                'title' => $title,
+                'message' => $message,
+                'understanding' => $this->consultantLlmStringList($understanding, 6),
+                'brandbook_advice' => [
+                    'topic' => (string) ($advice['topic'] ?? ''),
+                    'title' => (string) ($advice['title'] ?? ''),
+                    'summary' => (string) ($advice['summary'] ?? ''),
+                    'bullets' => $this->consultantLlmStringList($advice['bullets'] ?? [], 4),
+                    'next_step' => (string) ($advice['nextStep'] ?? ''),
+                ],
+                'real_sections' => array_map(
+                    static fn(array $section): array => [
+                        'label' => (string) ($section['label'] ?? $section['name'] ?? ''),
+                        'name' => (string) ($section['name'] ?? ''),
+                    ],
+                    array_slice($sections, 0, 4)
+                ),
+                'real_files' => array_map(
+                    static fn(array $item): array => [
+                        'label' => (string) ($item['label'] ?? $item['name'] ?? ''),
+                        'name' => (string) ($item['name'] ?? ''),
+                        'relative_path' => (string) ($item['relativePath'] ?? ''),
+                        'extension' => (string) ($item['extension'] ?? ''),
+                    ],
+                    array_slice($items, 0, 4)
+                ),
+                'follow_ups' => array_map(
+                    static fn(array $item): array => [
+                        'label' => (string) ($item['label'] ?? ''),
+                        'query' => (string) ($item['query'] ?? ''),
+                        'reason' => (string) ($item['reason'] ?? ''),
+                    ],
+                    array_slice($followUps, 0, 4)
+                ),
+            ],
+            'task' => 'Собери более глубокий ответ для пользователя, не нарушая grounding. Если вопрос шире каталога, дай общую рекомендацию, но явно отдели её от подтвержденных материалов каталога.',
+        ];
+
+        return [
+            'model' => (string) ($settings['model'] ?? 'gpt-5'),
+            'reasoning' => [
+                'effort' => (string) ($settings['reasoning_effort'] ?? 'high'),
+            ],
+            'max_output_tokens' => (int) ($settings['max_output_tokens'] ?? 2200),
+            'input' => [
+                [
+                    'role' => 'system',
+                    'content' => [
+                        [
+                            'type' => 'input_text',
+                            'text' => $this->consultantLlmSystemPrompt(),
+                        ],
+                    ],
+                ],
+                [
+                    'role' => 'user',
+                    'content' => [
+                        [
+                            'type' => 'input_text',
+                            'text' => json_encode($grounding, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
+                        ],
+                    ],
+                ],
+            ],
+            'text' => [
+                'format' => [
+                    'type' => 'json_schema',
+                    'name' => 'consultant_deep_answer',
+                    'strict' => true,
+                    'schema' => consultant_llm_response_schema(),
+                ],
+            ],
+        ];
+    }
+
+    private function httpJsonPost(string $url, array $payload, array $headers, int $timeoutSeconds): array
+    {
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($json) || $json === '') {
+            throw new RuntimeException('consultant_llm_encode_failed');
+        }
+
+        if (function_exists('curl_init')) {
+            $handle = curl_init($url);
+            if ($handle === false) {
+                throw new RuntimeException('consultant_llm_curl_init_failed');
+            }
+            curl_setopt_array($handle, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => $headers,
+                CURLOPT_POSTFIELDS => $json,
+                CURLOPT_TIMEOUT => $timeoutSeconds,
+                CURLOPT_CONNECTTIMEOUT => min(10, $timeoutSeconds),
+            ]);
+            $responseBody = curl_exec($handle);
+            $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+            $error = curl_error($handle);
+            curl_close($handle);
+            if ($responseBody === false) {
+                throw new RuntimeException('consultant_llm_request_failed: ' . $error);
+            }
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => implode("\r\n", $headers),
+                    'content' => $json,
+                    'ignore_errors' => true,
+                    'timeout' => $timeoutSeconds,
+                ],
+            ]);
+            $responseBody = @file_get_contents($url, false, $context);
+            $status = 0;
+            foreach ($http_response_header ?? [] as $headerLine) {
+                if (preg_match('/\s(\d{3})\s/', (string) $headerLine, $matches)) {
+                    $status = (int) ($matches[1] ?? 0);
+                    break;
+                }
+            }
+            if ($responseBody === false) {
+                throw new RuntimeException('consultant_llm_stream_failed');
+            }
+        }
+
+        $decoded = json_decode((string) $responseBody, true);
+        if (!is_array($decoded)) {
+            throw new RuntimeException('consultant_llm_invalid_json');
+        }
+        if ($status >= 400) {
+            $message = trim((string) (($decoded['error']['message'] ?? $decoded['message'] ?? '')));
+            throw new RuntimeException('consultant_llm_http_' . $status . ($message !== '' ? ': ' . $message : ''));
+        }
+
+        return $decoded;
+    }
+
+    private function dispatchConsultantLlm(array $request): array
+    {
+        $settings = $this->consultantLlmSettings();
+        if (is_callable($this->consultantLlmTransport)) {
+            $response = call_user_func($this->consultantLlmTransport, $request, $settings);
+            if (is_array($response)) {
+                return $response;
+            }
+            if (is_string($response)) {
+                return ['output_text' => $response];
+            }
+            return [];
+        }
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . (string) ($settings['api_key'] ?? ''),
+            'User-Agent: yamal-catalog-site/1.0',
+        ];
+        if (trim((string) ($settings['organization'] ?? '')) !== '') {
+            $headers[] = 'OpenAI-Organization: ' . trim((string) $settings['organization']);
+        }
+        if (trim((string) ($settings['project'] ?? '')) !== '') {
+            $headers[] = 'OpenAI-Project: ' . trim((string) $settings['project']);
+        }
+
+        return $this->httpJsonPost(
+            rtrim((string) ($settings['base_url'] ?? 'https://api.openai.com/v1'), '/') . '/responses',
+            $request,
+            $headers,
+            (int) ($settings['timeout_seconds'] ?? 25)
+        );
+    }
+
+    private function normalizeConsultantLlmAnswer(array $response): ?array
+    {
+        $candidate = $response;
+        if (!isset($candidate['title']) || !isset($candidate['answer'])) {
+            $outputText = openai_response_output_text($response);
+            if ($outputText === '') {
+                return null;
+            }
+            $decoded = json_decode($outputText, true);
+            if (!is_array($decoded)) {
+                return null;
+            }
+            $candidate = $decoded;
+        }
+
+        $mode = (string) ($candidate['mode'] ?? 'catalog');
+        if (!in_array($mode, ['catalog', 'brandbook', 'general'], true)) {
+            $mode = 'catalog';
+        }
+
+        $title = trim((string) ($candidate['title'] ?? ''));
+        $answer = trim((string) ($candidate['answer'] ?? ''));
+        if ($title === '' || $answer === '') {
+            return null;
+        }
+
+        $bullets = [];
+        foreach (($candidate['bullets'] ?? []) as $item) {
+            $text = trim((string) $item);
+            if ($text === '' || in_array($text, $bullets, true)) {
+                continue;
+            }
+            $bullets[] = $text;
+            if (count($bullets) >= 4) {
+                break;
+            }
+        }
+
+        $followUp = trim((string) ($candidate['follow_up'] ?? $candidate['followUp'] ?? ''));
+        $note = trim((string) ($candidate['note'] ?? ''));
+        if ($mode === 'general' && $note === '') {
+            $note = 'Общая рекомендация вне каталога. По конкретным файлам и разделам ориентируйтесь на подтвержденные материалы ниже.';
+        }
+
+        return [
+            'provider' => 'openai',
+            'mode' => $mode,
+            'title' => $title,
+            'answer' => $answer,
+            'bullets' => $bullets,
+            'followUp' => $followUp,
+            'note' => $note,
+        ];
+    }
+
+    private function consultDeepAnswer(
+        array $context,
+        array $sections,
+        array $items,
+        array $followUps,
+        array $advice,
+        string $title,
+        string $message,
+        array $understanding
+    ): ?array {
+        if (!consultant_llm_enabled($this->config)) {
+            return null;
+        }
+
+        try {
+            $request = $this->buildConsultantLlmRequestPayload(
+                $context,
+                $sections,
+                $items,
+                $followUps,
+                $advice,
+                $title,
+                $message,
+                $understanding
+            );
+            $response = $this->dispatchConsultantLlm($request);
+            return $this->normalizeConsultantLlmAnswer($response);
+        } catch (Throwable $error) {
+            return null;
+        }
+    }
+
     public function consult(string $query, string $intentId = '', array $memory = []): array
     {
         $context = build_consultant_context($query, $intentId, $memory);
@@ -3547,6 +3978,20 @@ class SiteCatalogService
         $followUps = consultant_follow_up_suggestions($context);
         $queries = $this->consultSearchQueries($context);
         $advice = consultant_brandbook_advice($context, $sections);
+        $understanding = consultant_understanding_labels($context);
+        $title = $this->consultResponseTitle($context);
+        $message = $this->consultResponseMessage($context, $sections, $items, $followUps);
+        $presentedSections = array_map(static fn(array $item): array => present_item($item), $sections);
+        $deepAnswer = $this->consultDeepAnswer(
+            $context,
+            $presentedSections,
+            $items,
+            $followUps,
+            $advice,
+            $title,
+            $message,
+            $understanding
+        );
 
         return [
             'query' => $trimmedQuery,
@@ -3555,9 +4000,9 @@ class SiteCatalogService
                 'label' => (string) ($intent['label'] ?? ''),
                 'summary' => (string) ($intent['summary'] ?? ''),
             ],
-            'title' => $this->consultResponseTitle($context),
-            'message' => $this->consultResponseMessage($context, $sections, $items, $followUps),
-            'understanding' => consultant_understanding_labels($context),
+            'title' => $title,
+            'message' => $message,
+            'understanding' => $understanding,
             'context' => [
                 'intentId' => (string) ($intent['id'] ?? ''),
                 'city' => (string) ($context['city'] ?? ''),
@@ -3568,7 +4013,8 @@ class SiteCatalogService
                 'memoryApplied' => (bool) ($context['memoryApplied'] ?? false),
             ],
             'advice' => $advice,
-            'sections' => array_map(static fn(array $item): array => present_item($item), $sections),
+            'deepAnswer' => $deepAnswer,
+            'sections' => $presentedSections,
             'items' => $items,
             'searchQuery' => (string) ($queries[0] ?? $trimmedQuery),
             'followUps' => $followUps,

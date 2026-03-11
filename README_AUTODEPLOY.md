@@ -102,6 +102,8 @@ For PHP code updates of the public REG.RU catalog site there is a separate workf
 - GitHub -> `Actions` -> `Deploy REG.RU PHP Catalog Site` -> `Run workflow`
 - it uploads `index.php`, `api.php`, `download.php`, `assets/`, `src/` and keeps `data/` untouched
 - this workflow is used for visual refinements too, including the current restrained white layout aligned with the Yamal brandbook structure
+- if you want the site consultant to use the optional OpenAI deep-answer mode, add repository secrets `OPENAI_API_KEY`, optionally `CONSULTANT_LLM_ENABLED`, `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`, `OPENAI_MAX_OUTPUT_TOKENS`, `OPENAI_TIMEOUT_SECONDS`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID`
+- the deploy script will upsert these values into the remote PHP `.env`; without them the assistant stays in grounded local mode
 
 To inspect the real catalog structure on the production runner:
 - GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.

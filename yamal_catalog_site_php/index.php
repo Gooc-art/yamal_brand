@@ -158,7 +158,7 @@ $config = site_config();
         <span class="consultant-toggle-mark" aria-hidden="true">?</span>
         <span class="consultant-toggle-copy">
           <strong>Помощник</strong>
-          <span>Подскажу раздел и файл</span>
+          <span>Подскажу раздел, файл и следующий шаг</span>
         </span>
       </button>
 
@@ -176,7 +176,7 @@ $config = site_config();
           </div>
         </div>
         <div class="consultant-body">
-          <p id="consultant-copy" class="consultant-copy visually-hidden">Опишите задачу одним сообщением. Помощник помнит предыдущий шаг, отвечает на вопросы применения, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
+          <p id="consultant-copy" class="consultant-copy visually-hidden">Опишите задачу одним сообщением. Помощник помнит предыдущий шаг, отвечает на вопросы применения, подсказывает по брендбуку, даёт более глубокий ответ и предлагает только реальные разделы и файлы из каталога.</p>
           <div id="consultant-result" class="consultant-result" role="log" aria-live="polite" aria-relevant="additions text">
             <div class="consultant-chat consultant-chat-home">
               <div class="consultant-turn assistant">
@@ -185,9 +185,9 @@ $config = site_config();
                     <div class="consultant-response-head">
                       <span class="consultant-kicker">Помощник</span>
                       <strong>Опишите задачу одним сообщением</strong>
-                      <p>Я сам подберу раздел, нужные файлы и следующий шаг по брендбуку. После ответа можно продолжать уточнениями прямо в этом же диалоге.</p>
+                      <p>Я сам подберу раздел, нужные файлы, следующий шаг по брендбуку и дам более глубокий ответ. После ответа можно продолжать уточнениями прямо в этом же диалоге.</p>
                     </div>
-                    <p class="consultant-home-note">Например: логотип SVG для Салехарда, брендбук PDF, можно ли менять цвет.</p>
+                    <p class="consultant-home-note">Например: логотип SVG для Салехарда, брендбук PDF, можно ли менять цвет, что делать на тёмном фоне.</p>
                   </div>
                 </div>
               </div>
