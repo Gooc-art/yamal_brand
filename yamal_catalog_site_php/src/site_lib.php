@@ -410,12 +410,13 @@ function root_menu_folders(): array
         ['folderName' => 'Брендбук Ноябрьск', 'label' => 'Брендбук Ноябрьск', 'icon' => '📒'],
         ['folderName' => 'Иллюстрации мастер-бренда SVG-элементы', 'label' => 'Иллюстрации и SVG', 'icon' => '🖼️'],
         ['folderName' => 'Каталог сувенирной продукции', 'label' => 'Сувенирная продукция', 'icon' => '🎁'],
+        ['folderName' => 'Шрифт', 'label' => 'Шрифты', 'icon' => '🔤'],
     ];
 }
 
 function hidden_root_folders(): array
 {
-    return ['Шрифт'];
+    return [];
 }
 
 function section_hints(): array
@@ -1757,7 +1758,7 @@ class SiteCatalogService
                 'root' => true,
                 'folder' => ['id' => root_id(), 'label' => 'Главное меню', 'name' => 'Главное меню', 'type' => 'folder'],
                 'breadcrumbs' => [['id' => root_id(), 'name' => 'Главная', 'type' => 'folder', 'relative_path' => '.']],
-                'hint' => $this->db->isAvailable() ? 'Выберите раздел каталога.' : 'Сайт готов. Как только в data/files появятся материалы, каталог соберется автоматически.',
+                'hint' => $this->db->isAvailable() ? 'Выберите раздел в главном меню.' : 'Сайт готов. Как только в data/files появятся материалы, каталог соберется автоматически.',
                 'page' => 0,
                 'total' => count($roots),
                 'pageSize' => $this->config['page_size'],

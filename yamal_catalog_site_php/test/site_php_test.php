@@ -33,11 +33,15 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url(
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/app.js')"), 'index uses versioned app script url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-routes'), 'index contains brand routes scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'search-panel'), 'index contains compact search panel');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Главное меню'), 'index contains unified main menu heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Скрыть витрину'), 'index contains hide showcase action label');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-stats'), 'index removed hero stats scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-briefing'), 'index removed hero briefing grid');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'brand-note'), 'index removed brand note block');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'brand-principles'), 'index removed brand principles scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-summary'), 'index removed old hero summary scaffold');
+assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Каталог брендирования'), 'index removed old branding catalog heading');
+assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Только каталог'), 'index removed confusing catalog-only label');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'featured-shelves'), 'index removed featured shelves scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Под рукой'), 'index removed secondary showcase heading');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Все брендбуки'), 'index removed showcase quick action');
@@ -98,6 +102,8 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-s
 
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildBrandRouteMark'), 'frontend derives route marks from real catalog sections');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'inferBrandRouteTone'), 'frontend derives route tones from real catalog sections');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderHeroExamples'), 'frontend contains hero examples renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'examples-tab'), 'frontend supports hero example tabs');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-example-autoplay'), 'frontend supports hero example autoplay toggle');
@@ -133,6 +139,7 @@ assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'bra
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-number'), 'frontend removed route numbering');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'result-path'), 'frontend removed full path line from result cards');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderFavorites'), 'frontend removed left rail favorites renderer');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'BRAND_ROUTE_BLUEPRINTS'), 'frontend removed fixed route blueprint');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderHeroBrief'), 'frontend removed old hero summary renderer');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderHeroStats'), 'frontend removed hero stats renderer');
 
@@ -341,5 +348,13 @@ $missing = new SiteCatalogService([
 $missingBootstrap = $missing->getBootstrap();
 assert_true($missingBootstrap['setupMessage'] === '', 'missing db auto-builds when files exist');
 assert_true(($missingBootstrap['stats']['totalAssets'] ?? 0) >= 3, 'auto-built db has rows');
+assert_true(
+    array_reduce(
+        $missingBootstrap['sections'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || in_array((string) ($item['label'] ?? $item['name'] ?? ''), ['Шрифты', 'Шрифт'], true),
+        false
+    ),
+    'root section menu includes fonts when only font folder exists'
+);
 
 echo "ok\n";

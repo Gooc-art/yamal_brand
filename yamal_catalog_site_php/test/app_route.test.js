@@ -64,27 +64,29 @@ test('buildRouteUrl removes stale route params for root state', () => {
   );
 });
 
-test('buildBrandRouteCards falls back to search when section is missing', () => {
+test('buildBrandRouteCards maps real root sections into menu cards', () => {
   const cards = buildBrandRouteCards([
-    { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд' },
-    { id: 'folder-logo', name: 'Логотип' },
-  ], 'folder-logo');
+    { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-Бренд', icon: '📕' },
+    { id: 'folder-font', name: 'Шрифт', label: 'Шрифты', icon: '🔤' },
+  ], 'folder-font');
 
+  assert.equal(cards.length, 2);
   assert.equal(cards[0].action, 'open-folder');
   assert.equal(cards[0].target, 'folder-master');
-  assert.equal(cards[3].isActive, true);
-  assert.equal(cards[6].action, 'search-chip');
-  assert.equal(cards[6].target, 'шрифт');
+  assert.equal(cards[0].mark, '📕');
+  assert.equal(cards[0].tone, 'tone-master');
+  assert.equal(cards[1].label, 'Шрифты');
+  assert.equal(cards[1].isActive, true);
 });
 
-test('buildBrandRoutesSummary exposes active label and route counters', () => {
+test('buildBrandRoutesSummary exposes active label and menu counters', () => {
   const summary = buildBrandRoutesSummary([
-    { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд' },
-    { id: 'folder-logo', name: 'Логотип' },
-    { id: 'folder-cities', name: 'Логотипы городов' },
+    { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-Бренд', icon: '📕' },
+    { id: 'folder-logo', name: 'Логотип', label: 'Логотип', icon: '🏷️' },
+    { id: 'folder-cities', name: 'Логотипы городов', label: 'Городские версии', icon: '🏙️' },
   ], 'folder-cities');
 
-  assert.equal(summary.total, 8);
+  assert.equal(summary.total, 3);
   assert.equal(summary.available, 3);
   assert.equal(summary.activeLabel, 'Городские версии');
 });

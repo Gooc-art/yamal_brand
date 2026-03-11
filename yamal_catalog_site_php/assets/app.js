@@ -1,62 +1,4 @@
 const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file'];
-const BRAND_ROUTE_BLUEPRINTS = [
-  {
-    mark: '✳',
-    label: 'Мастер-бренд',
-    sectionName: 'Брендбук ЯМАЛ Мастер бренд',
-    query: 'мастер бренд',
-    tone: 'tone-master',
-  },
-  {
-    mark: '100',
-    label: 'ЯМАЛ 100',
-    sectionName: 'Брендбук ЯМАЛ 100',
-    query: 'ямал 100',
-    tone: 'tone-anniversary',
-  },
-  {
-    mark: '🏙',
-    label: 'Городские версии',
-    sectionName: 'Логотипы городов',
-    query: 'салехард',
-    tone: 'tone-city',
-  },
-  {
-    mark: 'Я',
-    label: 'Логотип',
-    sectionName: 'Логотип',
-    query: 'логотип',
-    tone: 'tone-logo',
-  },
-  {
-    mark: '◉',
-    label: 'Фирменный знак',
-    sectionName: 'Фирменный знак',
-    query: 'фирменный знак',
-    tone: 'tone-mark',
-  },
-  {
-    mark: '▦',
-    label: 'Цвет и паттерны',
-    sectionName: 'Паттерны',
-    query: 'паттерн',
-    tone: 'tone-pattern',
-  },
-  {
-    mark: 'Aa',
-    label: 'Типографика',
-    sectionName: 'Шрифт',
-    query: 'шрифт',
-    tone: 'tone-type',
-  },
-  {
-    mark: 'SVG',
-    label: 'Графические элементы',
-    sectionName: 'Иллюстрации мастер-бренда SVG-элементы',
-    query: 'иллюстрации svg',
-    tone: 'tone-graphics',
-  },
-];
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 
@@ -130,19 +72,67 @@ function buildRouteUrl(inputUrl, route) {
   return url.toString();
 }
 
+function inferBrandRouteTone(...values) {
+  const source = values
+    .map((value) => String(value || '').toLowerCase())
+    .join(' ');
+  if (source.includes('100')) return 'tone-anniversary';
+  if (source.includes('мастер')) return 'tone-master';
+  if (source.includes('город') || source.includes('салехард') || source.includes('уренгой') || source.includes('ноябрьск')) return 'tone-city';
+  if (source.includes('логотип')) return 'tone-logo';
+  if (source.includes('знак')) return 'tone-mark';
+  if (source.includes('паттер') || source.includes('цвет')) return 'tone-pattern';
+  if (source.includes('шрифт')) return 'tone-type';
+  if (source.includes('svg') || source.includes('иллюстра')) return 'tone-graphics';
+  if (source.includes('сувенир') || source.includes('полиграф') || source.includes('диджитал') || source.includes('каталог')) return 'tone-digital';
+  return 'tone-master';
+}
+
+function buildBrandRouteMark(section) {
+  const icon = String(section?.icon || '').trim();
+  if (icon && icon !== '📁') {
+    return icon;
+  }
+  const label = String(section?.label || section?.name || '').trim();
+  if (!label) {
+    return '•';
+  }
+  if (/\b100\b/u.test(label)) {
+    return '100';
+  }
+  if (/svg/iu.test(label)) {
+    return 'SVG';
+  }
+  const compact = label
+    .replace(/^Брендбук\s+/iu, '')
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((token) => token.replace(/[^0-9A-Za-zА-ЯЁ]/giu, '').slice(0, 1))
+    .join('')
+    .toUpperCase();
+  return compact || '•';
+}
+
 function buildBrandRouteCards(sections, activeRouteId = '') {
-  const availableSections = Array.isArray(sections) ? sections : [];
-  return BRAND_ROUTE_BLUEPRINTS.map((item) => {
-    const section = availableSections.find((entry) => entry && entry.name === item.sectionName) || null;
-    return {
-      ...item,
-      action: section ? 'open-folder' : 'search-chip',
-      target: section ? section.id : item.query,
-      routeId: section ? section.id : '',
-      available: Boolean(section),
-      isActive: Boolean(section) && String(activeRouteId || '') === String(section.id || ''),
-    };
-  });
+  return (Array.isArray(sections) ? sections : [])
+    .filter((section) => section && section.id)
+    .map((section) => {
+      const label = String(section.label || section.name || 'Раздел').trim();
+      const sourceName = String(section.name || label).trim();
+      const hint = sourceName && sourceName !== label ? sourceName : 'Открыть раздел';
+      return {
+        mark: buildBrandRouteMark(section),
+        label,
+        hint,
+        tone: inferBrandRouteTone(label, sourceName),
+        action: 'open-folder',
+        target: section.id,
+        routeId: section.id,
+        available: true,
+        isActive: String(activeRouteId || '') === String(section.id || ''),
+      };
+    });
 }
 
 function buildBrandRoutesSummary(sections, activeRouteId = '') {
@@ -151,7 +141,7 @@ function buildBrandRoutesSummary(sections, activeRouteId = '') {
   return {
     cards,
     total: cards.length,
-    available: cards.filter((item) => item.available).length,
+    available: cards.length,
     activeLabel: activeCard ? activeCard.label : '',
   };
 }
@@ -464,7 +454,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     } else if (route.view === 'search' && route.query) {
       await search(route.query, { history: 'none' });
     } else {
-      await openRoot({ history: 'none' });
+      await openRoot({ history: 'none', keepWorkspace: Boolean(route.fileId) });
     }
 
     if (route.fileId) {
@@ -863,7 +853,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function setLoading(title, hint) {
-    els.contentMode.textContent = 'Каталог';
+    els.contentMode.textContent = 'Раздел';
     els.contentTitle.textContent = title;
     els.contentHint.textContent = hint || 'Загрузка раздела.';
     els.contentItems.innerHTML = `
@@ -891,8 +881,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     if (els.workspaceCopy) {
       els.workspaceCopy.textContent = state.workspaceCollapsed
-        ? 'Блок скрыт. Он откроется автоматически.'
-        : 'Все разделы и файлы в одном потоке.';
+        ? 'Блок скрыт. Он откроется автоматически после выбора раздела или поиска.'
+        : 'Материалы выбранного раздела и результаты поиска открываются здесь.';
     }
   }
 
@@ -902,7 +892,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       els.pageShell.classList.toggle('catalog-mode', state.catalogMode);
     }
     els.catalogModeButtons.forEach((button) => {
-      button.textContent = state.catalogMode ? 'Вернуть витрину' : 'Только каталог';
+      button.textContent = state.catalogMode ? 'Вернуть витрину' : 'Скрыть витрину';
     });
     if (state.catalogMode) {
       setBrandRoutesOpen(false);
@@ -911,8 +901,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     if (els.workspaceCopy) {
       els.workspaceCopy.textContent = state.catalogMode
-        ? 'Включен режим каталога.'
-        : 'Все разделы и файлы в одном потоке.';
+        ? 'Включен режим рабочей области без верхней витрины.'
+        : 'Материалы выбранного раздела и результаты поиска открываются здесь.';
     }
   }
 
@@ -941,6 +931,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return;
     }
     els.workspaceShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function focusBrandRoutes() {
+    els.brandRoutesBlock?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function setActiveRoute(routeId) {
@@ -1008,34 +1002,31 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const summary = buildBrandRoutesSummary(bootstrap.sections || [], state.activeRouteId);
     if (els.brandRoutesCaption) {
       els.brandRoutesCaption.textContent = summary.activeLabel
-        ? `Сейчас открыт раздел «${summary.activeLabel}». При необходимости переключитесь в другую ветку брендирования.`
-        : `${formatNumber(summary.available)} направлений брендирования собраны в одном компактном переключателе.`;
+        ? `Сейчас открыт раздел «${summary.activeLabel}». При необходимости переключитесь в другую ветку каталога.`
+        : `${formatNumber(summary.total)} разделов каталога собраны в одном компактном меню без дублирующего root-экрана.`;
     }
     if (els.brandRoutesToggleMeta) {
       els.brandRoutesToggleMeta.textContent = summary.activeLabel
         ? `Сейчас: ${summary.activeLabel}`
-        : `${formatNumber(summary.available)} ключевых разделов`;
+        : `${formatNumber(summary.total)} разделов каталога`;
     }
     if (els.brandRoutesCurrent) {
       els.brandRoutesCurrent.textContent = summary.activeLabel || 'Все разделы';
     }
     els.brandRoutes.innerHTML = summary.cards.map((item) => {
-      const attr = item.action === 'open-folder'
-        ? `data-id="${escapeHtml(item.target)}"`
-        : `data-query="${escapeHtml(item.target)}"`;
       return `
         <button
           type="button"
           class="brand-route-card ${escapeHtml(item.tone)}${item.isActive ? ' active' : ''}"
           data-action="${escapeHtml(item.action)}"
           data-route-id="${escapeHtml(item.routeId || '')}"
-          ${attr}
+          data-id="${escapeHtml(item.target)}"
           ${item.isActive ? 'aria-current="page"' : ''}
         >
           <span class="brand-route-icon" aria-hidden="true">${escapeHtml(item.mark)}</span>
           <span class="brand-route-copy">
             <strong>${escapeHtml(item.label)}</strong>
-            <small>${escapeHtml(item.available ? 'Открыть раздел' : `Искать: ${item.query}`)}</small>
+            <small>${escapeHtml(item.hint || 'Открыть раздел')}</small>
           </span>
           <span class="brand-route-arrow" aria-hidden="true">↗</span>
         </button>
@@ -1247,6 +1238,26 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
+  function renderRootLanding() {
+    state.current = null;
+    state.detail = null;
+    els.contentMode.textContent = 'Меню';
+    els.contentTitle.textContent = 'Выберите раздел';
+    els.contentHint.textContent = 'Основной вход в материалы теперь находится в верхнем меню. Поиск тоже откроет рабочую область автоматически.';
+    els.breadcrumbs.innerHTML = '';
+    els.contentItems.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-mark" aria-hidden="true">↗</div>
+        <div>
+          <h3>Главное меню наверху</h3>
+          <p class="detail-empty">Откройте раздел каталога в верхнем блоке или воспользуйтесь поиском.</p>
+        </div>
+      </div>
+    `;
+    els.pagination.innerHTML = '';
+    setDocumentTitle('');
+  }
+
   async function loadBootstrap() {
     const payload = await api('bootstrap');
     state.bootstrap = payload;
@@ -1260,14 +1271,26 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   async function openRoot(options = {}) {
-    setLoading('Главное меню');
+    const keepWorkspace = Boolean(options.keepWorkspace);
+    const revealMenu = Boolean(options.revealMenu);
+    if (!keepWorkspace && state.catalogMode) {
+      setCatalogMode(false);
+    }
     setInspectorOpen(false);
     setActiveRoute('');
     renderDetailPlaceholder();
-    const payload = await api('folder');
-    renderFolder(payload);
+    renderRootLanding();
     if (els.searchInput) {
       els.searchInput.value = '';
+    }
+    if (keepWorkspace) {
+      ensureWorkspaceVisible();
+    } else {
+      setWorkspaceCollapsed(true);
+    }
+    setBrandRoutesOpen(revealMenu, { focus: revealMenu });
+    if (revealMenu) {
+      focusBrandRoutes();
     }
     if (options.history !== 'none') {
       syncRouteWithState(options.history || 'push');
@@ -1275,7 +1298,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   async function openFolder(id, page, options = {}) {
-    if (!id) {
+    if (!id || String(id) === String(state.bootstrap?.rootId || '')) {
       await openRoot(options);
       return;
     }
@@ -1325,12 +1348,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function goBack() {
     if (state.current && state.current.kind === 'folder') {
       const crumbs = state.current.payload.breadcrumbs || [];
-      if (crumbs.length > 1) {
+      if (crumbs.length > 2) {
         openFolder(crumbs[crumbs.length - 2].id, 0);
         return;
       }
     }
-    openRoot();
+    openRoot({ revealMenu: true });
   }
 
   document.addEventListener('click', (event) => {
@@ -1374,7 +1397,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       void handleCopyCurrentLink(target);
       return;
     }
-    if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
+    if (['open-folder', 'open-folder-page', 'open-file', 'search-chip'].includes(action)) {
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
       }
@@ -1388,7 +1411,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       els.searchInput.value = target.dataset.query || '';
       search(target.dataset.query || '');
     }
-    if (action === 'go-root') openRoot();
+    if (action === 'go-root') openRoot({ revealMenu: true });
     if (action === 'back') goBack();
   });
 

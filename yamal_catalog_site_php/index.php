@@ -38,7 +38,7 @@ $config = site_config();
           <div class="hero-actions">
             <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Брендбуки</button>
             <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Логотипы</button>
-            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
+            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Скрыть витрину</button>
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
           </div>
 
@@ -68,8 +68,8 @@ $config = site_config();
         <div class="block-head brand-routes-head">
           <div>
             <p class="eyebrow">Навигация</p>
-            <h2>Каталог брендирования</h2>
-            <p id="brand-routes-caption" class="brand-routes-caption">Откройте список разделов и быстро перейдите в нужную ветку брендирования.</p>
+            <h2>Главное меню</h2>
+            <p id="brand-routes-caption" class="brand-routes-caption">Откройте список разделов и быстро перейдите в нужную ветку каталога без отдельного нижнего меню.</p>
           </div>
           <div class="brand-routes-actions">
             <button
@@ -82,7 +82,7 @@ $config = site_config();
             >
               <span class="brand-routes-toggle-copy">
                 <strong id="brand-routes-toggle-label">Открыть разделы</strong>
-                <span id="brand-routes-toggle-meta">Основные ветки брендирования</span>
+                <span id="brand-routes-toggle-meta">Все разделы каталога</span>
               </span>
               <span class="brand-routes-toggle-icon" aria-hidden="true">↓</span>
             </button>
@@ -91,8 +91,8 @@ $config = site_config();
         <div id="brand-routes-panel" class="brand-routes-panel" hidden>
           <div class="brand-routes-panel-head">
             <div class="brand-routes-panel-copy">
-              <strong>Разделы брендирования</strong>
-              <span>Плотная сетка для быстрого входа без длинной вертикальной сцены.</span>
+              <strong>Разделы каталога</strong>
+              <span>Плотная сетка для быстрого входа без отдельного root-каталога внизу.</span>
             </div>
             <span id="brand-routes-current" class="brand-routes-current">Все разделы</span>
           </div>
@@ -103,12 +103,12 @@ $config = site_config();
       <section id="workspace-shell" class="workspace-shell collapsed">
         <div class="surface workspace-header">
           <div>
-            <p class="eyebrow">Каталог</p>
-            <h2>Разделы и файлы</h2>
-            <p id="workspace-copy" class="workspace-copy">Рабочая область скрыта. Она откроется автоматически при переходе в раздел или поиск.</p>
+            <p class="eyebrow">Рабочая область</p>
+            <h2>Материалы раздела</h2>
+            <p id="workspace-copy" class="workspace-copy">Рабочая область скрыта. Она откроется автоматически после выбора раздела или поиска.</p>
           </div>
           <div class="workspace-actions">
-            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
+            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Скрыть витрину</button>
             <button type="button" id="workspace-toggle" class="ghost-button" data-action="toggle-workspace">Показать рабочую область</button>
           </div>
         </div>
@@ -117,7 +117,7 @@ $config = site_config();
         <section class="surface content-block workspace-stage">
           <div class="block-head stage-head">
             <div>
-              <p class="eyebrow" id="content-mode">Каталог</p>
+              <p class="eyebrow" id="content-mode">Раздел</p>
               <h2 id="content-title">Загрузка...</h2>
             </div>
             <div class="toolbar">
