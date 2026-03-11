@@ -251,7 +251,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     workspaceCollapsed: DEFAULT_WORKSPACE_COLLAPSED,
     catalogMode: false,
     inspectorOpen: false,
-    featurePanels: [],
     brandRoutesOpen: false,
   };
 
@@ -268,7 +267,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     brandRoutesToggleMeta: document.querySelector('#brand-routes-toggle-meta'),
     brandRoutesCaption: document.querySelector('#brand-routes-caption'),
     brandRoutesCurrent: document.querySelector('#brand-routes-current'),
-    featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
     topSearches: document.querySelector('#top-searches'),
     contentMode: document.querySelector('#content-mode'),
@@ -358,28 +356,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
   function currentShareUrl() {
     return buildRouteUrl(window.location.href, currentRoute());
-  }
-
-  function scrollRailById(id, direction) {
-    const rail = document.getElementById(String(id || ''));
-    if (!rail) {
-      return;
-    }
-    const delta = Math.max(180, Math.round(rail.clientWidth * 0.82)) * Number(direction || 0);
-    rail.scrollBy({ left: delta, behavior: 'smooth' });
-  }
-
-  function enhanceHorizontalRail(element) {
-    if (!element) {
-      return;
-    }
-    element.addEventListener('wheel', (event) => {
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || element.scrollWidth <= element.clientWidth) {
-        return;
-      }
-      event.preventDefault();
-      element.scrollBy({ left: event.deltaY, behavior: 'auto' });
-    }, { passive: false });
   }
 
   function revealItemInHorizontalContainer(container, item, behavior = 'smooth') {
@@ -526,13 +502,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const source = String(label || '').toUpperCase();
     const needle = String(token || '').trim().toUpperCase();
     return Boolean(needle) && source.includes(needle);
-  }
-
-  function trimPreviewLabel(value) {
-    const source = String(value || '').trim();
-    if (!source) return '';
-    const clean = source.replace(/\s*•\s*[A-Z0-9]+$/u, '').trim();
-    return clean.length > 48 ? `${clean.slice(0, 45).trim()}...` : clean;
   }
 
   function trimPanelTitle(value) {
@@ -868,147 +837,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
   }
 
-  function pluralizeRu(value, one, few, many) {
-    const number = Math.abs(Number(value || 0));
-    const mod10 = number % 10;
-    const mod100 = number % 100;
-    if (mod10 === 1 && mod100 !== 11) return one;
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-    return many;
-  }
-
-  function formatUsageLabel(value) {
-    const count = Number(value || 0);
-    if (!count) return '';
-    return `${formatNumber(count)} ${pluralizeRu(count, 'обращение', 'обращения', 'обращений')}`;
-  }
-
-  function resolveFeatureSectionName(item) {
-    const source = String(item?.relativePath || '').trim();
-    if (!source || source === '.') {
-      return String(item?.label || item?.name || '').trim();
-    }
-    const parts = source.split('/').filter(Boolean);
-    if (!parts.length) {
-      return String(item?.label || item?.name || '').trim();
-    }
-    if (item?.type === 'folder') {
-      return parts[0] || String(item.label || item.name || '').trim();
-    }
-    return parts[0] || String(item?.label || item?.name || '').trim();
-  }
-
-  function inferFeatureTone(...values) {
-    const source = values
-      .map((value) => String(value || '').toLowerCase())
-      .join(' ');
-    if (source.includes('100')) return 'tone-anniversary';
-    if (source.includes('мастер') || source.includes('брендбук')) return 'tone-master';
-    if (source.includes('город') || source.includes('салехард') || source.includes('уренгой') || source.includes('ноябрьск')) return 'tone-city';
-    if (source.includes('логотип')) return 'tone-logo';
-    if (source.includes('знак')) return 'tone-mark';
-    if (source.includes('паттер') || source.includes('цвет')) return 'tone-pattern';
-    if (source.includes('шрифт') || source.includes('типограф')) return 'tone-type';
-    if (source.includes('svg') || source.includes('иллюстра')) return 'tone-graphics';
-    if (source.includes('сувенир') || source.includes('полиграф') || source.includes('диджитал') || source.includes('наклей') || source.includes('каталог')) return 'tone-digital';
-    return 'tone-master';
-  }
-
-  function inferFeatureBadge(item, sectionName) {
-    const source = `${sectionName} ${item?.kindLabel || ''} ${item?.extension || ''}`.toLowerCase();
-    if (source.includes('100')) return 'ЯМАЛ 100';
-    if (source.includes('брендбук')) return 'Брендбук';
-    if (source.includes('город')) return 'Города';
-    if (source.includes('логотип')) return 'Логотип';
-    if (source.includes('знак')) return 'Знак';
-    if (source.includes('паттер') || source.includes('цвет')) return 'Паттерны';
-    if (source.includes('шрифт') || source.includes('типограф')) return 'Шрифт';
-    if (source.includes('svg') || source.includes('иллюстра')) return 'SVG';
-    if (source.includes('сувенир') || source.includes('полиграф') || source.includes('диджитал') || source.includes('каталог')) return 'Носители';
-    if (item?.type === 'folder') return 'Раздел';
-    return item?.kindLabel || formatExtension(item?.extension);
-  }
-
-  function featureFallbackAsset(tone) {
-    if (['tone-master', 'tone-mark', 'tone-pattern', 'tone-graphics'].includes(tone)) {
-      return siteConfig.brandMarkAsset || siteConfig.brandLogoAsset || '';
-    }
-    return siteConfig.brandLogoAsset || siteConfig.brandMarkAsset || '';
-  }
-
-  function buildDefaultFeaturePreview(item, tone, sectionName) {
-    const baseSource = sectionName && !labelIncludesToken(item?.label || item?.name, sectionName)
-      ? sectionName
-      : (item?.label || item?.name || '');
-    return {
-      kind: 'asset',
-      src: featureFallbackAsset(tone),
-      alt: item?.label || item?.name || sectionName || 'Материал каталога',
-      label: item?.type === 'file' && item?.extension ? formatExtension(item.extension) : 'Каталог',
-      source: trimPreviewLabel(baseSource),
-      fit: 'contain',
-    };
-  }
-
-  function buildFileFeaturePreview(item, tone, sectionName) {
-    if (!item || item.type !== 'file') return null;
-    if (item.downloadUrl && isPreviewableImage(item.extension)) {
-      return {
-        kind: 'image',
-        src: toInlineDownloadUrl(item.downloadUrl),
-        alt: item.label || item.name || sectionName || 'Материал каталога',
-        label: formatExtension(item.extension),
-        source: trimPreviewLabel(sectionName || item.label || item.name),
-        fit: item.extension === 'svg' ? 'contain' : 'cover',
-      };
-    }
-    return buildDefaultFeaturePreview(item, tone, sectionName);
-  }
-
-  function buildFeatureText(item, sectionName) {
-    const parts = [];
-    const normalizedSection = String(sectionName || '').trim();
-    if (normalizedSection && !labelIncludesToken(item?.label || item?.name, normalizedSection)) {
-      parts.push(normalizedSection);
-    }
-    if (item?.type === 'file' && item?.extension) {
-      const extensionLabel = formatExtension(item.extension);
-      if (!labelIncludesToken(item?.label || item?.name, extensionLabel)) {
-        parts.push(extensionLabel);
-      }
-    }
-    if (item?.uses) {
-      parts.push(formatUsageLabel(item.uses));
-    }
-    if (!parts.length) {
-      return item?.type === 'folder' ? 'Раздел каталога' : 'Материал каталога';
-    }
-    return parts.slice(0, 2).join(' • ');
-  }
-
-  function buildFeaturePanelFromItem(item) {
-    if (!item || !item.id) return null;
-    const sectionName = resolveFeatureSectionName(item);
-    const tone = inferFeatureTone(sectionName, item.label, item.name);
-    const preview = item.type === 'file'
-      ? buildFileFeaturePreview(item, tone, sectionName)
-      : buildDefaultFeaturePreview(item, tone, sectionName);
-    return {
-      badge: inferFeatureBadge(item, sectionName),
-      title: trimPanelTitle(item.label || item.name || sectionName),
-      text: buildFeatureText(item, sectionName),
-      tone,
-      action: item.type === 'folder' ? 'open-folder' : 'open-file',
-      target: item.id,
-      previewQuery: item.type === 'folder' ? (sectionName || item.name || '') : '',
-      preview,
-    };
-  }
-
-  function isPreviewableImage(extension) {
-    return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(String(extension || '').toLowerCase());
-  }
-
   function toInlineDownloadUrl(downloadUrl) {
     if (!downloadUrl) return '';
     return `${downloadUrl}${downloadUrl.includes('?') ? '&' : '?'}inline=1`;
@@ -1221,96 +1049,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
   }
 
-  function buildFeaturePanels(bootstrap) {
-    const sourceItems = Array.isArray(bootstrap.favorites) && bootstrap.favorites.length
-      ? bootstrap.favorites
-      : (bootstrap.sections || []);
-    return sourceItems
-      .slice(0, 4)
-      .map(buildFeaturePanelFromItem)
-      .filter(Boolean);
-  }
-
-  function renderFeaturePanels(panels) {
-    if (!els.featuredShelves) return;
-    els.featuredShelves.innerHTML = (panels || []).map((item) => {
-      const attr = (item.action === 'open-folder' || item.action === 'open-file')
-        ? `data-id="${escapeHtml(item.target)}"`
-        : `data-query="${escapeHtml(item.target)}"`;
-      const preview = item.preview || {};
-      const imageMarkup = preview.src
-        ? `<img class="feature-preview-image${preview.fit === 'contain' ? ' contain' : ''}" src="${escapeHtml(preview.src)}" alt="${escapeHtml(preview.alt || item.title)}" loading="lazy" />`
-        : `<span class="feature-preview-sigil">${escapeHtml(item.badge)}</span>`;
-      return `
-        <button type="button" class="feature-panel ${escapeHtml(item.tone)}" data-action="${escapeHtml(item.action)}" ${attr}>
-          <div class="feature-visual ${escapeHtml(preview.kind || 'asset')}">
-            <div class="feature-visual-frame">
-              ${imageMarkup}
-            </div>
-            <div class="feature-preview-chips">
-              ${preview.label ? `<span class="feature-preview-chip">${escapeHtml(preview.label)}</span>` : ''}
-              ${preview.source ? `<span class="feature-preview-chip muted">${escapeHtml(preview.source)}</span>` : ''}
-            </div>
-          </div>
-          <div class="feature-copy">
-            <span class="feature-badge">${escapeHtml(item.badge)}</span>
-            <strong>${escapeHtml(item.title)}</strong>
-            <p>${escapeHtml(item.text)}</p>
-          </div>
-        </button>
-      `;
-    }).join('');
-  }
-
-  function pickFeaturePreview(panel, items) {
-    const files = (items || []).filter((item) => item && item.type === 'file');
-    const image = files.find((item) => isPreviewableImage(item.extension));
-    if (image) {
-      return {
-        kind: 'image',
-        src: toInlineDownloadUrl(image.downloadUrl),
-        alt: image.label || panel.title,
-        label: formatExtension(image.extension),
-        source: trimPreviewLabel(image.label || image.name),
-        fit: image.extension === 'svg' ? 'contain' : 'cover',
-      };
-    }
-
-    const preferred = files.find((item) => item.extension === 'pdf') || files[0];
-    if (preferred) {
-      return {
-        kind: 'asset',
-        src: panel.preview?.src || featureFallbackAsset(panel.tone) || '',
-        alt: preferred.label || panel.title,
-        label: formatExtension(preferred.extension),
-        source: trimPreviewLabel(preferred.label || preferred.name),
-        fit: 'contain',
-      };
-    }
-
-    return panel.preview || null;
-  }
-
-  async function hydrateFeaturePanels() {
-    if (!state.featurePanels.length) return;
-    const tasks = state.featurePanels.map(async (panel, index) => {
-      if (!panel.previewQuery) return;
-      try {
-        const payload = await api('preview-search', { q: panel.previewQuery });
-        const preview = pickFeaturePreview(panel, payload.items || []);
-        if (!preview) return;
-        state.featurePanels[index] = {
-          ...panel,
-          preview,
-        };
-        renderFeaturePanels(state.featurePanels);
-      } catch (error) {
-        console.warn(error);
-      }
-    });
-    await Promise.allSettled(tasks);
-  }
-
   function renderTopSearches(items) {
     const normalized = (items && items.length ? items : fallbackTopSearches.map((query) => ({ query })))
       .map((item) => typeof item === 'string' ? item : item.query)
@@ -1518,10 +1256,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     state.exampleTab = (payload.examples && Array.isArray(payload.examples.good) && payload.examples.good.length) ? 'good' : 'debate';
     renderHeroExamples();
     renderBrandRoutes(payload);
-    state.featurePanels = buildFeaturePanels(payload);
-    renderFeaturePanels(state.featurePanels);
     renderTopSearches(payload.topSearches || []);
-    void hydrateFeaturePanels();
   }
 
   async function openRoot(options = {}) {
@@ -1639,10 +1374,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       void handleCopyCurrentLink(target);
       return;
     }
-    if (action === 'scroll-rail') {
-      scrollRailById(target.dataset.target, Number(target.dataset.direction || '0'));
-      return;
-    }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
@@ -1701,8 +1432,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       scheduleExampleAutoplay();
     });
   }
-
-  enhanceHorizontalRail(els.featuredShelves);
 
   document.addEventListener('click', (event) => {
     if (!state.brandRoutesOpen) {

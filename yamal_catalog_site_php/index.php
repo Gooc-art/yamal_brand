@@ -100,23 +100,6 @@ $config = site_config();
         </div>
       </section>
 
-      <section class="surface showcase-block">
-        <div class="block-head showcase-head">
-          <div>
-            <p class="eyebrow">Часто</p>
-            <h2>Под рукой</h2>
-          </div>
-          <div class="showcase-actions">
-            <button type="button" class="ghost-button" data-action="search-chip" data-query="брендбук">Все брендбуки</button>
-            <div class="rail-actions" aria-label="Прокрутка витрины">
-              <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="featured-shelves" data-direction="-1" aria-label="Прокрутить витрину влево">←</button>
-              <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="featured-shelves" data-direction="1" aria-label="Прокрутить витрину вправо">→</button>
-            </div>
-          </div>
-        </div>
-        <div id="featured-shelves" class="feature-grid"></div>
-      </section>
-
       <section id="workspace-shell" class="workspace-shell collapsed">
         <div class="surface workspace-header">
           <div>
