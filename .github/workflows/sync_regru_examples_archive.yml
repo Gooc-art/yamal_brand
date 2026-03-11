@@ -1,0 +1,79 @@
+name: Sync REG.RU Examples Archive
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    env:
+      REMOTE_HOST: ${{ secrets.REGRU_HOST }}
+      REMOTE_USER: ${{ secrets.REGRU_USER }}
+      REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
+      REMOTE_SITE_URL: ${{ secrets.REGRU_SITE_URL }}
+      SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
+      ARCHIVE_PATH: /home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz
+      ARCHIVE_SUBDIR: Примеры внедрения бренда территории
+      REMOTE_SYNC_SUBDIR: Примеры внедрения бренда территории
+      IMPORT_LABEL: examples-sync-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure import dependencies
+        run: |
+          set -euxo pipefail
+          missing=()
+          for cmd in python3 sshpass rsync curl tar; do
+            if ! command -v "${cmd}" >/dev/null 2>&1; then
+              missing+=("${cmd}")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            if command -v sudo >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y python3 sshpass rsync curl xz-utils
+            else
+              echo "Missing commands: ${missing[*]}" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Sync local examples archive to REG.RU
+        run: |
+          chmod +x scripts/import_regru_archive.sh
+          ./scripts/import_regru_archive.sh
+
+      - name: Verify public examples payload
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import ssl
+          import urllib.request
+
+          url = os.environ["REMOTE_SITE_URL"].rstrip("/") + "/api.php?action=bootstrap"
+          context = ssl._create_unverified_context()
+          with urllib.request.urlopen(url, context=context) as response:
+            payload = json.load(response)
+
+          good = payload.get("examples", {}).get("good", [])
+          debate = payload.get("examples", {}).get("debate", [])
+
+          assert good, "good examples are empty after sync"
+          assert debate, "debate examples are empty after sync"
+          assert all(
+            item.get("relativePath", "").startswith("Примеры внедрения бренда территории/Хорошие примеры/")
+            for item in good
+          ), good
+          assert all(
+            item.get("relativePath", "").startswith("Примеры внедрения бренда территории/Спорные примеры/")
+            for item in debate
+          ), debate
+
+          print("good examples:", len(good))
+          print("debate examples:", len(debate))
+          print("first good:", good[0]["relativePath"])
+          print("first debate:", debate[0]["relativePath"])
+          PY

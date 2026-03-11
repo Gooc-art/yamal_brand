@@ -92,6 +92,12 @@ For the public REG.RU website there is a separate archive-import workflow:
 - pass a direct `zip`, `tar`, `tar.gz`, or `tar.xz` URL with the `Макеты1` files
 - the workflow downloads the archive, backs up current `data/files`, uploads new files to `брендямал.рф`, deletes `max_catalog.db` and triggers automatic rebuild
 
+For the local archive with brand examples on the production runner there is a separate partial-sync workflow:
+- GitHub -> `Actions` -> `Sync REG.RU Examples Archive` -> `Run workflow`
+- it reads `/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz`
+- it replaces only `Примеры внедрения бренда территории` inside the live catalog and keeps the rest of `data/files` untouched
+- use this workflow when the public site shows the wrong `Хорошие` or `Спорные` examples
+
 For PHP code updates of the public REG.RU catalog site there is a separate workflow:
 - GitHub -> `Actions` -> `Deploy REG.RU PHP Catalog Site` -> `Run workflow`
 - it uploads `index.php`, `api.php`, `download.php`, `assets/`, `src/` and keeps `data/` untouched

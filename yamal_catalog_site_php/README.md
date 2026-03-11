@@ -142,6 +142,7 @@ Node test проверяет сериализацию и восстановле�
 - [deploy_regru_php_site.sh](/root/projects/yamal_brand/scripts/deploy_regru_php_site.sh)
 - [import_regru_archive.sh](/root/projects/yamal_brand/scripts/import_regru_archive.sh)
 - [deploy_regru_php_site.yml](/root/projects/yamal_brand/.github/workflows/deploy_regru_php_site.yml)
+- [sync_regru_examples_archive.yml](/root/projects/yamal_brand/.github/workflows/sync_regru_examples_archive.yml)
 
 Пример:
 
@@ -179,6 +180,17 @@ SSH_PORT=22 \
 - заливает содержимое архива в `data/files/`
 - удаляет старый `max_catalog.db`
 - прогревает сайт, чтобы каталог пересобрался автоматически
+
+Скрипт [import_regru_archive.sh](/root/projects/yamal_brand/scripts/import_regru_archive.sh) теперь поддерживает два режима:
+- полный импорт по `ARCHIVE_URL`, когда архив содержит весь каталог `Макеты1`
+- частичный sync по `ARCHIVE_PATH` + `ARCHIVE_SUBDIR`, когда нужно обновить только одну ветку внутри каталога и не трогать остальной `data/files`
+
+Для архива `/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz` есть отдельный workflow:
+- открой `Sync REG.RU Examples Archive`
+- workflow берет локальный архив с self-hosted runner
+- ищет внутри папку `Примеры внедрения бренда территории`
+- заменяет на хостинге только эту папку внутри каталога
+- удаляет `data/max_catalog.db` и проверяет, что `Хорошие примеры` и `Спорные примеры` уже читаются именно из `Примеры внедрения бренда территории/...`
 
 ## Что нужно положить на хостинг после выкладки
 
