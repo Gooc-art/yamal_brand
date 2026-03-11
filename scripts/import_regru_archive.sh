@@ -16,20 +16,21 @@ WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 IMPORT_LABEL="${IMPORT_LABEL:-import-${TIMESTAMP}}"
 SSH_OPTS=( -o StrictHostKeyChecking=no -o ConnectTimeout=20 )
-SSH_CMD=(sshpass -e ssh -p "${SSH_PORT}" "${SSH_OPTS[@]}")
-RSYNC_RSH="sshpass -e ssh -p ${SSH_PORT} ${SSH_OPTS[*]}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HELPER_PY="${SCRIPT_DIR}/import_regru_archive_paths.py"
 
+SSH_CMD=()
+RSYNC_RSH=""
 export SSHPASS="${SSH_PASSWORD}"
+export SSH_ASKPASS_HELPER=""
 
 cleanup() {
   rm -rf "${WORK_DIR}"
 }
 trap cleanup EXIT
 
-if ! command -v sshpass >/dev/null 2>&1; then
-  echo "sshpass is required" >&2
+if ! command -v ssh >/dev/null 2>&1; then
+  echo "ssh is required" >&2
   exit 1
 fi
 
@@ -61,6 +62,39 @@ fi
 if [ -n "${ARCHIVE_URL}" ] && [ -n "${ARCHIVE_PATH}" ]; then
   echo "use only one archive source: ARCHIVE_URL or ARCHIVE_PATH" >&2
   exit 1
+fi
+
+if command -v sshpass >/dev/null 2>&1; then
+  SSH_CMD=(sshpass -e ssh -p "${SSH_PORT}" "${SSH_OPTS[@]}")
+  RSYNC_RSH="sshpass -e ssh -p ${SSH_PORT} ${SSH_OPTS[*]}"
+else
+  if ! command -v setsid >/dev/null 2>&1; then
+    echo "setsid is required when sshpass is unavailable" >&2
+    exit 1
+  fi
+
+  askpass_script="${WORK_DIR}/ssh_askpass.sh"
+  ssh_wrapper="${WORK_DIR}/ssh_wrapper.sh"
+
+  cat > "${askpass_script}" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "${SSH_PASSWORD:?SSH_PASSWORD is required}"
+EOF
+  chmod 700 "${askpass_script}"
+
+  cat > "${ssh_wrapper}" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+export SSH_ASKPASS="${SSH_ASKPASS_HELPER:?SSH_ASKPASS_HELPER is required}"
+export SSH_ASKPASS_REQUIRE=force
+export DISPLAY="${DISPLAY:-:0}"
+exec setsid -w ssh "$@"
+EOF
+  chmod 700 "${ssh_wrapper}"
+
+  export SSH_ASKPASS_HELPER="${askpass_script}"
+  SSH_CMD=("${ssh_wrapper}" -p "${SSH_PORT}" "${SSH_OPTS[@]}")
+  RSYNC_RSH="${ssh_wrapper} -p ${SSH_PORT} ${SSH_OPTS[*]}"
 fi
 
 mkdir -p "${WORK_DIR}/download" "${WORK_DIR}/extract"

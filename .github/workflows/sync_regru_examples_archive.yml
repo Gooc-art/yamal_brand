@@ -25,19 +25,14 @@ jobs:
         run: |
           set -euxo pipefail
           missing=()
-          for cmd in python3 sshpass rsync curl tar; do
+          for cmd in python3 ssh rsync curl tar setsid; do
             if ! command -v "${cmd}" >/dev/null 2>&1; then
               missing+=("${cmd}")
             fi
           done
           if [ "${#missing[@]}" -gt 0 ]; then
-            if command -v sudo >/dev/null 2>&1; then
-              sudo apt-get update
-              sudo apt-get install -y python3 sshpass rsync curl xz-utils
-            else
-              echo "Missing commands: ${missing[*]}" >&2
-              exit 1
-            fi
+            echo "Missing commands: ${missing[*]}" >&2
+            exit 1
           fi
 
       - name: Sync local examples archive to REG.RU
