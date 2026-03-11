@@ -1447,8 +1447,8 @@ input[type="search"]:focus {
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(24, 42, 49, 0.24) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   background: linear-gradient(180deg, rgba(252, 249, 243, 0.98), rgba(244, 238, 230, 0.96));
   box-shadow: 0 28px 90px rgba(24, 42, 49, 0.2);
   transform: translateX(calc(100% + 24px));
@@ -1458,16 +1458,8 @@ input[type="search"]:focus {
 }
 
 .workspace-inspector::-webkit-scrollbar {
-  width: 6px;
-}
-
-.workspace-inspector::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(24, 42, 49, 0.24);
-}
-
-.workspace-inspector::-webkit-scrollbar-track {
-  background: transparent;
+  width: 0;
+  height: 0;
 }
 
 .block-head {

@@ -66,7 +66,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspa
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-composition'), 'styles contain workspace composition classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'appearance: none'), 'styles normalize button appearance');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scrollbar-width: thin'), 'styles contain inspector scrollbar styling');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scrollbar-width: none'), 'styles hide inspector scrollbar visuals');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-ms-overflow-style: none'), 'styles hide legacy inspector scrollbar visuals');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector::-webkit-scrollbar'), 'styles contain webkit inspector scrollbar styling');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspector-backdrop'), 'styles contain inspector backdrop classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell.inspector-open'), 'styles contain inspector open state classes');
