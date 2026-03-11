@@ -1,0 +1,24 @@
+name: Inspect Examples Archive
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    steps:
+      - name: Inspect local examples archive on runner
+        run: |
+          set -euxo pipefail
+          ARCHIVE="/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz"
+
+          ls -ld /home/sergey/yamal_brand || true
+          ls -ld /home/sergey/yamal_brand/input || true
+          ls -lah /home/sergey/yamal_brand/input || true
+          ls -lah "${ARCHIVE}"
+
+          printf '\n--- archive tree ---\n'
+          tar -tf "${ARCHIVE}" | sed -n '1,240p'
+
+          printf '\n--- image files ---\n'
+          tar -tf "${ARCHIVE}" | grep -Ei '\.(png|jpe?g|webp|gif|svg)$' | sed -n '1,240p'

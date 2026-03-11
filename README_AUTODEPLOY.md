@@ -100,6 +100,11 @@ For PHP code updates of the public REG.RU catalog site there is a separate workf
 To inspect the real catalog structure on the production runner:
 - GitHub -> `Actions` -> `Inspect Catalog Structure` -> `Run workflow`.
 
+To inspect the local archive with brand examples on the production runner:
+- GitHub -> `Actions` -> `Inspect Examples Archive` -> `Run workflow`
+- workflow prints the contents of `/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz`
+- use it when the public site picks the wrong example photos and you need the exact folder/file names from the source archive
+
 To inspect bot health and recent runtime errors on the production runner:
 - GitHub -> `Actions` -> `Diagnose Runner Filesystem` -> `Run workflow`
 - optional inputs:
