@@ -65,6 +65,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell'), 'styles contain workspace shell classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-composition'), 'styles contain workspace composition classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scrollbar-width: thin'), 'styles contain inspector scrollbar styling');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector::-webkit-scrollbar'), 'styles contain webkit inspector scrollbar styling');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspector-backdrop'), 'styles contain inspector backdrop classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell.inspector-open'), 'styles contain inspector open state classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-success'), 'styles contain copy success state');
@@ -72,6 +74,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-b
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-caption'), 'styles contain detail caption classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-section-card'), 'styles contain detail section card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-path-card'), 'styles contain detail path card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > *'), 'styles contain equal-width detail action buttons');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-kicker'), 'styles contain list card kicker classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-context'), 'styles contain list card context classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');

@@ -330,6 +330,10 @@ h3,
 .link-button,
 .item-action,
 .chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   min-height: 44px;
   border-radius: 999px;
 }
@@ -1439,13 +1443,30 @@ input[type="search"]:focus {
   z-index: 60;
   width: min(560px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 42, 49, 0.2) rgba(24, 42, 49, 0.04);
   background: linear-gradient(180deg, rgba(252, 249, 243, 0.98), rgba(244, 238, 230, 0.96));
   box-shadow: 0 28px 90px rgba(24, 42, 49, 0.2);
   transform: translateX(calc(100% + 24px));
   opacity: 0;
   pointer-events: none;
   transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.workspace-inspector::-webkit-scrollbar {
+  width: 10px;
+}
+
+.workspace-inspector::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(24, 42, 49, 0.18);
+  border: 2px solid rgba(252, 249, 243, 0.88);
+}
+
+.workspace-inspector::-webkit-scrollbar-track {
+  background: rgba(24, 42, 49, 0.04);
 }
 
 .block-head {
@@ -1791,10 +1812,16 @@ input[type="search"]:focus {
 }
 
 .detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-self: stretch;
-  justify-content: flex-start;
   align-self: start;
   margin-top: 0;
+}
+
+.detail-actions > * {
+  width: 100%;
+  min-width: 0;
 }
 
 .workspace-inspector .detail-card {
@@ -2003,6 +2030,10 @@ input[type="search"]:focus {
 
   .workspace-shell.inspector-open .workspace-stage {
     transform: none;
+  }
+
+  .detail-actions {
+    grid-template-columns: 1fr;
   }
 
   .hero-stats {
