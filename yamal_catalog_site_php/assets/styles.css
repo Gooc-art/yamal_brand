@@ -1712,7 +1712,7 @@ input[type="search"]:focus {
   color: var(--muted);
 }
 
-.detail-original-name {
+.detail-caption {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
@@ -1747,19 +1747,39 @@ input[type="search"]:focus {
   word-break: break-word;
 }
 
-.detail-section {
+.detail-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.detail-section-card {
   display: grid;
   gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.detail-note {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.detail-path-card {
+  grid-column: 1 / -1;
 }
 
 .detail-path {
   margin: 0;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(24, 42, 49, 0.04);
   color: var(--ink);
   line-height: 1.5;
   word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
 }
 
 .detail-actions {
@@ -1775,6 +1795,8 @@ input[type="search"]:focus {
 
 .detail-title {
   font-size: 28px;
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
 .inspector-copy {

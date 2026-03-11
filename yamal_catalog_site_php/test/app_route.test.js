@@ -9,6 +9,7 @@ const {
   buildBrandRoutesSummary,
   computeRevealScrollLeft,
   initialWorkspaceCollapsed,
+  splitDetailHeading,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -125,4 +126,22 @@ test('computeRevealScrollLeft keeps horizontal reveal local to the rail', () => 
     itemRight: 320,
     padding: 20,
   }), 120);
+});
+
+test('splitDetailHeading keeps the title clean and moves suffix into pills', () => {
+  assert.deepEqual(
+    splitDetailHeading('Основной логотип • PDF', 'PDF'),
+    {
+      title: 'Основной логотип',
+      suffix: ['PDF'],
+    },
+  );
+
+  assert.deepEqual(
+    splitDetailHeading('Логотип северного маршрута', 'PDF'),
+    {
+      title: 'Логотип северного маршрута',
+      suffix: [],
+    },
+  );
 });

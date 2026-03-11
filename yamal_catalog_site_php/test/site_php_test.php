@@ -69,6 +69,9 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspect
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell.inspector-open'), 'styles contain inspector open state classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-success'), 'styles contain copy success state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-error'), 'styles contain copy error state');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-caption'), 'styles contain detail caption classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-section-card'), 'styles contain detail section card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-path-card'), 'styles contain detail path card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-auto-flow: column'), 'styles contain horizontal rail flow');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
@@ -102,6 +105,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setI
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'compactRelativePath'), 'frontend compacts path context in cards');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildItemPills'), 'frontend builds compact meta pills');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'splitDetailHeading'), 'frontend structures detail heading text');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'detail-section-card'), 'frontend renders detail section cards');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'siteTitle:'), 'frontend no longer tracks visible hero title');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-helper'), 'frontend removed route helper duplication');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-number'), 'frontend removed route numbering');

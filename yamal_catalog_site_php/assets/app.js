@@ -185,6 +185,32 @@ function initialWorkspaceCollapsed() {
   return DEFAULT_WORKSPACE_COLLAPSED;
 }
 
+function splitDetailHeading(label, suffixToken = '') {
+  const rawLabel = String(label || '').trim();
+  const rawSuffix = String(suffixToken || '').trim();
+  if (!rawLabel || !rawSuffix) {
+    return {
+      title: rawLabel,
+      suffix: [],
+    };
+  }
+
+  const escapedSuffix = rawSuffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const suffixPattern = new RegExp(`\\s*[•·|/\\-]\\s*${escapedSuffix}$`, 'iu');
+  if (!suffixPattern.test(rawLabel)) {
+    return {
+      title: rawLabel,
+      suffix: [],
+    };
+  }
+
+  const title = rawLabel.replace(suffixPattern, '').trim();
+  return {
+    title: title || rawLabel,
+    suffix: [rawSuffix],
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -194,6 +220,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildBrandRoutesSummary,
     computeRevealScrollLeft,
     initialWorkspaceCollapsed,
+    splitDetailHeading,
   };
 }
 
@@ -588,16 +615,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return '';
   }
 
-  function buildDetailFacts(payload, detailTrail) {
+  function buildDetailFacts(payload) {
     const facts = [
       ['Тип', payload.kindLabel || 'Файл'],
       ['Формат', payload.extension ? formatExtension(payload.extension) : 'Файл'],
       ['Размер', payload.sizeLabel || 'Без размера'],
       ['Обновлено', formatDateLabel(payload.modifiedUtc) || 'Дата неизвестна'],
     ];
-    if (detailTrail) {
-      facts.push(['Раздел', detailTrail]);
-    }
     return facts.filter(([, value]) => String(value || '').trim() !== '');
   }
 
@@ -1408,20 +1432,49 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
   function renderDetail(payload) {
     state.detail = payload;
-    const detailTitle = payload.label || payload.name;
+    const extensionLabel = payload.extension ? formatExtension(payload.extension) : '';
+    const heading = splitDetailHeading(payload.label || payload.name, extensionLabel);
+    const detailTitle = heading.title || payload.label || payload.name || 'Файл';
     const originalName = payload.name && payload.name !== detailTitle ? payload.name : '';
     const detailTrail = buildDetailTrail(payload.breadcrumbs || []);
-    const detailFacts = buildDetailFacts(payload, detailTrail);
+    const detailFacts = buildDetailFacts(payload);
     const inlineUrl = payload.inlineUrl || toInlineDownloadUrl(payload.downloadUrl);
     const pills = [];
+    heading.suffix.forEach((pill) => {
+      if (pill && !pills.includes(pill)) {
+        pills.push(pill);
+      }
+    });
     if (payload.sizeLabel) {
       pills.push(payload.sizeLabel);
     }
-    if (payload.extension) {
-      const extensionLabel = formatExtension(payload.extension);
-      if (!labelIncludesToken(detailTitle, extensionLabel)) {
-        pills.push(extensionLabel);
-      }
+    if (extensionLabel && !pills.includes(extensionLabel) && !labelIncludesToken(detailTitle, extensionLabel)) {
+      pills.push(extensionLabel);
+    }
+    const detailSections = [];
+    if (detailTrail) {
+      detailSections.push(`
+        <div class="detail-section-card">
+          <span class="detail-section-label">Раздел</span>
+          <p class="detail-note">${escapeHtml(detailTrail)}</p>
+        </div>
+      `);
+    }
+    if (originalName) {
+      detailSections.push(`
+        <div class="detail-section-card">
+          <span class="detail-section-label">Оригинальное имя</span>
+          <p class="detail-note">${escapeHtml(originalName)}</p>
+        </div>
+      `);
+    }
+    if (payload.pathLabel) {
+      detailSections.push(`
+        <div class="detail-section-card detail-path-card">
+          <span class="detail-section-label">Полный путь</span>
+          <p class="detail-path">${escapeHtml(payload.pathLabel)}</p>
+        </div>
+      `);
     }
     els.detailPanel.innerHTML = `
       <article class="detail-card">
@@ -1430,7 +1483,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           <div class="detail-headline">
             <span class="detail-kicker">${escapeHtml(payload.kindLabel || 'Файл')}</span>
             <h3 class="detail-title">${escapeHtml(detailTitle)}</h3>
-            ${originalName ? `<p class="detail-original-name">${escapeHtml(originalName)}</p>` : ''}
+            ${detailTrail ? `<p class="detail-caption">${escapeHtml(detailTrail)}</p>` : ''}
           </div>
           <div class="item-meta">
             ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
@@ -1443,10 +1496,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
               </div>
             `).join('')}
           </div>
-          ${payload.pathLabel ? `
-            <div class="detail-section">
-              <span class="detail-section-label">Путь в каталоге</span>
-              <p class="detail-path">${escapeHtml(payload.pathLabel)}</p>
+          ${detailSections.length ? `
+            <div class="detail-sections">
+              ${detailSections.join('')}
             </div>
           ` : ''}
           <div class="item-actions detail-actions">
