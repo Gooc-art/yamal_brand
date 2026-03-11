@@ -1740,35 +1740,6 @@ input[type="search"]:focus {
   line-height: 1.5;
 }
 
-.detail-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.detail-fact {
-  display: grid;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(24, 42, 49, 0.08);
-  background: rgba(255, 255, 255, 0.74);
-}
-
-.detail-fact span {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.detail-fact strong {
-  font-size: 14px;
-  line-height: 1.35;
-  word-break: break-word;
-}
-
 .detail-sections {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -2193,10 +2164,6 @@ input[type="search"]:focus {
   .detail-card,
   .feature-panel {
     padding: 16px;
-  }
-
-  .detail-facts {
-    grid-template-columns: 1fr;
   }
 
   .detail-preview-pdf iframe {

@@ -78,6 +78,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-path-card'), 'styles contain detail path card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > *'), 'styles contain equal-width detail action buttons');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > .link-button'), 'styles unify detail action button visuals');
+assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.detail-facts'), 'styles removed detail fact tiles');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-kicker'), 'styles contain list card kicker classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-context'), 'styles contain list card context classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
@@ -117,6 +118,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'spli
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildItemHeading'), 'frontend structures list item heading text');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'detail-section-card'), 'frontend renders detail section cards');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '<div class="detail-actions">'), 'frontend renders dedicated detail action container');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'buildDetailFacts'), 'frontend removed boxed detail fact builder');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, '<div class="detail-facts">'), 'frontend removed detail fact tile markup');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'card-kicker'), 'frontend renders structured list card copy');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'siteTitle:'), 'frontend no longer tracks visible hero title');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-helper'), 'frontend removed route helper duplication');

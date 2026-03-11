@@ -627,16 +627,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return '';
   }
 
-  function buildDetailFacts(payload) {
-    const facts = [
-      ['Тип', payload.kindLabel || 'Файл'],
-      ['Формат', payload.extension ? formatExtension(payload.extension) : 'Файл'],
-      ['Размер', payload.sizeLabel || 'Без размера'],
-      ['Обновлено', formatDateLabel(payload.modifiedUtc) || 'Дата неизвестна'],
-    ];
-    return facts.filter(([, value]) => String(value || '').trim() !== '');
-  }
-
   function buildDetailPreview(payload, detailTitle) {
     const inlineUrl = payload.inlineUrl || toInlineDownloadUrl(payload.downloadUrl);
     const previewKind = inferDetailPreviewKind(payload);
@@ -1454,7 +1444,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const detailTitle = heading.title || payload.label || payload.name || 'Файл';
     const originalName = payload.name && payload.name !== detailTitle ? payload.name : '';
     const detailTrail = buildDetailTrail(payload.breadcrumbs || []);
-    const detailFacts = buildDetailFacts(payload);
     const inlineUrl = payload.inlineUrl || toInlineDownloadUrl(payload.downloadUrl);
     const pills = [];
     heading.suffix.forEach((pill) => {
@@ -1467,6 +1456,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     if (extensionLabel && !pills.includes(extensionLabel) && !labelIncludesToken(detailTitle, extensionLabel)) {
       pills.push(extensionLabel);
+    }
+    const modifiedLabel = formatDateLabel(payload.modifiedUtc);
+    if (modifiedLabel && !pills.includes(modifiedLabel)) {
+      pills.push(modifiedLabel);
     }
     const detailSections = [];
     if (detailTrail) {
@@ -1504,14 +1497,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </div>
           <div class="item-meta">
             ${pills.map((pill) => `<span class="meta-pill">${escapeHtml(pill)}</span>`).join('')}
-          </div>
-          <div class="detail-facts">
-            ${detailFacts.map(([label, value]) => `
-              <div class="detail-fact">
-                <span>${escapeHtml(label)}</span>
-                <strong>${escapeHtml(value)}</strong>
-              </div>
-            `).join('')}
           </div>
           ${detailSections.length ? `
             <div class="detail-sections">
