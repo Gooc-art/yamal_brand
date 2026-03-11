@@ -7,6 +7,7 @@ const {
   buildRouteUrl,
   buildBrandRouteCards,
   buildBrandRoutesSummary,
+  initialWorkspaceCollapsed,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -84,4 +85,11 @@ test('buildBrandRoutesSummary exposes active label and route counters', () => {
   assert.equal(summary.total, 8);
   assert.equal(summary.available, 3);
   assert.equal(summary.activeLabel, 'Городские версии');
+});
+
+test('initialWorkspaceCollapsed defaults to hidden state until user overrides it', () => {
+  assert.equal(initialWorkspaceCollapsed(null), true);
+  assert.equal(initialWorkspaceCollapsed(''), true);
+  assert.equal(initialWorkspaceCollapsed('1'), true);
+  assert.equal(initialWorkspaceCollapsed('0'), false);
 });

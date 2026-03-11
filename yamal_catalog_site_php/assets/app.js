@@ -57,6 +57,7 @@ const BRAND_ROUTE_BLUEPRINTS = [
     tone: 'tone-graphics',
   },
 ];
+const DEFAULT_WORKSPACE_COLLAPSED = true;
 
 function clampRoutePage(value) {
   const parsed = Number.parseInt(value, 10);
@@ -154,6 +155,16 @@ function buildBrandRoutesSummary(sections, activeRouteId = '') {
   };
 }
 
+function initialWorkspaceCollapsed(storedValue) {
+  if (storedValue === '0') {
+    return false;
+  }
+  if (storedValue === '1') {
+    return true;
+  }
+  return DEFAULT_WORKSPACE_COLLAPSED;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -161,6 +172,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildRouteUrl,
     buildBrandRouteCards,
     buildBrandRoutesSummary,
+    initialWorkspaceCollapsed,
   };
 }
 
@@ -188,7 +200,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     exampleTab: 'good',
     exampleIndex: { good: 0, debate: 0 },
     exampleAutoplay: true,
-    workspaceCollapsed: false,
+    workspaceCollapsed: DEFAULT_WORKSPACE_COLLAPSED,
     catalogMode: false,
     inspectorOpen: false,
     featurePanels: [],
@@ -1545,9 +1557,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   });
 
   try {
-    setWorkspaceCollapsed(window.localStorage.getItem(WORKSPACE_STORAGE_KEY) === '1');
+    setWorkspaceCollapsed(initialWorkspaceCollapsed(window.localStorage.getItem(WORKSPACE_STORAGE_KEY)));
   } catch (error) {
     console.warn(error);
+    setWorkspaceCollapsed(DEFAULT_WORKSPACE_COLLAPSED);
   }
 
   try {

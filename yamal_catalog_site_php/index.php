@@ -118,20 +118,20 @@ $config = site_config();
         <div id="featured-shelves" class="feature-grid"></div>
       </section>
 
-      <section id="workspace-shell" class="workspace-shell">
+      <section id="workspace-shell" class="workspace-shell collapsed">
         <div class="surface workspace-header">
           <div>
             <p class="eyebrow">Каталог</p>
             <h2>Разделы и файлы</h2>
-            <p id="workspace-copy" class="workspace-copy">Все разделы и файлы в одном потоке.</p>
+            <p id="workspace-copy" class="workspace-copy">Рабочая область скрыта. Она откроется автоматически при переходе в раздел или поиск.</p>
           </div>
           <div class="workspace-actions">
             <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Только каталог</button>
-            <button type="button" id="workspace-toggle" class="ghost-button" data-action="toggle-workspace">Скрыть рабочую область</button>
+            <button type="button" id="workspace-toggle" class="ghost-button" data-action="toggle-workspace">Показать рабочую область</button>
           </div>
         </div>
 
-      <main id="workspace-grid" class="workspace-composition">
+      <main id="workspace-grid" class="workspace-composition" hidden>
         <section class="surface content-block workspace-stage">
           <div class="block-head stage-head">
             <div>

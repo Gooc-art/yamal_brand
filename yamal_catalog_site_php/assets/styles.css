@@ -1377,6 +1377,19 @@ input[type="search"]:focus {
 .workspace-shell.collapsed .workspace-header {
   border-color: rgba(180, 36, 61, 0.16);
   background: linear-gradient(180deg, rgba(255, 247, 248, 0.96), rgba(248, 239, 241, 0.96));
+  padding-block: 18px;
+}
+
+.workspace-shell.collapsed {
+  gap: 0;
+}
+
+.workspace-shell.collapsed .workspace-copy {
+  max-width: 58ch;
+}
+
+.workspace-shell.collapsed .eyebrow {
+  color: rgba(180, 36, 61, 0.8);
 }
 
 .workspace-composition {
