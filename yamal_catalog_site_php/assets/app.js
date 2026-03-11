@@ -58,6 +58,7 @@ const BRAND_ROUTE_BLUEPRINTS = [
   },
 ];
 const DEFAULT_WORKSPACE_COLLAPSED = true;
+const DEFAULT_CATALOG_MODE = false;
 
 function clampRoutePage(value) {
   const parsed = Number.parseInt(value, 10);
@@ -155,13 +156,7 @@ function buildBrandRoutesSummary(sections, activeRouteId = '') {
   };
 }
 
-function initialWorkspaceCollapsed(storedValue) {
-  if (storedValue === '0') {
-    return false;
-  }
-  if (storedValue === '1') {
-    return true;
-  }
+function initialWorkspaceCollapsed() {
   return DEFAULT_WORKSPACE_COLLAPSED;
 }
 
@@ -923,11 +918,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         ? 'Блок скрыт. Он откроется автоматически.'
         : 'Все разделы и файлы в одном потоке.';
     }
-    try {
-      window.localStorage.setItem(WORKSPACE_STORAGE_KEY, state.workspaceCollapsed ? '1' : '0');
-    } catch (error) {
-      console.warn(error);
-    }
   }
 
   function setCatalogMode(nextValue) {
@@ -947,11 +937,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       els.workspaceCopy.textContent = state.catalogMode
         ? 'Включен режим каталога.'
         : 'Все разделы и файлы в одном потоке.';
-    }
-    try {
-      window.localStorage.setItem(CATALOG_MODE_STORAGE_KEY, state.catalogMode ? '1' : '0');
-    } catch (error) {
-      console.warn(error);
     }
   }
 
@@ -1557,17 +1542,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   });
 
   try {
-    setWorkspaceCollapsed(initialWorkspaceCollapsed(window.localStorage.getItem(WORKSPACE_STORAGE_KEY)));
+    window.localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+    window.localStorage.removeItem(CATALOG_MODE_STORAGE_KEY);
   } catch (error) {
     console.warn(error);
-    setWorkspaceCollapsed(DEFAULT_WORKSPACE_COLLAPSED);
   }
 
-  try {
-    setCatalogMode(window.localStorage.getItem(CATALOG_MODE_STORAGE_KEY) === '1');
-  } catch (error) {
-    console.warn(error);
-  }
+  setWorkspaceCollapsed(initialWorkspaceCollapsed());
+  setCatalogMode(DEFAULT_CATALOG_MODE);
 
   setInspectorOpen(false);
 

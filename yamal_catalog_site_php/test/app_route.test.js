@@ -88,8 +88,8 @@ test('buildBrandRoutesSummary exposes active label and route counters', () => {
 });
 
 test('initialWorkspaceCollapsed defaults to hidden state until user overrides it', () => {
-  assert.equal(initialWorkspaceCollapsed(null), true);
+  assert.equal(initialWorkspaceCollapsed(), true);
   assert.equal(initialWorkspaceCollapsed(''), true);
   assert.equal(initialWorkspaceCollapsed('1'), true);
-  assert.equal(initialWorkspaceCollapsed('0'), false);
+  assert.equal(initialWorkspaceCollapsed('0'), true);
 });
