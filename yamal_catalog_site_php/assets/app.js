@@ -241,6 +241,25 @@ function normalizeConsultantIntents(intents) {
     .slice(0, 6);
 }
 
+function buildConsultantStarterQueries(intents) {
+  const seen = new Set();
+  return normalizeConsultantIntents(intents)
+    .map((intent) => {
+      const query = String(intent.prompt || intent.label || '').trim();
+      if (!query || seen.has(query)) {
+        return null;
+      }
+      seen.add(query);
+      return {
+        label: String(intent.summary || intent.label || query).trim() || query,
+        query,
+        description: String(intent.description || '').trim(),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
 function buildConsultantResultTitle(result) {
   const explicit = String(result?.title || '').trim();
   if (explicit) {
@@ -345,6 +364,7 @@ if (typeof module !== 'undefined' && module.exports) {
     isWorkspaceNavigationAction,
     splitDetailHeading,
     normalizeConsultantIntents,
+    buildConsultantStarterQueries,
     buildConsultantResultTitle,
     normalizeConsultantFollowUps,
     normalizeConsultantContext,
@@ -420,7 +440,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     consultantPanel: document.querySelector('#consultant-panel'),
     consultantTitle: document.querySelector('#consultant-title'),
     consultantCopy: document.querySelector('#consultant-copy'),
-    consultantIntents: document.querySelector('#consultant-intents'),
     consultantForm: document.querySelector('#consultant-form'),
     consultantInput: document.querySelector('#consultant-input'),
     consultantResult: document.querySelector('#consultant-result'),
@@ -1041,14 +1060,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const payload = state.bootstrap?.consultant || {};
     const title = String(payload.title || '').trim() || 'Помощник по каталогу';
     const description = String(payload.description || '').trim()
-      || 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала, отвечает на вопросы применения и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.';
+      || 'Опишите задачу одним сообщением. Помощник сам разберет формат, город и тип материала, подберет реальные разделы и файлы каталога, а потом поможет уточнениями по брендбуку.';
     const placeholder = String(payload.placeholder || '').trim()
-      || 'Например: нужен логотип в SVG, можно ли менять цвет, можно ли ставить поверх фото?';
+      || 'Например: логотип SVG для Салехарда, можно ли менять цвет';
     return {
       title,
       description,
       placeholder,
-      intents: normalizeConsultantIntents(payload.intents),
+      starters: buildConsultantStarterQueries(payload.intents),
     };
   }
 
@@ -1074,24 +1093,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (submitButton) {
       submitButton.disabled = state.consultantBusy;
     }
-  }
-
-  function renderConsultantIntents(activeIntentId = state.consultantIntentId) {
-    if (!els.consultantIntents) {
-      return;
-    }
-    const intents = consultantConfig().intents;
-    els.consultantIntents.innerHTML = intents.map((intent) => `
-      <button
-        type="button"
-        class="consultant-intent${String(activeIntentId || '') === intent.id ? ' active' : ''}"
-        data-action="consultant-intent"
-        data-intent="${escapeHtml(intent.id)}"
-      >
-        <strong>${escapeHtml(intent.label)}</strong>
-        <span>${escapeHtml(intent.description || intent.summary)}</span>
-      </button>
-    `).join('');
   }
 
   function setConsultantOpen(nextValue) {
@@ -1126,9 +1127,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function renderConsultantHome(activeIntentId = '') {
+    const config = consultantConfig();
     updateConsultantChrome();
     state.consultantIntentId = String(activeIntentId || state.consultantIntentId || '').trim();
-    renderConsultantIntents(state.consultantIntentId);
     if (!els.consultantResult) {
       return;
     }
@@ -1136,10 +1137,35 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       renderConsultantConversation();
       return;
     }
+    const starterQueries = Array.isArray(config.starters) ? config.starters : [];
     els.consultantResult.innerHTML = `
-      <div class="panel-empty consultant-empty">
-        <strong>С чего начать</strong>
-        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «можно ли менять цвет?», «можно ли растягивать?» или «можно ли ставить поверх фото?».</span>
+      <div class="consultant-chat consultant-chat-home">
+        <div class="consultant-turn assistant">
+          <div class="consultant-turn-card consultant-assistant-turn">
+            <div class="consultant-response consultant-response-home">
+              <div class="consultant-response-head">
+                <span class="consultant-kicker">Помощник</span>
+                <strong>Опишите задачу одним сообщением</strong>
+                <p>${escapeHtml(config.description)}</p>
+              </div>
+              ${starterQueries.length ? `
+                <section class="consultant-group consultant-group-starter">
+                  <div class="consultant-group-head">
+                    <strong>Можно начать так</strong>
+                  </div>
+                  <div class="consultant-query-list">
+                    ${starterQueries.map((item) => `
+                      <button type="button" class="consultant-query-chip" data-action="consultant-query" data-query="${escapeHtml(item.query)}">
+                        ${escapeHtml(item.label)}
+                      </button>
+                    `).join('')}
+                  </div>
+                </section>
+              ` : ''}
+              <p class="consultant-home-note">После первого ответа можно продолжать короткими сообщениями: «а для печати», «можно ли менять цвет», «что отправить подрядчику».</p>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     els.consultantResult.scrollTop = 0;
@@ -1330,7 +1356,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function renderConsultantConversation({ loadingLabel = '' } = {}) {
-    renderConsultantIntents(state.consultantIntentId);
     if (!els.consultantResult) {
       return;
     }
@@ -1404,7 +1429,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   async function runConsultant(query = '', intentId = '') {
     const normalizedQuery = String(query || '').trim();
     const resolvedIntentId = String(intentId || state.consultantIntentId || '').trim();
-    const activeIntent = consultantConfig().intents.find((intent) => intent.id === resolvedIntentId) || null;
+    const activeIntent = normalizeConsultantIntents(state.bootstrap?.consultant?.intents).find((intent) => intent.id === resolvedIntentId) || null;
     if (!normalizedQuery && !resolvedIntentId) {
       renderConsultantHome();
       return;
@@ -2080,11 +2105,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     if (action === 'copy-current-link') {
       void handleCopyCurrentLink(target);
-      return;
-    }
-    if (action === 'consultant-intent') {
-      setConsultantOpen(true);
-      void runConsultant('', target.dataset.intent || '');
       return;
     }
     if (action === 'consultant-query') {

@@ -176,12 +176,21 @@ $config = site_config();
           </div>
         </div>
         <div class="consultant-body">
-          <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, отвечает на вопросы применения, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
-          <div id="consultant-intents" class="consultant-intents"></div>
+          <p id="consultant-copy" class="consultant-copy visually-hidden">Опишите задачу одним сообщением. Помощник помнит предыдущий шаг, отвечает на вопросы применения, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
           <div id="consultant-result" class="consultant-result" role="log" aria-live="polite" aria-relevant="additions text">
-            <div class="panel-empty">
-              <strong>С чего начать</strong>
-              <span>Выберите сценарий выше или напишите короткий запрос, а потом уточняйте следующими сообщениями про цвет, пропорции, фото, подрядчика или согласование.</span>
+            <div class="consultant-chat consultant-chat-home">
+              <div class="consultant-turn assistant">
+                <div class="consultant-turn-card consultant-assistant-turn">
+                  <div class="consultant-response consultant-response-home">
+                    <div class="consultant-response-head">
+                      <span class="consultant-kicker">Помощник</span>
+                      <strong>Опишите задачу одним сообщением</strong>
+                      <p>Я сам подберу раздел, нужные файлы и следующий шаг по брендбуку. После ответа можно продолжать уточнениями прямо в этом же диалоге.</p>
+                    </div>
+                    <p class="consultant-home-note">Например: логотип SVG для Салехарда, брендбук PDF, можно ли менять цвет.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <form id="consultant-form" class="consultant-form">
@@ -191,7 +200,7 @@ $config = site_config();
                 id="consultant-input"
                 name="consultant_q"
                 type="search"
-                placeholder="Например: нужен логотип в SVG, можно ли менять цвет"
+                placeholder="Например: логотип SVG для Салехарда, можно ли менять цвет"
                 autocomplete="off"
               />
               <button type="submit" class="accent-button">Подобрать</button>

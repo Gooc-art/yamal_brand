@@ -12,6 +12,7 @@ const {
   isWorkspaceNavigationAction,
   splitDetailHeading,
   normalizeConsultantIntents,
+  buildConsultantStarterQueries,
   buildConsultantResultTitle,
   normalizeConsultantFollowUps,
   normalizeConsultantContext,
@@ -174,6 +175,19 @@ test('normalizeConsultantIntents falls back to default assistant scenarios', () 
   assert.equal(intents.length, 6);
   assert.equal(intents[0].id, 'logo');
   assert.equal(intents[0].label, 'Нужен логотип');
+});
+
+test('buildConsultantStarterQueries turns assistant scenarios into compact dialog starters', () => {
+  const starters = buildConsultantStarterQueries([
+    { id: 'logo', label: 'Нужен логотип', summary: 'Логотип', description: 'Логотип и знак', prompt: 'логотип svg' },
+    { id: 'brandbook', label: 'Нужен брендбук', summary: 'Брендбук', description: 'PDF и правила', prompt: 'брендбук Салехард' },
+    { id: 'logo-duplicate', label: 'Еще логотип', summary: 'Логотип', description: 'Дубль', prompt: 'логотип svg' },
+  ]);
+
+  assert.deepEqual(starters, [
+    { label: 'Логотип', query: 'логотип svg', description: 'Логотип и знак' },
+    { label: 'Брендбук', query: 'брендбук Салехард', description: 'PDF и правила' },
+  ]);
 });
 
 test('buildConsultantResultTitle prefers explicit title and falls back to intent summary', () => {
