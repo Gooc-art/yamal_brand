@@ -1,4 +1,62 @@
 const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file'];
+const BRAND_ROUTE_BLUEPRINTS = [
+  {
+    mark: '✳',
+    label: 'Мастер-бренд',
+    sectionName: 'Брендбук ЯМАЛ Мастер бренд',
+    query: 'мастер бренд',
+    tone: 'tone-master',
+  },
+  {
+    mark: '100',
+    label: 'ЯМАЛ 100',
+    sectionName: 'Брендбук ЯМАЛ 100',
+    query: 'ямал 100',
+    tone: 'tone-anniversary',
+  },
+  {
+    mark: '🏙',
+    label: 'Городские версии',
+    sectionName: 'Логотипы городов',
+    query: 'салехард',
+    tone: 'tone-city',
+  },
+  {
+    mark: 'Я',
+    label: 'Логотип',
+    sectionName: 'Логотип',
+    query: 'логотип',
+    tone: 'tone-logo',
+  },
+  {
+    mark: '◉',
+    label: 'Фирменный знак',
+    sectionName: 'Фирменный знак',
+    query: 'фирменный знак',
+    tone: 'tone-mark',
+  },
+  {
+    mark: '▦',
+    label: 'Цвет и паттерны',
+    sectionName: 'Паттерны',
+    query: 'паттерн',
+    tone: 'tone-pattern',
+  },
+  {
+    mark: 'Aa',
+    label: 'Типографика',
+    sectionName: 'Шрифт',
+    query: 'шрифт',
+    tone: 'tone-type',
+  },
+  {
+    mark: 'SVG',
+    label: 'Графические элементы',
+    sectionName: 'Иллюстрации мастер-бренда SVG-элементы',
+    query: 'иллюстрации svg',
+    tone: 'tone-graphics',
+  },
+];
 
 function clampRoutePage(value) {
   const parsed = Number.parseInt(value, 10);
@@ -70,11 +128,39 @@ function buildRouteUrl(inputUrl, route) {
   return url.toString();
 }
 
+function buildBrandRouteCards(sections, activeRouteId = '') {
+  const availableSections = Array.isArray(sections) ? sections : [];
+  return BRAND_ROUTE_BLUEPRINTS.map((item) => {
+    const section = availableSections.find((entry) => entry && entry.name === item.sectionName) || null;
+    return {
+      ...item,
+      action: section ? 'open-folder' : 'search-chip',
+      target: section ? section.id : item.query,
+      routeId: section ? section.id : '',
+      available: Boolean(section),
+      isActive: Boolean(section) && String(activeRouteId || '') === String(section.id || ''),
+    };
+  });
+}
+
+function buildBrandRoutesSummary(sections, activeRouteId = '') {
+  const cards = buildBrandRouteCards(sections, activeRouteId);
+  const activeCard = cards.find((item) => item.isActive) || null;
+  return {
+    cards,
+    total: cards.length,
+    available: cards.filter((item) => item.available).length,
+    activeLabel: activeCard ? activeCard.label : '',
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
     routeFromUrl,
     buildRouteUrl,
+    buildBrandRouteCards,
+    buildBrandRoutesSummary,
   };
 }
 
@@ -106,6 +192,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     catalogMode: false,
     inspectorOpen: false,
     featurePanels: [],
+    brandRoutesOpen: false,
   };
 
   const els = {
@@ -114,7 +201,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     heroExamples: document.querySelector('.hero-examples'),
     heroExampleTabs: document.querySelector('#hero-example-tabs'),
     heroExampleStage: document.querySelector('#hero-example-stage'),
+    brandRoutesBlock: document.querySelector('.brand-routes-block'),
     brandRoutes: document.querySelector('#brand-routes'),
+    brandRoutesPanel: document.querySelector('#brand-routes-panel'),
+    brandRoutesToggle: document.querySelector('#brand-routes-toggle'),
+    brandRoutesToggleLabel: document.querySelector('#brand-routes-toggle-label'),
+    brandRoutesToggleMeta: document.querySelector('#brand-routes-toggle-meta'),
+    brandRoutesCaption: document.querySelector('#brand-routes-caption'),
+    brandRoutesCurrent: document.querySelector('#brand-routes-current'),
     featuredShelves: document.querySelector('#featured-shelves'),
     setupBanner: document.querySelector('#setup-banner'),
     topSearches: document.querySelector('#top-searches'),
@@ -833,6 +927,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       button.textContent = state.catalogMode ? 'Вернуть витрину' : 'Только каталог';
     });
     if (state.catalogMode) {
+      setBrandRoutesOpen(false);
       setWorkspaceCollapsed(false);
       els.workspaceShell?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -886,6 +981,30 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
   }
 
+  function setBrandRoutesOpen(nextValue, options = {}) {
+    state.brandRoutesOpen = Boolean(nextValue);
+    if (els.brandRoutesBlock) {
+      els.brandRoutesBlock.classList.toggle('open', state.brandRoutesOpen);
+    }
+    if (els.brandRoutesPanel) {
+      els.brandRoutesPanel.hidden = !state.brandRoutesOpen;
+    }
+    if (els.brandRoutesToggle) {
+      els.brandRoutesToggle.setAttribute('aria-expanded', state.brandRoutesOpen ? 'true' : 'false');
+    }
+    if (els.brandRoutesToggleLabel) {
+      els.brandRoutesToggleLabel.textContent = state.brandRoutesOpen ? 'Скрыть разделы' : 'Открыть разделы';
+    }
+    if (state.brandRoutesOpen && options.focus) {
+      window.requestAnimationFrame(() => {
+        const activeCard = els.brandRoutes?.querySelector('.brand-route-card.active');
+        const firstCard = els.brandRoutes?.querySelector('.brand-route-card');
+        (activeCard || firstCard)?.focus?.();
+        (activeCard || firstCard)?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      });
+    }
+  }
+
   function renderSetupBanner(message) {
     if (!message) {
       els.setupBanner.style.display = 'none';
@@ -902,90 +1021,53 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
-  function findSectionByName(sections, sectionName) {
-    return (sections || []).find((item) => item && item.name === sectionName) || null;
-  }
-
   function renderBrandRoutes(bootstrap) {
-    const sections = bootstrap.sections || [];
-    const blueprints = [
-      {
-        mark: '✳',
-        label: 'Мастер-бренд',
-        sectionName: 'Брендбук ЯМАЛ Мастер бренд',
-        query: 'мастер бренд',
-        tone: 'tone-master',
-      },
-      {
-        mark: '100',
-        label: 'ЯМАЛ 100',
-        sectionName: 'Брендбук ЯМАЛ 100',
-        query: 'ямал 100',
-        tone: 'tone-anniversary',
-      },
-      {
-        mark: '🏙',
-        label: 'Городские версии',
-        sectionName: 'Логотипы городов',
-        query: 'салехард',
-        tone: 'tone-city',
-      },
-      {
-        mark: 'Я',
-        label: 'Логотип',
-        sectionName: 'Логотип',
-        query: 'логотип',
-        tone: 'tone-logo',
-      },
-      {
-        mark: '◉',
-        label: 'Фирменный знак',
-        sectionName: 'Фирменный знак',
-        query: 'фирменный знак',
-        tone: 'tone-mark',
-      },
-       {
-        mark: '▦',
-        label: 'Цвет и паттерны',
-        sectionName: 'Паттерны',
-        query: 'паттерн',
-        tone: 'tone-pattern',
-      },
-      {
-        mark: 'Aa',
-        label: 'Типографика',
-        sectionName: 'Шрифт',
-        query: 'шрифт',
-        tone: 'tone-type',
-      },
-      {
-        mark: 'SVG',
-        label: 'Графические элементы',
-        sectionName: 'Иллюстрации мастер-бренда SVG-элементы',
-        query: 'иллюстрации svg',
-        tone: 'tone-graphics',
-      },
-    ];
-
-    els.brandRoutes.innerHTML = blueprints.map((item) => {
-      const section = findSectionByName(sections, item.sectionName);
-      const action = section ? 'open-folder' : 'search-chip';
-      const target = section ? section.id : item.query;
-      const attr = section ? `data-id="${escapeHtml(target)}"` : `data-query="${escapeHtml(target)}"`;
-      const isActive = section && state.activeRouteId === section.id;
+    if (!els.brandRoutes) {
+      return;
+    }
+    const summary = buildBrandRoutesSummary(bootstrap.sections || [], state.activeRouteId);
+    if (els.brandRoutesCaption) {
+      els.brandRoutesCaption.textContent = summary.activeLabel
+        ? `Сейчас открыт раздел «${summary.activeLabel}». При необходимости переключитесь в другую ветку брендирования.`
+        : `${formatNumber(summary.available)} направлений брендирования собраны в одном компактном переключателе.`;
+    }
+    if (els.brandRoutesToggleMeta) {
+      els.brandRoutesToggleMeta.textContent = summary.activeLabel
+        ? `Сейчас: ${summary.activeLabel}`
+        : `${formatNumber(summary.available)} ключевых разделов`;
+    }
+    if (els.brandRoutesCurrent) {
+      els.brandRoutesCurrent.textContent = summary.activeLabel || 'Все разделы';
+    }
+    els.brandRoutes.innerHTML = summary.cards.map((item) => {
+      const attr = item.action === 'open-folder'
+        ? `data-id="${escapeHtml(item.target)}"`
+        : `data-query="${escapeHtml(item.target)}"`;
       return `
-        <button type="button" class="brand-route-card ${escapeHtml(item.tone)}${isActive ? ' active' : ''}" data-action="${action}" data-route-id="${section ? escapeHtml(section.id) : ''}" ${attr}${isActive ? ' aria-current="page"' : ''}>
+        <button
+          type="button"
+          class="brand-route-card ${escapeHtml(item.tone)}${item.isActive ? ' active' : ''}"
+          data-action="${escapeHtml(item.action)}"
+          data-route-id="${escapeHtml(item.routeId || '')}"
+          ${attr}
+          ${item.isActive ? 'aria-current="page"' : ''}
+        >
           <span class="brand-route-icon" aria-hidden="true">${escapeHtml(item.mark)}</span>
-          <strong>${escapeHtml(item.label)}</strong>
+          <span class="brand-route-copy">
+            <strong>${escapeHtml(item.label)}</strong>
+            <small>${escapeHtml(item.available ? 'Открыть раздел' : `Искать: ${item.query}`)}</small>
+          </span>
           <span class="brand-route-arrow" aria-hidden="true">↗</span>
         </button>
       `;
     }).join('');
-    window.requestAnimationFrame(() => {
-      els.brandRoutes
-        ?.querySelector('.brand-route-card.active')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    });
+    if (state.brandRoutesOpen) {
+      window.requestAnimationFrame(() => {
+        els.brandRoutes
+          ?.querySelector('.brand-route-card.active')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      });
+    }
   }
 
   function buildFeaturePanels(bootstrap) {
@@ -1344,6 +1426,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       setCatalogMode(!state.catalogMode);
       return;
     }
+    if (action === 'toggle-brand-routes') {
+      setBrandRoutesOpen(!state.brandRoutesOpen, { focus: !state.brandRoutesOpen });
+      return;
+    }
     if (action === 'examples-tab') {
       setExampleTab(target.dataset.tab || 'good');
       return;
@@ -1374,6 +1460,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return;
     }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'go-root', 'back'].includes(action)) {
+      if (state.brandRoutesOpen) {
+        setBrandRoutesOpen(false);
+      }
       ensureWorkspaceVisible();
       focusWorkspace(target);
     }
@@ -1398,8 +1487,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   document.addEventListener('keydown', (event) => {
     const targetTag = String(event.target?.tagName || '').toLowerCase();
     const typingContext = ['input', 'textarea', 'select'].includes(targetTag) || event.target?.isContentEditable;
-    if (event.key === 'Escape' && state.inspectorOpen) {
-      closeInspector('replace');
+    if (event.key === 'Escape') {
+      if (state.brandRoutesOpen) {
+        setBrandRoutesOpen(false);
+        return;
+      }
+      if (state.inspectorOpen) {
+        closeInspector('replace');
+      }
     }
     if (typingContext) {
       return;
@@ -1423,8 +1518,17 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     });
   }
 
-  enhanceHorizontalRail(els.brandRoutes);
   enhanceHorizontalRail(els.featuredShelves);
+
+  document.addEventListener('click', (event) => {
+    if (!state.brandRoutesOpen) {
+      return;
+    }
+    if (event.target.closest('#brand-routes-toggle') || event.target.closest('#brand-routes-panel')) {
+      return;
+    }
+    setBrandRoutesOpen(false);
+  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {

@@ -1,7 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { normalizeRoute, routeFromUrl, buildRouteUrl } = require('../assets/app.js');
+const {
+  normalizeRoute,
+  routeFromUrl,
+  buildRouteUrl,
+  buildBrandRouteCards,
+  buildBrandRoutesSummary,
+} = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
   assert.deepEqual(normalizeRoute({ view: 'folder', folderId: 'logo', page: '2', fileId: 'file1' }), {
@@ -53,4 +59,29 @@ test('buildRouteUrl removes stale route params for root state', () => {
     }),
     'https://brand.yamal/catalog/?utm=1',
   );
+});
+
+test('buildBrandRouteCards falls back to search when section is missing', () => {
+  const cards = buildBrandRouteCards([
+    { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд' },
+    { id: 'folder-logo', name: 'Логотип' },
+  ], 'folder-logo');
+
+  assert.equal(cards[0].action, 'open-folder');
+  assert.equal(cards[0].target, 'folder-master');
+  assert.equal(cards[3].isActive, true);
+  assert.equal(cards[6].action, 'search-chip');
+  assert.equal(cards[6].target, 'шрифт');
+});
+
+test('buildBrandRoutesSummary exposes active label and route counters', () => {
+  const summary = buildBrandRoutesSummary([
+    { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд' },
+    { id: 'folder-logo', name: 'Логотип' },
+    { id: 'folder-cities', name: 'Логотипы городов' },
+  ], 'folder-cities');
+
+  assert.equal(summary.total, 8);
+  assert.equal(summary.available, 3);
+  assert.equal(summary.activeLabel, 'Городские версии');
 });

@@ -857,15 +857,112 @@ input[type="search"]:focus {
 }
 
 .brand-routes-head {
-  align-items: end;
+  align-items: center;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 
 .showcase-head {
   align-items: end;
   gap: 16px;
   margin-bottom: 18px;
+}
+
+.brand-routes-caption {
+  margin: 8px 0 0;
+  max-width: 52ch;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.brand-routes-actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.brand-routes-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: min(100%, 320px);
+  padding-inline: 18px;
+}
+
+.brand-routes-toggle-copy {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+}
+
+.brand-routes-toggle-copy strong {
+  font-size: 17px;
+  line-height: 1.05;
+}
+
+.brand-routes-toggle-copy span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.76;
+}
+
+.brand-routes-toggle-icon {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.brand-routes-block.open .brand-routes-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.brand-routes-panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(24, 42, 49, 0.09);
+}
+
+.brand-routes-panel-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.brand-routes-panel-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.brand-routes-panel-copy strong {
+  font-size: 18px;
+  line-height: 1.05;
+}
+
+.brand-routes-panel-copy span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.brand-routes-current {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--accent-deep);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .showcase-actions,
@@ -1103,13 +1200,11 @@ input[type="search"]:focus {
 
 .brand-route-grid {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(230px, 256px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
+  max-height: min(56vh, 560px);
+  overflow: auto;
+  padding-right: 4px;
   scrollbar-width: thin;
 }
 
@@ -1121,14 +1216,13 @@ input[type="search"]:focus {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  min-height: 132px;
-  padding: 18px 18px 18px 20px;
+  min-height: 112px;
+  padding: 16px 16px 16px 20px;
   text-align: left;
   border: 1px solid rgba(24, 42, 49, 0.08);
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--route-soft), rgba(255, 255, 255, 0.86) 76%);
   box-shadow: var(--shadow-soft);
-  scroll-snap-align: start;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
@@ -1162,10 +1256,21 @@ input[type="search"]:focus {
 }
 
 .brand-route-card strong {
-  max-width: 12ch;
   min-width: 0;
-  font-size: 21px;
+  font-size: 19px;
   line-height: 1.05;
+}
+
+.brand-route-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.brand-route-copy small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
 }
 
 .brand-route-arrow {
@@ -1620,7 +1725,7 @@ input[type="search"]:focus {
   }
 
   .brand-route-grid {
-    grid-auto-columns: minmax(220px, 236px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .feature-grid {
@@ -1679,7 +1784,7 @@ input[type="search"]:focus {
   }
 
   .brand-route-grid {
-    grid-auto-columns: minmax(230px, 260px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .feature-grid {
@@ -1754,6 +1859,22 @@ input[type="search"]:focus {
   .workspace-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .brand-routes-actions,
+  .brand-routes-toggle {
+    width: 100%;
+  }
+
+  .brand-routes-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .brand-route-grid {
+    grid-template-columns: 1fr;
+    max-height: none;
+    padding-right: 0;
   }
 
   .toolbar,

@@ -68,15 +68,37 @@ $config = site_config();
       <section class="surface brand-routes-block">
         <div class="block-head brand-routes-head">
           <div>
-            <p class="eyebrow">Разделы</p>
-            <h2>Главное меню</h2>
+            <p class="eyebrow">Навигация</p>
+            <h2>Каталог брендирования</h2>
+            <p id="brand-routes-caption" class="brand-routes-caption">Откройте список разделов и быстро перейдите в нужную ветку брендирования.</p>
           </div>
-          <div class="rail-actions" aria-label="Прокрутка главного меню">
-            <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="brand-routes" data-direction="-1" aria-label="Прокрутить главное меню влево">←</button>
-            <button type="button" class="ghost-button rail-button" data-action="scroll-rail" data-target="brand-routes" data-direction="1" aria-label="Прокрутить главное меню вправо">→</button>
+          <div class="brand-routes-actions">
+            <button
+              type="button"
+              id="brand-routes-toggle"
+              class="accent-button brand-routes-toggle"
+              data-action="toggle-brand-routes"
+              aria-expanded="false"
+              aria-controls="brand-routes-panel"
+            >
+              <span class="brand-routes-toggle-copy">
+                <strong id="brand-routes-toggle-label">Открыть разделы</strong>
+                <span id="brand-routes-toggle-meta">Основные ветки брендирования</span>
+              </span>
+              <span class="brand-routes-toggle-icon" aria-hidden="true">↓</span>
+            </button>
           </div>
         </div>
-        <div id="brand-routes" class="brand-route-grid"></div>
+        <div id="brand-routes-panel" class="brand-routes-panel" hidden>
+          <div class="brand-routes-panel-head">
+            <div class="brand-routes-panel-copy">
+              <strong>Разделы брендирования</strong>
+              <span>Плотная сетка для быстрого входа без длинной вертикальной сцены.</span>
+            </div>
+            <span id="brand-routes-current" class="brand-routes-current">Все разделы</span>
+          </div>
+          <div id="brand-routes" class="brand-route-grid"></div>
+        </div>
       </section>
 
       <section class="surface showcase-block">
