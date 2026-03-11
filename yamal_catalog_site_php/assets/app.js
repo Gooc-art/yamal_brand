@@ -249,6 +249,36 @@ function buildConsultantResultTitle(result) {
   return query ? `По запросу: ${query}` : 'Помощник каталога';
 }
 
+function normalizeConsultantFollowUps(followUps, suggestedQueries = []) {
+  const items = [];
+  const seen = new Set();
+  if (Array.isArray(followUps)) {
+    followUps.forEach((item) => {
+      const query = String(item?.query || '').trim();
+      if (!query || seen.has(query)) {
+        return;
+      }
+      seen.add(query);
+      items.push({
+        label: String(item?.label || query).trim() || query,
+        query,
+        reason: String(item?.reason || '').trim(),
+      });
+    });
+  }
+  if (!items.length && Array.isArray(suggestedQueries)) {
+    suggestedQueries.forEach((query) => {
+      const text = String(query || '').trim();
+      if (!text || seen.has(text)) {
+        return;
+      }
+      seen.add(text);
+      items.push({ label: text, query: text, reason: '' });
+    });
+  }
+  return items.slice(0, 4);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -261,6 +291,7 @@ if (typeof module !== 'undefined' && module.exports) {
     splitDetailHeading,
     normalizeConsultantIntents,
     buildConsultantResultTitle,
+    normalizeConsultantFollowUps,
   };
 }
 
@@ -950,7 +981,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const payload = state.bootstrap?.consultant || {};
     const title = String(payload.title || '').trim() || 'Помощник по каталогу';
     const description = String(payload.description || '').trim()
-      || 'Опишите задачу или выберите готовый сценарий. Помощник предлагает только реальные разделы и файлы из каталога.';
+      || 'Опишите задачу или выберите готовый сценарий. Помощник разбирает формат, город и тип материала и предлагает только реальные разделы и файлы из каталога.';
     const placeholder = String(payload.placeholder || '').trim()
       || 'Например: нужен логотип в SVG или брендбук Салехарда';
     return {
@@ -1047,7 +1078,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.consultantResult.innerHTML = `
       <div class="panel-empty consultant-empty">
         <strong>С чего начать</strong>
-        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg» или «брендбук Салехард».</span>
+        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард» или «наклейка для печати».</span>
       </div>
     `;
   }
@@ -1118,13 +1149,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
     const title = buildConsultantResultTitle(payload);
     const message = String(payload?.message || '').trim();
+    const understanding = Array.isArray(payload?.understanding) ? payload.understanding.slice(0, 6) : [];
     const sections = Array.isArray(payload?.sections) ? payload.sections.slice(0, 4) : [];
     const items = Array.isArray(payload?.items) ? payload.items.slice(0, 4) : [];
-    const suggestedQueries = Array.isArray(payload?.suggestedQueries) ? payload.suggestedQueries.slice(0, 4) : [];
+    const followUps = normalizeConsultantFollowUps(payload?.followUps, payload?.suggestedQueries);
     const primarySection = sections[0] || null;
     const searchQuery = String(payload?.searchQuery || payload?.query || '').trim();
 
-    if (!sections.length && !items.length && !suggestedQueries.length) {
+    if (!sections.length && !items.length && !followUps.length) {
       els.consultantResult.innerHTML = `
         <div class="panel-empty consultant-empty">
           <strong>${escapeHtml(title)}</strong>
@@ -1141,6 +1173,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           <strong>${escapeHtml(title)}</strong>
           ${message ? `<p>${escapeHtml(message)}</p>` : ''}
         </div>
+        ${understanding.length ? `
+          <section class="consultant-group consultant-group-understanding">
+            <div class="consultant-group-head">
+              <strong>Я понял</strong>
+            </div>
+            <div class="consultant-understanding">
+              ${understanding.map((item) => `<span class="meta-pill consultant-pill">${escapeHtml(item)}</span>`).join('')}
+            </div>
+          </section>
+        ` : ''}
         <div class="consultant-primary-actions">
           ${primarySection ? `<button type="button" class="accent-button" data-action="open-folder" data-id="${escapeHtml(primarySection.id)}">Открыть раздел</button>` : ''}
           ${searchQuery ? `<button type="button" class="ghost-button" data-action="search-chip" data-query="${escapeHtml(searchQuery)}">Показать поиск</button>` : ''}
@@ -1167,15 +1209,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             </div>
           </section>
         ` : ''}
-        ${suggestedQueries.length ? `
+        ${followUps.length ? `
           <section class="consultant-group">
             <div class="consultant-group-head">
-              <strong>Можно уточнить</strong>
+              <strong>Уточнить</strong>
             </div>
-            <div class="consultant-query-list">
-              ${suggestedQueries.map((query) => `
-                <button type="button" class="chip" data-action="consultant-query" data-query="${escapeHtml(query)}">
-                  ${escapeHtml(query)}
+            <div class="consultant-followup-list">
+              ${followUps.map((item) => `
+                <button type="button" class="consultant-followup" data-action="consultant-query" data-query="${escapeHtml(item.query)}">
+                  <strong>${escapeHtml(item.label)}</strong>
+                  ${item.reason ? `<span>${escapeHtml(item.reason)}</span>` : ''}
                 </button>
               `).join('')}
             </div>

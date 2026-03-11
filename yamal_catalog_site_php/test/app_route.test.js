@@ -12,6 +12,7 @@ const {
   splitDetailHeading,
   normalizeConsultantIntents,
   buildConsultantResultTitle,
+  normalizeConsultantFollowUps,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -177,5 +178,23 @@ test('buildConsultantResultTitle prefers explicit title and falls back to intent
   assert.equal(
     buildConsultantResultTitle({ query: 'логотип svg' }),
     'По запросу: логотип svg',
+  );
+});
+
+test('normalizeConsultantFollowUps keeps rich follow-up cards and falls back to plain queries', () => {
+  assert.deepEqual(
+    normalizeConsultantFollowUps([
+      { label: 'SVG', query: 'логотип svg', reason: 'Для вектора и веба' },
+      { label: 'PDF', query: 'логотип pdf', reason: 'Для печати' },
+    ]),
+    [
+      { label: 'SVG', query: 'логотип svg', reason: 'Для вектора и веба' },
+      { label: 'PDF', query: 'логотип pdf', reason: 'Для печати' },
+    ],
+  );
+
+  assert.deepEqual(
+    normalizeConsultantFollowUps([], ['брендбук', 'брендбук Салехард']).map((item) => item.query),
+    ['брендбук', 'брендбук Салехард'],
   );
 });

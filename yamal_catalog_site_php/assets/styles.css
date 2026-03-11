@@ -1962,6 +1962,22 @@ input[type="search"]:focus {
   gap: 10px;
 }
 
+.consultant-group-understanding {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.consultant-understanding {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consultant-pill {
+  background: rgba(180, 36, 61, 0.08);
+  color: var(--accent-deep);
+}
+
 .consultant-group {
   padding-top: 14px;
   border-top: 1px solid rgba(24, 42, 49, 0.08);
@@ -2068,6 +2084,39 @@ input[type="search"]:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.consultant-followup-list {
+  display: grid;
+  gap: 10px;
+}
+
+.consultant-followup {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.consultant-followup:hover {
+  transform: translateY(-1px);
+  border-color: rgba(24, 42, 49, 0.14);
+  box-shadow: 0 12px 24px rgba(24, 42, 49, 0.06);
+}
+
+.consultant-followup strong {
+  font-size: 14px;
+  line-height: 1.08;
+}
+
+.consultant-followup span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .consultant-empty,

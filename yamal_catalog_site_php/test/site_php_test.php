@@ -80,6 +80,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consult
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-panel'), 'styles contain consultant panel classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-intent'), 'styles contain consultant intent classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-section-card'), 'styles contain consultant section cards');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-understanding'), 'styles contain consultant understanding chips');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-followup'), 'styles contain consultant follow-up cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-success'), 'styles contain copy success state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-error'), 'styles contain copy error state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-caption'), 'styles contain detail caption classes');
@@ -134,6 +136,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setW
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'runConsultant'), 'frontend contains consultant runner');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-consultant'), 'frontend contains consultant toggle action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantIntents'), 'frontend normalizes consultant intents');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantFollowUps'), 'frontend normalizes consultant follow-up cards');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultant-understanding'), 'frontend renders consultant understanding section');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSectionSwitcher'), 'frontend renders workspace section switcher');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'compactRelativePath'), 'frontend compacts path context in cards');
@@ -171,6 +175,19 @@ assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark as
 assert_true(str_contains(asset_url('assets/styles.css'), '?v='), 'asset_url appends version query');
 assert_true(str_contains(asset_url('assets/app.js'), '?v='), 'asset_url versions app script');
 assert_true(str_contains(asset_url('assets/brand-logo-main.svg'), '?v='), 'asset_url versions logo asset');
+
+assert_true(detect_consultant_intent('нужен логотип в svg') !== null && (detect_consultant_intent('нужен логотип в svg')['id'] ?? '') === 'logo', 'consultant detects logo intent from svg query');
+assert_true(detect_consultant_city('материалы Салехарда') === 'салехард', 'consultant detects city from query');
+assert_true(detect_consultant_medium('наклейка для печати') === 'print', 'consultant detects print medium from query');
+assert_true(detect_consultant_source_mode('нужен исходник логотипа') === 'editable', 'consultant detects editable source mode');
+assert_true(detect_consultant_formats('логотип svg pdf') === ['svg', 'pdf'], 'consultant detects ordered format list');
+$consultContext = build_consultant_context('логотип svg для Салехарда');
+assert_true(($consultContext['intent']['id'] ?? '') === 'logo', 'consultant context resolves intent');
+assert_true(($consultContext['city'] ?? '') === 'салехард', 'consultant context resolves city');
+assert_true(($consultContext['formats'] ?? []) === ['svg'], 'consultant context resolves formats');
+assert_true(in_array('SVG', consultant_understanding_labels($consultContext), true), 'consultant understanding exposes resolved format');
+$followUps = consultant_follow_up_suggestions(build_consultant_context('брендбук', ''));
+assert_true(count($followUps) >= 3, 'consultant builds follow-up clarifications for broad query');
 
 function create_catalog_db(string $path): void
 {
@@ -291,6 +308,7 @@ assert_true($bootstrap['title'] === 'Test Site', 'bootstrap title');
 assert_true(count($bootstrap['sections']) >= 2, 'root sections exist');
 assert_true($bootstrap['setupMessage'] === '', 'setup message empty when db exists');
 assert_true(($bootstrap['consultant']['title'] ?? '') === 'Помощник по каталогу', 'bootstrap exposes consultant title');
+assert_true(str_contains((string) ($bootstrap['consultant']['description'] ?? ''), 'формат'), 'bootstrap exposes smarter consultant description');
 assert_true(count($bootstrap['consultant']['intents'] ?? []) >= 6, 'bootstrap exposes consultant scenarios');
 assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
@@ -341,10 +359,13 @@ $logoConsult = $service->consult('', 'logo');
 assert_true(($logoConsult['intent']['id'] ?? '') === 'logo', 'consult keeps explicit logo intent');
 assert_true(($logoConsult['sections'][0]['name'] ?? '') === 'Логотип', 'consult logo points to logo section');
 assert_true(($logoConsult['items'][0]['id'] ?? '') === 'file1', 'consult logo suggests matching file');
+assert_true(in_array('Логотип и фирменный знак', $logoConsult['understanding'] ?? [], true), 'consult logo exposes understanding labels');
+assert_true(count($logoConsult['followUps'] ?? []) >= 1, 'consult logo exposes follow-up clarifications');
 
 $brandbookConsult = $service->consult('брендбук', '');
 assert_true(($brandbookConsult['intent']['id'] ?? '') === 'brandbook', 'consult detects brandbook intent from query');
 assert_true(count($brandbookConsult['sections'] ?? []) >= 1, 'consult brandbook returns matching sections');
+assert_true(count($brandbookConsult['followUps'] ?? []) >= 1, 'consult brandbook proposes city follow-ups');
 
 $file = $service->getFile('file1');
 assert_true($file !== null, 'file details exist');
