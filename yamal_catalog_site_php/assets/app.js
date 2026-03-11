@@ -279,6 +279,53 @@ function normalizeConsultantFollowUps(followUps, suggestedQueries = []) {
   return items.slice(0, 4);
 }
 
+function normalizeConsultantContext(context) {
+  const formatsSource = Array.isArray(context?.formats)
+    ? context.formats
+    : String(context?.formats || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+  const formats = [];
+  formatsSource.forEach((value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized && !formats.includes(normalized)) {
+      formats.push(normalized);
+    }
+  });
+  return {
+    intentId: String(context?.intentId || context?.intent?.id || '').trim(),
+    city: String(context?.city || '').trim(),
+    formats,
+    medium: String(context?.medium || '').trim(),
+    sourceMode: String(context?.sourceMode || '').trim(),
+    memoryApplied: Boolean(context?.memoryApplied),
+  };
+}
+
+function buildConsultantMemoryPayload(context) {
+  const normalized = normalizeConsultantContext(context);
+  return {
+    memory_intent: normalized.intentId,
+    memory_city: normalized.city,
+    memory_formats: normalized.formats.join(','),
+    memory_medium: normalized.medium,
+    memory_source: normalized.sourceMode,
+  };
+}
+
+function normalizeConsultantAdvice(advice) {
+  return {
+    topic: String(advice?.topic || '').trim(),
+    title: String(advice?.title || '').trim(),
+    summary: String(advice?.summary || '').trim(),
+    bullets: Array.isArray(advice?.bullets)
+      ? advice.bullets.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
+      : [],
+    nextStep: String(advice?.nextStep || '').trim(),
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -292,6 +339,9 @@ if (typeof module !== 'undefined' && module.exports) {
     normalizeConsultantIntents,
     buildConsultantResultTitle,
     normalizeConsultantFollowUps,
+    normalizeConsultantContext,
+    buildConsultantMemoryPayload,
+    normalizeConsultantAdvice,
   };
 }
 
@@ -328,6 +378,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     consultantResult: null,
     consultantBusy: false,
     consultantIntentId: '',
+    consultantHistory: [],
+    consultantContext: null,
   };
 
   const els = {
@@ -981,9 +1033,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const payload = state.bootstrap?.consultant || {};
     const title = String(payload.title || '').trim() || 'Помощник по каталогу';
     const description = String(payload.description || '').trim()
-      || 'Опишите задачу или выберите готовый сценарий. Помощник разбирает формат, город и тип материала и предлагает только реальные разделы и файлы из каталога.';
+      || 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.';
     const placeholder = String(payload.placeholder || '').trim()
-      || 'Например: нужен логотип в SVG или брендбук Салехарда';
+      || 'Например: нужен логотип в SVG, а потом можно спросить: а для печати?';
     return {
       title,
       description,
@@ -1052,9 +1104,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     if (state.consultantOpen) {
       updateConsultantChrome();
-      if (!state.consultantResult) {
-        renderConsultantHome(state.consultantIntentId);
-      }
+      renderConsultantHome(state.consultantIntentId);
       window.requestAnimationFrame(() => {
         if (els.consultantInput?.focus) {
           try {
@@ -1069,35 +1119,36 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
   function renderConsultantHome(activeIntentId = '') {
     updateConsultantChrome();
-    state.consultantIntentId = String(activeIntentId || '').trim();
-    state.consultantResult = null;
+    state.consultantIntentId = String(activeIntentId || state.consultantIntentId || '').trim();
     renderConsultantIntents(state.consultantIntentId);
     if (!els.consultantResult) {
+      return;
+    }
+    if (state.consultantHistory.length) {
+      renderConsultantConversation();
       return;
     }
     els.consultantResult.innerHTML = `
       <div class="panel-empty consultant-empty">
         <strong>С чего начать</strong>
-        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард» или «наклейка для печати».</span>
+        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg», «брендбук Салехард». Потом можно уточнить следующим сообщением: «а для печати?» или «нужен исходник».</span>
       </div>
     `;
   }
 
-  function renderConsultantLoading(label = '') {
-    renderConsultantIntents(state.consultantIntentId);
-    if (!els.consultantResult) {
-      return;
+  function clearConsultantConversation(activeIntentId = '') {
+    state.consultantIntentId = String(activeIntentId || '').trim();
+    state.consultantResult = null;
+    state.consultantContext = null;
+    state.consultantHistory = [];
+    if (els.consultantInput) {
+      els.consultantInput.value = '';
     }
-    const detail = String(label || '').trim() || 'Подбираю материалы';
-    els.consultantResult.innerHTML = `
-      <div class="empty-state loading-state consultant-loading">
-        <div class="loading-mark" aria-hidden="true"></div>
-        <div>
-          <h3>Помощник ищет</h3>
-          <p class="detail-empty">${escapeHtml(detail)}</p>
-        </div>
-      </div>
-    `;
+    renderConsultantHome(state.consultantIntentId);
+  }
+
+  function renderConsultantLoading(label = '') {
+    renderConsultantConversation({ loadingLabel: label });
   }
 
   function consultantSectionCard(section) {
@@ -1139,14 +1190,31 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
-  function renderConsultantResponse(payload) {
-    state.consultantResult = payload || null;
-    state.consultantIntentId = String(payload?.intent?.id || '').trim();
-    renderConsultantIntents(state.consultantIntentId);
-    if (!els.consultantResult) {
-      return;
+  function consultantAdviceBlock(payload) {
+    const advice = normalizeConsultantAdvice(payload?.advice);
+    if (!advice.title && !advice.summary && !advice.bullets.length && !advice.nextStep) {
+      return '';
     }
+    return `
+      <section class="consultant-group consultant-advice">
+        <div class="consultant-group-head">
+          <strong>По брендбуку</strong>
+        </div>
+        <div class="consultant-advice-card">
+          ${advice.title ? `<strong class="consultant-advice-title">${escapeHtml(advice.title)}</strong>` : ''}
+          ${advice.summary ? `<p>${escapeHtml(advice.summary)}</p>` : ''}
+          ${advice.bullets.length ? `
+            <ul class="consultant-advice-list">
+              ${advice.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          ` : ''}
+          ${advice.nextStep ? `<p class="consultant-next-step">${escapeHtml(advice.nextStep)}</p>` : ''}
+        </div>
+      </section>
+    `;
+  }
 
+  function consultantAssistantTurnMarkup(payload, { compact = false } = {}) {
     const title = buildConsultantResultTitle(payload);
     const message = String(payload?.message || '').trim();
     const understanding = Array.isArray(payload?.understanding) ? payload.understanding.slice(0, 6) : [];
@@ -1155,19 +1223,27 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const followUps = normalizeConsultantFollowUps(payload?.followUps, payload?.suggestedQueries);
     const primarySection = sections[0] || null;
     const searchQuery = String(payload?.searchQuery || payload?.query || '').trim();
+    const adviceMarkup = consultantAdviceBlock(payload);
+    const stats = [];
+    if (sections.length) stats.push(`Разделы: ${sections.length}`);
+    if (items.length) stats.push(`Файлы: ${items.length}`);
+    if (followUps.length) stats.push(`Уточнения: ${followUps.length}`);
 
-    if (!sections.length && !items.length && !followUps.length) {
-      els.consultantResult.innerHTML = `
-        <div class="panel-empty consultant-empty">
+    if (!sections.length && !items.length && !followUps.length && !adviceMarkup) {
+      return `
+        <div class="consultant-turn assistant">
+          <div class="panel-empty consultant-empty consultant-assistant-turn">
           <strong>${escapeHtml(title)}</strong>
           <span>${escapeHtml(message || 'Помощник пока не нашел прямой ответ. Попробуйте уточнить запрос форматом, городом или типом материала.')}</span>
         </div>
+        </div>
       `;
-      return;
     }
 
-    els.consultantResult.innerHTML = `
-      <div class="consultant-response">
+    return `
+      <div class="consultant-turn assistant${compact ? ' compact' : ''}">
+        <div class="consultant-turn-card consultant-assistant-turn">
+      <div class="consultant-response${compact ? ' compact' : ''}">
         <div class="consultant-response-head">
           <span class="consultant-kicker">${escapeHtml(payload?.intent?.label || 'Подбор')}</span>
           <strong>${escapeHtml(title)}</strong>
@@ -1183,55 +1259,137 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             </div>
           </section>
         ` : ''}
-        <div class="consultant-primary-actions">
-          ${primarySection ? `<button type="button" class="accent-button" data-action="open-folder" data-id="${escapeHtml(primarySection.id)}">Открыть раздел</button>` : ''}
-          ${searchQuery ? `<button type="button" class="ghost-button" data-action="search-chip" data-query="${escapeHtml(searchQuery)}">Показать поиск</button>` : ''}
-        </div>
-        ${sections.length ? `
-          <section class="consultant-group">
-            <div class="consultant-group-head">
-              <strong>Разделы</strong>
-              <span>${escapeHtml(String(sections.length))}</span>
+        ${adviceMarkup}
+        ${compact ? `
+          ${stats.length ? `<p class="consultant-turn-summary">${escapeHtml(stats.join(' • '))}</p>` : ''}
+        ` : `
+          <div class="consultant-primary-actions">
+            ${primarySection ? `<button type="button" class="accent-button" data-action="open-folder" data-id="${escapeHtml(primarySection.id)}">Открыть раздел</button>` : ''}
+            ${searchQuery ? `<button type="button" class="ghost-button" data-action="search-chip" data-query="${escapeHtml(searchQuery)}">Показать поиск</button>` : ''}
+          </div>
+          ${sections.length ? `
+            <section class="consultant-group">
+              <div class="consultant-group-head">
+                <strong>Разделы</strong>
+                <span>${escapeHtml(String(sections.length))}</span>
+              </div>
+              <div class="consultant-section-list">
+                ${sections.map(consultantSectionCard).join('')}
+              </div>
+            </section>
+          ` : ''}
+          ${items.length ? `
+            <section class="consultant-group">
+              <div class="consultant-group-head">
+                <strong>Файлы</strong>
+                <span>${escapeHtml(String(items.length))}</span>
+              </div>
+              <div class="consultant-file-list">
+                ${items.map(consultantFileCard).join('')}
+              </div>
+            </section>
+          ` : ''}
+          ${followUps.length ? `
+            <section class="consultant-group">
+              <div class="consultant-group-head">
+                <strong>Уточнить</strong>
+              </div>
+              <div class="consultant-followup-list">
+                ${followUps.map((item) => `
+                  <button type="button" class="consultant-followup" data-action="consultant-query" data-query="${escapeHtml(item.query)}">
+                    <strong>${escapeHtml(item.label)}</strong>
+                    ${item.reason ? `<span>${escapeHtml(item.reason)}</span>` : ''}
+                  </button>
+                `).join('')}
+              </div>
+            </section>
+          ` : ''}
+        `}
+      </div>
+      </div>
+      </div>
+    `;
+  }
+
+  function renderConsultantConversation({ loadingLabel = '' } = {}) {
+    renderConsultantIntents(state.consultantIntentId);
+    if (!els.consultantResult) {
+      return;
+    }
+
+    const history = Array.isArray(state.consultantHistory) ? state.consultantHistory : [];
+    if (!history.length && !loadingLabel) {
+      renderConsultantHome(state.consultantIntentId);
+      return;
+    }
+
+    let lastAssistantIndex = -1;
+    history.forEach((turn, index) => {
+      if (turn?.role === 'assistant') {
+        lastAssistantIndex = index;
+      }
+    });
+
+    els.consultantResult.innerHTML = `
+      <div class="consultant-chat">
+        ${history.map((turn, index) => {
+          if (turn?.role === 'user') {
+            const queryText = String(turn?.query || '').trim() || 'Запрос';
+            const intentText = String(turn?.intentLabel || '').trim();
+            return `
+              <div class="consultant-turn user">
+                <div class="consultant-turn-card consultant-user-turn">
+                  <span class="consultant-turn-kicker">${escapeHtml(intentText || 'Запрос')}</span>
+                  <strong>${escapeHtml(queryText)}</strong>
+                </div>
+              </div>
+            `;
+          }
+          if (turn?.error) {
+            return `
+              <div class="consultant-turn assistant">
+                <div class="consultant-turn-card consultant-assistant-turn">
+                  <div class="panel-empty consultant-empty">
+                    <strong>${escapeHtml(turn.title || 'Не удалось загрузить подбор')}</strong>
+                    <span>${escapeHtml(turn.message || 'Попробуйте повторить запрос чуть позже.')}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+          return consultantAssistantTurnMarkup(turn?.payload || {}, { compact: index !== lastAssistantIndex });
+        }).join('')}
+        ${loadingLabel ? `
+          <div class="consultant-turn assistant pending">
+            <div class="consultant-turn-card consultant-assistant-turn consultant-loading-bubble">
+              <span class="consultant-turn-kicker">Помощник ищет</span>
+              <strong>${escapeHtml(String(loadingLabel || '').trim() || 'Подбор материалов')}</strong>
             </div>
-            <div class="consultant-section-list">
-              ${sections.map(consultantSectionCard).join('')}
-            </div>
-          </section>
-        ` : ''}
-        ${items.length ? `
-          <section class="consultant-group">
-            <div class="consultant-group-head">
-              <strong>Файлы</strong>
-              <span>${escapeHtml(String(items.length))}</span>
-            </div>
-            <div class="consultant-file-list">
-              ${items.map(consultantFileCard).join('')}
-            </div>
-          </section>
-        ` : ''}
-        ${followUps.length ? `
-          <section class="consultant-group">
-            <div class="consultant-group-head">
-              <strong>Уточнить</strong>
-            </div>
-            <div class="consultant-followup-list">
-              ${followUps.map((item) => `
-                <button type="button" class="consultant-followup" data-action="consultant-query" data-query="${escapeHtml(item.query)}">
-                  <strong>${escapeHtml(item.label)}</strong>
-                  ${item.reason ? `<span>${escapeHtml(item.reason)}</span>` : ''}
-                </button>
-              `).join('')}
-            </div>
-          </section>
+          </div>
         ` : ''}
       </div>
     `;
+  }
+
+  function renderConsultantResponse(payload) {
+    state.consultantResult = payload || null;
+    state.consultantIntentId = String(payload?.intent?.id || '').trim();
+    state.consultantContext = normalizeConsultantContext(payload?.context);
+    state.consultantHistory.push({
+      role: 'assistant',
+      payload,
+    });
+    renderConsultantConversation();
   }
 
   async function runConsultant(query = '', intentId = '') {
     const normalizedQuery = String(query || '').trim();
     const resolvedIntentId = String(intentId || state.consultantIntentId || '').trim();
     const activeIntent = consultantConfig().intents.find((intent) => intent.id === resolvedIntentId) || null;
+    if (!normalizedQuery && !resolvedIntentId) {
+      renderConsultantHome();
+      return;
+    }
     state.consultantIntentId = resolvedIntentId;
     if (els.consultantInput) {
       if (normalizedQuery) {
@@ -1242,21 +1400,30 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         }
       }
     }
+    state.consultantHistory.push({
+      role: 'user',
+      query: normalizedQuery || activeIntent?.prompt || activeIntent?.label || 'Подбор материалов',
+      intentId: resolvedIntentId,
+      intentLabel: activeIntent?.label || '',
+    });
     renderConsultantLoading(normalizedQuery || activeIntent?.label || 'Подбор материалов');
     setConsultantBusy(true);
     try {
-      const payload = await api('consult', { q: normalizedQuery, intent: resolvedIntentId });
+      const payload = await api('consult', {
+        q: normalizedQuery,
+        intent: resolvedIntentId,
+        ...buildConsultantMemoryPayload(state.consultantContext),
+      });
       renderConsultantResponse(payload);
     } catch (error) {
       console.error(error);
-      if (els.consultantResult) {
-        els.consultantResult.innerHTML = `
-          <div class="panel-empty consultant-empty">
-            <strong>Не удалось загрузить подбор</strong>
-            <span>${escapeHtml(error.message || 'Попробуйте повторить запрос чуть позже.')}</span>
-          </div>
-        `;
-      }
+      state.consultantHistory.push({
+        role: 'assistant',
+        error: true,
+        title: 'Не удалось загрузить подбор',
+        message: String(error?.message || 'Попробуйте повторить запрос чуть позже.'),
+      });
+      renderConsultantConversation();
     } finally {
       setConsultantBusy(false);
     }
@@ -1853,6 +2020,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     if (action === 'close-consultant') {
       setConsultantOpen(false);
+      return;
+    }
+    if (action === 'clear-consultant') {
+      clearConsultantConversation('');
       return;
     }
     if (action === 'toggle-workspace') {

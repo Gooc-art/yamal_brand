@@ -170,10 +170,13 @@ $config = site_config();
             <p class="eyebrow">Навигатор</p>
             <h2 id="consultant-title">Помощник по каталогу</h2>
           </div>
-          <button type="button" class="ghost-button close-consultant-button" data-action="close-consultant">Закрыть</button>
+          <div class="consultant-head-actions">
+            <button type="button" class="ghost-button consultant-clear-button" data-action="clear-consultant">Очистить</button>
+            <button type="button" class="ghost-button close-consultant-button" data-action="close-consultant">Закрыть</button>
+          </div>
         </div>
         <div class="consultant-body">
-          <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник предлагает только реальные разделы и файлы из каталога.</p>
+          <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, подсказывает по брендбуку и предлагает только реальные разделы и файлы из каталога.</p>
           <div id="consultant-intents" class="consultant-intents"></div>
           <form id="consultant-form" class="consultant-form">
             <label class="search-label" for="consultant-input">Запрос</label>
@@ -191,7 +194,7 @@ $config = site_config();
           <div id="consultant-result" class="consultant-result">
             <div class="panel-empty">
               <strong>С чего начать</strong>
-              <span>Выберите сценарий выше или напишите короткий запрос.</span>
+              <span>Выберите сценарий выше или напишите короткий запрос, а потом уточняйте следующими сообщениями.</span>
             </div>
           </div>
         </div>

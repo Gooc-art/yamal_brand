@@ -13,6 +13,9 @@ const {
   normalizeConsultantIntents,
   buildConsultantResultTitle,
   normalizeConsultantFollowUps,
+  normalizeConsultantContext,
+  buildConsultantMemoryPayload,
+  normalizeConsultantAdvice,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -196,5 +199,64 @@ test('normalizeConsultantFollowUps keeps rich follow-up cards and falls back to 
   assert.deepEqual(
     normalizeConsultantFollowUps([], ['брендбук', 'брендбук Салехард']).map((item) => item.query),
     ['брендбук', 'брендбук Салехард'],
+  );
+});
+
+test('normalizeConsultantContext keeps compact dialog memory for the next step', () => {
+  assert.deepEqual(
+    normalizeConsultantContext({
+      intentId: 'logo',
+      city: 'салехард',
+      formats: ['svg', 'pdf', 'svg'],
+      medium: 'print',
+      sourceMode: 'editable',
+      memoryApplied: true,
+    }),
+    {
+      intentId: 'logo',
+      city: 'салехард',
+      formats: ['svg', 'pdf'],
+      medium: 'print',
+      sourceMode: 'editable',
+      memoryApplied: true,
+    },
+  );
+});
+
+test('buildConsultantMemoryPayload serializes previous context for API follow-ups', () => {
+  assert.deepEqual(
+    buildConsultantMemoryPayload({
+      intentId: 'logo',
+      city: 'салехард',
+      formats: ['svg', 'pdf'],
+      medium: 'print',
+      sourceMode: 'editable',
+    }),
+    {
+      memory_intent: 'logo',
+      memory_city: 'салехард',
+      memory_formats: 'svg,pdf',
+      memory_medium: 'print',
+      memory_source: 'editable',
+    },
+  );
+});
+
+test('normalizeConsultantAdvice keeps only meaningful brandbook guidance fields', () => {
+  assert.deepEqual(
+    normalizeConsultantAdvice({
+      topic: 'logo_formats',
+      title: 'По брендбуку: какой формат брать',
+      summary: 'Для использования берите готовый файл.',
+      bullets: ['SVG для веба', '', 'PDF для печати', 'AI для редактирования'],
+      nextStep: 'Откройте раздел «Логотип».',
+    }),
+    {
+      topic: 'logo_formats',
+      title: 'По брендбуку: какой формат брать',
+      summary: 'Для использования берите готовый файл.',
+      bullets: ['SVG для веба', 'PDF для печати', 'AI для редактирования'],
+      nextStep: 'Откройте раздел «Логотип».',
+    },
   );
 });

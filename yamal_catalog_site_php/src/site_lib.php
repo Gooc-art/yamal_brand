@@ -811,8 +811,8 @@ function consultant_bootstrap(): array
 {
     return [
         'title' => 'Помощник по каталогу',
-        'description' => 'Опишите задачу или выберите готовый сценарий. Помощник разбирает формат, город и тип материала и предлагает только реальные разделы и файлы из каталога.',
-        'placeholder' => 'Например: нужен логотип в SVG или брендбук Салехарда',
+        'description' => 'Опишите задачу или выберите готовый сценарий. Помощник помнит предыдущий шаг, разбирает формат, город и тип материала и подсказывает по брендбуку, опираясь только на реальные разделы и файлы каталога.',
+        'placeholder' => 'Например: нужен логотип в SVG, а потом можно спросить: а для печати?',
         'intents' => array_map(
             static fn(array $intent): array => [
                 'id' => (string) ($intent['id'] ?? ''),
@@ -1090,7 +1090,87 @@ function detect_consultant_intent(string $query, string $intentId = ''): ?array
     return $bestScore > 0 ? $bestIntent : null;
 }
 
-function build_consultant_context(string $query, string $intentId = ''): array
+function consultant_query_is_follow_up(string $query): bool
+{
+    $source = normalize_text($query);
+    if ($source === '') {
+        return false;
+    }
+
+    if (preg_match('/^(а|и|ещ[eё]|тогда)\b/u', $source) === 1) {
+        return true;
+    }
+
+    if (preg_match('/^(для|в)\s+(печати|экрана|pdf|svg|png|jpg|jpeg|ai|eps|cdr|ttf|otf)\b/u', $source) === 1) {
+        return true;
+    }
+
+    if (preg_match('/^(что|как)\s+(по|с)\b/u', $source) === 1) {
+        return true;
+    }
+
+    return normalized_contains_any($source, [
+        'а если',
+        'а теперь',
+        'а еще',
+        'а ещё',
+        'нужен исходник',
+        'для печати',
+        'для экрана',
+    ]);
+}
+
+function normalize_consultant_memory_context(array $memory): array
+{
+    $intentId = trim((string) ($memory['intentId'] ?? $memory['intent'] ?? ''));
+    $intent = consultant_intent_by_id($intentId);
+
+    $rawCity = trim((string) ($memory['city'] ?? ''));
+    $city = '';
+    if ($rawCity !== '') {
+        $city = detect_consultant_city($rawCity);
+        if ($city === '') {
+            $normalizedCity = normalize_text($rawCity);
+            if (isset(consultant_city_aliases()[$normalizedCity])) {
+                $city = $normalizedCity;
+            }
+        }
+    }
+
+    $sourceFormats = $memory['formats'] ?? [];
+    if (!is_array($sourceFormats)) {
+        $sourceFormats = preg_split('/\s*,\s*/u', trim((string) $sourceFormats), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    }
+
+    $allowedFormats = consultant_format_definitions();
+    $formats = [];
+    foreach ($sourceFormats as $format) {
+        $normalizedFormat = strtolower(trim((string) $format));
+        if ($normalizedFormat !== '' && isset($allowedFormats[$normalizedFormat]) && !in_array($normalizedFormat, $formats, true)) {
+            $formats[] = $normalizedFormat;
+        }
+    }
+
+    $medium = trim((string) ($memory['medium'] ?? ''));
+    if (!isset(consultant_medium_definitions()[$medium])) {
+        $medium = '';
+    }
+
+    $sourceMode = trim((string) ($memory['sourceMode'] ?? $memory['source'] ?? ''));
+    if (!isset(consultant_source_mode_definitions()[$sourceMode])) {
+        $sourceMode = '';
+    }
+
+    return [
+        'intent' => $intent,
+        'city' => $city,
+        'formats' => $formats,
+        'medium' => $medium,
+        'sourceMode' => $sourceMode,
+    ];
+}
+
+function build_consultant_context(string $query, string $intentId = '', array $memory = []): array
 {
     $trimmed = trim($query);
     $formats = detect_consultant_formats($trimmed);
@@ -1098,6 +1178,38 @@ function build_consultant_context(string $query, string $intentId = ''): array
     $sourceMode = detect_consultant_source_mode($trimmed);
     $city = detect_consultant_city($trimmed);
     $intent = detect_consultant_intent($trimmed, $intentId);
+    $memoryContext = normalize_consultant_memory_context($memory);
+    $memoryIntent = $memoryContext['intent'] ?? null;
+    $useMemory = $memoryContext !== []
+        && ($intent === null || consultant_query_is_follow_up($trimmed));
+    $intentChanged = $intent !== null
+        && $memoryIntent !== null
+        && (string) ($intent['id'] ?? '') !== (string) ($memoryIntent['id'] ?? '');
+    $memoryApplied = false;
+
+    if ($intent === null && $memoryIntent !== null) {
+        $intent = $memoryIntent;
+        $memoryApplied = true;
+    }
+
+    if ($useMemory) {
+        if ($city === '' && (string) ($memoryContext['city'] ?? '') !== '') {
+            $city = (string) $memoryContext['city'];
+            $memoryApplied = true;
+        }
+        if (!$intentChanged && $formats === [] && ($memoryContext['formats'] ?? []) !== []) {
+            $formats = $memoryContext['formats'];
+            $memoryApplied = true;
+        }
+        if (!$intentChanged && $medium === '' && (string) ($memoryContext['medium'] ?? '') !== '') {
+            $medium = (string) $memoryContext['medium'];
+            $memoryApplied = true;
+        }
+        if (!$intentChanged && $sourceMode === '' && (string) ($memoryContext['sourceMode'] ?? '') !== '') {
+            $sourceMode = (string) $memoryContext['sourceMode'];
+            $memoryApplied = true;
+        }
+    }
 
     return [
         'query' => $trimmed,
@@ -1106,6 +1218,7 @@ function build_consultant_context(string $query, string $intentId = ''): array
         'formats' => $formats,
         'medium' => $medium,
         'sourceMode' => $sourceMode,
+        'memoryApplied' => $memoryApplied,
     ];
 }
 
@@ -1204,6 +1317,211 @@ function consultant_follow_up_suggestions(array $context): array
     }
 
     return array_slice($followUps, 0, 4);
+}
+
+function detect_consultant_brandbook_topic(array $context): string
+{
+    $source = normalize_text((string) ($context['query'] ?? ''));
+    $intentId = (string) (($context['intent']['id'] ?? ''));
+    $city = (string) ($context['city'] ?? '');
+    $formats = $context['formats'] ?? [];
+    $medium = (string) ($context['medium'] ?? '');
+    $sourceMode = (string) ($context['sourceMode'] ?? '');
+
+    if ($intentId === 'fonts' || normalized_contains_any($source, ['шрифт', 'гарнитур', 'ttf', 'otf', 'font'])) {
+        return 'fonts';
+    }
+
+    if ($intentId === 'graphics' || normalized_contains_any($source, ['цвет', 'палитр', 'паттер', 'иллюстра', 'орнамент', 'фон'])) {
+        return 'colors_patterns';
+    }
+
+    if ($sourceMode === 'editable' || normalized_contains_any($source, ['исходник', 'редактир', 'ai', 'eps', 'cdr'])) {
+        return 'source_files';
+    }
+
+    if ($intentId === 'merch' || in_array($medium, ['merch', 'navigation', 'digital'], true) || normalized_contains_any($source, ['носител', 'макет', 'сувенир', 'полиграф', 'баннер', 'навигац', 'диджитал'])) {
+        return 'carriers';
+    }
+
+    if ($intentId === 'brandbook' && $city !== '') {
+        return 'city_brandbook';
+    }
+
+    if ($intentId === 'brandbook') {
+        return 'brandbook_start';
+    }
+
+    if ($intentId === 'logo' && ($formats !== [] || normalized_contains_any($source, ['формат', 'pdf', 'svg', 'png', 'jpg']))) {
+        return 'logo_formats';
+    }
+
+    if ($intentId === 'logo') {
+        return 'logo_rules';
+    }
+
+    if ($intentId === 'city' && $city !== '') {
+        return 'city_brandbook';
+    }
+
+    if ($city !== '' && normalized_contains_any($source, ['брендбук', 'логотип'])) {
+        return 'city_brandbook';
+    }
+
+    return 'brandbook_start';
+}
+
+function consultant_section_label_by_keywords(array $sections, array $keywords = []): string
+{
+    if ($sections === []) {
+        return '';
+    }
+
+    foreach ($sections as $section) {
+        $label = (string) ($section['label'] ?? $section['name'] ?? '');
+        $source = normalize_text($label . ' ' . (string) ($section['name'] ?? ''));
+        if ($source === '') {
+            continue;
+        }
+        foreach ($keywords as $keyword) {
+            $needle = normalize_text((string) $keyword);
+            if ($needle !== '' && str_contains($source, $needle)) {
+                return $label;
+            }
+        }
+    }
+
+    return (string) ($sections[0]['label'] ?? $sections[0]['name'] ?? '');
+}
+
+function consultant_brandbook_advice(array $context, array $sections): array
+{
+    $topic = detect_consultant_brandbook_topic($context);
+    $city = (string) ($context['city'] ?? '');
+    $cityLabel = $city !== '' ? consultant_city_display_name($city) : '';
+    $logoSection = consultant_section_label_by_keywords($sections, ['логотип', 'знак']);
+    $brandbookSection = consultant_section_label_by_keywords($sections, ['брендбук']);
+    $graphicsSection = consultant_section_label_by_keywords($sections, ['паттер', 'иллюстра', 'svg']);
+    $fontSection = consultant_section_label_by_keywords($sections, ['шрифт']);
+    $carrierSection = consultant_section_label_by_keywords($sections, ['сувенир', 'полиграф', 'диджитал', 'навигац', 'каталог']);
+    $citySection = consultant_section_label_by_keywords($sections, ['город']);
+    $advice = [
+        'topic' => $topic,
+        'title' => '',
+        'summary' => '',
+        'bullets' => [],
+        'nextStep' => '',
+    ];
+
+    switch ($topic) {
+        case 'city_brandbook':
+            $advice['title'] = $cityLabel !== '' ? 'По брендбуку: ' . $cityLabel : 'По брендбуку: городская версия';
+            $advice['summary'] = 'Для городских материалов сначала сверяйтесь с городским брендбуком, а уже потом выбирайте логотипы и носители.';
+            $advice['bullets'] = array_values(array_filter([
+                $cityLabel !== '' ? 'Для официальной версии начните с брендбука ' . $cityLabel . '.' : 'Сначала откройте соответствующий городской брендбук.',
+                'Для использования удобны готовые PDF, SVG и PNG, для адаптации нужны AI, EPS, CDR или SVG.',
+                'После брендбука проверьте городские логотипы и профильные макеты под нужный носитель.',
+            ]));
+            $advice['nextStep'] = $brandbookSection !== ''
+                ? 'Сначала откройте раздел «' . $brandbookSection . '», затем проверьте «' . ($citySection !== '' ? $citySection : $logoSection) . '».'
+                : 'Сначала откройте городской брендбук, затем перейдите к логотипам города.';
+            break;
+
+        case 'logo_formats':
+            $advice['title'] = 'По брендбуку: какой формат брать';
+            $advice['summary'] = 'Для использования берите готовый файл, а для изменений только исходник.';
+            $advice['bullets'] = [
+                'SVG удобен для веба, презентаций и масштабирования без потери качества.',
+                'PDF подходит для согласования и чаще всего для печати.',
+                'AI, EPS и CDR нужны только если дизайнер будет менять макет или собирать новый носитель.',
+            ];
+            $advice['nextStep'] = $logoSection !== ''
+                ? 'Откройте раздел «' . $logoSection . '» и выберите нужный формат.'
+                : 'Сначала откройте раздел с логотипами и выберите готовый формат.';
+            break;
+
+        case 'logo_rules':
+            $advice['title'] = 'По брендбуку: как брать логотип';
+            $advice['summary'] = 'Сначала определите, нужен общий логотип, фирменный знак или городская версия.';
+            $advice['bullets'] = array_values(array_filter([
+                'Для готового использования обычно достаточно SVG, PDF или PNG.',
+                'Если нужен только знак без подписи, ищите связанный раздел с фирменным знаком.',
+                $cityLabel !== '' ? 'Для ' . $cityLabel . ' проверьте, что взята именно городская версия, а не общий региональный логотип.' : 'Если задача привязана к городу, уточните городскую версию брендбука.',
+            ]));
+            $advice['nextStep'] = $logoSection !== ''
+                ? 'Откройте раздел «' . $logoSection . '» и сравните готовые варианты.'
+                : 'Сначала откройте раздел с логотипами или фирменным знаком.';
+            break;
+
+        case 'fonts':
+            $advice['title'] = 'По брендбуку: работа со шрифтами';
+            $advice['summary'] = 'Шрифты лучше брать из выделенного раздела, а не из случайных вложений брендбука.';
+            $advice['bullets'] = [
+                'OTF чаще удобен для дизайна, TTF полезен для более широкой совместимости.',
+                'ZIP имеет смысл, когда нужен полный пакет шрифтов одним архивом.',
+                'Перед печатью или передачей подрядчику проверьте установку шрифта или переведите текст в кривые.',
+            ];
+            $advice['nextStep'] = $fontSection !== ''
+                ? 'Откройте раздел «' . $fontSection . '» и выберите нужный формат.'
+                : 'Сначала откройте раздел со шрифтами и заберите нужный пакет.';
+            break;
+
+        case 'colors_patterns':
+            $advice['title'] = 'По брендбуку: цвет и паттерны';
+            $advice['summary'] = 'Палитру и паттерны лучше сверять по брендбуку, а потом брать чистые графические файлы.';
+            $advice['bullets'] = [
+                'Если нужен фон, орнамент или графический элемент, сначала проверьте паттерны и SVG-элементы.',
+                'Для печати чаще нужны PDF, AI или EPS, для экрана подойдут SVG и PNG.',
+                'Если есть сомнение по сочетанию цветов, брендбук важнее любого отдельного макета.',
+            ];
+            $advice['nextStep'] = $graphicsSection !== ''
+                ? 'Откройте раздел «' . $graphicsSection . '» и сопоставьте его с брендбуком.'
+                : 'Сначала сверяйтесь с брендбуком, затем ищите паттерны и SVG-элементы.';
+            break;
+
+        case 'source_files':
+            $advice['title'] = 'По брендбуку: когда нужен исходник';
+            $advice['summary'] = 'Исходники берите только если макет будут адаптировать, а не просто использовать как есть.';
+            $advice['bullets'] = [
+                'AI, EPS и CDR нужны для редактирования и сборки новых носителей.',
+                'SVG тоже может быть рабочим исходником, если правки не требуют редкой вёрстки.',
+                'Для согласования и передачи без правок обычно достаточно PDF или готового SVG.',
+            ];
+            $advice['nextStep'] = $logoSection !== ''
+                ? 'Начните с раздела «' . $logoSection . '» и ищите векторные исходники.'
+                : 'Ищите исходники в профильном разделе с логотипами или графикой.';
+            break;
+
+        case 'carriers':
+            $advice['title'] = 'По брендбуку: носители и макеты';
+            $advice['summary'] = 'Для носителей сначала полезно свериться с брендбуком, а потом взять профильный макет под задачу.';
+            $advice['bullets'] = [
+                'Для согласования с заказчиком удобнее готовый PDF-макет.',
+                'Если подрядчик будет адаптировать носитель, лучше брать исходник или векторный файл.',
+                'Для сувенирки, полиграфии, навигации и диджитала лучше выбирать файлы из профильных разделов, а не из случайных примеров.',
+            ];
+            $advice['nextStep'] = $carrierSection !== ''
+                ? 'Откройте раздел «' . $carrierSection . '» после проверки брендбука.'
+                : 'Сначала сверяйтесь с брендбуком, затем переходите в раздел с нужным типом носителя.';
+            break;
+
+        case 'brandbook_start':
+        default:
+            $advice['title'] = 'По брендбуку: с чего начать';
+            $advice['summary'] = 'Брендбук лучше открывать первым документом, а затем переходить в разделы с файлами.';
+            $advice['bullets'] = array_values(array_filter([
+                'Сначала откройте PDF брендбука или мастер-бренд, чтобы увидеть правила применения.',
+                $cityLabel === '' ? 'Если нужен конкретный город, уточните Салехард, Новый Уренгой или Ноябрьск.' : 'Если задача привязана к городу, держитесь городской версии брендбука.',
+                'После брендбука переходите в разделы с логотипами, паттернами, шрифтами и макетами.',
+            ]));
+            $advice['nextStep'] = $brandbookSection !== ''
+                ? 'Откройте раздел «' . $brandbookSection . '» и начните с PDF.'
+                : 'Сначала откройте раздел с брендбуком, затем переходите к файлам.';
+            break;
+    }
+
+    $advice['bullets'] = array_values(array_slice(array_filter(array_map(static fn($item): string => trim((string) $item), $advice['bullets'])), 0, 3));
+    return $advice;
 }
 
 function dedicated_examples_roots(): array
@@ -2251,6 +2569,8 @@ class SiteCatalogService
             if ($cityLabel !== '') {
                 $add('логотип ' . $cityLabel);
                 $add($cityLabel . ' логотип');
+                $add('логотипы городов ' . $cityLabel);
+                $add($cityLabel . ' svg');
             }
             if ($singleFormat !== '') {
                 $add('логотип ' . $singleFormat);
@@ -2274,6 +2594,10 @@ class SiteCatalogService
         if ($intentId === 'brandbook') {
             if ($cityLabel !== '') {
                 $add('брендбук ' . $cityLabel);
+                $cityBrandbook = consultant_city_brandbook_name($city);
+                if ($cityBrandbook !== '') {
+                    $add($cityBrandbook);
+                }
                 $add($cityLabel);
                 $add($cityLabel . ' логотип');
             }
@@ -2287,8 +2611,13 @@ class SiteCatalogService
         if ($intentId === 'city') {
             if ($cityLabel !== '') {
                 $add($cityLabel);
+                $cityBrandbook = consultant_city_brandbook_name($city);
+                if ($cityBrandbook !== '') {
+                    $add($cityBrandbook);
+                }
                 $add('брендбук ' . $cityLabel);
                 $add('логотип ' . $cityLabel);
+                $add('логотипы городов ' . $cityLabel);
             }
             $add('логотипы городов');
         }
@@ -2789,7 +3118,10 @@ class SiteCatalogService
         $intentId = (string) ($intent['id'] ?? '');
         $city = (string) ($context['city'] ?? '');
         $understanding = consultant_understanding_labels($context);
-        $lead = $understanding !== [] ? 'Я понял запрос как: ' . implode(', ', $understanding) . '. ' : '';
+        $lead = ($context['memoryApplied'] ?? false) ? 'Учел контекст прошлого шага. ' : '';
+        if ($understanding !== []) {
+            $lead .= 'Я понял запрос как: ' . implode(', ', $understanding) . '. ';
+        }
 
         if ($intentId === 'city' && $city !== '') {
             return $lead . 'Нашел городские материалы для ' . consultant_city_display_name($city) . '. Начните с логотипов города или брендбука.';
@@ -2812,9 +3144,9 @@ class SiteCatalogService
         return $lead . 'Сформулируйте запрос чуть точнее: например, «логотип svg», «брендбук Салехард», «шрифт otf» или «сувенирка».';
     }
 
-    public function consult(string $query, string $intentId = ''): array
+    public function consult(string $query, string $intentId = '', array $memory = []): array
     {
-        $context = build_consultant_context($query, $intentId);
+        $context = build_consultant_context($query, $intentId, $memory);
         $trimmedQuery = (string) ($context['query'] ?? '');
         $intent = $context['intent'] ?? null;
         $sections = $this->selectConsultSections($context);
@@ -2826,6 +3158,7 @@ class SiteCatalogService
 
         $followUps = consultant_follow_up_suggestions($context);
         $queries = $this->consultSearchQueries($context);
+        $advice = consultant_brandbook_advice($context, $sections);
 
         return [
             'query' => $trimmedQuery,
@@ -2837,6 +3170,15 @@ class SiteCatalogService
             'title' => $this->consultResponseTitle($context),
             'message' => $this->consultResponseMessage($context, $sections, $items, $followUps),
             'understanding' => consultant_understanding_labels($context),
+            'context' => [
+                'intentId' => (string) ($intent['id'] ?? ''),
+                'city' => (string) ($context['city'] ?? ''),
+                'formats' => array_values($context['formats'] ?? []),
+                'medium' => (string) ($context['medium'] ?? ''),
+                'sourceMode' => (string) ($context['sourceMode'] ?? ''),
+                'memoryApplied' => (bool) ($context['memoryApplied'] ?? false),
+            ],
+            'advice' => $advice,
             'sections' => array_map(static fn(array $item): array => present_item($item), $sections),
             'items' => $items,
             'searchQuery' => (string) ($queries[0] ?? $trimmedQuery),

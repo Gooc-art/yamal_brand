@@ -44,7 +44,14 @@ try {
         case 'consult':
             $query = trim((string) ($_GET['q'] ?? ''));
             $intent = trim((string) ($_GET['intent'] ?? ''));
-            echo json_encode($service->consult($query, $intent), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $memory = [
+                'intentId' => trim((string) ($_GET['memory_intent'] ?? '')),
+                'city' => trim((string) ($_GET['memory_city'] ?? '')),
+                'formats' => trim((string) ($_GET['memory_formats'] ?? '')),
+                'medium' => trim((string) ($_GET['memory_medium'] ?? '')),
+                'sourceMode' => trim((string) ($_GET['memory_source'] ?? '')),
+            ];
+            echo json_encode($service->consult($query, $intent, $memory), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
         case 'file':

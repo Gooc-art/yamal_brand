@@ -32,6 +32,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'close-insp
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-toggle'), 'index contains consultant toggle scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-panel'), 'index contains consultant panel scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Помощник по каталогу'), 'index contains consultant heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-clear-button'), 'index contains consultant clear control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/styles.css')"), 'index uses versioned stylesheet url');
@@ -82,6 +83,10 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consult
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-section-card'), 'styles contain consultant section cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-understanding'), 'styles contain consultant understanding chips');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-followup'), 'styles contain consultant follow-up cards');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-chat'), 'styles contain consultant transcript classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-user-turn'), 'styles contain consultant user bubble classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-advice'), 'styles contain consultant brandbook advice classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-head-actions'), 'styles contain consultant head action classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-success'), 'styles contain copy success state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-error'), 'styles contain copy error state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-caption'), 'styles contain detail caption classes');
@@ -137,7 +142,13 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'runC
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-consultant'), 'frontend contains consultant toggle action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantIntents'), 'frontend normalizes consultant intents');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantFollowUps'), 'frontend normalizes consultant follow-up cards');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantContext'), 'frontend normalizes consultant memory context');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConsultantMemoryPayload'), 'frontend serializes consultant memory payload');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantAdvice'), 'frontend normalizes consultant advice');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultant-understanding'), 'frontend renders consultant understanding section');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantHistory'), 'frontend tracks consultant transcript history');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'clear-consultant'), 'frontend handles consultant clear action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'consultantAdviceBlock'), 'frontend renders consultant advice block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSectionSwitcher'), 'frontend renders workspace section switcher');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'compactRelativePath'), 'frontend compacts path context in cards');
@@ -169,6 +180,7 @@ assert_true($downloadTemplate !== false && str_contains($downloadTemplate, 'inli
 
 $apiTemplate = file_get_contents(dirname(__DIR__) . '/api.php');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'consult'"), 'api exposes consult action');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_intent'), 'api accepts consultant memory parameters');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
@@ -186,6 +198,21 @@ assert_true(($consultContext['intent']['id'] ?? '') === 'logo', 'consultant cont
 assert_true(($consultContext['city'] ?? '') === 'салехард', 'consultant context resolves city');
 assert_true(($consultContext['formats'] ?? []) === ['svg'], 'consultant context resolves formats');
 assert_true(in_array('SVG', consultant_understanding_labels($consultContext), true), 'consultant understanding exposes resolved format');
+$followUpContext = build_consultant_context('а для печати', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($followUpContext['intent']['id'] ?? '') === 'logo', 'consultant context can reuse intent from previous step');
+assert_true(($followUpContext['city'] ?? '') === 'салехард', 'consultant context can reuse city from previous step');
+assert_true(($followUpContext['medium'] ?? '') === 'print', 'consultant follow-up query still resolves new medium');
+assert_true(($followUpContext['memoryApplied'] ?? false) === true, 'consultant context marks reused dialogue memory');
+$switchedTopicContext = build_consultant_context('а брендбук', '', ['intentId' => 'logo', 'city' => 'салехард', 'formats' => ['svg']]);
+assert_true(($switchedTopicContext['intent']['id'] ?? '') === 'brandbook', 'consultant can switch intent inside follow-up dialogue');
+assert_true(($switchedTopicContext['city'] ?? '') === 'салехард', 'consultant keeps city when follow-up switches to brandbook');
+assert_true(($switchedTopicContext['formats'] ?? []) === [], 'consultant does not leak old file format into a new intent');
+$brandbookTopic = detect_consultant_brandbook_topic(build_consultant_context('какие цвета и паттерны использовать'));
+assert_true($brandbookTopic === 'colors_patterns', 'consultant detects brandbook color and pattern topic');
+$brandbookAdvice = consultant_brandbook_advice(build_consultant_context('нужен логотип svg'), [['label' => 'Логотип', 'name' => 'Логотип']]);
+assert_true(($brandbookAdvice['topic'] ?? '') === 'logo_formats', 'consultant returns brandbook topic-aware advice');
+assert_true(str_contains((string) ($brandbookAdvice['title'] ?? ''), 'формат'), 'consultant advice exposes brandbook title');
+assert_true(count($brandbookAdvice['bullets'] ?? []) >= 2, 'consultant advice exposes brandbook guidance bullets');
 $followUps = consultant_follow_up_suggestions(build_consultant_context('брендбук', ''));
 assert_true(count($followUps) >= 3, 'consultant builds follow-up clarifications for broad query');
 
@@ -236,6 +263,12 @@ function create_catalog_db(string $path): void
         ['examples-generic-good-file', 'examples-generic-good-root', 'file', 'Старая витрина.png', 'Примеры внедрения бренда/Хорошие примеры/Старая витрина.png', 'Примеры внедрения бренда/Хорошие примеры', 3, 'png', 1024, 'image/png', '2026-03-09T00:00:00Z', 'старая витрина', 'примеры внедрения бренда хорошие примеры старая витрина png', 'старая витрина png', 1, 0],
         ['examples-generic-debate-root', 'examples-generic-root', 'folder', 'Спорные примеры', 'Примеры внедрения бренда/Спорные примеры', 'Примеры внедрения бренда', 2, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'примеры внедрения бренда спорные примеры', 'спорные примеры generic', 1, 0],
         ['examples-generic-debate-file', 'examples-generic-debate-root', 'file', 'Старый баннер.jpg', 'Примеры внедрения бренда/Спорные примеры/Старый баннер.jpg', 'Примеры внедрения бренда/Спорные примеры', 3, 'jpg', 1024, 'image/jpeg', '2026-03-09T00:00:00Z', 'старый баннер', 'примеры внедрения бренда спорные примеры старый баннер jpg', 'старый баннер jpg', 1, 0],
+        ['cities-root', $rootId, 'folder', 'Логотипы городов', 'Логотипы городов', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'логотипы городов', 'логотипы городов', 'логотипы городов салехард ноябрьск уренгой', 1, 0],
+        ['salekhard-city-folder', 'cities-root', 'folder', 'Салехард', 'Логотипы городов/Салехард', 'Логотипы городов', 2, '', null, '', '2026-03-09T00:00:00Z', 'салехард', 'логотипы городов салехард', 'салехард логотип город', 1, 0],
+        ['salekhard-city-logo', 'salekhard-city-folder', 'file', 'Логотип Салехард.svg', 'Логотипы городов/Салехард/Логотип Салехард.svg', 'Логотипы городов/Салехард', 3, 'svg', 1024, 'image/svg+xml', '2026-03-09T00:00:00Z', 'логотип салехард', 'логотипы городов салехард логотип салехард svg', 'салехард логотип svg город', 1, 0],
+        ['salekhard-city-mark', 'salekhard-city-folder', 'file', 'Фирменный знак Салехард.pdf', 'Логотипы городов/Салехард/Фирменный знак Салехард.pdf', 'Логотипы городов/Салехард', 3, 'pdf', 1024, 'application/pdf', '2026-03-09T00:00:00Z', 'фирменный знак салехард', 'логотипы городов салехард фирменный знак салехард pdf', 'салехард фирменный знак pdf город', 1, 0],
+        ['salekhard-brandbook', $rootId, 'folder', 'Брендбук Салехард', 'Брендбук Салехард', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'брендбук салехард', 'брендбук салехард', 'брендбук салехард guide', 1, 0],
+        ['salekhard-brandbook-file', 'salekhard-brandbook', 'file', 'Брендбук Салехард.pdf', 'Брендбук Салехард/Брендбук Салехард.pdf', 'Брендбук Салехард', 2, 'pdf', 2048, 'application/pdf', '2026-03-09T00:00:00Z', 'брендбук салехард', 'брендбук салехард брендбук салехард pdf', 'брендбук салехард pdf guide', 1, 0],
         ['debate-root', $rootId, 'folder', 'Спорные примеры', 'Спорные примеры', '.', 1, '', null, '', '2026-03-09T00:00:00Z', 'спорные примеры', 'спорные примеры', 'спорные примеры обсуждение', 1, 0],
         ['debate-file', 'debate-root', 'file', 'Плохой щит.jpg', 'Спорные примеры/Плохой щит.jpg', 'Спорные примеры', 2, 'jpg', 2048, 'image/jpeg', '2026-03-09T00:00:00Z', 'плохой щит', 'спорные примеры плохой щит jpg', 'плохой щит jpg спорный пример', 1, 0],
         ['file1', 'logo', 'file', 'Логотип основной вариант для печати финальный.pdf', 'Логотип/Логотип основной вариант для печати финальный.pdf', 'Логотип', 2, 'pdf', 2048, 'application/pdf', '2026-03-09T00:00:00Z', 'логотип основной вариант для печати финальный', 'логотип логотип основной вариант для печати финальный pdf', 'логотип основной вариант pdf', 1, 0],
@@ -260,6 +293,8 @@ mkdir($base . '/upload/Макеты1/Примеры внедрения брен�
 mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Архив', 0777, true);
 mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Спорные примеры', 0777, true);
 mkdir($base . '/upload/Макеты1/Примеры внедрения бренда территории/Обсуждение', 0777, true);
+mkdir($base . '/upload/Макеты1/Логотипы городов/Салехард', 0777, true);
+mkdir($base . '/upload/Макеты1/Брендбук Салехард', 0777, true);
 mkdir($base . '/upload/Макеты1/Спорные примеры', 0777, true);
 file_put_contents($base . '/upload/Макеты1/Логотип/Логотип основной вариант для печати финальный.pdf', 'pdf');
 file_put_contents($base . '/upload/Макеты1/Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', 'png');
@@ -269,6 +304,9 @@ file_put_contents($base . '/upload/Макеты1/Примеры внедрени
 file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Архив/Павильон.png', 'png');
 file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', 'jpg');
 file_put_contents($base . '/upload/Макеты1/Примеры внедрения бренда территории/Обсуждение/Черновой щит.jpg', 'jpg');
+file_put_contents($base . '/upload/Макеты1/Логотипы городов/Салехард/Логотип Салехард.svg', 'svg');
+file_put_contents($base . '/upload/Макеты1/Логотипы городов/Салехард/Фирменный знак Салехард.pdf', 'pdf');
+file_put_contents($base . '/upload/Макеты1/Брендбук Салехард/Брендбук Салехард.pdf', 'pdf');
 file_put_contents($base . '/upload/Макеты1/Спорные примеры/Плохой щит.jpg', 'jpg');
 
 $detectedRoot = detect_catalog_source_root($base . '/upload');
@@ -282,6 +320,8 @@ assert_true(in_array('Логотип/Логотип основной вариа�
 assert_true(in_array('Брендбук ЯМАЛ Мастер бренд/Файлы/Макеты/Автобус/Автобус пример.png', $builtRelativePaths, true), 'scan includes good example image path');
 assert_true(in_array('Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', $builtRelativePaths, true), 'scan includes dedicated good example path');
 assert_true(in_array('Примеры внедрения бренда территории/Спорные примеры/Перегруженный баннер.jpg', $builtRelativePaths, true), 'scan includes dedicated debate example path');
+assert_true(in_array('Логотипы городов/Салехард/Логотип Салехард.svg', $builtRelativePaths, true), 'scan includes city logo path');
+assert_true(in_array('Брендбук Салехард/Брендбук Салехард.pdf', $builtRelativePaths, true), 'scan includes city brandbook path');
 assert_true(str_contains(implode(' ', array_column($builtRows, 'search_text')), 'логотип'), 'search text includes normalized file words');
 
 if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
@@ -361,11 +401,24 @@ assert_true(($logoConsult['sections'][0]['name'] ?? '') === 'Логотип', 'c
 assert_true(($logoConsult['items'][0]['id'] ?? '') === 'file1', 'consult logo suggests matching file');
 assert_true(in_array('Логотип и фирменный знак', $logoConsult['understanding'] ?? [], true), 'consult logo exposes understanding labels');
 assert_true(count($logoConsult['followUps'] ?? []) >= 1, 'consult logo exposes follow-up clarifications');
+assert_true(str_contains((string) ($logoConsult['advice']['title'] ?? ''), 'брендбук') || str_contains((string) ($logoConsult['advice']['title'] ?? ''), 'логотип'), 'consult logo exposes brandbook advice title');
 
 $brandbookConsult = $service->consult('брендбук', '');
 assert_true(($brandbookConsult['intent']['id'] ?? '') === 'brandbook', 'consult detects brandbook intent from query');
 assert_true(count($brandbookConsult['sections'] ?? []) >= 1, 'consult brandbook returns matching sections');
 assert_true(count($brandbookConsult['followUps'] ?? []) >= 1, 'consult brandbook proposes city follow-ups');
+assert_true(str_contains((string) ($brandbookConsult['advice']['title'] ?? ''), 'брендбук'), 'consult brandbook exposes brandbook advice');
+
+$cityConsult = $service->consult('логотип Салехард svg', '');
+assert_true(($cityConsult['intent']['id'] ?? '') === 'logo', 'consult city query still resolves logo intent');
+assert_true(($cityConsult['context']['city'] ?? '') === 'салехард', 'consult city query exposes resolved city context');
+assert_true(($cityConsult['sections'][0]['name'] ?? '') === 'Логотипы городов', 'consult city query points to city logos section');
+assert_true(($cityConsult['items'][0]['id'] ?? '') === 'salekhard-city-logo', 'consult city query promotes city-specific file');
+
+$memoryConsult = $service->consult('а для печати', '', ['intentId' => 'logo', 'city' => 'салехард']);
+assert_true(($memoryConsult['context']['memoryApplied'] ?? false) === true, 'consult exposes reused memory context');
+assert_true(($memoryConsult['context']['city'] ?? '') === 'салехард', 'consult follow-up keeps previous city');
+assert_true(($memoryConsult['context']['medium'] ?? '') === 'print', 'consult follow-up resolves new medium');
 
 $file = $service->getFile('file1');
 assert_true($file !== null, 'file details exist');
