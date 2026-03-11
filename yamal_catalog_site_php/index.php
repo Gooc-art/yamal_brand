@@ -146,6 +146,56 @@ $config = site_config();
         </div>
       </aside>
       </section>
+
+      <button
+        type="button"
+        id="consultant-toggle"
+        class="consultant-toggle"
+        data-action="toggle-consultant"
+        aria-expanded="false"
+        aria-controls="consultant-panel"
+      >
+        <span class="consultant-toggle-mark" aria-hidden="true">?</span>
+        <span class="consultant-toggle-copy">
+          <strong>Помощник</strong>
+          <span>Подскажу раздел и файл</span>
+        </span>
+      </button>
+
+      <div id="consultant-backdrop" class="consultant-backdrop" data-action="close-consultant" hidden></div>
+
+      <aside id="consultant-panel" class="surface consultant-panel" hidden aria-hidden="true">
+        <div class="block-head compact consultant-head">
+          <div>
+            <p class="eyebrow">Навигатор</p>
+            <h2 id="consultant-title">Помощник по каталогу</h2>
+          </div>
+          <button type="button" class="ghost-button close-consultant-button" data-action="close-consultant">Закрыть</button>
+        </div>
+        <div class="consultant-body">
+          <p id="consultant-copy" class="consultant-copy">Опишите задачу или выберите готовый сценарий. Помощник предлагает только реальные разделы и файлы из каталога.</p>
+          <div id="consultant-intents" class="consultant-intents"></div>
+          <form id="consultant-form" class="consultant-form">
+            <label class="search-label" for="consultant-input">Запрос</label>
+            <div class="consultant-row">
+              <input
+                id="consultant-input"
+                name="consultant_q"
+                type="search"
+                placeholder="Например: нужен логотип в SVG"
+                autocomplete="off"
+              />
+              <button type="submit" class="accent-button">Подобрать</button>
+            </div>
+          </form>
+          <div id="consultant-result" class="consultant-result">
+            <div class="panel-empty">
+              <strong>С чего начать</strong>
+              <span>Выберите сценарий выше или напишите короткий запрос.</span>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
 
     <script>

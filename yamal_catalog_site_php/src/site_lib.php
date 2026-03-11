@@ -735,6 +735,187 @@ function display_section_label(string $value): string
     return root_menu_labels()[$value] ?? cleanup_folder_label($value);
 }
 
+function consultant_intent_definitions(): array
+{
+    return [
+        [
+            'id' => 'logo',
+            'label' => 'Нужен логотип',
+            'summary' => 'Логотип и фирменный знак',
+            'description' => 'Подберу логотип, знак и базовые форматы.',
+            'prompt' => 'логотип svg',
+            'keywords' => ['логотип', 'лого', 'эмблема', 'знак', 'brandmark', 'symbol'],
+            'sectionNames' => ['Логотип', 'Фирменный знак'],
+            'queries' => ['логотип', 'логотип svg', 'логотип pdf', 'фирменный знак'],
+            'suggestedQueries' => ['логотип svg', 'логотип pdf', 'фирменный знак'],
+        ],
+        [
+            'id' => 'brandbook',
+            'label' => 'Нужен брендбук',
+            'summary' => 'Брендбуки и гайды',
+            'description' => 'Покажу брендбук региона или города.',
+            'prompt' => 'брендбук Салехард',
+            'keywords' => ['брендбук', 'гайд', 'гайдлайн', 'brandbook', 'guideline', 'guide'],
+            'sectionNames' => [],
+            'queries' => ['брендбук', 'брендбук ямал', 'мастер бренд'],
+            'suggestedQueries' => ['брендбук', 'брендбук Салехард', 'брендбук Новый Уренгой'],
+        ],
+        [
+            'id' => 'fonts',
+            'label' => 'Нужны шрифты',
+            'summary' => 'Шрифты и архивы',
+            'description' => 'Покажу TTF, OTF и архивы со шрифтами.',
+            'prompt' => 'шрифт otf',
+            'keywords' => ['шрифт', 'font', 'fonts', 'гарнитура', 'typeface', 'ttf', 'otf'],
+            'sectionNames' => ['Шрифт'],
+            'queries' => ['шрифт', 'ttf', 'otf'],
+            'suggestedQueries' => ['шрифт', 'ttf', 'otf'],
+        ],
+        [
+            'id' => 'city',
+            'label' => 'Материалы города',
+            'summary' => 'Городские версии',
+            'description' => 'Соберу логотипы городов и городские брендбуки.',
+            'prompt' => 'материалы Салехарда',
+            'keywords' => ['город', 'города', 'салехард', 'уренгой', 'ноябрьск', 'муницип'],
+            'sectionNames' => ['Логотипы городов'],
+            'queries' => ['логотипы городов', 'салехард', 'новый уренгой', 'ноябрьск'],
+            'suggestedQueries' => ['Салехард', 'Новый Уренгой', 'Ноябрьск'],
+        ],
+        [
+            'id' => 'merch',
+            'label' => 'Сувенирка и носители',
+            'summary' => 'Сувенирка, полиграфия и диджитал',
+            'description' => 'Подберу сувенирку, полиграфию, навигацию и диджитал.',
+            'prompt' => 'сувенирка наклейки',
+            'keywords' => ['сувенир', 'сувенирка', 'мерч', 'подарок', 'наклейка', 'полиграф', 'навигац', 'диджитал', 'футбол'],
+            'sectionNames' => ['Каталог сувенирной продукции'],
+            'queries' => ['сувенир', 'сувенирка', 'наклейка', 'полиграфия'],
+            'suggestedQueries' => ['сувенир', 'наклейка', 'полиграфия'],
+        ],
+        [
+            'id' => 'graphics',
+            'label' => 'SVG, паттерны, графика',
+            'summary' => 'SVG и графические элементы',
+            'description' => 'Покажу SVG-элементы, паттерны и векторную графику.',
+            'prompt' => 'svg паттерн',
+            'keywords' => ['svg', 'паттерн', 'иллюстра', 'элемент', 'графика', 'вектор'],
+            'sectionNames' => ['Иллюстрации мастер-бренда SVG-элементы', 'Паттерны'],
+            'queries' => ['svg', 'паттерн', 'иллюстрации', 'вектор'],
+            'suggestedQueries' => ['svg', 'паттерн', 'иллюстрации'],
+        ],
+    ];
+}
+
+function consultant_bootstrap(): array
+{
+    return [
+        'title' => 'Помощник по каталогу',
+        'description' => 'Опишите задачу или выберите готовый сценарий. Помощник предлагает только реальные разделы и файлы из каталога.',
+        'placeholder' => 'Например: нужен логотип в SVG или брендбук Салехарда',
+        'intents' => array_map(
+            static fn(array $intent): array => [
+                'id' => (string) ($intent['id'] ?? ''),
+                'label' => (string) ($intent['label'] ?? ''),
+                'summary' => (string) ($intent['summary'] ?? ''),
+                'description' => (string) ($intent['description'] ?? ''),
+                'prompt' => (string) ($intent['prompt'] ?? ''),
+            ],
+            consultant_intent_definitions()
+        ),
+    ];
+}
+
+function consultant_city_aliases(): array
+{
+    return [
+        'салехард' => ['салехард', 'схд'],
+        'новый уренгой' => ['новый уренгой', 'уренгой', 'ну'],
+        'ноябрьск' => ['ноябрьск', 'нск'],
+    ];
+}
+
+function detect_consultant_city(string $query): string
+{
+    $source = normalize_text($query);
+    if ($source === '') {
+        return '';
+    }
+
+    foreach (consultant_city_aliases() as $city => $aliases) {
+        if (normalized_contains_any($source, $aliases)) {
+            return $city;
+        }
+    }
+
+    return '';
+}
+
+function consultant_city_display_name(string $city): string
+{
+    $normalized = normalize_text($city);
+    return match ($normalized) {
+        'салехард' => 'Салехард',
+        'новый уренгой' => 'Новый Уренгой',
+        'ноябрьск' => 'Ноябрьск',
+        default => cleanup_folder_label($city),
+    };
+}
+
+function consultant_city_brandbook_name(string $city): string
+{
+    $normalized = normalize_text($city);
+    return match ($normalized) {
+        'салехард' => 'Брендбук Салехард',
+        'новый уренгой' => 'Брендбук Новый Уренгой',
+        'ноябрьск' => 'Брендбук Ноябрьск',
+        default => '',
+    };
+}
+
+function consultant_intent_by_id(string $intentId): ?array
+{
+    foreach (consultant_intent_definitions() as $intent) {
+        if ((string) ($intent['id'] ?? '') === $intentId) {
+            return $intent;
+        }
+    }
+
+    return null;
+}
+
+function detect_consultant_intent(string $query, string $intentId = ''): ?array
+{
+    $normalizedId = trim($intentId);
+    if ($normalizedId !== '') {
+        return consultant_intent_by_id($normalizedId);
+    }
+
+    $source = normalize_text($query);
+    if ($source === '') {
+        return null;
+    }
+
+    $bestIntent = null;
+    $bestScore = 0;
+    foreach (consultant_intent_definitions() as $intent) {
+        $score = 0;
+        foreach (($intent['keywords'] ?? []) as $keyword) {
+            $needle = normalize_text((string) $keyword);
+            if ($needle !== '' && str_contains($source, $needle)) {
+                $score += mb_strlen($needle, 'UTF-8') >= 5 ? 3 : 1;
+            }
+        }
+
+        if ($score > $bestScore) {
+            $bestScore = $score;
+            $bestIntent = $intent;
+        }
+    }
+
+    return $bestScore > 0 ? $bestIntent : null;
+}
+
 function dedicated_examples_roots(): array
 {
     return [
@@ -1745,8 +1926,282 @@ class SiteCatalogService
             ],
             'sections' => array_map(static fn(array $item): array => present_item($item), $this->getRootFolders()),
             'examples' => $this->getHeroExamples(),
+            'consultant' => consultant_bootstrap(),
             'favorites' => $this->getFavorites(),
             'topSearches' => array_map(static fn(array $row): array => ['query' => $row['sample_query'], 'uses' => (int) $row['uses']], $this->state->getTopSearches(8)),
+        ];
+    }
+
+    private function consultSearchQueries(?array $intent, string $query, string $city): array
+    {
+        $queries = [];
+        $seen = [];
+        $add = static function (string $value) use (&$queries, &$seen): void {
+            $trimmed = trim($value);
+            $normalized = normalize_text($trimmed);
+            if ($trimmed === '' || $normalized === '' || isset($seen[$normalized])) {
+                return;
+            }
+            $seen[$normalized] = true;
+            $queries[] = $trimmed;
+        };
+
+        $add($query);
+        $intentId = (string) ($intent['id'] ?? '');
+        $cityLabel = consultant_city_display_name($city);
+
+        if ($intentId === 'brandbook' && $cityLabel !== '') {
+            $add('брендбук ' . $cityLabel);
+            $add($cityLabel);
+            $add($cityLabel . ' логотип');
+        }
+
+        if ($intentId === 'city' && $cityLabel !== '') {
+            $add($cityLabel);
+            $add('брендбук ' . $cityLabel);
+            $add('логотип ' . $cityLabel);
+        }
+
+        foreach (($intent['queries'] ?? []) as $candidate) {
+            $add((string) $candidate);
+        }
+
+        return array_slice($queries, 0, 6);
+    }
+
+    private function consultSuggestedQueries(?array $intent, string $query, array $queries): array
+    {
+        $suggestions = [];
+        $seen = [];
+        $queryNormalized = normalize_text($query);
+        $add = static function (string $value) use (&$suggestions, &$seen, $queryNormalized): void {
+            $trimmed = trim($value);
+            $normalized = normalize_text($trimmed);
+            if ($trimmed === '' || $normalized === '' || $normalized === $queryNormalized || isset($seen[$normalized])) {
+                return;
+            }
+            $seen[$normalized] = true;
+            $suggestions[] = $trimmed;
+        };
+
+        foreach (($intent['suggestedQueries'] ?? []) as $candidate) {
+            $add((string) $candidate);
+        }
+        foreach ($queries as $candidate) {
+            $add((string) $candidate);
+        }
+
+        return array_slice($suggestions, 0, 4);
+    }
+
+    private function selectConsultSections(?array $intent, string $city): array
+    {
+        $roots = $this->getRootFolders();
+        $selected = [];
+        $intentId = (string) ($intent['id'] ?? '');
+        $cityBrandbook = consultant_city_brandbook_name($city);
+
+        foreach ($roots as $section) {
+            $name = (string) ($section['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
+            if ($intentId === 'brandbook') {
+                if ($cityBrandbook !== '' && ($name === $cityBrandbook || $name === 'Логотипы городов')) {
+                    $selected[$name] = $section;
+                    continue;
+                }
+                if (str_starts_with($name, 'Брендбук ')) {
+                    $selected[$name] = $section;
+                }
+                continue;
+            }
+
+            if ($intentId === 'city') {
+                if ($name === 'Логотипы городов' || ($cityBrandbook !== '' && $name === $cityBrandbook)) {
+                    $selected[$name] = $section;
+                    continue;
+                }
+                if ($cityBrandbook === '' && in_array($name, ['Брендбук Салехард', 'Брендбук Новый Уренгой', 'Брендбук Ноябрьск'], true)) {
+                    $selected[$name] = $section;
+                }
+                continue;
+            }
+
+            if (in_array($name, $intent['sectionNames'] ?? [], true)) {
+                $selected[$name] = $section;
+            }
+        }
+
+        if ($intentId === 'brandbook' && $cityBrandbook !== '') {
+            $ordered = [];
+            foreach ([$cityBrandbook, 'Логотипы городов'] as $name) {
+                if (isset($selected[$name])) {
+                    $ordered[$name] = $selected[$name];
+                    unset($selected[$name]);
+                }
+            }
+            foreach ($selected as $name => $section) {
+                $ordered[$name] = $section;
+            }
+            $selected = $ordered;
+        }
+
+        return array_slice(array_values($selected), 0, 4);
+    }
+
+    private function filterConsultItemsBySections(array $items, array $sections): array
+    {
+        if ($items === [] || $sections === []) {
+            return $items;
+        }
+
+        $allowed = [];
+        foreach ($sections as $section) {
+            $name = normalize_text((string) ($section['name'] ?? ''));
+            if ($name !== '') {
+                $allowed[$name] = true;
+            }
+        }
+
+        if ($allowed === []) {
+            return $items;
+        }
+
+        $filtered = [];
+        foreach ($items as $item) {
+            $relativePath = str_replace('\\', '/', (string) ($item['relativePath'] ?? ''));
+            $parts = explode('/', $relativePath);
+            $top = normalize_text((string) ($parts[0] ?? ''));
+            if ($top !== '' && isset($allowed[$top])) {
+                $filtered[] = $item;
+            }
+        }
+
+        return $filtered !== [] ? $filtered : $items;
+    }
+
+    private function collectConsultItems(array $queries, array $sections): array
+    {
+        $items = [];
+        $seen = [];
+        foreach ($queries as $query) {
+            $payload = $this->search((string) $query, false, false);
+            foreach ($payload['items'] ?? [] as $item) {
+                $id = (string) ($item['id'] ?? '');
+                if ($id === '' || isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                $items[] = $item;
+                if (count($items) >= 12) {
+                    break 2;
+                }
+            }
+        }
+
+        $filtered = $this->filterConsultItemsBySections($items, $sections);
+        return array_slice($filtered, 0, 4);
+    }
+
+    private function deriveConsultSectionsFromItems(array $items): array
+    {
+        if ($items === []) {
+            return [];
+        }
+
+        $rootsByName = [];
+        foreach ($this->getRootFolders() as $section) {
+            $name = normalize_text((string) ($section['name'] ?? ''));
+            if ($name !== '') {
+                $rootsByName[$name] = $section;
+            }
+        }
+
+        $derived = [];
+        foreach ($items as $item) {
+            $relativePath = str_replace('\\', '/', (string) ($item['relativePath'] ?? ''));
+            $parts = explode('/', $relativePath);
+            $top = normalize_text((string) ($parts[0] ?? ''));
+            if ($top !== '' && isset($rootsByName[$top])) {
+                $derived[$top] = $rootsByName[$top];
+            }
+            if (count($derived) >= 4) {
+                break;
+            }
+        }
+
+        return array_values($derived);
+    }
+
+    private function consultResponseTitle(?array $intent, string $city, string $query): string
+    {
+        $intentId = (string) ($intent['id'] ?? '');
+        if ($intentId === 'brandbook' && $city !== '') {
+            return 'Брендбук: ' . consultant_city_display_name($city);
+        }
+        if ($intentId === 'city' && $city !== '') {
+            return 'Материалы города: ' . consultant_city_display_name($city);
+        }
+        if ($intent !== null) {
+            return (string) ($intent['summary'] ?? 'Подбор материалов');
+        }
+        if (trim($query) !== '') {
+            return 'Подбор материалов';
+        }
+        return 'Помощник каталога';
+    }
+
+    private function consultResponseMessage(?array $intent, array $sections, array $items, string $city): string
+    {
+        $firstSection = (string) ($sections[0]['label'] ?? $sections[0]['name'] ?? '');
+        $intentId = (string) ($intent['id'] ?? '');
+
+        if ($intentId === 'city' && $city !== '') {
+            return 'Нашел городские материалы для ' . consultant_city_display_name($city) . '. Начните с логотипов города или брендбука.';
+        }
+        if ($intentId === 'brandbook' && $city !== '' && $firstSection !== '') {
+            return 'Лучше начать с раздела «' . $firstSection . '». Ниже подобраны брендбук и связанные материалы города.';
+        }
+        if ($firstSection !== '' && $items !== []) {
+            return 'Лучше начать с раздела «' . $firstSection . '». Ниже только реальные разделы и файлы из каталога.';
+        }
+        if ($firstSection !== '') {
+            return 'Начните с раздела «' . $firstSection . '». Если нужно, уточните формат, город или тип файла.';
+        }
+        if ($items !== []) {
+            return 'Нашел несколько реальных материалов по запросу. Можно открыть файл сразу или показать результаты поиска полностью.';
+        }
+        return 'Сформулируйте запрос чуть точнее: например, «логотип svg», «брендбук Салехард», «шрифт otf» или «сувенирка».';
+    }
+
+    public function consult(string $query, string $intentId = ''): array
+    {
+        $trimmedQuery = trim($query);
+        $intent = detect_consultant_intent($trimmedQuery, $intentId);
+        $city = detect_consultant_city($trimmedQuery);
+        $sections = $this->selectConsultSections($intent, $city);
+        $queries = $this->consultSearchQueries($intent, $trimmedQuery, $city);
+        $items = $this->collectConsultItems($queries, $sections);
+
+        if ($sections === [] && $items !== []) {
+            $sections = $this->deriveConsultSectionsFromItems($items);
+        }
+
+        return [
+            'query' => $trimmedQuery,
+            'intent' => $intent === null ? null : [
+                'id' => (string) ($intent['id'] ?? ''),
+                'label' => (string) ($intent['label'] ?? ''),
+                'summary' => (string) ($intent['summary'] ?? ''),
+            ],
+            'title' => $this->consultResponseTitle($intent, $city, $trimmedQuery),
+            'message' => $this->consultResponseMessage($intent, $sections, $items, $city),
+            'sections' => array_map(static fn(array $item): array => present_item($item), $sections),
+            'items' => $items,
+            'searchQuery' => $trimmedQuery !== '' ? $trimmedQuery : ((string) ($queries[0] ?? '')),
+            'suggestedQueries' => $this->consultSuggestedQueries($intent, $trimmedQuery, $queries),
         ];
     }
 

@@ -29,6 +29,9 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'section-switcher'), 'index contains workspace section switcher scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'inspector-backdrop'), 'index contains inspector backdrop scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'close-inspector'), 'index contains inspector close action');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-toggle'), 'index contains consultant toggle scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'consultant-panel'), 'index contains consultant panel scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Помощник по каталогу'), 'index contains consultant heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-logo-main.svg')"), 'index uses versioned brand logo asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/brand-mark.svg')"), 'index uses versioned brand mark asset url');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url('assets/styles.css')"), 'index uses versioned stylesheet url');
@@ -73,6 +76,10 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-ms-over
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector::-webkit-scrollbar'), 'styles contain webkit inspector scrollbar styling');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspector-backdrop'), 'styles contain inspector backdrop classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell.inspector-open'), 'styles contain inspector open state classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-toggle'), 'styles contain consultant toggle classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-panel'), 'styles contain consultant panel classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-intent'), 'styles contain consultant intent classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.consultant-section-card'), 'styles contain consultant section cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-success'), 'styles contain copy success state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.ghost-button.copy-error'), 'styles contain copy error state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-caption'), 'styles contain detail caption classes');
@@ -124,6 +131,9 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'navi
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "document.execCommand('copy')"), 'frontend keeps clipboard fallback');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setInspectorOpen'), 'frontend controls inspector drawer state');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setWorkspaceVisible'), 'frontend controls full workspace visibility state');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'runConsultant'), 'frontend contains consultant runner');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'toggle-consultant'), 'frontend contains consultant toggle action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConsultantIntents'), 'frontend normalizes consultant intents');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSectionSwitcher'), 'frontend renders workspace section switcher');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'focusWorkspace'), 'frontend focuses workspace for route clicks');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'compactRelativePath'), 'frontend compacts path context in cards');
@@ -152,6 +162,9 @@ assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'ren
 
 $downloadTemplate = file_get_contents(dirname(__DIR__) . '/download.php');
 assert_true($downloadTemplate !== false && str_contains($downloadTemplate, 'inline'), 'download supports inline mode');
+
+$apiTemplate = file_get_contents(dirname(__DIR__) . '/api.php');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'consult'"), 'api exposes consult action');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
@@ -277,6 +290,8 @@ $bootstrap = $service->getBootstrap();
 assert_true($bootstrap['title'] === 'Test Site', 'bootstrap title');
 assert_true(count($bootstrap['sections']) >= 2, 'root sections exist');
 assert_true($bootstrap['setupMessage'] === '', 'setup message empty when db exists');
+assert_true(($bootstrap['consultant']['title'] ?? '') === 'Помощник по каталогу', 'bootstrap exposes consultant title');
+assert_true(count($bootstrap['consultant']['intents'] ?? []) >= 6, 'bootstrap exposes consultant scenarios');
 assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
 assert_true(($bootstrap['examples']['good'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'dedicated good examples are prioritized');
@@ -321,6 +336,15 @@ assert_true((int) ($runtimeStats['total_searches'] ?? 0) === 1, 'preview search 
 
 $previewFilesOnly = $service->search('логотип', false, false);
 assert_true(($previewFilesOnly['items'][0]['type'] ?? '') === 'file', 'preview search can be restricted to files only');
+
+$logoConsult = $service->consult('', 'logo');
+assert_true(($logoConsult['intent']['id'] ?? '') === 'logo', 'consult keeps explicit logo intent');
+assert_true(($logoConsult['sections'][0]['name'] ?? '') === 'Логотип', 'consult logo points to logo section');
+assert_true(($logoConsult['items'][0]['id'] ?? '') === 'file1', 'consult logo suggests matching file');
+
+$brandbookConsult = $service->consult('брендбук', '');
+assert_true(($brandbookConsult['intent']['id'] ?? '') === 'brandbook', 'consult detects brandbook intent from query');
+assert_true(count($brandbookConsult['sections'] ?? []) >= 1, 'consult brandbook returns matching sections');
 
 $file = $service->getFile('file1');
 assert_true($file !== null, 'file details exist');

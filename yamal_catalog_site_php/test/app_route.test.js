@@ -10,6 +10,8 @@ const {
   computeRevealScrollLeft,
   initialWorkspaceCollapsed,
   splitDetailHeading,
+  normalizeConsultantIntents,
+  buildConsultantResultTitle,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -150,5 +152,30 @@ test('splitDetailHeading keeps the title clean and moves suffix into pills', () 
       title: 'Логотип северного маршрута',
       suffix: [],
     },
+  );
+});
+
+test('normalizeConsultantIntents falls back to default assistant scenarios', () => {
+  const intents = normalizeConsultantIntents([]);
+
+  assert.equal(intents.length, 6);
+  assert.equal(intents[0].id, 'logo');
+  assert.equal(intents[0].label, 'Нужен логотип');
+});
+
+test('buildConsultantResultTitle prefers explicit title and falls back to intent summary', () => {
+  assert.equal(
+    buildConsultantResultTitle({ title: 'Брендбук: Салехард', intent: { summary: 'Брендбуки' } }),
+    'Брендбук: Салехард',
+  );
+
+  assert.equal(
+    buildConsultantResultTitle({ intent: { summary: 'Шрифты и архивы' } }),
+    'Шрифты и архивы',
+  );
+
+  assert.equal(
+    buildConsultantResultTitle({ query: 'логотип svg' }),
+    'По запросу: логотип svg',
   );
 });

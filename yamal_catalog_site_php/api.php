@@ -41,6 +41,12 @@ try {
             echo json_encode($service->search($query, false, false), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
+        case 'consult':
+            $query = trim((string) ($_GET['q'] ?? ''));
+            $intent = trim((string) ($_GET['intent'] ?? ''));
+            echo json_encode($service->consult($query, $intent), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
         case 'file':
             $fileId = trim((string) ($_GET['id'] ?? ''));
             $payload = $service->getFile($fileId);

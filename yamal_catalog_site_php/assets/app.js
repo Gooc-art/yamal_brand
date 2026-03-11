@@ -1,6 +1,14 @@
 const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file'];
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
+const DEFAULT_CONSULTANT_INTENTS = [
+  { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
+  { id: 'brandbook', label: 'Нужен брендбук', summary: 'Брендбуки', description: 'Брендбук региона или города.', prompt: 'брендбук Салехард' },
+  { id: 'fonts', label: 'Нужны шрифты', summary: 'Шрифты', description: 'TTF, OTF и архивы.', prompt: 'шрифт otf' },
+  { id: 'city', label: 'Материалы города', summary: 'Городские версии', description: 'Городские логотипы и брендбуки.', prompt: 'материалы Салехарда' },
+  { id: 'merch', label: 'Сувенирка и носители', summary: 'Сувенирка', description: 'Сувениры, полиграфия и диджитал.', prompt: 'сувенирка наклейки' },
+  { id: 'graphics', label: 'SVG, паттерны, графика', summary: 'SVG и паттерны', description: 'SVG, паттерны и векторная графика.', prompt: 'svg паттерн' },
+];
 
 function clampRoutePage(value) {
   const parsed = Number.parseInt(value, 10);
@@ -214,6 +222,33 @@ function splitDetailHeading(label, suffixToken = '') {
   };
 }
 
+function normalizeConsultantIntents(intents) {
+  const source = Array.isArray(intents) && intents.length ? intents : DEFAULT_CONSULTANT_INTENTS;
+  return source
+    .map((intent) => ({
+      id: String(intent?.id || '').trim(),
+      label: String(intent?.label || '').trim(),
+      summary: String(intent?.summary || intent?.label || '').trim(),
+      description: String(intent?.description || '').trim(),
+      prompt: String(intent?.prompt || '').trim(),
+    }))
+    .filter((intent) => intent.id && intent.label)
+    .slice(0, 6);
+}
+
+function buildConsultantResultTitle(result) {
+  const explicit = String(result?.title || '').trim();
+  if (explicit) {
+    return explicit;
+  }
+  const intentLabel = String(result?.intent?.summary || result?.intent?.label || '').trim();
+  if (intentLabel) {
+    return intentLabel;
+  }
+  const query = String(result?.query || '').trim();
+  return query ? `По запросу: ${query}` : 'Помощник каталога';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -224,6 +259,8 @@ if (typeof module !== 'undefined' && module.exports) {
     computeRevealScrollLeft,
     initialWorkspaceCollapsed,
     splitDetailHeading,
+    normalizeConsultantIntents,
+    buildConsultantResultTitle,
   };
 }
 
@@ -256,6 +293,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     catalogMode: false,
     inspectorOpen: false,
     brandRoutesOpen: false,
+    consultantOpen: false,
+    consultantResult: null,
+    consultantBusy: false,
+    consultantIntentId: '',
   };
 
   const els = {
@@ -283,6 +324,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     detailPanel: document.querySelector('#detail-panel'),
     searchForm: document.querySelector('#search-form'),
     searchInput: document.querySelector('#search-input'),
+    consultantToggle: document.querySelector('#consultant-toggle'),
+    consultantBackdrop: document.querySelector('#consultant-backdrop'),
+    consultantPanel: document.querySelector('#consultant-panel'),
+    consultantTitle: document.querySelector('#consultant-title'),
+    consultantCopy: document.querySelector('#consultant-copy'),
+    consultantIntents: document.querySelector('#consultant-intents'),
+    consultantForm: document.querySelector('#consultant-form'),
+    consultantInput: document.querySelector('#consultant-input'),
+    consultantResult: document.querySelector('#consultant-result'),
     workspaceShell: document.querySelector('#workspace-shell'),
     workspaceGrid: document.querySelector('#workspace-grid'),
     workspaceToggle: document.querySelector('#workspace-toggle'),
@@ -896,6 +946,279 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return payload;
   }
 
+  function consultantConfig() {
+    const payload = state.bootstrap?.consultant || {};
+    const title = String(payload.title || '').trim() || 'Помощник по каталогу';
+    const description = String(payload.description || '').trim()
+      || 'Опишите задачу или выберите готовый сценарий. Помощник предлагает только реальные разделы и файлы из каталога.';
+    const placeholder = String(payload.placeholder || '').trim()
+      || 'Например: нужен логотип в SVG или брендбук Салехарда';
+    return {
+      title,
+      description,
+      placeholder,
+      intents: normalizeConsultantIntents(payload.intents),
+    };
+  }
+
+  function updateConsultantChrome() {
+    const config = consultantConfig();
+    if (els.consultantTitle) {
+      els.consultantTitle.textContent = config.title;
+    }
+    if (els.consultantCopy) {
+      els.consultantCopy.textContent = config.description;
+    }
+    if (els.consultantInput) {
+      els.consultantInput.placeholder = config.placeholder;
+    }
+  }
+
+  function setConsultantBusy(nextValue) {
+    state.consultantBusy = Boolean(nextValue);
+    if (els.consultantPanel) {
+      els.consultantPanel.classList.toggle('loading', state.consultantBusy);
+    }
+    const submitButton = els.consultantForm?.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = state.consultantBusy;
+    }
+  }
+
+  function renderConsultantIntents(activeIntentId = state.consultantIntentId) {
+    if (!els.consultantIntents) {
+      return;
+    }
+    const intents = consultantConfig().intents;
+    els.consultantIntents.innerHTML = intents.map((intent) => `
+      <button
+        type="button"
+        class="consultant-intent${String(activeIntentId || '') === intent.id ? ' active' : ''}"
+        data-action="consultant-intent"
+        data-intent="${escapeHtml(intent.id)}"
+      >
+        <strong>${escapeHtml(intent.label)}</strong>
+        <span>${escapeHtml(intent.description || intent.summary)}</span>
+      </button>
+    `).join('');
+  }
+
+  function setConsultantOpen(nextValue) {
+    state.consultantOpen = Boolean(nextValue);
+    if (els.pageShell) {
+      els.pageShell.classList.toggle('consultant-open', state.consultantOpen);
+    }
+    if (els.consultantPanel) {
+      els.consultantPanel.hidden = !state.consultantOpen;
+      els.consultantPanel.classList.toggle('open', state.consultantOpen);
+      els.consultantPanel.setAttribute('aria-hidden', state.consultantOpen ? 'false' : 'true');
+    }
+    if (els.consultantBackdrop) {
+      els.consultantBackdrop.hidden = !state.consultantOpen;
+    }
+    if (els.consultantToggle) {
+      els.consultantToggle.setAttribute('aria-expanded', state.consultantOpen ? 'true' : 'false');
+    }
+    if (state.consultantOpen) {
+      updateConsultantChrome();
+      if (!state.consultantResult) {
+        renderConsultantHome(state.consultantIntentId);
+      }
+      window.requestAnimationFrame(() => {
+        if (els.consultantInput?.focus) {
+          try {
+            els.consultantInput.focus({ preventScroll: true });
+          } catch (error) {
+            els.consultantInput.focus();
+          }
+        }
+      });
+    }
+  }
+
+  function renderConsultantHome(activeIntentId = '') {
+    updateConsultantChrome();
+    state.consultantIntentId = String(activeIntentId || '').trim();
+    state.consultantResult = null;
+    renderConsultantIntents(state.consultantIntentId);
+    if (!els.consultantResult) {
+      return;
+    }
+    els.consultantResult.innerHTML = `
+      <div class="panel-empty consultant-empty">
+        <strong>С чего начать</strong>
+        <span>Выберите сценарий выше или напишите короткий запрос вроде «логотип svg» или «брендбук Салехард».</span>
+      </div>
+    `;
+  }
+
+  function renderConsultantLoading(label = '') {
+    renderConsultantIntents(state.consultantIntentId);
+    if (!els.consultantResult) {
+      return;
+    }
+    const detail = String(label || '').trim() || 'Подбираю материалы';
+    els.consultantResult.innerHTML = `
+      <div class="empty-state loading-state consultant-loading">
+        <div class="loading-mark" aria-hidden="true"></div>
+        <div>
+          <h3>Помощник ищет</h3>
+          <p class="detail-empty">${escapeHtml(detail)}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  function consultantSectionCard(section) {
+    const mark = buildBrandRouteMark(section);
+    const tone = inferBrandRouteTone(section?.label, section?.name);
+    return `
+      <button
+        type="button"
+        class="consultant-section-card ${escapeHtml(tone)}"
+        data-action="open-folder"
+        data-id="${escapeHtml(section.id)}"
+      >
+        <span class="consultant-section-icon" aria-hidden="true">${escapeHtml(mark)}</span>
+        <span class="consultant-section-copy">
+          <strong>${escapeHtml(section.label || section.name || 'Раздел')}</strong>
+          <span>${escapeHtml(buildBrandRouteHint(section))}</span>
+        </span>
+      </button>
+    `;
+  }
+
+  function consultantFileCard(item) {
+    const heading = buildItemHeading(item);
+    const title = heading.title || item.label || item.name || 'Файл';
+    const context = compactRelativePath(item.relativePath, item.type);
+    const kicker = buildListCardKicker(item, heading);
+    return `
+      <article class="consultant-file-card">
+        <div class="consultant-file-copy">
+          <span class="consultant-file-kicker">${escapeHtml(kicker)}</span>
+          <strong>${escapeHtml(title)}</strong>
+          ${context ? `<p>${escapeHtml(context)}</p>` : ''}
+        </div>
+        <div class="consultant-file-actions">
+          <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
+          <a class="link-button" href="${escapeHtml(item.downloadUrl)}">Скачать</a>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderConsultantResponse(payload) {
+    state.consultantResult = payload || null;
+    state.consultantIntentId = String(payload?.intent?.id || '').trim();
+    renderConsultantIntents(state.consultantIntentId);
+    if (!els.consultantResult) {
+      return;
+    }
+
+    const title = buildConsultantResultTitle(payload);
+    const message = String(payload?.message || '').trim();
+    const sections = Array.isArray(payload?.sections) ? payload.sections.slice(0, 4) : [];
+    const items = Array.isArray(payload?.items) ? payload.items.slice(0, 4) : [];
+    const suggestedQueries = Array.isArray(payload?.suggestedQueries) ? payload.suggestedQueries.slice(0, 4) : [];
+    const primarySection = sections[0] || null;
+    const searchQuery = String(payload?.searchQuery || payload?.query || '').trim();
+
+    if (!sections.length && !items.length && !suggestedQueries.length) {
+      els.consultantResult.innerHTML = `
+        <div class="panel-empty consultant-empty">
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(message || 'Помощник пока не нашел прямой ответ. Попробуйте уточнить запрос форматом, городом или типом материала.')}</span>
+        </div>
+      `;
+      return;
+    }
+
+    els.consultantResult.innerHTML = `
+      <div class="consultant-response">
+        <div class="consultant-response-head">
+          <span class="consultant-kicker">${escapeHtml(payload?.intent?.label || 'Подбор')}</span>
+          <strong>${escapeHtml(title)}</strong>
+          ${message ? `<p>${escapeHtml(message)}</p>` : ''}
+        </div>
+        <div class="consultant-primary-actions">
+          ${primarySection ? `<button type="button" class="accent-button" data-action="open-folder" data-id="${escapeHtml(primarySection.id)}">Открыть раздел</button>` : ''}
+          ${searchQuery ? `<button type="button" class="ghost-button" data-action="search-chip" data-query="${escapeHtml(searchQuery)}">Показать поиск</button>` : ''}
+        </div>
+        ${sections.length ? `
+          <section class="consultant-group">
+            <div class="consultant-group-head">
+              <strong>Разделы</strong>
+              <span>${escapeHtml(String(sections.length))}</span>
+            </div>
+            <div class="consultant-section-list">
+              ${sections.map(consultantSectionCard).join('')}
+            </div>
+          </section>
+        ` : ''}
+        ${items.length ? `
+          <section class="consultant-group">
+            <div class="consultant-group-head">
+              <strong>Файлы</strong>
+              <span>${escapeHtml(String(items.length))}</span>
+            </div>
+            <div class="consultant-file-list">
+              ${items.map(consultantFileCard).join('')}
+            </div>
+          </section>
+        ` : ''}
+        ${suggestedQueries.length ? `
+          <section class="consultant-group">
+            <div class="consultant-group-head">
+              <strong>Можно уточнить</strong>
+            </div>
+            <div class="consultant-query-list">
+              ${suggestedQueries.map((query) => `
+                <button type="button" class="chip" data-action="consultant-query" data-query="${escapeHtml(query)}">
+                  ${escapeHtml(query)}
+                </button>
+              `).join('')}
+            </div>
+          </section>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  async function runConsultant(query = '', intentId = '') {
+    const normalizedQuery = String(query || '').trim();
+    const resolvedIntentId = String(intentId || state.consultantIntentId || '').trim();
+    const activeIntent = consultantConfig().intents.find((intent) => intent.id === resolvedIntentId) || null;
+    state.consultantIntentId = resolvedIntentId;
+    if (els.consultantInput) {
+      if (normalizedQuery) {
+        els.consultantInput.value = normalizedQuery;
+      } else if (resolvedIntentId) {
+        if (activeIntent?.prompt) {
+          els.consultantInput.value = activeIntent.prompt;
+        }
+      }
+    }
+    renderConsultantLoading(normalizedQuery || activeIntent?.label || 'Подбор материалов');
+    setConsultantBusy(true);
+    try {
+      const payload = await api('consult', { q: normalizedQuery, intent: resolvedIntentId });
+      renderConsultantResponse(payload);
+    } catch (error) {
+      console.error(error);
+      if (els.consultantResult) {
+        els.consultantResult.innerHTML = `
+          <div class="panel-empty consultant-empty">
+            <strong>Не удалось загрузить подбор</strong>
+            <span>${escapeHtml(error.message || 'Попробуйте повторить запрос чуть позже.')}</span>
+          </div>
+        `;
+      }
+    } finally {
+      setConsultantBusy(false);
+    }
+  }
+
   function setLoading(title, hint) {
     els.contentMode.textContent = 'Раздел';
     els.contentTitle.textContent = title;
@@ -1386,6 +1709,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     renderHeroExamples();
     renderBrandRoutes(payload);
     renderTopSearches(payload.topSearches || []);
+    renderConsultantHome();
   }
 
   async function openRoot(options = {}) {
@@ -1480,6 +1804,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const target = event.target.closest('[data-action]');
     if (!target) return;
     const action = target.dataset.action;
+    if (action === 'toggle-consultant') {
+      setConsultantOpen(!state.consultantOpen);
+      return;
+    }
+    if (action === 'close-consultant') {
+      setConsultantOpen(false);
+      return;
+    }
     if (action === 'toggle-workspace') {
       setWorkspaceCollapsed(!state.workspaceCollapsed);
       return;
@@ -1517,7 +1849,24 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       void handleCopyCurrentLink(target);
       return;
     }
+    if (action === 'consultant-intent') {
+      setConsultantOpen(true);
+      void runConsultant('', target.dataset.intent || '');
+      return;
+    }
+    if (action === 'consultant-query') {
+      const nextQuery = target.dataset.query || '';
+      if (els.consultantInput) {
+        els.consultantInput.value = nextQuery;
+      }
+      setConsultantOpen(true);
+      void runConsultant(nextQuery, '');
+      return;
+    }
     if (['open-folder', 'open-folder-page', 'open-file', 'search-chip'].includes(action)) {
+      if (state.consultantOpen) {
+        setConsultantOpen(false);
+      }
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
       }
@@ -1542,10 +1891,22 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     search(els.searchInput.value.trim());
   });
 
+  if (els.consultantForm) {
+    els.consultantForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      setConsultantOpen(true);
+      void runConsultant(els.consultantInput?.value.trim() || '', '');
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
     const targetTag = String(event.target?.tagName || '').toLowerCase();
     const typingContext = ['input', 'textarea', 'select'].includes(targetTag) || event.target?.isContentEditable;
     if (event.key === 'Escape') {
+      if (state.consultantOpen) {
+        setConsultantOpen(false);
+        return;
+      }
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
         return;
@@ -1584,6 +1945,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return;
     }
     setBrandRoutesOpen(false);
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!state.consultantOpen) {
+      return;
+    }
+    if (event.target.closest('#consultant-toggle') || event.target.closest('#consultant-panel')) {
+      return;
+    }
+    setConsultantOpen(false);
   });
 
   document.addEventListener('visibilitychange', () => {

@@ -10,3 +10,4 @@
 ## Операционная заметка
 
 - Для обновления фото в hero-блоке REG.RU из локального архива `/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz` используй частичный sync через `.github/workflows/sync_regru_examples_archive.yml` или `scripts/import_regru_archive.sh` с `ARCHIVE_PATH` + `ARCHIVE_SUBDIR`. Не запускай полный импорт этого архива в `data/files`, потому что он содержит только папку примеров.
+- Встроенный помощник PHP-сайта должен оставаться grounded: подбирать только реальные разделы и файлы через `api.php?action=consult`, `getRootFolders()` и SQLite-поиск без выдуманных материалов.
