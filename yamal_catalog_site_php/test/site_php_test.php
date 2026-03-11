@@ -65,6 +65,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.feature
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-shell'), 'styles contain workspace shell classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-composition'), 'styles contain workspace composition classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector'), 'styles contain workspace inspector classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'appearance: none'), 'styles normalize button appearance');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scrollbar-width: thin'), 'styles contain inspector scrollbar styling');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-inspector::-webkit-scrollbar'), 'styles contain webkit inspector scrollbar styling');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.inspector-backdrop'), 'styles contain inspector backdrop classes');
@@ -75,6 +76,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-section-card'), 'styles contain detail section card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-path-card'), 'styles contain detail path card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > *'), 'styles contain equal-width detail action buttons');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.detail-actions > .link-button'), 'styles unify detail action button visuals');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-kicker'), 'styles contain list card kicker classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-context'), 'styles contain list card context classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
@@ -113,6 +115,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buil
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'splitDetailHeading'), 'frontend structures detail heading text');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildItemHeading'), 'frontend structures list item heading text');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'detail-section-card'), 'frontend renders detail section cards');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '<div class="detail-actions">'), 'frontend renders dedicated detail action container');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'card-kicker'), 'frontend renders structured list card copy');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'siteTitle:'), 'frontend no longer tracks visible hero title');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'brand-route-helper'), 'frontend removed route helper duplication');

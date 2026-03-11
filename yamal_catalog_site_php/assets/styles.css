@@ -65,6 +65,8 @@ a {
 
 button {
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 button,
@@ -1446,7 +1448,7 @@ input[type="search"]:focus {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(24, 42, 49, 0.2) rgba(24, 42, 49, 0.04);
+  scrollbar-color: rgba(24, 42, 49, 0.24) transparent;
   background: linear-gradient(180deg, rgba(252, 249, 243, 0.98), rgba(244, 238, 230, 0.96));
   box-shadow: 0 28px 90px rgba(24, 42, 49, 0.2);
   transform: translateX(calc(100% + 24px));
@@ -1456,17 +1458,16 @@ input[type="search"]:focus {
 }
 
 .workspace-inspector::-webkit-scrollbar {
-  width: 10px;
+  width: 6px;
 }
 
 .workspace-inspector::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(24, 42, 49, 0.18);
-  border: 2px solid rgba(252, 249, 243, 0.88);
+  background: rgba(24, 42, 49, 0.24);
 }
 
 .workspace-inspector::-webkit-scrollbar-track {
-  background: rgba(24, 42, 49, 0.04);
+  background: transparent;
 }
 
 .block-head {
@@ -1814,6 +1815,8 @@ input[type="search"]:focus {
 .detail-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(48px, auto);
+  gap: 10px;
   justify-self: stretch;
   align-self: start;
   margin-top: 0;
@@ -1822,6 +1825,24 @@ input[type="search"]:focus {
 .detail-actions > * {
   width: 100%;
   min-width: 0;
+  min-height: 48px;
+}
+
+.detail-actions > .ghost-button,
+.detail-actions > .link-button,
+.detail-actions > .item-action {
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(24, 42, 49, 0.06);
+  color: var(--ink);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.detail-actions > .ghost-button:hover,
+.detail-actions > .link-button:hover,
+.detail-actions > .item-action:hover {
+  border-color: rgba(24, 42, 49, 0.14);
+  background: rgba(24, 42, 49, 0.09);
 }
 
 .workspace-inspector .detail-card {

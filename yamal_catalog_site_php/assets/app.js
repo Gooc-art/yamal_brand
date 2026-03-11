@@ -1518,7 +1518,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
               ${detailSections.join('')}
             </div>
           ` : ''}
-          <div class="item-actions detail-actions">
+          <div class="detail-actions">
             ${inlineUrl ? `<a class="ghost-button" href="${escapeHtml(inlineUrl)}" target="_blank" rel="noopener">Открыть</a>` : ''}
             <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
             <a class="link-button" href="${escapeHtml(payload.downloadUrl)}">Скачать</a>
