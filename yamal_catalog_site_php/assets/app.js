@@ -88,7 +88,7 @@ function inferBrandRouteTone(...values) {
   return 'tone-master';
 }
 
-function buildBrandRouteMark(section) {
+  function buildBrandRouteMark(section) {
   const icon = String(section?.icon || '').trim();
   if (icon && icon !== '📁') {
     return icon;
@@ -114,17 +114,30 @@ function buildBrandRouteMark(section) {
   return compact || '•';
 }
 
+function buildBrandRouteHint(section) {
+  const source = `${section?.label || ''} ${section?.name || ''}`.toLowerCase();
+  if (source.includes('брендбук')) return 'PDF и исходники';
+  if (source.includes('город')) return 'Города и версии';
+  if (source.includes('логотип')) return 'SVG, PNG, PDF';
+  if (source.includes('знак')) return 'Знак и сочетания';
+  if (source.includes('паттер') || source.includes('цвет')) return 'Паттерны и цвет';
+  if (source.includes('шрифт')) return 'TTF, OTF, архивы';
+  if (source.includes('иллюстра') || source.includes('svg')) return 'SVG и графика';
+  if (source.includes('сувенир') || source.includes('канцеляр') || source.includes('полиграф') || source.includes('диджитал')) return 'Носители и макеты';
+  if (source.includes('пример') || source.includes('внедрения') || source.includes('кейс')) return 'Хорошие и спорные';
+  return 'Открыть раздел';
+}
+
 function buildBrandRouteCards(sections, activeRouteId = '') {
   return (Array.isArray(sections) ? sections : [])
     .filter((section) => section && section.id)
     .map((section) => {
       const label = String(section.label || section.name || 'Раздел').trim();
       const sourceName = String(section.name || label).trim();
-      const hint = sourceName && sourceName !== label ? sourceName : 'Открыть раздел';
       return {
         mark: buildBrandRouteMark(section),
         label,
-        hint,
+        hint: buildBrandRouteHint(section),
         tone: inferBrandRouteTone(label, sourceName),
         action: 'open-folder',
         target: section.id,
@@ -263,6 +276,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     contentMode: document.querySelector('#content-mode'),
     contentTitle: document.querySelector('#content-title'),
     contentHint: document.querySelector('#content-hint'),
+    sectionSwitcher: document.querySelector('#section-switcher'),
     breadcrumbs: document.querySelector('#breadcrumbs'),
     contentItems: document.querySelector('#content-items'),
     pagination: document.querySelector('#pagination'),
@@ -546,6 +560,35 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       pills.push(extensionLabel);
     }
     return pills;
+  }
+
+  function buildListCardPills(item, heading = null) {
+    if (item.type === 'folder') {
+      return [];
+    }
+    const resolvedHeading = heading || buildItemHeading(item);
+    const pills = [];
+    const extensionLabel = item.extension ? formatExtension(item.extension) : '';
+    resolvedHeading.suffix.forEach((pill) => {
+      if (pill && !pills.includes(pill)) {
+        pills.push(pill);
+      }
+    });
+    if (extensionLabel && !pills.includes(extensionLabel)) {
+      pills.push(extensionLabel);
+    }
+    if (item.sizeLabel && !pills.includes(item.sizeLabel)) {
+      pills.push(item.sizeLabel);
+    }
+    return pills.slice(0, 2);
+  }
+
+  function buildListCardKicker(item, heading = null) {
+    if (item.type === 'folder') {
+      return item.kindLabel || 'Раздел';
+    }
+    const resolvedHeading = heading || buildItemHeading(item);
+    return resolvedHeading.suffix[0] || formatExtension(item.extension) || item.kindLabel || 'Файл';
   }
 
   function buildDetailTrail(items) {
@@ -1067,6 +1110,62 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `).join('');
   }
 
+  function renderSectionSwitcher(mode = '') {
+    if (!els.sectionSwitcher) {
+      return;
+    }
+    const cards = buildBrandRouteCards(state.bootstrap?.sections || [], state.activeRouteId);
+    if (!cards.length || !mode) {
+      els.sectionSwitcher.hidden = true;
+      els.sectionSwitcher.innerHTML = '';
+      return;
+    }
+
+    const activeCard = cards.find((item) => item.isActive) || null;
+    const orderedCards = activeCard
+      ? [activeCard, ...cards.filter((item) => item !== activeCard)]
+      : cards;
+    const title = mode === 'search' ? 'Разделы каталога' : 'Быстрый переход';
+    const note = mode === 'search'
+      ? 'Откройте нужный раздел прямо из результатов поиска.'
+      : activeCard
+        ? `Сейчас открыт раздел «${activeCard.label}». Можно быстро перейти в соседний.`
+        : 'Переключайтесь между разделами без возврата к верхнему меню.';
+
+    els.sectionSwitcher.hidden = false;
+    els.sectionSwitcher.innerHTML = `
+      <div class="section-switcher-head">
+        <div class="section-switcher-copy">
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(note)}</span>
+        </div>
+      </div>
+      <div class="section-switcher-rail">
+        ${orderedCards.map((item) => `
+          <button
+            type="button"
+            class="section-switch-card ${escapeHtml(item.tone)}${item.isActive ? ' active' : ''}"
+            data-action="open-folder"
+            data-id="${escapeHtml(item.target)}"
+            ${item.isActive ? 'aria-current="page"' : ''}
+          >
+            <span class="section-switch-icon" aria-hidden="true">${escapeHtml(item.mark)}</span>
+            <span class="section-switch-copy">
+              <strong>${escapeHtml(item.label)}</strong>
+              <small>${escapeHtml(item.isActive ? 'Открыт сейчас' : item.hint)}</small>
+            </span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    window.requestAnimationFrame(() => {
+      const rail = els.sectionSwitcher?.querySelector('.section-switcher-rail');
+      const current = rail?.querySelector('.section-switch-card.active');
+      revealItemInHorizontalContainer(rail, current);
+    });
+  }
+
   function renderBreadcrumbs(items) {
     els.breadcrumbs.innerHTML = items.map((item, index) => {
       if (index === items.length - 1 || item.type !== 'folder') {
@@ -1080,7 +1179,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const heading = buildItemHeading(item);
     const title = heading.title || item.label || item.name;
     const secondary = buildItemSecondary(item);
-    const pills = buildItemPills(item, heading);
+    const pills = buildListCardPills(item, heading);
+    const kicker = buildListCardKicker(item, heading);
     const actions = item.type === 'folder'
       ? `<button type="button" class="item-action" data-action="open-folder" data-id="${escapeHtml(item.id)}">Открыть</button>`
       : `<button type="button" class="item-action" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
@@ -1091,7 +1191,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         <div class="result-head">
           <span class="card-icon">${escapeHtml(item.icon)}</span>
           <div class="card-copy">
-            <span class="card-kicker">${escapeHtml(item.kindLabel || (item.type === 'folder' ? 'Раздел' : 'Файл'))}</span>
+            <span class="card-kicker">${escapeHtml(kicker)}</span>
             <strong>${escapeHtml(title)}</strong>
             ${secondary ? `<p class="card-context">${escapeHtml(secondary)}</p>` : ''}
           </div>
@@ -1144,6 +1244,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.contentMode.textContent = payload.root ? 'Главная' : 'Раздел';
     els.contentTitle.textContent = payload.folder.label || payload.folder.name;
     els.contentHint.textContent = payload.hint || 'Открой раздел или файл.';
+    renderSectionSwitcher(payload.root ? '' : 'folder');
     renderBreadcrumbs(payload.breadcrumbs || []);
     renderItems(payload.items || [], 'Раздел пуст');
     renderPagination(payload);
@@ -1158,6 +1259,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.contentHint.textContent = payload.total
       ? `${formatNumber(payload.total)} результатов`
       : 'Ничего не найдено.';
+    renderSectionSwitcher('search');
     els.breadcrumbs.innerHTML = '';
     renderItems(payload.items || [], payload.emptyState || 'Пусто');
     els.pagination.innerHTML = '';
@@ -1259,6 +1361,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.contentMode.textContent = 'Меню';
     els.contentTitle.textContent = 'Выберите раздел';
     els.contentHint.textContent = 'Основной вход в материалы теперь находится в верхнем меню. Поиск тоже откроет рабочую область автоматически.';
+    renderSectionSwitcher('');
     els.breadcrumbs.innerHTML = '';
     els.contentItems.innerHTML = `
       <div class="empty-state">

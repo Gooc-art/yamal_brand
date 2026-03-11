@@ -126,6 +126,7 @@ $config = site_config();
               <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
             </div>
           </div>
+          <div id="section-switcher" class="section-switcher" hidden></div>
           <div id="breadcrumbs" class="breadcrumbs"></div>
           <p id="content-hint" class="content-hint"></p>
           <div id="content-items" class="card-grid"></div>

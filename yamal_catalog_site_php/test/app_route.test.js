@@ -68,15 +68,20 @@ test('buildBrandRouteCards maps real root sections into menu cards', () => {
   const cards = buildBrandRouteCards([
     { id: 'folder-master', name: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-Бренд', icon: '📕' },
     { id: 'folder-font', name: 'Шрифт', label: 'Шрифты', icon: '🔤' },
+    { id: 'folder-cases', name: 'Примеры внедрения бренда территории', label: 'Кейсы внедрения', icon: '🗂️' },
   ], 'folder-font');
 
-  assert.equal(cards.length, 2);
+  assert.equal(cards.length, 3);
   assert.equal(cards[0].action, 'open-folder');
   assert.equal(cards[0].target, 'folder-master');
   assert.equal(cards[0].mark, '📕');
   assert.equal(cards[0].tone, 'tone-master');
+  assert.equal(cards[0].hint, 'PDF и исходники');
   assert.equal(cards[1].label, 'Шрифты');
+  assert.equal(cards[1].hint, 'TTF, OTF, архивы');
   assert.equal(cards[1].isActive, true);
+  assert.equal(cards[2].label, 'Кейсы внедрения');
+  assert.equal(cards[2].hint, 'Хорошие и спорные');
 });
 
 test('buildBrandRoutesSummary exposes active label and menu counters', () => {
