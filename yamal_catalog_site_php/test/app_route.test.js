@@ -9,6 +9,8 @@ const {
   buildBrandRoutesSummary,
   buildConstructorCategoryFilters,
   groupConstructorFields,
+  readConstructorPreviewBoxMetrics,
+  buildConstructorPreviewLayout,
   computeRevealScrollLeft,
   initialWorkspaceCollapsed,
   isWorkspaceNavigationAction,
@@ -132,6 +134,43 @@ test('groupConstructorFields splits fields into basics, content and people block
   assert.deepEqual(groups[0].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
   assert.deepEqual(groups[1].items.map((item) => item.id), ['title', 'message']);
   assert.deepEqual(groups[2].items.map((item) => item.id), ['full_name', 'email']);
+});
+
+test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {
+  assert.deepEqual(
+    readConstructorPreviewBoxMetrics('<svg viewBox="0 0 1200 420" width="1200" height="420"></svg>'),
+    {
+      width: 1200,
+      height: 420,
+      ratio: 1200 / 420,
+    },
+  );
+});
+
+test('buildConstructorPreviewLayout adapts preview profile by artifact type and ratio', () => {
+  assert.equal(
+    buildConstructorPreviewLayout(
+      { id: 'nameplate' },
+      { previewType: 'svg', content: '<svg viewBox="0 0 1200 420"></svg>' },
+    ).profile,
+    'panorama',
+  );
+
+  assert.equal(
+    buildConstructorPreviewLayout(
+      { id: 'letterhead' },
+      { previewType: 'svg', content: '<svg viewBox="0 0 1240 1754"></svg>' },
+    ).profile,
+    'document',
+  );
+
+  assert.equal(
+    buildConstructorPreviewLayout(
+      { id: 'presentation_deck' },
+      { previewType: 'html', content: '<html></html>' },
+    ).profile,
+    'brief',
+  );
 });
 
 test('buildBrandRouteCards maps real root sections into menu cards', () => {

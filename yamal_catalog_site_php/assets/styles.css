@@ -2001,18 +2001,68 @@ input[type="search"]:focus {
 }
 
 .constructor-form-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
+.constructor-shell .accent-button,
+.constructor-shell .ghost-button,
+.constructor-shell .link-button,
+.constructor-download-card,
+.constructor-mini-card {
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.constructor-form-actions > * {
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+}
+
 .constructor-preview-stage {
+  display: grid;
+  place-items: center;
+  align-content: center;
   min-height: 360px;
   padding: 12px;
   border-radius: 22px;
   border: 1px solid rgba(24, 42, 49, 0.08);
   background: linear-gradient(180deg, rgba(248, 242, 234, 0.92), rgba(255, 255, 255, 0.96));
   overflow: auto;
+}
+
+.constructor-preview-stage.is-panorama {
+  min-height: clamp(300px, 34vw, 420px);
+}
+
+.constructor-preview-stage.is-landscape {
+  min-height: clamp(340px, 40vw, 520px);
+}
+
+.constructor-preview-stage.is-square {
+  min-height: clamp(360px, 46vw, 560px);
+}
+
+.constructor-preview-stage.is-portrait {
+  min-height: clamp(460px, 58vw, 760px);
+}
+
+.constructor-preview-stage.is-document,
+.constructor-preview-stage.is-brief {
+  min-height: clamp(560px, 72vw, 980px);
+}
+
+.constructor-preview-stage.is-tower {
+  min-height: clamp(620px, 84vw, 1120px);
+}
+
+.constructor-preview-stage.is-code {
+  min-height: 420px;
 }
 
 .constructor-preview-empty {
@@ -2027,6 +2077,7 @@ input[type="search"]:focus {
 .constructor-preview-visual {
   display: grid;
   place-items: center;
+  width: 100%;
   min-height: 300px;
 }
 
@@ -2039,12 +2090,46 @@ input[type="search"]:focus {
   box-shadow: 0 18px 44px rgba(24, 42, 49, 0.08);
 }
 
+.constructor-preview-visual.is-panorama svg {
+  width: min(100%, 820px);
+  max-height: 420px;
+}
+
+.constructor-preview-visual.is-landscape svg {
+  width: min(100%, 760px);
+  max-height: 560px;
+}
+
+.constructor-preview-visual.is-square svg {
+  width: min(100%, 620px);
+  max-height: 620px;
+}
+
+.constructor-preview-visual.is-portrait svg {
+  width: min(100%, 460px);
+  max-height: 760px;
+}
+
+.constructor-preview-visual.is-document svg {
+  width: min(100%, 460px);
+  max-height: 920px;
+}
+
+.constructor-preview-visual.is-tower svg {
+  width: min(100%, 320px);
+  max-height: 1040px;
+}
+
 .constructor-preview-frame {
   width: 100%;
   min-height: 460px;
   border: 0;
   border-radius: 18px;
   background: #ffffff;
+}
+
+.constructor-preview-frame.is-brief {
+  min-height: min(74vh, 900px);
 }
 
 .constructor-preview-code {
@@ -2066,8 +2151,10 @@ input[type="search"]:focus {
 
 .constructor-download-card {
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  align-content: start;
   width: 100%;
+  min-height: 116px;
   padding: 14px;
   border-radius: 18px;
   border: 1px solid rgba(24, 42, 49, 0.12);
@@ -2077,6 +2164,11 @@ input[type="search"]:focus {
   text-align: left;
   cursor: pointer;
   transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.constructor-download-card strong {
+  font-size: 15px;
+  line-height: 1.15;
 }
 
 .constructor-download-card:hover,
@@ -2091,6 +2183,16 @@ input[type="search"]:focus {
 .constructor-download-card small,
 .constructor-download-card span {
   color: var(--muted);
+}
+
+.constructor-download-card span {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.constructor-download-card small {
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .constructor-summary-list {
@@ -2153,11 +2255,12 @@ input[type="search"]:focus {
 
 .constructor-mini-card {
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   text-align: left;
   font: inherit;
   color: inherit;
   cursor: pointer;
+  min-height: 88px;
 }
 
 .constructor-mini-copy,
@@ -2170,23 +2273,27 @@ input[type="search"]:focus {
 
 .constructor-mini-copy strong,
 .constructor-file-copy strong {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.15;
 }
 
-.constructor-mini-copy small {
+.constructor-mini-copy small,
+.constructor-file-copy small {
   color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .constructor-file-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .constructor-file-actions > * {
-  flex: 1 1 0;
+  width: 100%;
   min-width: 0;
+  min-height: 46px;
 }
 
 .constructor-next-step {

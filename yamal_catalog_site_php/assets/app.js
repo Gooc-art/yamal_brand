@@ -308,6 +308,81 @@ function pickConstructorPreviewArtifact(artifacts) {
     || null;
 }
 
+function readConstructorPreviewBoxMetrics(markup) {
+  const source = String(markup || '');
+  if (!source) {
+    return { width: 0, height: 0, ratio: 1 };
+  }
+
+  const viewBoxMatch = source.match(/viewBox=["']\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)\s*["']/i);
+  const widthMatch = source.match(/\bwidth=["']([0-9.]+)["']/i);
+  const heightMatch = source.match(/\bheight=["']([0-9.]+)["']/i);
+
+  const width = Number(viewBoxMatch?.[1] || widthMatch?.[1] || 0);
+  const height = Number(viewBoxMatch?.[2] || heightMatch?.[1] || 0);
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 0;
+  const safeHeight = Number.isFinite(height) && height > 0 ? height : 0;
+  const ratio = safeWidth > 0 && safeHeight > 0 ? safeWidth / safeHeight : 1;
+
+  return {
+    width: safeWidth,
+    height: safeHeight,
+    ratio,
+  };
+}
+
+function buildConstructorPreviewLayout(definition, artifact) {
+  const previewType = String(artifact?.previewType || '').trim();
+  const solutionId = String(definition?.id || '').trim();
+
+  if (previewType === 'html') {
+    return {
+      profile: 'brief',
+      stageClass: 'constructor-preview-stage is-brief',
+      visualClass: 'constructor-preview-visual is-brief',
+      frameClass: 'constructor-preview-frame is-brief',
+      codeClass: 'constructor-preview-code is-brief',
+    };
+  }
+
+  if (previewType === 'json') {
+    return {
+      profile: 'code',
+      stageClass: 'constructor-preview-stage is-code',
+      visualClass: 'constructor-preview-visual is-code',
+      frameClass: 'constructor-preview-frame is-code',
+      codeClass: 'constructor-preview-code is-code',
+    };
+  }
+
+  const metrics = readConstructorPreviewBoxMetrics(artifact?.content || '');
+  let profile = 'landscape';
+
+  if (solutionId === 'rollup') {
+    profile = 'tower';
+  } else if (solutionId === 'letterhead') {
+    profile = 'document';
+  } else if (metrics.ratio >= 2.05) {
+    profile = 'panorama';
+  } else if (metrics.ratio >= 1.18) {
+    profile = 'landscape';
+  } else if (metrics.ratio >= 0.88) {
+    profile = 'square';
+  } else if (metrics.ratio >= 0.58) {
+    profile = 'portrait';
+  } else {
+    profile = 'tower';
+  }
+
+  return {
+    profile,
+    stageClass: `constructor-preview-stage is-${profile}`,
+    visualClass: `constructor-preview-visual is-${profile}`,
+    frameClass: `constructor-preview-frame is-${profile}`,
+    codeClass: `constructor-preview-code is-${profile}`,
+  };
+}
+
 function computeRevealScrollLeft({
   currentScrollLeft = 0,
   maxScrollLeft = 0,
@@ -524,6 +599,8 @@ if (typeof module !== 'undefined' && module.exports) {
     buildBrandRoutesSummary,
     buildConstructorCategoryFilters,
     groupConstructorFields,
+    readConstructorPreviewBoxMetrics,
+    buildConstructorPreviewLayout,
     computeRevealScrollLeft,
     initialWorkspaceCollapsed,
     isWorkspaceNavigationAction,
@@ -2072,7 +2149,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
-  function buildConstructorPreviewMarkup(artifact) {
+  function buildConstructorPreviewMarkup(artifact, layout) {
+    const previewLayout = layout || buildConstructorPreviewLayout({}, artifact);
     if (!artifact) {
       return `
         <div class="constructor-preview-empty">
@@ -2082,12 +2160,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       `;
     }
     if (artifact.previewType === 'svg') {
-      return `<div class="constructor-preview-visual">${artifact.content || ''}</div>`;
+      return `<div class="${previewLayout.visualClass}">${artifact.content || ''}</div>`;
     }
     if (artifact.previewType === 'html') {
-      return `<iframe class="constructor-preview-frame" title="${escapeHtml(artifact.label || 'Превью')}" srcdoc="${escapeHtml(artifact.content || '')}"></iframe>`;
+      return `<iframe class="${previewLayout.frameClass}" title="${escapeHtml(artifact.label || 'Превью')}" srcdoc="${escapeHtml(artifact.content || '')}"></iframe>`;
     }
-    return `<pre class="constructor-preview-code">${escapeHtml(artifact.content || '')}</pre>`;
+    return `<pre class="${previewLayout.codeClass}">${escapeHtml(artifact.content || '')}</pre>`;
   }
 
   function renderConstructorRecommendations(recommendations) {
@@ -2159,6 +2237,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const input = payload?.input || {};
     const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
     const previewArtifact = pickConstructorPreviewArtifact(artifacts);
+    const previewLayout = buildConstructorPreviewLayout(definition, previewArtifact);
     const summary = payload?.summary || {};
     const generated = Boolean(payload?.generated);
 
@@ -2212,8 +2291,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
               <strong>Превью и файлы</strong>
               <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или бриф')} • На ПК этот блок закреплён и остаётся в поле зрения.</span>
             </div>
-            <div class="constructor-preview-stage">
-              ${buildConstructorPreviewMarkup(previewArtifact)}
+            <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">
+              ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
             </div>
             <div class="constructor-downloads">
               ${artifacts.map((artifact) => `
