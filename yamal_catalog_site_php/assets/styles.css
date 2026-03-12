@@ -1703,6 +1703,44 @@ input[type="search"]:focus {
   line-height: 1.5;
 }
 
+.solution-lab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.solution-lab-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.solution-lab-meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.solution-filter-chip {
+  gap: 8px;
+}
+
+.solution-filter-chip small {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.solution-filter-chip.active {
+  border-color: rgba(180, 36, 61, 0.22);
+  background: rgba(180, 36, 61, 0.08);
+  color: var(--accent-deep);
+}
+
 .solution-lab-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1717,6 +1755,18 @@ input[type="search"]:focus {
   border: 1px solid rgba(24, 42, 49, 0.08);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 242, 234, 0.9));
   box-shadow: 0 20px 48px rgba(24, 42, 49, 0.06);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.solution-card:hover {
+  border-color: rgba(24, 42, 49, 0.14);
+  box-shadow: 0 24px 52px rgba(24, 42, 49, 0.08);
+  transform: translateY(-1px);
+}
+
+.solution-card.active {
+  border-color: rgba(180, 36, 61, 0.2);
+  box-shadow: 0 26px 58px rgba(180, 36, 61, 0.12);
 }
 
 .solution-card-head {
@@ -1821,9 +1871,95 @@ input[type="search"]:focus {
   line-height: 1.08;
 }
 
+.constructor-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.constructor-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 68px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.constructor-step.active {
+  border-color: rgba(180, 36, 61, 0.18);
+  background: linear-gradient(180deg, rgba(180, 36, 61, 0.08), rgba(255, 255, 255, 0.92));
+}
+
+.constructor-step.done {
+  border-color: rgba(29, 103, 112, 0.18);
+  background: linear-gradient(180deg, rgba(29, 103, 112, 0.08), rgba(255, 255, 255, 0.92));
+}
+
+.constructor-step.muted {
+  opacity: 0.8;
+}
+
+.constructor-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(24, 42, 49, 0.08);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.constructor-step-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.constructor-step-copy strong {
+  font-size: 14px;
+  line-height: 1.08;
+}
+
+.constructor-step-copy small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .constructor-form {
   display: grid;
   gap: 16px;
+}
+
+.constructor-field-group {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.constructor-group-head {
+  display: grid;
+  gap: 4px;
+}
+
+.constructor-group-head strong {
+  font-size: 16px;
+  line-height: 1.08;
+}
+
+.constructor-group-head span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .constructor-field-grid {
@@ -2080,6 +2216,12 @@ input[type="search"]:focus {
 
   .detail-copy {
     gap: 14px;
+  }
+
+  .constructor-preview-panel {
+    position: sticky;
+    top: 18px;
+    align-self: start;
   }
 
   .detail-copy .item-meta {
@@ -3264,10 +3406,20 @@ input[type="search"]:focus {
 }
 
 @media (max-width: 1120px) {
+  .solution-lab-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .solution-lab-meta {
+    white-space: normal;
+  }
+
   .solution-lab-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .constructor-steps,
   .constructor-layout,
   .constructor-support-grid {
     grid-template-columns: 1fr;
@@ -3282,6 +3434,7 @@ input[type="search"]:focus {
   }
 
   .solution-lab-grid,
+  .constructor-steps,
   .constructor-field-grid,
   .constructor-support-grid,
   .constructor-downloads {
@@ -3301,5 +3454,10 @@ input[type="search"]:focus {
 
   .constructor-preview-frame {
     min-height: 360px;
+  }
+
+  .solution-lab-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -108,6 +108,10 @@ $config = site_config();
             <p id="solution-lab-copy" class="solution-lab-copy">Готовые каркасы для типовых носителей: визиток, табличек, бейджей, сертификатов, digital-карточек, бланков, роллапов и презентаций.</p>
           </div>
         </div>
+        <div class="solution-lab-toolbar">
+          <div id="solution-lab-filters" class="solution-lab-filters"></div>
+          <span id="solution-lab-meta" class="solution-lab-meta">8 шаблонов</span>
+        </div>
         <div id="solution-lab-grid" class="solution-lab-grid"></div>
       </section>
 

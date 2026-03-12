@@ -1,6 +1,7 @@
 const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution'];
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
+const DEFAULT_SOLUTION_FILTER = 'all';
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
@@ -202,6 +203,73 @@ function normalizeConstructorSolutions(payload) {
       artifactKind: String(item?.artifactKind || '').trim(),
     }))
     .filter((item) => item.id && item.label);
+}
+
+function buildConstructorCategoryFilters(items, activeCategory = DEFAULT_SOLUTION_FILTER) {
+  const source = Array.isArray(items) ? items : [];
+  const counts = new Map();
+  source.forEach((item) => {
+    const category = String(item?.category || '').trim();
+    if (!category) {
+      return;
+    }
+    counts.set(category, (counts.get(category) || 0) + 1);
+  });
+
+  const categories = Array.from(counts.keys()).sort((left, right) => left.localeCompare(right, 'ru'));
+  const normalizedActive = counts.has(activeCategory) ? activeCategory : DEFAULT_SOLUTION_FILTER;
+  const filters = [{
+    id: DEFAULT_SOLUTION_FILTER,
+    label: 'Все',
+    count: source.length,
+    active: normalizedActive === DEFAULT_SOLUTION_FILTER,
+  }];
+
+  categories.forEach((category) => {
+    filters.push({
+      id: category,
+      label: category,
+      count: counts.get(category) || 0,
+      active: normalizedActive === category,
+    });
+  });
+
+  return {
+    activeCategory: normalizedActive,
+    filters,
+    visibleItems: normalizedActive === DEFAULT_SOLUTION_FILTER
+      ? source
+      : source.filter((item) => String(item?.category || '').trim() === normalizedActive),
+  };
+}
+
+function groupConstructorFields(fields) {
+  const groups = [
+    { id: 'basics', label: 'Базовые параметры', hint: 'Город, формат и основной режим носителя.', items: [] },
+    { id: 'content', label: 'Содержание', hint: 'Заголовки, сообщения, событие и смысловой текст.', items: [] },
+    { id: 'people', label: 'Люди и контакты', hint: 'ФИО, роли, подписи и контактные данные.', items: [] },
+  ];
+  const fieldList = Array.isArray(fields) ? fields : [];
+  const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
+  const basicsIds = new Set(['city', 'size_variant', 'ratio', 'slide_count', 'access_level', 'mount', 'issue_date']);
+
+  fieldList.forEach((field) => {
+    const fieldId = String(field?.id || '').trim();
+    if (!fieldId) {
+      return;
+    }
+    if (basicsIds.has(fieldId)) {
+      groups[0].items.push(field);
+      return;
+    }
+    if (peopleIds.has(fieldId)) {
+      groups[2].items.push(field);
+      return;
+    }
+    groups[1].items.push(field);
+  });
+
+  return groups.filter((group) => group.items.length);
 }
 
 function formatDataSize(value) {
@@ -441,6 +509,8 @@ if (typeof module !== 'undefined' && module.exports) {
     buildRouteUrl,
     buildBrandRouteCards,
     buildBrandRoutesSummary,
+    buildConstructorCategoryFilters,
+    groupConstructorFields,
     computeRevealScrollLeft,
     initialWorkspaceCollapsed,
     isWorkspaceNavigationAction,
@@ -477,6 +547,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     current: null,
     detail: null,
     activeRouteId: '',
+    activeSolutionFilter: DEFAULT_SOLUTION_FILTER,
     exampleTab: 'good',
     exampleIndex: { good: 0, debate: 0 },
     exampleAutoplay: true,
@@ -509,6 +580,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     solutionLab: document.querySelector('#solution-lab'),
     solutionLabTitle: document.querySelector('#solution-lab-title'),
     solutionLabCopy: document.querySelector('#solution-lab-copy'),
+    solutionLabFilters: document.querySelector('#solution-lab-filters'),
+    solutionLabMeta: document.querySelector('#solution-lab-meta'),
     solutionLabGrid: document.querySelector('#solution-lab-grid'),
     setupBanner: document.querySelector('#setup-banner'),
     topSearches: document.querySelector('#top-searches'),
@@ -1844,6 +1917,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     const config = bootstrap?.constructors || {};
     const items = normalizeConstructorSolutions(config);
+    const { filters, visibleItems, activeCategory } = buildConstructorCategoryFilters(items, state.activeSolutionFilter);
+    state.activeSolutionFilter = activeCategory;
+    const activeSolutionId = state.current?.kind === 'constructor'
+      ? String(state.current?.payload?.definition?.id || '').trim()
+      : '';
     if (els.solutionLabTitle) {
       els.solutionLabTitle.textContent = String(config.title || 'Лаборатория решений').trim() || 'Лаборатория решений';
     }
@@ -1851,13 +1929,30 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       els.solutionLabCopy.textContent = String(config.description || 'Готовые каркасы для типовых бренд-носителей.').trim()
         || 'Готовые каркасы для типовых бренд-носителей.';
     }
+    if (els.solutionLabFilters) {
+      els.solutionLabFilters.innerHTML = filters.map((filter) => `
+        <button
+          type="button"
+          class="chip solution-filter-chip${filter.active ? ' active' : ''}"
+          data-action="set-solution-filter"
+          data-filter="${escapeHtml(filter.id)}"
+          ${filter.active ? 'aria-pressed="true"' : 'aria-pressed="false"'}
+        >
+          <span>${escapeHtml(filter.label)}</span>
+          <small>${escapeHtml(String(filter.count))}</small>
+        </button>
+      `).join('');
+    }
+    if (els.solutionLabMeta) {
+      els.solutionLabMeta.textContent = `${formatNumber(visibleItems.length)} шаблон${visibleItems.length === 1 ? '' : visibleItems.length >= 2 && visibleItems.length <= 4 ? 'а' : 'ов'}`;
+    }
     els.solutionLab.hidden = !items.length;
     if (!items.length) {
       els.solutionLabGrid.innerHTML = '';
       return;
     }
-    els.solutionLabGrid.innerHTML = items.map((item) => `
-      <article class="solution-card">
+    els.solutionLabGrid.innerHTML = visibleItems.map((item) => `
+      <article class="solution-card${activeSolutionId === item.id ? ' active' : ''}">
         <div class="solution-card-head">
           <span class="solution-card-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
           <div class="solution-card-copy">
@@ -1923,6 +2018,44 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         <span class="constructor-field-label">${escapeHtml(label)}${required ? ' *' : ''}</span>
         ${control}
       </label>
+    `;
+  }
+
+  function buildConstructorFieldGroupsMarkup(fields, input) {
+    return groupConstructorFields(fields).map((group) => `
+      <section class="constructor-field-group">
+        <div class="constructor-group-head">
+          <strong>${escapeHtml(group.label)}</strong>
+          <span>${escapeHtml(group.hint)}</span>
+        </div>
+        <div class="constructor-field-grid">
+          ${group.items.map((field) => renderConstructorField(field, input[field.id])).join('')}
+        </div>
+      </section>
+    `).join('');
+  }
+
+  function buildConstructorStepsMarkup(generated) {
+    const states = generated
+      ? ['done', 'done', 'active']
+      : ['active', 'muted', 'muted'];
+    const labels = [
+      { title: 'Параметры', note: 'Заполните поля шаблона.' },
+      { title: 'Сборка', note: 'Получите стартовый пакет.' },
+      { title: 'Handoff', note: 'Скачайте и откройте реальные материалы.' },
+    ];
+    return `
+      <div class="constructor-steps" aria-label="Этапы решения">
+        ${labels.map((item, index) => `
+          <div class="constructor-step ${states[index]}">
+            <span class="constructor-step-index">${index + 1}</span>
+            <span class="constructor-step-copy">
+              <strong>${escapeHtml(item.title)}</strong>
+              <small>${escapeHtml(item.note)}</small>
+            </span>
+          </div>
+        `).join('')}
+      </div>
     `;
   }
 
@@ -2014,9 +2147,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
     const previewArtifact = pickConstructorPreviewArtifact(artifacts);
     const summary = payload?.summary || {};
+    const generated = Boolean(payload?.generated);
 
     state.current = { kind: 'constructor', payload };
     state.detail = null;
+    renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Конструктор';
     els.contentTitle.textContent = definition.label || 'Лаборатория решений';
     els.contentHint.textContent = summary.lead || definition.description || 'Соберите шаблон под реальную задачу.';
@@ -2037,23 +2172,23 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </div>
           <div class="item-meta">
             ${definition.formatHint ? `<span class="meta-pill">${escapeHtml(definition.formatHint)}</span>` : ''}
-            <span class="meta-pill">${escapeHtml(payload?.generated ? 'Пакет собран' : 'Черновик')}</span>
+            <span class="meta-pill">${escapeHtml(generated ? 'Пакет собран' : 'Черновик')}</span>
             ${previewArtifact?.label ? `<span class="meta-pill">${escapeHtml(previewArtifact.label)}</span>` : ''}
           </div>
+          ${buildConstructorStepsMarkup(generated)}
         </section>
 
         <div class="constructor-layout">
           <section class="constructor-panel constructor-form-panel">
             <div class="constructor-panel-head">
               <strong>Поля решения</strong>
-              <span>Заполните минимальные данные и соберите пакет.</span>
+              <span>Сначала задайте параметры, потом соберите SVG/brief-пакет и откройте реальные материалы каталога.</span>
             </div>
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
-              <div class="constructor-field-grid">
-                ${fields.map((field) => renderConstructorField(field, input[field.id])).join('')}
-              </div>
+              ${buildConstructorFieldGroupsMarkup(fields, input)}
               <div class="constructor-form-actions">
                 <button type="submit" class="accent-button">Собрать решение</button>
+                <button type="button" class="ghost-button" data-action="reset-constructor" data-id="${escapeHtml(definition.id || '')}">Сбросить шаблон</button>
                 <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
               </div>
             </form>
@@ -2062,7 +2197,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           <section class="constructor-panel constructor-preview-panel">
             <div class="constructor-panel-head">
               <strong>Превью и файлы</strong>
-              <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или бриф')}</span>
+              <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или бриф')} • На ПК этот блок закреплён и остаётся в поле зрения.</span>
             </div>
             <div class="constructor-preview-stage">
               ${buildConstructorPreviewMarkup(previewArtifact)}
@@ -2072,7 +2207,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
                 <button type="button" class="constructor-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
                   <strong>${escapeHtml(artifact.label || 'Артефакт')}</strong>
                   <span>${escapeHtml(artifact.filename || '')}</span>
-                  <small>${escapeHtml(formatDataSize(artifact.sizeBytes))}</small>
+                  <small>${escapeHtml(formatDataSize(artifact.sizeBytes))} • Нажмите, чтобы скачать</small>
                 </button>
               `).join('')}
             </div>
@@ -2228,6 +2363,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function renderFolder(payload) {
     state.current = { kind: 'folder', payload };
     state.detail = null;
+    renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = payload.root ? 'Главная' : 'Раздел';
     els.contentTitle.textContent = payload.folder.label || payload.folder.name;
     els.contentHint.textContent = payload.hint || 'Открой раздел или файл.';
@@ -2241,6 +2377,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function renderSearch(payload) {
     state.current = { kind: 'search', payload };
     state.detail = null;
+    renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Поиск';
     els.contentTitle.textContent = payload.query ? `Поиск: ${payload.query}` : 'Поиск';
     els.contentHint.textContent = payload.total
@@ -2345,6 +2482,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function renderRootLanding() {
     state.current = null;
     state.detail = null;
+    renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Меню';
     els.contentTitle.textContent = 'Выберите раздел';
     els.contentHint.textContent = 'Основной вход в материалы находится в верхнем меню, а готовые шаблоны носителей — в лаборатории решений ниже.';
@@ -2557,6 +2695,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       setExampleAutoplay(!state.exampleAutoplay);
       return;
     }
+    if (action === 'set-solution-filter') {
+      state.activeSolutionFilter = String(target.dataset.filter || DEFAULT_SOLUTION_FILTER).trim() || DEFAULT_SOLUTION_FILTER;
+      renderSolutionLab(state.bootstrap);
+      return;
+    }
     if (action === 'close-inspector') {
       closeInspector('replace');
       return;
@@ -2579,6 +2722,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       if (artifact) {
         downloadArtifact(artifact);
       }
+      return;
+    }
+    if (action === 'reset-constructor') {
+      void openConstructor(target.dataset.id, { history: 'replace' });
       return;
     }
     if (isWorkspaceNavigationAction(action)) {

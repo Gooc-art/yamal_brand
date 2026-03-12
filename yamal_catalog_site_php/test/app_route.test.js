@@ -7,6 +7,8 @@ const {
   buildRouteUrl,
   buildBrandRouteCards,
   buildBrandRoutesSummary,
+  buildConstructorCategoryFilters,
+  groupConstructorFields,
   computeRevealScrollLeft,
   initialWorkspaceCollapsed,
   isWorkspaceNavigationAction,
@@ -99,6 +101,35 @@ test('buildRouteUrl serializes constructor route and keeps file overlay', () => 
     }),
     'https://brand.yamal/catalog/?utm=1&view=constructor&solution=rollup&file=file5',
   );
+});
+
+test('buildConstructorCategoryFilters keeps all filter and current category stable', () => {
+  const result = buildConstructorCategoryFilters([
+    { id: 'business_card', category: 'Печать' },
+    { id: 'nameplate', category: 'Навигация' },
+    { id: 'certificate', category: 'Документы' },
+    { id: 'badge', category: 'События' },
+  ], 'Документы');
+
+  assert.equal(result.activeCategory, 'Документы');
+  assert.equal(result.filters[0].id, 'all');
+  assert.equal(result.filters[0].count, 4);
+  assert.deepEqual(result.visibleItems.map((item) => item.id), ['certificate']);
+});
+
+test('groupConstructorFields splits fields into basics, content and people blocks', () => {
+  const groups = groupConstructorFields([
+    { id: 'city', label: 'Город / версия' },
+    { id: 'title', label: 'Название' },
+    { id: 'message', label: 'Текст' },
+    { id: 'full_name', label: 'ФИО' },
+    { id: 'email', label: 'Email' },
+  ]);
+
+  assert.deepEqual(groups.map((group) => group.id), ['basics', 'content', 'people']);
+  assert.deepEqual(groups[0].items.map((item) => item.id), ['city']);
+  assert.deepEqual(groups[1].items.map((item) => item.id), ['title', 'message']);
+  assert.deepEqual(groups[2].items.map((item) => item.id), ['full_name', 'email']);
 });
 
 test('buildBrandRouteCards maps real root sections into menu cards', () => {

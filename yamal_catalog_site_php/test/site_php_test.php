@@ -50,6 +50,8 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'search-pan
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Главное меню'), 'index contains unified main menu heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab'), 'index contains solution lab scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Лаборатория решений'), 'index contains solution lab heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab-filters'), 'index contains solution lab filters scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab-meta'), 'index contains solution lab meta scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Каталог и решения'), 'index updates workspace heading for catalog and constructor');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Скрыть витрину'), 'index contains hide showcase action label');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-stats'), 'index removed hero stats scaffold');
@@ -119,8 +121,12 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.detail
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-kicker'), 'styles contain list card kicker classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-context'), 'styles contain list card context classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-lab-grid'), 'styles contain solution lab grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-lab-toolbar'), 'styles contain solution lab toolbar classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-filter-chip.active'), 'styles contain active solution filter classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage'), 'styles contain constructor preview stage classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-download-card'), 'styles contain constructor artifact download classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-grid'), 'styles contain constructor recommendation grid classes');
@@ -147,8 +153,11 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-s
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSolutionLab'), 'frontend contains solution lab renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCategoryFilters'), 'frontend contains solution lab category filter builder');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'groupConstructorFields'), 'frontend contains constructor field grouping helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'openConstructor'), 'frontend contains constructor opener');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructor('), 'frontend contains constructor build action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'reset-constructor'), 'frontend contains constructor reset action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'download-artifact'), 'frontend contains constructor artifact download action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-form'), 'frontend renders constructor form');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildBrandRouteMark'), 'frontend derives route marks from real catalog sections');
