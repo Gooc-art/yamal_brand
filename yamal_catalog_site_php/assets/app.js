@@ -2,6 +2,7 @@ const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
+const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'background_style', 'palette_tone']);
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
@@ -243,6 +244,15 @@ function buildConstructorCategoryFilters(items, activeCategory = DEFAULT_SOLUTIO
   };
 }
 
+function isConstructorChoiceField(fieldId) {
+  return CONSTRUCTOR_STYLE_FIELD_IDS.has(String(fieldId || '').trim());
+}
+
+function shouldAutoBuildConstructorField(fieldId, fieldType = '') {
+  const normalizedType = String(fieldType || '').trim().toLowerCase();
+  return isConstructorChoiceField(fieldId) || ['select', 'date', 'number'].includes(normalizedType);
+}
+
 function groupConstructorFields(fields) {
   const groups = [
     { id: 'basics', label: 'Базовые параметры', hint: 'Город, формат и основной режим носителя.', items: [] },
@@ -252,7 +262,6 @@ function groupConstructorFields(fields) {
   ];
   const fieldList = Array.isArray(fields) ? fields : [];
   const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
-  const styleIds = new Set(['color_variant', 'brand_lockup', 'background_style', 'palette_tone']);
   const basicsIds = new Set([
     'city',
     'variant',
@@ -277,7 +286,7 @@ function groupConstructorFields(fields) {
       groups[0].items.push(field);
       return;
     }
-    if (styleIds.has(fieldId)) {
+    if (isConstructorChoiceField(fieldId)) {
       groups[1].items.push(field);
       return;
     }
@@ -387,6 +396,29 @@ function buildConstructorPreviewLayout(definition, artifact) {
     frameClass: `constructor-preview-frame is-${profile}`,
     codeClass: `constructor-preview-code is-${profile}`,
   };
+}
+
+function buildConstructorChoicePreview(fieldId, option) {
+  const token = String(option?.mark || option?.label || option?.value || '').trim().slice(0, 10);
+  if (fieldId === 'palette_tone') {
+    const swatch = String(option?.swatch || '').trim() || '#f6f0e7';
+    const dark = Boolean(option?.dark);
+    return `
+      <span class="constructor-choice-visual constructor-choice-visual-swatch${dark ? ' is-dark' : ''}" style="--choice-tone:${escapeHtml(swatch)};">
+        <span class="constructor-choice-swatch" aria-hidden="true"></span>
+        <span class="constructor-choice-token">${escapeHtml(token)}</span>
+      </span>
+    `;
+  }
+  return `<span class="constructor-choice-visual constructor-choice-visual-token">${escapeHtml(token)}</span>`;
+}
+
+function collectConstructorFormInput(form) {
+  const input = {};
+  new FormData(form).forEach((value, key) => {
+    input[key] = String(value);
+  });
+  return input;
 }
 
 function computeRevealScrollLeft({
@@ -604,6 +636,8 @@ if (typeof module !== 'undefined' && module.exports) {
     buildBrandRouteCards,
     buildBrandRoutesSummary,
     buildConstructorCategoryFilters,
+    isConstructorChoiceField,
+    shouldAutoBuildConstructorField,
     groupConstructorFields,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
@@ -2074,6 +2108,42 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const placeholder = String(field?.placeholder || '').trim();
     const required = Boolean(field?.required);
     const currentValue = value ?? field?.default ?? '';
+    if (fieldType === 'select' && isConstructorChoiceField(fieldId)) {
+      const options = Array.isArray(field?.options) ? field.options : [];
+      return `
+        <fieldset class="constructor-field constructor-choice-field">
+          <legend class="constructor-field-label">${escapeHtml(label)}${required ? ' *' : ''}</legend>
+          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}">
+            ${options.map((option, index) => {
+              const optionValue = String(option?.value || '').trim();
+              const optionLabel = String(option?.label || optionValue || '').trim();
+              const optionDescription = String(option?.description || option?.note || '').trim();
+              const optionId = `constructor-field-${fieldId}-${index}`;
+              const checked = optionValue === String(currentValue);
+              return `
+                <label class="constructor-choice-card${checked ? ' active' : ''}" for="${escapeHtml(optionId)}">
+                  <input
+                    class="constructor-choice-input"
+                    type="radio"
+                    id="${escapeHtml(optionId)}"
+                    name="${escapeHtml(fieldId)}"
+                    value="${escapeHtml(optionValue)}"
+                    ${checked ? 'checked' : ''}
+                    ${required && index === 0 ? 'required' : ''}
+                  />
+                  ${buildConstructorChoicePreview(fieldId, option)}
+                  <span class="constructor-choice-copy">
+                    <strong>${escapeHtml(optionLabel)}</strong>
+                    ${optionDescription ? `<small>${escapeHtml(optionDescription)}</small>` : ''}
+                  </span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </fieldset>
+      `;
+    }
+
     const baseAttrs = [
       `id="constructor-field-${escapeHtml(fieldId)}"`,
       `name="${escapeHtml(fieldId)}"`,
@@ -2860,11 +2930,31 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (!constructorId) {
       return;
     }
-    const input = {};
-    new FormData(form).forEach((value, key) => {
-      input[key] = String(value);
-    });
-    void buildConstructor(constructorId, input);
+    void buildConstructor(constructorId, collectConstructorFormInput(form));
+  });
+
+  let constructorAutoBuildTimer = 0;
+  document.addEventListener('change', (event) => {
+    const form = event.target.closest('#constructor-form');
+    if (!form) {
+      return;
+    }
+    const constructorId = String(form.dataset.constructorId || '').trim();
+    if (!constructorId) {
+      return;
+    }
+    const fieldName = String(event.target?.name || '').trim();
+    const fieldType = String(event.target?.type || event.target?.tagName || '').trim().toLowerCase();
+    if (!shouldAutoBuildConstructorField(fieldName, fieldType)) {
+      return;
+    }
+    clearTimeout(constructorAutoBuildTimer);
+    constructorAutoBuildTimer = window.setTimeout(() => {
+      if (!document.body.contains(form)) {
+        return;
+      }
+      void buildConstructor(constructorId, collectConstructorFormInput(form));
+    }, 140);
   });
 
   document.addEventListener('keydown', (event) => {

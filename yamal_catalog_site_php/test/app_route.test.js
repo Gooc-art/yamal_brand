@@ -8,6 +8,8 @@ const {
   buildBrandRouteCards,
   buildBrandRoutesSummary,
   buildConstructorCategoryFilters,
+  isConstructorChoiceField,
+  shouldAutoBuildConstructorField,
   groupConstructorFields,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
@@ -136,6 +138,16 @@ test('groupConstructorFields splits fields into basics, style, content and peopl
   assert.deepEqual(groups[1].items.map((item) => item.id), ['palette_tone']);
   assert.deepEqual(groups[2].items.map((item) => item.id), ['title', 'message']);
   assert.deepEqual(groups[3].items.map((item) => item.id), ['full_name', 'email']);
+});
+
+test('constructor choice fields and auto-build fields are detected consistently', () => {
+  assert.equal(isConstructorChoiceField('palette_tone'), true);
+  assert.equal(isConstructorChoiceField('background_style'), true);
+  assert.equal(isConstructorChoiceField('title'), false);
+  assert.equal(shouldAutoBuildConstructorField('palette_tone', 'radio'), true);
+  assert.equal(shouldAutoBuildConstructorField('city', 'select'), true);
+  assert.equal(shouldAutoBuildConstructorField('slide_count', 'number'), true);
+  assert.equal(shouldAutoBuildConstructorField('full_name', 'text'), false);
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {

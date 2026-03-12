@@ -1002,6 +1002,60 @@ function constructor_palette_tone_labels(): array
     ];
 }
 
+function constructor_color_variant_options(): array
+{
+    return [
+        ['value' => 'cmyk', 'label' => 'CMYK для печати', 'description' => 'Печатная красная версия', 'mark' => 'CMYK'],
+        ['value' => 'color', 'label' => 'Color', 'description' => 'Основной фирменный цвет', 'mark' => 'COL'],
+        ['value' => 'black', 'label' => 'Black', 'description' => 'Тёмная одноцветная версия', 'mark' => 'BLK'],
+        ['value' => 'white', 'label' => 'White', 'description' => 'Белая версия для плотного фона', 'mark' => 'WHT'],
+    ];
+}
+
+function constructor_brand_lockup_options(): array
+{
+    return [
+        ['value' => 'logo', 'label' => 'Логотип с надписью', 'description' => 'Полное название и знак', 'mark' => 'ЛОГО'],
+        ['value' => 'mark', 'label' => 'Фирменный знак', 'description' => 'Чистый знак как главный акцент', 'mark' => 'ЗНАК'],
+    ];
+}
+
+function constructor_background_style_options(): array
+{
+    return [
+        ['value' => 'clean', 'label' => 'Чистый фон', 'description' => 'Без фоновой графики', 'mark' => 'ЧИСТО'],
+        ['value' => 'band', 'label' => 'Сигнальная плашка', 'description' => 'Короткий акцентный блок', 'mark' => 'ПЛАШКА'],
+        ['value' => 'frame', 'label' => 'Контур и рамка', 'description' => 'Рамка и спокойный контур', 'mark' => 'РАМКА'],
+        ['value' => 'watermark', 'label' => 'Водяной знак', 'description' => 'Крупный знак на фоне', 'mark' => 'WATER'],
+        ['value' => 'pattern', 'label' => 'Сетка из знака', 'description' => 'Повторяемый ритм из фирменного знака', 'mark' => 'GRID'],
+    ];
+}
+
+function constructor_palette_tone_options(): array
+{
+    $items = [];
+    foreach (constructor_palette_tone_labels() as $value => $label) {
+        $tone = constructor_palette_tone_definition($value);
+        $items[] = [
+            'value' => $value,
+            'label' => $label,
+            'description' => match ($value) {
+                'paper' => 'Нейтральная светлая подложка',
+                'sand' => 'Тёплый спокойный фон',
+                'accent' => 'Насыщенный фирменный акцент',
+                'teal' => 'Холодный северный акцент',
+                'gold' => 'Тёплый статусный акцент',
+                'ink' => 'Глубокий тёмный фон',
+                default => 'Фоновый тон',
+            },
+            'mark' => mb_strtoupper(mb_substr($label, 0, 1, 'UTF-8'), 'UTF-8'),
+            'swatch' => (string) ($tone['tone'] ?? '#f6f0e7'),
+            'dark' => !empty($tone['dark']),
+        ];
+    }
+    return $items;
+}
+
 function constructor_style_fields(array $defaults = []): array
 {
     $colorDefault = (string) ($defaults['color_variant'] ?? 'color');
@@ -1016,11 +1070,7 @@ function constructor_style_fields(array $defaults = []): array
             'label' => 'Цветовая версия',
             'required' => true,
             'default' => $colorDefault,
-            'options' => array_map(
-                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
-                array_keys(constructor_color_variant_labels()),
-                constructor_color_variant_labels()
-            ),
+            'options' => constructor_color_variant_options(),
         ],
         'brand_lockup' => [
             'id' => 'brand_lockup',
@@ -1028,11 +1078,7 @@ function constructor_style_fields(array $defaults = []): array
             'label' => 'Логотип / знак',
             'required' => true,
             'default' => $lockupDefault,
-            'options' => array_map(
-                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
-                array_keys(constructor_brand_lockup_labels()),
-                constructor_brand_lockup_labels()
-            ),
+            'options' => constructor_brand_lockup_options(),
         ],
         'background_style' => [
             'id' => 'background_style',
@@ -1040,11 +1086,7 @@ function constructor_style_fields(array $defaults = []): array
             'label' => 'Элементы фона',
             'required' => true,
             'default' => $backgroundDefault,
-            'options' => array_map(
-                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
-                array_keys(constructor_background_style_labels()),
-                constructor_background_style_labels()
-            ),
+            'options' => constructor_background_style_options(),
         ],
         'palette_tone' => [
             'id' => 'palette_tone',
@@ -1052,11 +1094,7 @@ function constructor_style_fields(array $defaults = []): array
             'label' => 'Палитра фона',
             'required' => true,
             'default' => $paletteDefault,
-            'options' => array_map(
-                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
-                array_keys(constructor_palette_tone_labels()),
-                constructor_palette_tone_labels()
-            ),
+            'options' => constructor_palette_tone_options(),
         ],
     ];
 }
