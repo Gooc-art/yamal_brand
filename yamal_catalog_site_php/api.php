@@ -8,11 +8,45 @@ header('Cache-Control: no-store');
 
 $service = new SiteCatalogService();
 $action = trim((string) ($_GET['action'] ?? ''));
+$rawBody = file_get_contents('php://input');
+$jsonBody = [];
+if (is_string($rawBody) && trim($rawBody) !== '') {
+    $decodedBody = json_decode($rawBody, true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedBody)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid_json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+    $jsonBody = $decodedBody;
+}
 
 try {
     switch ($action) {
         case 'bootstrap':
             echo json_encode($service->getBootstrap(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case 'constructor':
+            $constructorId = trim((string) ($_GET['id'] ?? ''));
+            $payload = $service->getConstructor($constructorId);
+            if ($payload === null) {
+                http_response_code(404);
+                echo json_encode(['error' => 'constructor_not_found'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+            echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case 'construct':
+            $constructorId = trim((string) ($jsonBody['id'] ?? $_GET['id'] ?? ''));
+            $input = is_array($jsonBody['input'] ?? null) ? $jsonBody['input'] : [];
+            $payload = $service->buildConstructor($constructorId, $input);
+            if ($payload === null) {
+                http_response_code(404);
+                echo json_encode(['error' => 'constructor_not_found'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+            echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
         case 'favorites':

@@ -937,6 +937,499 @@ function consultant_bootstrap(?array $config = null): array
     ];
 }
 
+function constructor_city_options(): array
+{
+    return [
+        ['value' => 'ямал', 'label' => 'Ямал'],
+        ['value' => 'салехард', 'label' => 'Салехард'],
+        ['value' => 'новый уренгой', 'label' => 'Новый Уренгой'],
+        ['value' => 'ноябрьск', 'label' => 'Ноябрьск'],
+    ];
+}
+
+function constructor_base_fields(): array
+{
+    return [
+        'city' => [
+            'id' => 'city',
+            'type' => 'select',
+            'label' => 'Город / версия',
+            'required' => true,
+            'default' => 'ямал',
+            'options' => constructor_city_options(),
+        ],
+    ];
+}
+
+function constructor_solution_definitions(): array
+{
+    $base = constructor_base_fields();
+
+    return [
+        [
+            'id' => 'business_card',
+            'label' => 'Визитка',
+            'summary' => 'Контактная карточка для сотрудника',
+            'description' => 'Готовая визитка с ФИО, должностью и контактами на базе бренд-материалов региона или города.',
+            'icon' => '▣',
+            'category' => 'Печать',
+            'artifactKind' => 'svg',
+            'formatHint' => '90×50 мм • SVG + JSON',
+            'consultPrompt' => 'визитка логотип шрифт брендбук',
+            'sectionKeywords' => ['логотип', 'брендбук', 'шрифт'],
+            'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'шрифт otf'],
+            'fields' => array_values(array_merge($base, [
+                'full_name' => [
+                    'id' => 'full_name',
+                    'type' => 'text',
+                    'label' => 'ФИО',
+                    'required' => true,
+                    'default' => 'Имя Фамилия',
+                    'placeholder' => 'Например: Сергей Иванов',
+                    'maxLength' => 80,
+                ],
+                'role' => [
+                    'id' => 'role',
+                    'type' => 'text',
+                    'label' => 'Должность',
+                    'required' => true,
+                    'default' => 'Руководитель проекта',
+                    'placeholder' => 'Например: Руководитель проекта',
+                    'maxLength' => 80,
+                ],
+                'phone' => [
+                    'id' => 'phone',
+                    'type' => 'text',
+                    'label' => 'Телефон',
+                    'required' => true,
+                    'default' => '+7 900 000-00-00',
+                    'maxLength' => 40,
+                ],
+                'email' => [
+                    'id' => 'email',
+                    'type' => 'email',
+                    'label' => 'Email',
+                    'required' => true,
+                    'default' => 'team@yamal.ru',
+                    'maxLength' => 120,
+                ],
+                'department' => [
+                    'id' => 'department',
+                    'type' => 'text',
+                    'label' => 'Подразделение',
+                    'required' => false,
+                    'default' => 'Бренд-команда',
+                    'maxLength' => 80,
+                ],
+            ])),
+        ],
+        [
+            'id' => 'nameplate',
+            'label' => 'Табличка',
+            'summary' => 'Навигационная или кабинетная табличка',
+            'description' => 'Шаблон таблички для кабинета, переговорной или навигации с привязкой к городу и месту.',
+            'icon' => '▭',
+            'category' => 'Навигация',
+            'artifactKind' => 'svg',
+            'formatHint' => '300×120 мм • SVG + JSON',
+            'consultPrompt' => 'табличка навигация логотип брендбук',
+            'sectionKeywords' => ['логотип', 'брендбук', 'сувенир', 'полиграф'],
+            'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'навигация'],
+            'fields' => array_values(array_merge($base, [
+                'location' => [
+                    'id' => 'location',
+                    'type' => 'text',
+                    'label' => 'Название места',
+                    'required' => true,
+                    'default' => 'Переговорная Полярная',
+                    'maxLength' => 100,
+                ],
+                'subline' => [
+                    'id' => 'subline',
+                    'type' => 'text',
+                    'label' => 'Подпись',
+                    'required' => false,
+                    'default' => '2 этаж • блок Б',
+                    'maxLength' => 80,
+                ],
+                'size_variant' => [
+                    'id' => 'size_variant',
+                    'type' => 'select',
+                    'label' => 'Размер',
+                    'required' => true,
+                    'default' => '300x120',
+                    'options' => [
+                        ['value' => '300x120', 'label' => '300×120 мм'],
+                        ['value' => '400x160', 'label' => '400×160 мм'],
+                        ['value' => '600x200', 'label' => '600×200 мм'],
+                    ],
+                ],
+                'mount' => [
+                    'id' => 'mount',
+                    'type' => 'select',
+                    'label' => 'Крепление',
+                    'required' => false,
+                    'default' => 'wall',
+                    'options' => [
+                        ['value' => 'wall', 'label' => 'Настенное'],
+                        ['value' => 'door', 'label' => 'На дверь'],
+                        ['value' => 'desktop', 'label' => 'Настольное'],
+                    ],
+                ],
+            ])),
+        ],
+        [
+            'id' => 'presentation_deck',
+            'label' => 'Презентация',
+            'summary' => 'Каркас презентации и мастер-слайд',
+            'description' => 'Структурированный бриф и обложка презентации с рекомендациями по брендбуку и файловому пакету.',
+            'icon' => '▤',
+            'category' => 'Презентации',
+            'artifactKind' => 'brief',
+            'formatHint' => '16:9 • SVG cover + HTML/JSON brief',
+            'consultPrompt' => 'презентация брендбук логотип шрифт паттерн',
+            'sectionKeywords' => ['брендбук', 'логотип', 'шрифт', 'паттер'],
+            'queries' => ['брендбук {{city}} pdf', 'логотип svg {{city}}', 'шрифт otf', 'паттерн'],
+            'fields' => array_values(array_merge($base, [
+                'title' => [
+                    'id' => 'title',
+                    'type' => 'text',
+                    'label' => 'Название презентации',
+                    'required' => true,
+                    'default' => 'Инвестиционные возможности Ямала',
+                    'maxLength' => 120,
+                ],
+                'speaker' => [
+                    'id' => 'speaker',
+                    'type' => 'text',
+                    'label' => 'Спикер',
+                    'required' => true,
+                    'default' => 'Имя Фамилия',
+                    'maxLength' => 80,
+                ],
+                'speaker_role' => [
+                    'id' => 'speaker_role',
+                    'type' => 'text',
+                    'label' => 'Должность спикера',
+                    'required' => false,
+                    'default' => 'Руководитель направления',
+                    'maxLength' => 80,
+                ],
+                'audience' => [
+                    'id' => 'audience',
+                    'type' => 'text',
+                    'label' => 'Аудитория',
+                    'required' => false,
+                    'default' => 'Партнёры и инвесторы',
+                    'maxLength' => 80,
+                ],
+                'slide_count' => [
+                    'id' => 'slide_count',
+                    'type' => 'number',
+                    'label' => 'Количество слайдов',
+                    'required' => true,
+                    'default' => 12,
+                    'min' => 6,
+                    'max' => 40,
+                ],
+            ])),
+        ],
+        [
+            'id' => 'certificate',
+            'label' => 'Сертификат',
+            'summary' => 'Именной сертификат или диплом',
+            'description' => 'Шаблон сертификата для мероприятий, награждений и внутренних программ.',
+            'icon' => '◫',
+            'category' => 'Документы',
+            'artifactKind' => 'svg',
+            'formatHint' => 'A4 • SVG + JSON',
+            'consultPrompt' => 'сертификат брендбук логотип паттерн',
+            'sectionKeywords' => ['брендбук', 'логотип', 'паттер'],
+            'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'паттерн'],
+            'fields' => array_values(array_merge($base, [
+                'recipient' => [
+                    'id' => 'recipient',
+                    'type' => 'text',
+                    'label' => 'Получатель',
+                    'required' => true,
+                    'default' => 'Имя Фамилия',
+                    'maxLength' => 100,
+                ],
+                'reason' => [
+                    'id' => 'reason',
+                    'type' => 'textarea',
+                    'label' => 'За что выдан',
+                    'required' => true,
+                    'default' => 'за вклад в развитие проектной инициативы и качественную реализацию программы.',
+                    'rows' => 3,
+                    'maxLength' => 220,
+                ],
+                'event_name' => [
+                    'id' => 'event_name',
+                    'type' => 'text',
+                    'label' => 'Событие / программа',
+                    'required' => false,
+                    'default' => 'Форум северных инициатив',
+                    'maxLength' => 100,
+                ],
+                'signer' => [
+                    'id' => 'signer',
+                    'type' => 'text',
+                    'label' => 'Подписант',
+                    'required' => true,
+                    'default' => 'Имя Фамилия',
+                    'maxLength' => 80,
+                ],
+                'issue_date' => [
+                    'id' => 'issue_date',
+                    'type' => 'date',
+                    'label' => 'Дата',
+                    'required' => true,
+                    'default' => date('Y-m-d'),
+                ],
+            ])),
+        ],
+        [
+            'id' => 'badge',
+            'label' => 'Бейдж',
+            'summary' => 'Именной бейдж для события или команды',
+            'description' => 'Вертикальный бейдж для мероприятий, волонтёров, участников и организаторов.',
+            'icon' => '◧',
+            'category' => 'События',
+            'artifactKind' => 'svg',
+            'formatHint' => '100×140 мм • SVG + JSON',
+            'consultPrompt' => 'бейдж логотип шрифт брендбук',
+            'sectionKeywords' => ['логотип', 'шрифт', 'брендбук'],
+            'queries' => ['логотип svg {{city}}', 'шрифт otf', 'брендбук {{city}}'],
+            'fields' => array_values(array_merge($base, [
+                'full_name' => [
+                    'id' => 'full_name',
+                    'type' => 'text',
+                    'label' => 'Имя и фамилия',
+                    'required' => true,
+                    'default' => 'Имя Фамилия',
+                    'maxLength' => 80,
+                ],
+                'role' => [
+                    'id' => 'role',
+                    'type' => 'text',
+                    'label' => 'Роль',
+                    'required' => true,
+                    'default' => 'Участник',
+                    'maxLength' => 60,
+                ],
+                'event_name' => [
+                    'id' => 'event_name',
+                    'type' => 'text',
+                    'label' => 'Мероприятие',
+                    'required' => false,
+                    'default' => 'Арктический форум',
+                    'maxLength' => 90,
+                ],
+                'access_level' => [
+                    'id' => 'access_level',
+                    'type' => 'select',
+                    'label' => 'Уровень доступа',
+                    'required' => false,
+                    'default' => 'standard',
+                    'options' => [
+                        ['value' => 'standard', 'label' => 'Стандарт'],
+                        ['value' => 'speaker', 'label' => 'Спикер'],
+                        ['value' => 'staff', 'label' => 'Оргкомитет'],
+                        ['value' => 'vip', 'label' => 'VIP'],
+                    ],
+                ],
+            ])),
+        ],
+        [
+            'id' => 'social_post',
+            'label' => 'Пост для соцсетей',
+            'summary' => 'Карточка или анонс для digital',
+            'description' => 'Готовая digital-карточка для анонсов, поздравлений и коротких сообщений.',
+            'icon' => '◩',
+            'category' => 'Digital',
+            'artifactKind' => 'svg',
+            'formatHint' => '1:1 / 4:5 • SVG + JSON',
+            'consultPrompt' => 'соцсети логотип паттерн svg',
+            'sectionKeywords' => ['логотип', 'паттер', 'иллюстра', 'svg'],
+            'queries' => ['логотип svg {{city}}', 'паттерн', 'иллюстрации svg'],
+            'fields' => array_values(array_merge($base, [
+                'headline' => [
+                    'id' => 'headline',
+                    'type' => 'text',
+                    'label' => 'Заголовок',
+                    'required' => true,
+                    'default' => 'Ямал открывает новые возможности',
+                    'maxLength' => 90,
+                ],
+                'message' => [
+                    'id' => 'message',
+                    'type' => 'textarea',
+                    'label' => 'Текст',
+                    'required' => true,
+                    'default' => 'Короткий анонс, тезис или поздравление для публикации в digital-каналах.',
+                    'rows' => 4,
+                    'maxLength' => 240,
+                ],
+                'cta' => [
+                    'id' => 'cta',
+                    'type' => 'text',
+                    'label' => 'CTA / ссылка',
+                    'required' => false,
+                    'default' => 'Подробнее на brand.yamal',
+                    'maxLength' => 80,
+                ],
+                'ratio' => [
+                    'id' => 'ratio',
+                    'type' => 'select',
+                    'label' => 'Формат',
+                    'required' => true,
+                    'default' => '4:5',
+                    'options' => [
+                        ['value' => '1:1', 'label' => '1:1'],
+                        ['value' => '4:5', 'label' => '4:5'],
+                        ['value' => '16:9', 'label' => '16:9'],
+                    ],
+                ],
+            ])),
+        ],
+        [
+            'id' => 'letterhead',
+            'label' => 'Фирменный бланк',
+            'summary' => 'Официальный лист и сопроводительное письмо',
+            'description' => 'Шаблон для официальной переписки с шапкой, контактной строкой и местом под подпись.',
+            'icon' => '◪',
+            'category' => 'Документы',
+            'artifactKind' => 'svg',
+            'formatHint' => 'A4 • SVG + JSON',
+            'consultPrompt' => 'фирменный бланк логотип брендбук шрифт',
+            'sectionKeywords' => ['логотип', 'брендбук', 'шрифт'],
+            'queries' => ['логотип pdf {{city}}', 'брендбук {{city}}', 'шрифт otf'],
+            'fields' => array_values(array_merge($base, [
+                'department' => [
+                    'id' => 'department',
+                    'type' => 'text',
+                    'label' => 'Подразделение',
+                    'required' => true,
+                    'default' => 'Проектный офис',
+                    'maxLength' => 80,
+                ],
+                'document_title' => [
+                    'id' => 'document_title',
+                    'type' => 'text',
+                    'label' => 'Тема письма',
+                    'required' => true,
+                    'default' => 'Сопроводительное письмо',
+                    'maxLength' => 100,
+                ],
+                'contact_line' => [
+                    'id' => 'contact_line',
+                    'type' => 'text',
+                    'label' => 'Контактная строка',
+                    'required' => false,
+                    'default' => 'team@yamal.ru • +7 900 000-00-00',
+                    'maxLength' => 120,
+                ],
+                'signer' => [
+                    'id' => 'signer',
+                    'type' => 'text',
+                    'label' => 'Подписант',
+                    'required' => false,
+                    'default' => 'Имя Фамилия',
+                    'maxLength' => 80,
+                ],
+            ])),
+        ],
+        [
+            'id' => 'rollup',
+            'label' => 'Роллап / стенд',
+            'summary' => 'Вертикальный носитель для событий',
+            'description' => 'Каркас роллапа или event-стенда с заголовком, подзаголовком и блоком ключевых сообщений.',
+            'icon' => '▥',
+            'category' => 'События',
+            'artifactKind' => 'svg',
+            'formatHint' => '85×200 см • SVG preview + JSON',
+            'consultPrompt' => 'роллап логотип брендбук полиграфия паттерн',
+            'sectionKeywords' => ['логотип', 'брендбук', 'паттер', 'сувенир', 'полиграф'],
+            'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'паттерн', 'полиграфия'],
+            'fields' => array_values(array_merge($base, [
+                'headline' => [
+                    'id' => 'headline',
+                    'type' => 'text',
+                    'label' => 'Заголовок',
+                    'required' => true,
+                    'default' => 'Ямал. Север возможностей',
+                    'maxLength' => 90,
+                ],
+                'subline' => [
+                    'id' => 'subline',
+                    'type' => 'textarea',
+                    'label' => 'Подзаголовок',
+                    'required' => true,
+                    'default' => 'Короткое сообщение о событии, проекте или площадке, которое будет работать на расстоянии.',
+                    'rows' => 3,
+                    'maxLength' => 220,
+                ],
+                'event_name' => [
+                    'id' => 'event_name',
+                    'type' => 'text',
+                    'label' => 'Событие / площадка',
+                    'required' => false,
+                    'default' => 'Деловая программа',
+                    'maxLength' => 90,
+                ],
+                'size_variant' => [
+                    'id' => 'size_variant',
+                    'type' => 'select',
+                    'label' => 'Размер',
+                    'required' => true,
+                    'default' => '85x200',
+                    'options' => [
+                        ['value' => '85x200', 'label' => '85×200 см'],
+                        ['value' => '100x200', 'label' => '100×200 см'],
+                        ['value' => '120x220', 'label' => '120×220 см'],
+                    ],
+                ],
+            ])),
+        ],
+    ];
+}
+
+function constructor_definition_by_id(string $id): ?array
+{
+    $normalizedId = trim($id);
+    if ($normalizedId === '') {
+        return null;
+    }
+    foreach (constructor_solution_definitions() as $definition) {
+        if ((string) ($definition['id'] ?? '') === $normalizedId) {
+            return $definition;
+        }
+    }
+    return null;
+}
+
+function constructor_bootstrap(): array
+{
+    return [
+        'title' => 'Лаборатория решений',
+        'description' => 'Шаблоны для типовых носителей: визитки, таблички, бейджи, сертификаты, бланки, digital-карточки, роллапы и презентации.',
+        'items' => array_map(
+            static fn(array $definition): array => [
+                'id' => (string) ($definition['id'] ?? ''),
+                'label' => (string) ($definition['label'] ?? ''),
+                'summary' => (string) ($definition['summary'] ?? ''),
+                'description' => (string) ($definition['description'] ?? ''),
+                'icon' => (string) ($definition['icon'] ?? '▣'),
+                'category' => (string) ($definition['category'] ?? ''),
+                'formatHint' => (string) ($definition['formatHint'] ?? ''),
+                'artifactKind' => (string) ($definition['artifactKind'] ?? ''),
+            ],
+            constructor_solution_definitions()
+        ),
+    ];
+}
+
 function consultant_city_aliases(): array
 {
     return [
@@ -1875,6 +2368,597 @@ function consultant_brandbook_advice(array $context, array $sections): array
 
     $advice['bullets'] = array_values(array_slice(array_filter(array_map(static fn($item): string => trim((string) $item), $advice['bullets'])), 0, 3));
     return $advice;
+}
+
+function constructor_present_definition(array $definition): array
+{
+    return [
+        'id' => (string) ($definition['id'] ?? ''),
+        'label' => (string) ($definition['label'] ?? ''),
+        'summary' => (string) ($definition['summary'] ?? ''),
+        'description' => (string) ($definition['description'] ?? ''),
+        'icon' => (string) ($definition['icon'] ?? '▣'),
+        'category' => (string) ($definition['category'] ?? ''),
+        'artifactKind' => (string) ($definition['artifactKind'] ?? ''),
+        'formatHint' => (string) ($definition['formatHint'] ?? ''),
+        'fields' => array_map(
+            static function (array $field): array {
+                return [
+                    'id' => (string) ($field['id'] ?? ''),
+                    'type' => (string) ($field['type'] ?? 'text'),
+                    'label' => (string) ($field['label'] ?? ''),
+                    'required' => (bool) ($field['required'] ?? false),
+                    'default' => $field['default'] ?? '',
+                    'placeholder' => (string) ($field['placeholder'] ?? ''),
+                    'rows' => (int) ($field['rows'] ?? 0),
+                    'min' => isset($field['min']) ? (int) $field['min'] : null,
+                    'max' => isset($field['max']) ? (int) $field['max'] : null,
+                    'maxLength' => isset($field['maxLength']) ? (int) $field['maxLength'] : 0,
+                    'options' => array_values(array_map(
+                        static fn(array $option): array => [
+                            'value' => (string) ($option['value'] ?? ''),
+                            'label' => (string) ($option['label'] ?? ''),
+                        ],
+                        array_filter($field['options'] ?? [], static fn($item): bool => is_array($item))
+                    )),
+                ];
+            },
+            array_filter($definition['fields'] ?? [], static fn($item): bool => is_array($item))
+        ),
+    ];
+}
+
+function constructor_default_input(array $definition): array
+{
+    $out = [];
+    foreach (($definition['fields'] ?? []) as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+        $fieldId = (string) ($field['id'] ?? '');
+        if ($fieldId === '') {
+            continue;
+        }
+        $out[$fieldId] = $field['default'] ?? '';
+    }
+    return $out;
+}
+
+function constructor_allowed_option_values(array $field): array
+{
+    $values = [];
+    foreach (($field['options'] ?? []) as $option) {
+        if (!is_array($option)) {
+            continue;
+        }
+        $value = trim((string) ($option['value'] ?? ''));
+        if ($value !== '') {
+            $values[] = $value;
+        }
+    }
+    return $values;
+}
+
+function constructor_normalize_field_value(array $field, $rawValue)
+{
+    $fieldType = (string) ($field['type'] ?? 'text');
+    $defaultValue = $field['default'] ?? '';
+    $maxLength = max(0, (int) ($field['maxLength'] ?? 0));
+
+    if ($fieldType === 'number') {
+        $numeric = (int) $rawValue;
+        if ($numeric === 0 && !is_numeric($rawValue)) {
+            $numeric = (int) $defaultValue;
+        }
+        if (isset($field['min'])) {
+            $numeric = max((int) $field['min'], $numeric);
+        }
+        if (isset($field['max'])) {
+            $numeric = min((int) $field['max'], $numeric);
+        }
+        return $numeric;
+    }
+
+    $value = trim((string) $rawValue);
+    if ($value === '') {
+        $value = trim((string) $defaultValue);
+    }
+    if ($maxLength > 0) {
+        $value = mb_substr($value, 0, $maxLength, 'UTF-8');
+    }
+
+    if ($fieldType === 'select') {
+        $allowed = constructor_allowed_option_values($field);
+        if ($allowed !== [] && !in_array($value, $allowed, true)) {
+            $value = (string) ($defaultValue ?: $allowed[0]);
+        }
+    }
+
+    if ($fieldType === 'date' && $value !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        $value = (string) $defaultValue;
+    }
+
+    return $value;
+}
+
+function constructor_normalize_input(array $definition, array $input): array
+{
+    $normalized = constructor_default_input($definition);
+    foreach (($definition['fields'] ?? []) as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+        $fieldId = (string) ($field['id'] ?? '');
+        if ($fieldId === '') {
+            continue;
+        }
+        $normalized[$fieldId] = constructor_normalize_field_value($field, $input[$fieldId] ?? $normalized[$fieldId] ?? '');
+    }
+    return $normalized;
+}
+
+function constructor_city_label(string $city): string
+{
+    $normalized = normalize_text($city);
+    if ($normalized === 'ямал') {
+        return 'Ямал';
+    }
+    return consultant_city_display_name($city);
+}
+
+function constructor_query_value(string $template, array $input): string
+{
+    $cityValue = (string) ($input['city'] ?? '');
+    $cityLabel = constructor_city_label($cityValue);
+    $query = str_replace(
+        ['{{city}}', '{{city_display}}'],
+        [$cityValue !== '' ? $cityLabel : '', $cityLabel],
+        $template
+    );
+    return trim(preg_replace('/\s+/u', ' ', $query) ?: '');
+}
+
+function constructor_asset_data_uri(string $relativePath, string $mimeType): string
+{
+    static $cache = [];
+    $cacheKey = $relativePath . '|' . $mimeType;
+    if (isset($cache[$cacheKey])) {
+        return $cache[$cacheKey];
+    }
+
+    $fullPath = dirname(__DIR__) . '/' . ltrim($relativePath, '/');
+    if (!is_file($fullPath)) {
+        return '';
+    }
+    $content = file_get_contents($fullPath);
+    if ($content === false || $content === '') {
+        return '';
+    }
+    $cache[$cacheKey] = 'data:' . $mimeType . ';base64,' . base64_encode($content);
+    return $cache[$cacheKey];
+}
+
+function constructor_svg_escape(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function constructor_svg_wrap_lines(string $text, int $maxChars, int $maxLines = 3): array
+{
+    $source = trim(preg_replace('/\s+/u', ' ', $text) ?: '');
+    if ($source === '') {
+        return [];
+    }
+    if ($maxChars <= 0) {
+        return [$source];
+    }
+
+    $words = preg_split('/\s+/u', $source) ?: [$source];
+    $lines = [];
+    $current = '';
+    $hasOverflow = false;
+    foreach ($words as $index => $word) {
+        $candidate = trim($current === '' ? $word : $current . ' ' . $word);
+        if (mb_strlen($candidate, 'UTF-8') <= $maxChars || $current === '') {
+            $current = $candidate;
+            continue;
+        }
+        $lines[] = $current;
+        $current = $word;
+        if (count($lines) >= $maxLines - 1) {
+            $remaining = array_slice($words, $index + 1);
+            if ($remaining !== []) {
+                $current = trim($current . ' ' . implode(' ', $remaining));
+            }
+            $hasOverflow = true;
+            break;
+        }
+    }
+
+    if ($current !== '' && count($lines) < $maxLines) {
+        $lines[] = $current;
+    }
+
+    $lines = array_values(array_filter($lines));
+    if (count($lines) > $maxLines) {
+        $lines = array_slice($lines, 0, $maxLines);
+        $hasOverflow = true;
+    }
+    if ($lines !== []) {
+        $lastIndex = count($lines) - 1;
+        if ($hasOverflow || mb_strlen($source, 'UTF-8') > mb_strlen(implode(' ', $lines), 'UTF-8')) {
+            $lines[$lastIndex] = rtrim(mb_substr($lines[$lastIndex], 0, max(1, $maxChars - 1), 'UTF-8'), " \t\n\r\0\x0B.") . '…';
+        }
+    }
+    return $lines;
+}
+
+function constructor_svg_render_text(float $x, float $y, array $lines, string $className, float $lineHeight, string $anchor = 'start'): string
+{
+    if ($lines === []) {
+        return '';
+    }
+    $safeClass = constructor_svg_escape($className);
+    $safeAnchor = constructor_svg_escape($anchor);
+    $out = '<text class="' . $safeClass . '" x="' . $x . '" y="' . $y . '" text-anchor="' . $safeAnchor . '">';
+    foreach (array_values($lines) as $index => $line) {
+        $dy = $index === 0 ? '0' : (string) $lineHeight;
+        $out .= '<tspan x="' . $x . '" dy="' . $dy . '">' . constructor_svg_escape($line) . '</tspan>';
+    }
+    $out .= '</text>';
+    return $out;
+}
+
+function constructor_svg_document(float $width, float $height, string $body, string $background = '#ffffff'): string
+{
+    $bg = constructor_svg_escape($background);
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . $width . ' ' . $height . '" width="' . $width . '" height="' . $height . '">' .
+        '<defs><style><![CDATA[' .
+        '.bg{fill:' . $bg . ';}' .
+        '.accent{fill:#bf1238;}.accent-soft{fill:#f4d8df;}.ink{fill:#182a31;}.muted{fill:#5d6972;}.sand{fill:#f6f0e7;}.white{fill:#ffffff;}' .
+        '.title{font:700 64px DejaVu Sans,Arial,sans-serif;fill:#182a31;letter-spacing:-0.02em;}' .
+        '.headline{font:700 92px DejaVu Sans,Arial,sans-serif;fill:#182a31;letter-spacing:-0.03em;}' .
+        '.subhead{font:600 36px DejaVu Sans,Arial,sans-serif;fill:#182a31;}' .
+        '.body{font:400 30px DejaVu Sans,Arial,sans-serif;fill:#182a31;}' .
+        '.small{font:400 24px DejaVu Sans,Arial,sans-serif;fill:#5d6972;}' .
+        '.tiny{font:500 20px DejaVu Sans,Arial,sans-serif;fill:#5d6972;letter-spacing:0.04em;text-transform:uppercase;}' .
+        '.badge{font:700 28px DejaVu Sans,Arial,sans-serif;fill:#bf1238;letter-spacing:0.08em;text-transform:uppercase;}' .
+        '.line{stroke:#d8d1c5;stroke-width:2;}' .
+        '.card{fill:#ffffff;stroke:#e3dbcf;stroke-width:2;}' .
+        'text{white-space:pre;}' .
+        ']]></style></defs>' .
+        '<rect class="bg" width="100%" height="100%" rx="0"/>' .
+        $body .
+        '</svg>';
+}
+
+function constructor_format_date(string $value): string
+{
+    if ($value === '') {
+        return '';
+    }
+    $date = strtotime($value);
+    if ($date === false) {
+        return $value;
+    }
+    return date('d.m.Y', $date);
+}
+
+function constructor_filename_base(array $definition, array $input): string
+{
+    $slug = preg_replace('/[^a-z0-9_-]+/i', '-', (string) ($definition['id'] ?? 'solution')) ?: 'solution';
+    $city = preg_replace('/[^a-z0-9_-]+/i', '-', strtolower((string) ($input['city'] ?? 'yamal'))) ?: 'yamal';
+    return 'yamal-' . trim($slug, '-') . '-' . trim($city, '-');
+}
+
+function constructor_brief_payload(array $definition, array $input, array $recommendations): array
+{
+    return [
+        'solution' => [
+            'id' => (string) ($definition['id'] ?? ''),
+            'label' => (string) ($definition['label'] ?? ''),
+            'category' => (string) ($definition['category'] ?? ''),
+            'formatHint' => (string) ($definition['formatHint'] ?? ''),
+        ],
+        'input' => $input,
+        'cityLabel' => constructor_city_label((string) ($input['city'] ?? '')),
+        'recommendations' => [
+            'sections' => array_map(
+                static fn(array $item): array => [
+                    'label' => (string) ($item['label'] ?? $item['name'] ?? ''),
+                    'relativePath' => (string) ($item['relativePath'] ?? ''),
+                ],
+                array_slice($recommendations['sections'] ?? [], 0, 4)
+            ),
+            'files' => array_map(
+                static fn(array $item): array => [
+                    'label' => (string) ($item['label'] ?? $item['name'] ?? ''),
+                    'downloadUrl' => (string) ($item['downloadUrl'] ?? ''),
+                    'relativePath' => (string) ($item['relativePath'] ?? ''),
+                    'extension' => (string) ($item['extension'] ?? ''),
+                ],
+                array_slice($recommendations['items'] ?? [], 0, 4)
+            ),
+            'advice' => $recommendations['advice'] ?? [],
+        ],
+        'generatedAtUtc' => gmdate(DATE_ATOM),
+    ];
+}
+
+function constructor_json_brief_artifact(array $definition, array $input, array $recommendations): array
+{
+    $payload = constructor_brief_payload($definition, $input, $recommendations);
+    return [
+        'id' => 'brief-json',
+        'label' => 'Бриф JSON',
+        'mimeType' => 'application/json',
+        'filename' => constructor_filename_base($definition, $input) . '-brief.json',
+        'content' => (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
+        'previewType' => 'json',
+    ];
+}
+
+function constructor_html_brief_artifact(array $definition, array $input, array $recommendations): array
+{
+    $payload = constructor_brief_payload($definition, $input, $recommendations);
+    $sections = array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $payload['recommendations']['sections'] ?? []);
+    $files = array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $payload['recommendations']['files'] ?? []);
+    $adviceTitle = trim((string) (($payload['recommendations']['advice']['title'] ?? '')));
+    $adviceSummary = trim((string) (($payload['recommendations']['advice']['summary'] ?? '')));
+    $cityLabel = (string) ($payload['cityLabel'] ?? 'Ямал');
+
+    $html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>' .
+        htmlspecialchars((string) ($definition['label'] ?? 'Решение'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
+        '</title><style>body{font-family:Arial,sans-serif;background:#f6f0e7;color:#182a31;margin:0;padding:40px;}article{max-width:920px;margin:0 auto;background:#fff;border:1px solid #e3dbcf;border-radius:28px;padding:36px;box-shadow:0 20px 60px rgba(24,42,49,.08);}h1{margin:0 0 8px;font-size:40px;}h2{margin:28px 0 10px;font-size:22px;}p,li{line-height:1.6;font-size:16px;}ul{margin:0;padding-left:18px;} .eyebrow{color:#bf1238;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;} .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;} .card{background:#faf7f2;border:1px solid #eee1d4;border-radius:18px;padding:14px;}</style></head><body><article>' .
+        '<p class="eyebrow">Лаборатория решений</p>' .
+        '<h1>' . htmlspecialchars((string) ($definition['label'] ?? 'Решение'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1>' .
+        '<p>' . htmlspecialchars((string) ($definition['description'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>' .
+        '<div class="grid">' .
+        '<div class="card"><strong>Город</strong><p>' . htmlspecialchars($cityLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+        '<div class="card"><strong>Формат</strong><p>' . htmlspecialchars((string) ($definition['formatHint'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+        '</div>';
+
+    if ($adviceTitle !== '' || $adviceSummary !== '') {
+        $html .= '<h2>По брендбуку</h2><p><strong>' . htmlspecialchars($adviceTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</strong></p><p>' .
+            htmlspecialchars($adviceSummary, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
+    }
+
+    if ($sections !== []) {
+        $html .= '<h2>Рекомендуемые разделы</h2><ul>' . implode('', array_map(
+            static fn(string $item): string => '<li>' . htmlspecialchars($item, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>',
+            $sections
+        )) . '</ul>';
+    }
+    if ($files !== []) {
+        $html .= '<h2>Рекомендуемые файлы</h2><ul>' . implode('', array_map(
+            static fn(string $item): string => '<li>' . htmlspecialchars($item, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>',
+            $files
+        )) . '</ul>';
+    }
+
+    $html .= '<h2>Поля</h2><ul>' . implode('', array_map(
+        static fn(string $key, $value): string => '<li><strong>' . htmlspecialchars((string) $key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ':</strong> ' . htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>',
+        array_keys($input),
+        array_values($input)
+    )) . '</ul></article></body></html>';
+
+    return [
+        'id' => 'brief-html',
+        'label' => 'HTML-бриф',
+        'mimeType' => 'text/html',
+        'filename' => constructor_filename_base($definition, $input) . '-brief.html',
+        'content' => $html,
+        'previewType' => 'html',
+    ];
+}
+
+function constructor_svg_artifact(array $definition, array $input): ?array
+{
+    $cityLabel = constructor_city_label((string) ($input['city'] ?? ''));
+    $brandMark = constructor_asset_data_uri('assets/brand-mark.svg', 'image/svg+xml');
+    $brandLogo = constructor_asset_data_uri('assets/brand-logo-main.svg', 'image/svg+xml');
+    $body = '';
+    $width = 1200.0;
+    $height = 675.0;
+    $background = '#ffffff';
+    $fileSuffix = 'preview.svg';
+
+    switch ((string) ($definition['id'] ?? '')) {
+        case 'business_card':
+            $width = 900;
+            $height = 500;
+            $background = '#f8f4ee';
+            $body =
+                '<rect x="40" y="40" width="820" height="420" rx="36" class="card"/>' .
+                '<rect x="40" y="40" width="260" height="420" rx="36" class="accent"/>' .
+                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="88" y="92" width="164" height="28"/>' : '') .
+                constructor_svg_render_text(348, 164, constructor_svg_wrap_lines((string) ($input['full_name'] ?? ''), 18, 2), 'headline', 86) .
+                constructor_svg_render_text(348, 292, constructor_svg_wrap_lines((string) ($input['role'] ?? ''), 28, 2), 'subhead', 42) .
+                constructor_svg_render_text(348, 370, constructor_svg_wrap_lines((string) ($input['department'] ?? ''), 32, 1), 'small', 28) .
+                constructor_svg_render_text(348, 412, constructor_svg_wrap_lines((string) ($input['phone'] ?? ''), 32, 1), 'body', 30) .
+                constructor_svg_render_text(348, 448, constructor_svg_wrap_lines((string) ($input['email'] ?? ''), 38, 1), 'small', 26) .
+                '<text class="badge" x="88" y="392">' . constructor_svg_escape($cityLabel) . '</text>';
+            break;
+
+        case 'nameplate':
+            $width = 1200;
+            $height = 420;
+            $background = '#fbf7f0';
+            $body =
+                '<rect x="30" y="30" width="1140" height="360" rx="28" class="card"/>' .
+                '<rect x="30" y="30" width="1140" height="96" rx="28" class="accent"/>' .
+                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="62" y="62" width="182" height="30"/>' : '') .
+                constructor_svg_render_text(62, 178, constructor_svg_wrap_lines((string) ($input['location'] ?? ''), 24, 2), 'headline', 88) .
+                constructor_svg_render_text(62, 306, constructor_svg_wrap_lines((string) ($input['subline'] ?? ''), 36, 2), 'subhead', 40) .
+                '<text class="badge" x="1040" y="356" text-anchor="end">' . constructor_svg_escape((string) ($input['size_variant'] ?? '300x120')) . '</text>';
+            break;
+
+        case 'presentation_deck':
+            $width = 1600;
+            $height = 900;
+            $background = '#f7f1ea';
+            $body =
+                '<rect x="0" y="0" width="560" height="900" class="accent"/>' .
+                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="104" y="92" width="232" height="151"/>' : '') .
+                constructor_svg_render_text(644, 208, constructor_svg_wrap_lines((string) ($input['title'] ?? ''), 20, 3), 'headline', 94) .
+                constructor_svg_render_text(644, 530, constructor_svg_wrap_lines((string) ($input['speaker'] ?? ''), 30, 1), 'subhead', 40) .
+                constructor_svg_render_text(644, 584, constructor_svg_wrap_lines((string) ($input['speaker_role'] ?? ''), 34, 2), 'body', 34) .
+                constructor_svg_render_text(644, 720, constructor_svg_wrap_lines('Аудитория: ' . (string) ($input['audience'] ?? ''), 42, 1), 'small', 28) .
+                constructor_svg_render_text(644, 760, constructor_svg_wrap_lines('Слайдов: ' . (string) ($input['slide_count'] ?? ''), 42, 1), 'small', 28);
+            break;
+
+        case 'certificate':
+            $width = 1400;
+            $height = 990;
+            $background = '#fbf7f0';
+            $body =
+                '<rect x="44" y="44" width="1312" height="902" rx="28" fill="none" stroke="#bf1238" stroke-width="8"/>' .
+                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="86" y="88" width="200" height="32"/>' : '') .
+                '<text class="badge" x="700" y="202" text-anchor="middle">' . constructor_svg_escape($cityLabel) . '</text>' .
+                '<text class="title" x="700" y="310" text-anchor="middle">Сертификат</text>' .
+                constructor_svg_render_text(700, 456, constructor_svg_wrap_lines((string) ($input['recipient'] ?? ''), 20, 2), 'headline', 94, 'middle') .
+                constructor_svg_render_text(700, 598, constructor_svg_wrap_lines((string) ($input['reason'] ?? ''), 46, 3), 'body', 36, 'middle') .
+                constructor_svg_render_text(160, 810, constructor_svg_wrap_lines((string) ($input['event_name'] ?? ''), 38, 2), 'small', 28) .
+                '<line x1="968" y1="804" x2="1248" y2="804" class="line"/>' .
+                constructor_svg_render_text(968, 846, constructor_svg_wrap_lines((string) ($input['signer'] ?? ''), 28, 1), 'small', 28) .
+                constructor_svg_render_text(160, 900, constructor_svg_wrap_lines(constructor_format_date((string) ($input['issue_date'] ?? '')), 24, 1), 'small', 26);
+            break;
+
+        case 'badge':
+            $width = 720;
+            $height = 1120;
+            $background = '#f8f4ee';
+            $accessMap = [
+                'standard' => 'Стандарт',
+                'speaker' => 'Спикер',
+                'staff' => 'Оргкомитет',
+                'vip' => 'VIP',
+            ];
+            $accessLabel = $accessMap[(string) ($input['access_level'] ?? 'standard')] ?? 'Стандарт';
+            $body =
+                '<rect x="44" y="44" width="632" height="1032" rx="36" class="card"/>' .
+                '<rect x="44" y="44" width="632" height="182" rx="36" class="accent"/>' .
+                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="76" y="70" width="168" height="109"/>' : '') .
+                constructor_svg_render_text(76, 300, constructor_svg_wrap_lines((string) ($input['event_name'] ?? $cityLabel), 22, 2), 'small', 28) .
+                constructor_svg_render_text(76, 420, constructor_svg_wrap_lines((string) ($input['full_name'] ?? ''), 16, 3), 'headline', 92) .
+                constructor_svg_render_text(76, 718, constructor_svg_wrap_lines((string) ($input['role'] ?? ''), 24, 2), 'subhead', 40) .
+                '<rect x="76" y="824" width="260" height="72" rx="24" class="accent-soft"/>' .
+                '<text class="badge" x="206" y="870" text-anchor="middle">' . constructor_svg_escape($accessLabel) . '</text>' .
+                constructor_svg_render_text(76, 974, constructor_svg_wrap_lines($cityLabel, 22, 1), 'small', 28);
+            break;
+
+        case 'social_post':
+            $ratio = (string) ($input['ratio'] ?? '4:5');
+            if ($ratio === '1:1') {
+                $width = 1080;
+                $height = 1080;
+            } elseif ($ratio === '16:9') {
+                $width = 1600;
+                $height = 900;
+            } else {
+                $width = 1080;
+                $height = 1350;
+            }
+            $background = '#f7f1ea';
+            $body =
+                '<rect x="0" y="0" width="' . $width . '" height="220" class="accent"/>' .
+                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="64" y="50" width="172" height="112"/>' : '') .
+                constructor_svg_render_text(80, 328, constructor_svg_wrap_lines((string) ($input['headline'] ?? ''), 18, 3), 'headline', 94) .
+                constructor_svg_render_text(80, 690, constructor_svg_wrap_lines((string) ($input['message'] ?? ''), 34, 4), 'body', 36) .
+                '<rect x="80" y="' . ($height - 178) . '" width="' . ($width - 160) . '" height="88" rx="28" class="card"/>' .
+                constructor_svg_render_text(124, $height - 120, constructor_svg_wrap_lines((string) ($input['cta'] ?? ''), 42, 1), 'subhead', 36) .
+                constructor_svg_render_text($width - 80, $height - 46, constructor_svg_wrap_lines($cityLabel, 18, 1), 'small', 24, 'end');
+            break;
+
+        case 'letterhead':
+            $width = 1240;
+            $height = 1754;
+            $background = '#ffffff';
+            $body =
+                '<rect x="0" y="0" width="1240" height="210" class="sand"/>' .
+                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="84" y="76" width="220" height="36"/>' : '') .
+                constructor_svg_render_text(84, 168, constructor_svg_wrap_lines((string) ($input['department'] ?? ''), 32, 1), 'subhead', 38) .
+                constructor_svg_render_text(84, 320, constructor_svg_wrap_lines((string) ($input['document_title'] ?? ''), 30, 2), 'title', 70) .
+                '<line x1="84" y1="412" x2="1156" y2="412" class="line"/>' .
+                constructor_svg_render_text(84, 500, constructor_svg_wrap_lines('Текст письма или справки размещается в рабочей области ниже.', 46, 2), 'body', 34) .
+                constructor_svg_render_text(84, 1604, constructor_svg_wrap_lines((string) ($input['contact_line'] ?? ''), 58, 2), 'small', 26) .
+                constructor_svg_render_text(900, 1488, constructor_svg_wrap_lines((string) ($input['signer'] ?? ''), 26, 1), 'small', 24);
+            break;
+
+        case 'rollup':
+            $width = 1000;
+            $height = 2200;
+            $background = '#f8f4ee';
+            $body =
+                '<rect x="0" y="0" width="1000" height="620" class="accent"/>' .
+                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="88" y="82" width="220" height="143"/>' : '') .
+                constructor_svg_render_text(88, 760, constructor_svg_wrap_lines((string) ($input['headline'] ?? ''), 14, 4), 'headline', 96) .
+                constructor_svg_render_text(88, 1348, constructor_svg_wrap_lines((string) ($input['subline'] ?? ''), 28, 5), 'body', 38) .
+                '<rect x="88" y="1730" width="824" height="232" rx="34" class="card"/>' .
+                constructor_svg_render_text(132, 1818, constructor_svg_wrap_lines((string) ($input['event_name'] ?? ''), 28, 2), 'subhead', 40) .
+                constructor_svg_render_text(132, 1908, constructor_svg_wrap_lines((string) ($input['size_variant'] ?? ''), 28, 1), 'small', 28) .
+                constructor_svg_render_text(912, 2128, constructor_svg_wrap_lines($cityLabel, 16, 1), 'small', 24, 'end');
+            break;
+    }
+
+    if ($body === '') {
+        return null;
+    }
+
+    return [
+        'id' => 'preview-svg',
+        'label' => 'SVG-шаблон',
+        'mimeType' => 'image/svg+xml',
+        'filename' => constructor_filename_base($definition, $input) . '-' . $fileSuffix,
+        'content' => constructor_svg_document($width, $height, $body, $background),
+        'previewType' => 'svg',
+    ];
+}
+
+function constructor_result_summary(array $definition, array $input, array $recommendations, array $artifacts): array
+{
+    $cityLabel = constructor_city_label((string) ($input['city'] ?? ''));
+    $artifactLabels = array_values(array_filter(array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $artifacts)));
+    return [
+        'title' => (string) ($definition['label'] ?? 'Решение'),
+        'lead' => 'Каркас решения собран. Его можно использовать как стартовую заготовку и handoff-пакет для дизайнера или подрядчика.',
+        'bullets' => array_values(array_filter([
+            'Город / версия: ' . $cityLabel,
+            'Выход: ' . (string) ($definition['formatHint'] ?? ''),
+            $artifactLabels !== [] ? 'Артефакты: ' . implode(', ', array_slice($artifactLabels, 0, 3)) : '',
+            count($recommendations['items'] ?? []) > 0 ? 'Подобраны реальные файлы из каталога: ' . count($recommendations['items']) : '',
+        ])),
+    ];
+}
+
+function constructor_draft_summary(array $definition, array $input, array $recommendations): array
+{
+    $cityLabel = constructor_city_label((string) ($input['city'] ?? ''));
+    $sectionLabels = array_values(array_filter(array_map(static fn(array $item): string => (string) ($item['label'] ?? $item['name'] ?? ''), $recommendations['sections'] ?? [])));
+    return [
+        'title' => (string) ($definition['label'] ?? 'Решение'),
+        'lead' => 'Это стартовый каркас решения. Заполните поля и соберите пакет под конкретную задачу, подрядчика или внутреннюю команду.',
+        'bullets' => array_values(array_filter([
+            'Город / версия: ' . $cityLabel,
+            'Выход: ' . (string) ($definition['formatHint'] ?? ''),
+            $sectionLabels !== [] ? 'Под рукой уже подобраны разделы: ' . implode(', ', array_slice($sectionLabels, 0, 3)) : '',
+            count($recommendations['items'] ?? []) > 0 ? 'Есть реальные файлы для старта: ' . count($recommendations['items']) : '',
+        ])),
+    ];
+}
+
+function constructor_present_artifact(array $artifact): array
+{
+    $content = (string) ($artifact['content'] ?? '');
+    return [
+        'id' => (string) ($artifact['id'] ?? ''),
+        'label' => (string) ($artifact['label'] ?? ''),
+        'mimeType' => (string) ($artifact['mimeType'] ?? 'text/plain'),
+        'filename' => (string) ($artifact['filename'] ?? 'artifact.txt'),
+        'previewType' => (string) ($artifact['previewType'] ?? 'text'),
+        'sizeBytes' => strlen($content),
+        'content' => $content,
+    ];
 }
 
 function dedicated_examples_roots(): array
@@ -2889,10 +3973,242 @@ class SiteCatalogService
             ],
             'sections' => array_map(static fn(array $item): array => present_item($item), $this->getRootFolders()),
             'examples' => $this->getHeroExamples(),
+            'constructors' => constructor_bootstrap(),
             'consultant' => consultant_bootstrap($this->config),
             'favorites' => $this->getFavorites(),
             'topSearches' => array_map(static fn(array $row): array => ['query' => $row['sample_query'], 'uses' => (int) $row['uses']], $this->state->getTopSearches(8)),
         ];
+    }
+
+    private function constructorContext(array $definition, array $input): array
+    {
+        $query = constructor_query_value((string) ($definition['consultPrompt'] ?? ''), $input);
+        if ($query === '') {
+            $query = trim((string) ($definition['label'] ?? ''));
+        }
+        return build_consultant_context($query, '');
+    }
+
+    private function constructorKeywordSections(array $definition): array
+    {
+        $keywords = array_values(array_filter(array_map(
+            static fn($value): string => trim((string) $value),
+            $definition['sectionKeywords'] ?? []
+        )));
+        if ($keywords === []) {
+            return [];
+        }
+
+        $sections = [];
+        foreach ($this->getRootFolders() as $section) {
+            $source = normalize_text(implode(' ', [
+                (string) ($section['name'] ?? ''),
+                (string) ($section['label'] ?? ''),
+                (string) ($section['relative_path'] ?? ''),
+            ]));
+            $score = 0;
+            foreach ($keywords as $keyword) {
+                $normalizedKeyword = normalize_text($keyword);
+                if ($normalizedKeyword !== '' && str_contains($source, $normalizedKeyword)) {
+                    $score += 1;
+                }
+            }
+            if ($score <= 0) {
+                continue;
+            }
+            $section['__constructor_score'] = $score;
+            $sections[] = $section;
+        }
+
+        usort($sections, static function (array $left, array $right): int {
+            if (($right['__constructor_score'] ?? 0) !== ($left['__constructor_score'] ?? 0)) {
+                return ($right['__constructor_score'] ?? 0) <=> ($left['__constructor_score'] ?? 0);
+            }
+            return strnatcasecmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? ''));
+        });
+
+        foreach ($sections as &$section) {
+            unset($section['__constructor_score']);
+        }
+        unset($section);
+
+        return array_slice($sections, 0, 4);
+    }
+
+    private function constructorMergeSections(array ...$sectionGroups): array
+    {
+        $merged = [];
+        $seen = [];
+        foreach ($sectionGroups as $group) {
+            foreach ($group as $section) {
+                $id = (string) ($section['id'] ?? '');
+                if ($id === '' || isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                $merged[] = $section;
+                if (count($merged) >= 4) {
+                    break 2;
+                }
+            }
+        }
+        return $merged;
+    }
+
+    private function constructorQueries(array $definition, array $input): array
+    {
+        $queries = [];
+        $seen = [];
+        $add = static function (string $value) use (&$queries, &$seen): void {
+            $trimmed = trim($value);
+            $normalized = normalize_text($trimmed);
+            if ($trimmed === '' || $normalized === '' || isset($seen[$normalized])) {
+                return;
+            }
+            $seen[$normalized] = true;
+            $queries[] = $trimmed;
+        };
+
+        $add(constructor_query_value((string) ($definition['consultPrompt'] ?? ''), $input));
+        foreach (($definition['queries'] ?? []) as $queryTemplate) {
+            $add(constructor_query_value((string) $queryTemplate, $input));
+        }
+
+        return array_slice($queries, 0, 8);
+    }
+
+    private function constructorRecommendations(array $definition, array $input): array
+    {
+        $context = $this->constructorContext($definition, $input);
+        $queries = $this->constructorQueries($definition, $input);
+        $sections = $this->constructorMergeSections(
+            $this->selectConsultSections($context),
+            $this->constructorKeywordSections($definition)
+        );
+
+        $items = [];
+        $seen = [];
+        foreach ($queries as $query) {
+            $payload = $this->search($query, false, false);
+            foreach (($payload['items'] ?? []) as $item) {
+                $id = (string) ($item['id'] ?? '');
+                if ($id === '' || isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                $items[] = $item;
+                if (count($items) >= 20) {
+                    break 2;
+                }
+            }
+        }
+
+        foreach ($this->collectSectionStarterItems($sections) as $item) {
+            $id = (string) ($item['id'] ?? '');
+            if ($id === '' || isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            $items[] = $item;
+            if (count($items) >= 28) {
+                break;
+            }
+        }
+
+        $filtered = $this->filterConsultItemsBySections($items, $sections);
+        $scored = [];
+        foreach ($filtered as $item) {
+            $item['__constructor_score'] = $this->scoreConsultItem($item, $context, $sections);
+            $scored[] = $item;
+        }
+
+        usort($scored, static function (array $left, array $right): int {
+            if (($right['__constructor_score'] ?? 0) !== ($left['__constructor_score'] ?? 0)) {
+                return ($right['__constructor_score'] ?? 0) <=> ($left['__constructor_score'] ?? 0);
+            }
+            return strnatcasecmp((string) ($left['relativePath'] ?? ''), (string) ($right['relativePath'] ?? ''));
+        });
+
+        $pool = array_values(array_filter($scored, static fn(array $item): bool => (int) ($item['__constructor_score'] ?? 0) > 0));
+        if ($pool === []) {
+            $pool = $scored;
+        }
+
+        $recommendedItems = [];
+        foreach (array_slice($pool, 0, 4) as $item) {
+            unset($item['__constructor_score']);
+            $recommendedItems[] = $item;
+        }
+
+        return [
+            'query' => (string) ($queries[0] ?? ''),
+            'queries' => $queries,
+            'context' => [
+                'intentId' => (string) (($context['intent']['id'] ?? '')),
+                'city' => (string) ($context['city'] ?? ''),
+                'formats' => array_values($context['formats'] ?? []),
+                'medium' => (string) ($context['medium'] ?? ''),
+                'sourceMode' => (string) ($context['sourceMode'] ?? ''),
+                'applicationFocus' => (string) ($context['applicationFocus'] ?? ''),
+            ],
+            'sections' => array_map(static fn(array $item): array => present_item($item), $sections),
+            'items' => $recommendedItems,
+            'advice' => consultant_brandbook_advice($context, $sections),
+        ];
+    }
+
+    private function constructorArtifacts(array $definition, array $input, array $recommendations): array
+    {
+        $artifacts = [];
+        $svg = constructor_svg_artifact($definition, $input);
+        if ($svg !== null) {
+            $artifacts[] = $svg;
+        }
+
+        if ((string) ($definition['artifactKind'] ?? '') === 'brief') {
+            $artifacts[] = constructor_html_brief_artifact($definition, $input, $recommendations);
+        }
+
+        $artifacts[] = constructor_json_brief_artifact($definition, $input, $recommendations);
+        return $artifacts;
+    }
+
+    private function constructorResponsePayload(array $definition, array $input, bool $generated): array
+    {
+        $normalizedInput = constructor_normalize_input($definition, $input);
+        $recommendations = $this->constructorRecommendations($definition, $normalizedInput);
+        $artifacts = $this->constructorArtifacts($definition, $normalizedInput, $recommendations);
+
+        return [
+            'generated' => $generated,
+            'definition' => constructor_present_definition($definition),
+            'input' => $normalizedInput,
+            'summary' => $generated
+                ? constructor_result_summary($definition, $normalizedInput, $recommendations, $artifacts)
+                : constructor_draft_summary($definition, $normalizedInput, $recommendations),
+            'recommendations' => $recommendations,
+            'artifacts' => array_map(static fn(array $artifact): array => constructor_present_artifact($artifact), $artifacts),
+        ];
+    }
+
+    public function getConstructor(string $constructorId): ?array
+    {
+        $definition = constructor_definition_by_id($constructorId);
+        if ($definition === null) {
+            return null;
+        }
+
+        return $this->constructorResponsePayload($definition, constructor_default_input($definition), false);
+    }
+
+    public function buildConstructor(string $constructorId, array $input = []): ?array
+    {
+        $definition = constructor_definition_by_id($constructorId);
+        if ($definition === null) {
+            return null;
+        }
+
+        return $this->constructorResponsePayload($definition, $input, true);
     }
 
     private function consultSearchQueries(array $context): array

@@ -1,7 +1,7 @@
-const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file'];
+const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution'];
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
-const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip']);
+const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
   { id: 'brandbook', label: 'Нужен брендбук', summary: 'Брендбуки', description: 'Брендбук региона или города.', prompt: 'брендбук Салехард' },
@@ -17,25 +17,42 @@ function clampRoutePage(value) {
 }
 
 function normalizeRoute(route) {
-  const view = route?.view === 'folder' ? 'folder' : route?.view === 'search' ? 'search' : 'root';
+  const view = route?.view === 'folder'
+    ? 'folder'
+    : route?.view === 'search'
+      ? 'search'
+      : route?.view === 'constructor'
+        ? 'constructor'
+        : 'root';
   const folderId = String(route?.folderId || route?.id || '').trim();
   const query = String(route?.query || route?.q || '').trim();
   const fileId = String(route?.fileId || route?.file || '').trim();
+  const solutionId = String(route?.solutionId || route?.solution || '').trim();
   const page = clampRoutePage(route?.page);
 
   if (view === 'folder' && folderId) {
-    return { view, folderId, query: '', page, fileId };
+    return { view, folderId, query: '', page, fileId, solutionId: '' };
   }
   if (view === 'search' && query) {
-    return { view, folderId: '', query, page: 0, fileId };
+    return { view, folderId: '', query, page: 0, fileId, solutionId: '' };
   }
-  return { view: 'root', folderId: '', query: '', page: 0, fileId };
+  if (view === 'constructor' && solutionId) {
+    return { view, folderId: '', query: '', page: 0, fileId, solutionId };
+  }
+  return { view: 'root', folderId: '', query: '', page: 0, fileId, solutionId: '' };
 }
 
 function routeFromUrl(inputUrl) {
   const url = new URL(String(inputUrl || 'http://localhost/'), 'http://localhost');
   const params = url.searchParams;
   const view = params.get('view');
+  if (view === 'constructor' || params.get('solution')) {
+    return normalizeRoute({
+      view: 'constructor',
+      solutionId: params.get('solution') || '',
+      fileId: params.get('file') || '',
+    });
+  }
   if (view === 'folder' || params.get('folder')) {
     return normalizeRoute({
       view: 'folder',
@@ -71,6 +88,9 @@ function buildRouteUrl(inputUrl, route) {
   } else if (normalized.view === 'search') {
     url.searchParams.set('view', 'search');
     url.searchParams.set('q', normalized.query);
+  } else if (normalized.view === 'constructor') {
+    url.searchParams.set('view', 'constructor');
+    url.searchParams.set('solution', normalized.solutionId);
   }
 
   if (normalized.fileId) {
@@ -166,6 +186,45 @@ function buildBrandRoutesSummary(sections, activeRouteId = '') {
     available: cards.length,
     activeLabel: activeCard ? activeCard.label : '',
   };
+}
+
+function normalizeConstructorSolutions(payload) {
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  return items
+    .map((item) => ({
+      id: String(item?.id || '').trim(),
+      label: String(item?.label || '').trim(),
+      summary: String(item?.summary || '').trim(),
+      description: String(item?.description || '').trim(),
+      icon: String(item?.icon || '▣').trim() || '▣',
+      category: String(item?.category || '').trim(),
+      formatHint: String(item?.formatHint || '').trim(),
+      artifactKind: String(item?.artifactKind || '').trim(),
+    }))
+    .filter((item) => item.id && item.label);
+}
+
+function formatDataSize(value) {
+  const size = Number(value || 0);
+  if (!Number.isFinite(size) || size <= 0) {
+    return '0 Б';
+  }
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1)} МБ`;
+  }
+  if (size >= 1024) {
+    return `${(size / 1024).toFixed(size >= 10 * 1024 ? 0 : 1)} КБ`;
+  }
+  return `${Math.round(size)} Б`;
+}
+
+function pickConstructorPreviewArtifact(artifacts) {
+  const normalized = Array.isArray(artifacts) ? artifacts : [];
+  return normalized.find((artifact) => artifact?.previewType === 'svg')
+    || normalized.find((artifact) => artifact?.previewType === 'html')
+    || normalized.find((artifact) => artifact?.previewType === 'json')
+    || normalized[0]
+    || null;
 }
 
 function computeRevealScrollLeft({
@@ -447,6 +506,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     brandRoutesToggleMeta: document.querySelector('#brand-routes-toggle-meta'),
     brandRoutesCaption: document.querySelector('#brand-routes-caption'),
     brandRoutesCurrent: document.querySelector('#brand-routes-current'),
+    solutionLab: document.querySelector('#solution-lab'),
+    solutionLabTitle: document.querySelector('#solution-lab-title'),
+    solutionLabCopy: document.querySelector('#solution-lab-copy'),
+    solutionLabGrid: document.querySelector('#solution-lab-grid'),
     setupBanner: document.querySelector('#setup-banner'),
     topSearches: document.querySelector('#top-searches'),
     contentMode: document.querySelector('#content-mode'),
@@ -521,6 +584,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return normalizeRoute({
         view: 'search',
         query: state.current.payload?.query || '',
+        fileId: state.inspectorOpen ? state.detail?.id : '',
+      });
+    }
+    if (state.current?.kind === 'constructor') {
+      return normalizeRoute({
+        view: 'constructor',
+        solutionId: state.current.payload?.definition?.id || '',
         fileId: state.inspectorOpen ? state.detail?.id : '',
       });
     }
@@ -648,7 +718,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       ensureWorkspaceVisible();
     }
 
-    if (route.view === 'folder' && route.folderId) {
+    if (route.view === 'constructor' && route.solutionId) {
+      await openConstructor(route.solutionId, { history: 'none' });
+    } else if (route.view === 'folder' && route.folderId) {
       await openFolder(route.folderId, route.page, { history: 'none' });
     } else if (route.view === 'search' && route.query) {
       await search(route.query, { history: 'none' });
@@ -1069,10 +1141,22 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return url.toString();
   }
 
-  async function api(action, params) {
-    const response = await fetch(actionUrl(action, params), {
+  async function api(action, params, options = {}) {
+    const method = String(options.method || 'GET').toUpperCase();
+    const fetchOptions = {
+      method,
       headers: { Accept: 'application/json' },
-    });
+    };
+    let requestUrl = actionUrl(action, method === 'GET' ? params : {});
+
+    if (method !== 'GET') {
+      fetchOptions.headers['Content-Type'] = 'application/json; charset=utf-8';
+      fetchOptions.body = JSON.stringify(params || {});
+    } else {
+      requestUrl = actionUrl(action, params);
+    }
+
+    const response = await fetch(requestUrl, fetchOptions);
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(payload.error || `HTTP ${response.status}`);
@@ -1754,6 +1838,265 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `).join('');
   }
 
+  function renderSolutionLab(bootstrap) {
+    if (!els.solutionLabGrid || !els.solutionLab) {
+      return;
+    }
+    const config = bootstrap?.constructors || {};
+    const items = normalizeConstructorSolutions(config);
+    if (els.solutionLabTitle) {
+      els.solutionLabTitle.textContent = String(config.title || 'Лаборатория решений').trim() || 'Лаборатория решений';
+    }
+    if (els.solutionLabCopy) {
+      els.solutionLabCopy.textContent = String(config.description || 'Готовые каркасы для типовых бренд-носителей.').trim()
+        || 'Готовые каркасы для типовых бренд-носителей.';
+    }
+    els.solutionLab.hidden = !items.length;
+    if (!items.length) {
+      els.solutionLabGrid.innerHTML = '';
+      return;
+    }
+    els.solutionLabGrid.innerHTML = items.map((item) => `
+      <article class="solution-card">
+        <div class="solution-card-head">
+          <span class="solution-card-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+          <div class="solution-card-copy">
+            <span class="card-kicker">${escapeHtml(item.category || 'Решение')}</span>
+            <strong>${escapeHtml(item.label)}</strong>
+            <p>${escapeHtml(item.summary || item.description)}</p>
+          </div>
+        </div>
+        <div class="item-meta">
+          ${item.formatHint ? `<span class="meta-pill">${escapeHtml(item.formatHint)}</span>` : ''}
+          ${item.artifactKind ? `<span class="meta-pill">${escapeHtml(item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон')}</span>` : ''}
+        </div>
+        <p class="solution-card-note">${escapeHtml(item.description || item.summary)}</p>
+        <div class="item-actions">
+          <button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(item.id)}">Открыть конструктор</button>
+        </div>
+      </article>
+    `).join('');
+  }
+
+  function renderConstructorField(field, value) {
+    const fieldId = String(field?.id || '').trim();
+    if (!fieldId) {
+      return '';
+    }
+    const fieldType = String(field?.type || 'text').trim() || 'text';
+    const label = String(field?.label || fieldId).trim();
+    const placeholder = String(field?.placeholder || '').trim();
+    const required = Boolean(field?.required);
+    const currentValue = value ?? field?.default ?? '';
+    const baseAttrs = [
+      `id="constructor-field-${escapeHtml(fieldId)}"`,
+      `name="${escapeHtml(fieldId)}"`,
+      placeholder ? `placeholder="${escapeHtml(placeholder)}"` : '',
+      required ? 'required' : '',
+    ].filter(Boolean).join(' ');
+
+    let control = '';
+    if (fieldType === 'textarea') {
+      const rows = Math.max(2, Number.parseInt(field?.rows || '3', 10) || 3);
+      control = `<textarea ${baseAttrs} rows="${rows}">${escapeHtml(currentValue)}</textarea>`;
+    } else if (fieldType === 'select') {
+      const options = Array.isArray(field?.options) ? field.options : [];
+      control = `
+        <select ${baseAttrs}>
+          ${options.map((option) => `
+            <option value="${escapeHtml(option?.value || '')}"${String(option?.value || '') === String(currentValue) ? ' selected' : ''}>
+              ${escapeHtml(option?.label || option?.value || '')}
+            </option>
+          `).join('')}
+        </select>
+      `;
+    } else {
+      const inputType = ['email', 'date', 'number'].includes(fieldType) ? fieldType : 'text';
+      const numericAttrs = inputType === 'number'
+        ? `${field?.min !== null && field?.min !== undefined ? ` min="${escapeHtml(field.min)}"` : ''}${field?.max !== null && field?.max !== undefined ? ` max="${escapeHtml(field.max)}"` : ''}`
+        : '';
+      control = `<input type="${escapeHtml(inputType)}" value="${escapeHtml(currentValue)}" ${baseAttrs}${numericAttrs} />`;
+    }
+
+    return `
+      <label class="constructor-field" for="constructor-field-${escapeHtml(fieldId)}">
+        <span class="constructor-field-label">${escapeHtml(label)}${required ? ' *' : ''}</span>
+        ${control}
+      </label>
+    `;
+  }
+
+  function buildConstructorPreviewMarkup(artifact) {
+    if (!artifact) {
+      return `
+        <div class="constructor-preview-empty">
+          <strong>Превью появится здесь</strong>
+          <span>Соберите решение, и справа появится визуальный каркас или бриф.</span>
+        </div>
+      `;
+    }
+    if (artifact.previewType === 'svg') {
+      return `<div class="constructor-preview-visual">${artifact.content || ''}</div>`;
+    }
+    if (artifact.previewType === 'html') {
+      return `<iframe class="constructor-preview-frame" title="${escapeHtml(artifact.label || 'Превью')}" srcdoc="${escapeHtml(artifact.content || '')}"></iframe>`;
+    }
+    return `<pre class="constructor-preview-code">${escapeHtml(artifact.content || '')}</pre>`;
+  }
+
+  function renderConstructorRecommendations(recommendations) {
+    const sections = Array.isArray(recommendations?.sections) ? recommendations.sections : [];
+    const items = Array.isArray(recommendations?.items) ? recommendations.items : [];
+    const advice = recommendations?.advice || {};
+    return `
+      <div class="constructor-support-grid">
+        <section class="constructor-support-card">
+          <div class="constructor-support-head">
+            <strong>Разделы каталога</strong>
+            <span>Куда идти за исходниками и правилами.</span>
+          </div>
+          <div class="constructor-mini-grid">
+            ${sections.length ? sections.map((section) => `
+              <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
+                <span class="constructor-mini-icon" aria-hidden="true">${escapeHtml(section.icon || '📁')}</span>
+                <span class="constructor-mini-copy">
+                  <strong>${escapeHtml(section.label || section.name || 'Раздел')}</strong>
+                  <small>${escapeHtml(section.kindLabel || 'Раздел')}</small>
+                </span>
+              </button>
+            `).join('') : '<p class="detail-empty">Подходящие разделы появятся после загрузки каталога.</p>'}
+          </div>
+        </section>
+        <section class="constructor-support-card">
+          <div class="constructor-support-head">
+            <strong>Файлы для старта</strong>
+            <span>Реальные материалы из каталога под этот носитель.</span>
+          </div>
+          <div class="constructor-file-list">
+            ${items.length ? items.map((item) => `
+              <article class="constructor-file-card">
+                <div class="constructor-file-copy">
+                  <strong>${escapeHtml(item.label || item.name || 'Файл')}</strong>
+                  <small>${escapeHtml(item.relativePath || item.kindLabel || '')}</small>
+                </div>
+                <div class="constructor-file-actions">
+                  <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
+                  <a class="link-button" href="${escapeHtml(item.downloadUrl || '#')}">Скачать</a>
+                </div>
+              </article>
+            `).join('') : '<p class="detail-empty">Реальные файлы будут подобраны после индексации каталога.</p>'}
+          </div>
+        </section>
+        <section class="constructor-support-card constructor-support-advice">
+          <div class="constructor-support-head">
+            <strong>По брендбуку</strong>
+            <span>Grounded-подсказка перед handoff в дизайн или печать.</span>
+          </div>
+          <div class="constructor-advice-copy">
+            ${advice?.title ? `<strong>${escapeHtml(advice.title)}</strong>` : ''}
+            ${advice?.summary ? `<p>${escapeHtml(advice.summary)}</p>` : '<p>Откройте брендбук и логотипы, затем заберите нужный формат под задачу.</p>'}
+            ${Array.isArray(advice?.bullets) && advice.bullets.length ? `
+              <ul class="constructor-summary-list">
+                ${advice.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+              </ul>
+            ` : ''}
+            ${advice?.nextStep ? `<p class="constructor-next-step">${escapeHtml(advice.nextStep)}</p>` : ''}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function renderConstructor(payload) {
+    const definition = payload?.definition || {};
+    const fields = Array.isArray(definition?.fields) ? definition.fields : [];
+    const input = payload?.input || {};
+    const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
+    const previewArtifact = pickConstructorPreviewArtifact(artifacts);
+    const summary = payload?.summary || {};
+
+    state.current = { kind: 'constructor', payload };
+    state.detail = null;
+    els.contentMode.textContent = 'Конструктор';
+    els.contentTitle.textContent = definition.label || 'Лаборатория решений';
+    els.contentHint.textContent = summary.lead || definition.description || 'Соберите шаблон под реальную задачу.';
+    renderSectionSwitcher('');
+    els.breadcrumbs.innerHTML = `
+      <span class="breadcrumb current">Лаборатория решений</span>
+      <span class="breadcrumb-sep">•</span>
+      <span class="breadcrumb current">${escapeHtml(definition.label || 'Решение')}</span>
+    `;
+    els.pagination.innerHTML = '';
+    els.contentItems.innerHTML = `
+      <div class="constructor-shell">
+        <section class="constructor-hero">
+          <div class="constructor-hero-copy">
+            <span class="card-kicker">${escapeHtml(definition.category || 'Решение')}</span>
+            <h3>${escapeHtml(definition.label || 'Решение')}</h3>
+            <p>${escapeHtml(definition.description || definition.summary || 'Готовый каркас носителя с привязкой к каталогу и брендбуку.')}</p>
+          </div>
+          <div class="item-meta">
+            ${definition.formatHint ? `<span class="meta-pill">${escapeHtml(definition.formatHint)}</span>` : ''}
+            <span class="meta-pill">${escapeHtml(payload?.generated ? 'Пакет собран' : 'Черновик')}</span>
+            ${previewArtifact?.label ? `<span class="meta-pill">${escapeHtml(previewArtifact.label)}</span>` : ''}
+          </div>
+        </section>
+
+        <div class="constructor-layout">
+          <section class="constructor-panel constructor-form-panel">
+            <div class="constructor-panel-head">
+              <strong>Поля решения</strong>
+              <span>Заполните минимальные данные и соберите пакет.</span>
+            </div>
+            <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
+              <div class="constructor-field-grid">
+                ${fields.map((field) => renderConstructorField(field, input[field.id])).join('')}
+              </div>
+              <div class="constructor-form-actions">
+                <button type="submit" class="accent-button">Собрать решение</button>
+                <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="constructor-panel constructor-preview-panel">
+            <div class="constructor-panel-head">
+              <strong>Превью и файлы</strong>
+              <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или бриф')}</span>
+            </div>
+            <div class="constructor-preview-stage">
+              ${buildConstructorPreviewMarkup(previewArtifact)}
+            </div>
+            <div class="constructor-downloads">
+              ${artifacts.map((artifact) => `
+                <button type="button" class="constructor-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
+                  <strong>${escapeHtml(artifact.label || 'Артефакт')}</strong>
+                  <span>${escapeHtml(artifact.filename || '')}</span>
+                  <small>${escapeHtml(formatDataSize(artifact.sizeBytes))}</small>
+                </button>
+              `).join('')}
+            </div>
+          </section>
+        </div>
+
+        <section class="constructor-panel constructor-summary-panel">
+          <div class="constructor-panel-head">
+            <strong>${escapeHtml(summary.title || 'Результат')}</strong>
+            <span>${escapeHtml(summary.lead || 'Готовый стартовый пакет для handoff.')}</span>
+          </div>
+          ${Array.isArray(summary?.bullets) && summary.bullets.length ? `
+            <ul class="constructor-summary-list">
+              ${summary.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </section>
+
+        ${renderConstructorRecommendations(payload?.recommendations)}
+      </div>
+    `;
+    setDocumentTitle(definition.label || 'Лаборатория решений');
+  }
+
   function renderSectionSwitcher(mode = '') {
     if (!els.sectionSwitcher) {
       return;
@@ -2004,15 +2347,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     state.detail = null;
     els.contentMode.textContent = 'Меню';
     els.contentTitle.textContent = 'Выберите раздел';
-    els.contentHint.textContent = 'Основной вход в материалы теперь находится в верхнем меню. Поиск тоже откроет рабочую область автоматически.';
+    els.contentHint.textContent = 'Основной вход в материалы находится в верхнем меню, а готовые шаблоны носителей — в лаборатории решений ниже.';
     renderSectionSwitcher('');
     els.breadcrumbs.innerHTML = '';
     els.contentItems.innerHTML = `
       <div class="empty-state">
         <div class="empty-mark" aria-hidden="true">↗</div>
         <div>
-          <h3>Главное меню наверху</h3>
-          <p class="detail-empty">Откройте раздел каталога в верхнем блоке или воспользуйтесь поиском.</p>
+          <h3>Главное меню и лаборатория решений наверху</h3>
+          <p class="detail-empty">Откройте раздел каталога, воспользуйтесь поиском или запустите конструктор типового носителя.</p>
         </div>
       </div>
     `;
@@ -2029,6 +2372,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     state.exampleTab = (payload.examples && Array.isArray(payload.examples.good) && payload.examples.good.length) ? 'good' : 'debate';
     renderHeroExamples();
     renderBrandRoutes(payload);
+    renderSolutionLab(payload);
     renderTopSearches(payload.topSearches || []);
     renderConsultantHome();
   }
@@ -2110,6 +2454,53 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
   }
 
+  async function openConstructor(id, options = {}) {
+    const constructorId = String(id || '').trim();
+    if (!constructorId) {
+      await openRoot(options);
+      return;
+    }
+    setLoading('Открываю конструктор', 'Поднимаю поля, рекомендации и стартовый каркас решения.');
+    setInspectorOpen(false);
+    setActiveRoute('');
+    renderDetailPlaceholder();
+    const payload = await api('constructor', { id: constructorId });
+    renderConstructor(payload);
+    if (options.history !== 'none') {
+      syncRouteWithState(options.history || 'push');
+    }
+  }
+
+  async function buildConstructor(id, input) {
+    const constructorId = String(id || '').trim();
+    if (!constructorId) {
+      return;
+    }
+    setLoading('Собираю решение', 'Генерирую стартовый пакет и подтягиваю реальные материалы каталога.');
+    const payload = await api('construct', { id: constructorId, input }, { method: 'POST' });
+    renderConstructor(payload);
+    syncRouteWithState('replace');
+  }
+
+  function currentConstructorArtifacts() {
+    return Array.isArray(state.current?.payload?.artifacts) ? state.current.payload.artifacts : [];
+  }
+
+  function downloadArtifact(artifact) {
+    if (!artifact || !artifact.content) {
+      return;
+    }
+    const blob = new Blob([artifact.content], { type: artifact.mimeType || 'application/octet-stream' });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = artifact.filename || 'artifact';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  }
+
   function goBack() {
     if (state.current && state.current.kind === 'folder') {
       const crumbs = state.current.payload.breadcrumbs || [];
@@ -2183,6 +2574,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       void runConsultant(nextQuery, '');
       return;
     }
+    if (action === 'download-artifact') {
+      const artifact = currentConstructorArtifacts().find((item) => String(item?.id || '') === String(target.dataset.artifactId || ''));
+      if (artifact) {
+        downloadArtifact(artifact);
+      }
+      return;
+    }
     if (isWorkspaceNavigationAction(action)) {
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
@@ -2193,6 +2591,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (action === 'open-folder') openFolder(target.dataset.id, 0);
     if (action === 'open-folder-page') openFolder(target.dataset.id, Number.parseInt(target.dataset.page || '0', 10));
     if (action === 'open-file') openFile(target.dataset.id);
+    if (action === 'open-constructor') openConstructor(target.dataset.id);
     if (action === 'search-chip') {
       els.searchInput.value = target.dataset.query || '';
       search(target.dataset.query || '');
@@ -2215,6 +2614,23 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       void runConsultant(els.consultantInput?.value.trim() || '', '');
     });
   }
+
+  document.addEventListener('submit', (event) => {
+    const form = event.target.closest('#constructor-form');
+    if (!form) {
+      return;
+    }
+    event.preventDefault();
+    const constructorId = String(form.dataset.constructorId || '').trim();
+    if (!constructorId) {
+      return;
+    }
+    const input = {};
+    new FormData(form).forEach((value, key) => {
+      input[key] = String(value);
+    });
+    void buildConstructor(constructorId, input);
+  });
 
   document.addEventListener('keydown', (event) => {
     const targetTag = String(event.target?.tagName || '').toLowerCase();

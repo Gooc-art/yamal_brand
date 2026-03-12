@@ -48,6 +48,9 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, "asset_url(
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-routes'), 'index contains brand routes scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'search-panel'), 'index contains compact search panel');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Главное меню'), 'index contains unified main menu heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab'), 'index contains solution lab scaffold');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Лаборатория решений'), 'index contains solution lab heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Каталог и решения'), 'index updates workspace heading for catalog and constructor');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Скрыть витрину'), 'index contains hide showcase action label');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-stats'), 'index removed hero stats scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-briefing'), 'index removed hero briefing grid');
@@ -115,6 +118,12 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'white-sp
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.detail-facts'), 'styles removed detail fact tiles');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-kicker'), 'styles contain list card kicker classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-context'), 'styles contain list card context classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-lab-grid'), 'styles contain solution lab grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage'), 'styles contain constructor preview stage classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-download-card'), 'styles contain constructor artifact download classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-grid'), 'styles contain constructor recommendation grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-auto-flow: column'), 'styles contain horizontal rail flow');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
@@ -137,6 +146,11 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-s
 
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSolutionLab'), 'frontend contains solution lab renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'openConstructor'), 'frontend contains constructor opener');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructor('), 'frontend contains constructor build action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'download-artifact'), 'frontend contains constructor artifact download action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-form'), 'frontend renders constructor form');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildBrandRouteMark'), 'frontend derives route marks from real catalog sections');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'inferBrandRouteTone'), 'frontend derives route tones from real catalog sections');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildBrandRouteHint'), 'frontend derives compact route hints from real catalog sections');
@@ -208,6 +222,9 @@ assert_true($downloadTemplate !== false && str_contains($downloadTemplate, 'inli
 
 $apiTemplate = file_get_contents(dirname(__DIR__) . '/api.php');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'consult'"), 'api exposes consult action');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'constructor'"), 'api exposes constructor action');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'construct'"), 'api exposes construct action');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, 'invalid_json'), 'api validates constructor json body');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_intent'), 'api accepts consultant memory parameters');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_focus'), 'api accepts consultant memory focus parameter');
 
@@ -434,6 +451,16 @@ assert_true(($bootstrap['consultant']['placeholder'] ?? '') === 'Наприме�
 assert_true(count($bootstrap['consultant']['intents'] ?? []) >= 6, 'bootstrap exposes consultant scenarios');
 assert_true(array_key_exists('smartMode', $bootstrap['consultant'] ?? []), 'bootstrap exposes consultant smart mode metadata');
 assert_true(is_bool($bootstrap['consultant']['smartMode']['enabled'] ?? null), 'bootstrap smart mode flag is boolean');
+assert_true(($bootstrap['constructors']['title'] ?? '') === 'Лаборатория решений', 'bootstrap exposes solution lab title');
+assert_true(count($bootstrap['constructors']['items'] ?? []) >= 8, 'bootstrap exposes constructor cards');
+assert_true(
+    array_reduce(
+        $bootstrap['constructors']['items'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['id'] ?? '') === 'business_card' && (string) ($item['label'] ?? '') === 'Визитка'),
+        false
+    ),
+    'bootstrap exposes business card constructor'
+);
 assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');
 assert_true(($bootstrap['examples']['good'][0]['relativePath'] ?? '') === 'Примеры внедрения бренда территории/Хорошие примеры/Автобус на маршруте.png', 'dedicated good examples are prioritized');
@@ -462,6 +489,50 @@ assert_true(
     ),
     'root menu shortens examples section label'
 );
+
+$constructorDraft = $service->getConstructor('business_card');
+assert_true($constructorDraft !== null, 'constructor draft exists');
+assert_true(($constructorDraft['generated'] ?? null) === false, 'constructor draft is not marked as generated');
+assert_true(($constructorDraft['definition']['id'] ?? '') === 'business_card', 'constructor draft exposes definition id');
+assert_true(($constructorDraft['input']['city'] ?? '') === 'ямал', 'constructor draft exposes normalized default city');
+assert_true(count($constructorDraft['artifacts'] ?? []) >= 2, 'constructor draft exposes starter artifacts');
+assert_true(
+    array_reduce(
+        $constructorDraft['recommendations']['sections'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || in_array((string) ($item['name'] ?? ''), ['Логотип', 'Брендбук ЯМАЛ Мастер бренд'], true),
+        false
+    ),
+    'constructor draft exposes grounded recommended sections'
+);
+
+$constructorBuild = $service->buildConstructor('presentation_deck', [
+    'city' => 'салехард',
+    'title' => 'Инвестиционный сезон Ямала',
+    'speaker' => 'Имя Фамилия',
+    'speaker_role' => 'Руководитель проекта',
+    'audience' => 'Партнёры',
+    'slide_count' => '18',
+]);
+assert_true($constructorBuild !== null, 'constructor build exists');
+assert_true(($constructorBuild['generated'] ?? null) === true, 'constructor build is marked as generated');
+assert_true(($constructorBuild['input']['slide_count'] ?? 0) === 18, 'constructor build normalizes numeric input');
+assert_true(
+    array_reduce(
+        $constructorBuild['artifacts'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['previewType'] ?? '') === 'html'),
+        false
+    ),
+    'presentation constructor build exposes html brief artifact'
+);
+assert_true(
+    array_reduce(
+        $constructorBuild['recommendations']['items'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || in_array((string) ($item['id'] ?? ''), ['salekhard-brandbook-file', 'salekhard-city-logo'], true),
+        false
+    ),
+    'presentation constructor build exposes grounded city-aware files'
+);
+assert_true(str_contains((string) ($constructorBuild['summary']['lead'] ?? ''), 'Каркас решения собран'), 'constructor build exposes generated summary');
 
 $folder = $service->getFolder('logo', 0);
 assert_true($folder !== null, 'logo folder exists');

@@ -100,12 +100,23 @@ $config = site_config();
         </div>
       </section>
 
+      <section id="solution-lab" class="surface solution-lab-block">
+        <div class="block-head solution-lab-head">
+          <div>
+            <p class="eyebrow">Конструктор</p>
+            <h2 id="solution-lab-title">Лаборатория решений</h2>
+            <p id="solution-lab-copy" class="solution-lab-copy">Готовые каркасы для типовых носителей: визиток, табличек, бейджей, сертификатов, digital-карточек, бланков, роллапов и презентаций.</p>
+          </div>
+        </div>
+        <div id="solution-lab-grid" class="solution-lab-grid"></div>
+      </section>
+
       <section id="workspace-shell" class="workspace-shell collapsed" hidden>
         <div class="surface workspace-header">
           <div>
             <p class="eyebrow">Рабочая область</p>
-            <h2>Материалы раздела</h2>
-            <p id="workspace-copy" class="workspace-copy">Рабочая область скрыта. Она откроется автоматически после выбора раздела или поиска.</p>
+            <h2>Каталог и решения</h2>
+            <p id="workspace-copy" class="workspace-copy">Рабочая область скрыта. Она откроется автоматически после выбора раздела, поиска или запуска конструктора.</p>
           </div>
           <div class="workspace-actions">
             <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Скрыть витрину</button>

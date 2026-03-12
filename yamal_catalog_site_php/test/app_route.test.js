@@ -28,6 +28,7 @@ test('normalizeRoute keeps only valid folder routes', () => {
     query: '',
     page: 2,
     fileId: 'file1',
+    solutionId: '',
   });
 
   assert.deepEqual(normalizeRoute({ view: 'folder', folderId: '', page: '-4', fileId: 'file1' }), {
@@ -36,6 +37,7 @@ test('normalizeRoute keeps only valid folder routes', () => {
     query: '',
     page: 0,
     fileId: 'file1',
+    solutionId: '',
   });
 });
 
@@ -48,6 +50,21 @@ test('routeFromUrl parses search and file state from query string', () => {
       query: 'логотип',
       page: 0,
       fileId: 'file42',
+      solutionId: '',
+    },
+  );
+});
+
+test('routeFromUrl parses constructor state from query string', () => {
+  assert.deepEqual(
+    routeFromUrl('https://brand.yamal/?view=constructor&solution=business_card&file=file7'),
+    {
+      view: 'constructor',
+      folderId: '',
+      query: '',
+      page: 0,
+      fileId: 'file7',
+      solutionId: 'business_card',
     },
   );
 });
@@ -70,6 +87,17 @@ test('buildRouteUrl removes stale route params for root state', () => {
       view: 'root',
     }),
     'https://brand.yamal/catalog/?utm=1',
+  );
+});
+
+test('buildRouteUrl serializes constructor route and keeps file overlay', () => {
+  assert.equal(
+    buildRouteUrl('https://brand.yamal/catalog/?utm=1', {
+      view: 'constructor',
+      solutionId: 'rollup',
+      fileId: 'file5',
+    }),
+    'https://brand.yamal/catalog/?utm=1&view=constructor&solution=rollup&file=file5',
   );
 });
 
@@ -116,6 +144,7 @@ test('isWorkspaceNavigationAction keeps assistant navigation logic explicit', ()
   assert.equal(isWorkspaceNavigationAction('open-folder'), true);
   assert.equal(isWorkspaceNavigationAction('open-folder-page'), true);
   assert.equal(isWorkspaceNavigationAction('open-file'), true);
+  assert.equal(isWorkspaceNavigationAction('open-constructor'), true);
   assert.equal(isWorkspaceNavigationAction('search-chip'), true);
   assert.equal(isWorkspaceNavigationAction('toggle-consultant'), false);
 });
