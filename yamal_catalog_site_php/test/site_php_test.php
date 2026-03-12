@@ -123,6 +123,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.card-co
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-lab-grid'), 'styles contain solution lab grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-lab-toolbar'), 'styles contain solution lab toolbar classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-filter-chip.active'), 'styles contain active solution filter classes');
+assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.solution-filter-chip small'), 'styles removed solution filter counters');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
@@ -160,6 +161,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buil
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'groupConstructorFields'), 'frontend contains constructor field grouping helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, "item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон'"), 'frontend removed verbose solution artifact pills');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'openConstructor'), 'frontend contains constructor opener');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructor('), 'frontend contains constructor build action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'reset-constructor'), 'frontend contains constructor reset action');

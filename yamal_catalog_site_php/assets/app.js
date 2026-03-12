@@ -2029,12 +2029,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           ${filter.active ? 'aria-pressed="true"' : 'aria-pressed="false"'}
         >
           <span>${escapeHtml(filter.label)}</span>
-          <small>${escapeHtml(String(filter.count))}</small>
         </button>
       `).join('');
     }
     if (els.solutionLabMeta) {
-      els.solutionLabMeta.textContent = `${formatNumber(visibleItems.length)} шаблон${visibleItems.length === 1 ? '' : visibleItems.length >= 2 && visibleItems.length <= 4 ? 'а' : 'ов'}`;
+      els.solutionLabMeta.textContent = '';
+      els.solutionLabMeta.hidden = true;
     }
     els.solutionLab.hidden = !items.length;
     if (!items.length) {
@@ -2048,14 +2048,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           <div class="solution-card-copy">
             <span class="card-kicker">${escapeHtml(item.category || 'Решение')}</span>
             <strong>${escapeHtml(item.label)}</strong>
-            <p>${escapeHtml(item.summary || item.description)}</p>
+            <p>${escapeHtml(item.description || item.summary)}</p>
           </div>
         </div>
-        <div class="item-meta">
-          ${item.formatHint ? `<span class="meta-pill">${escapeHtml(item.formatHint)}</span>` : ''}
-          ${item.artifactKind ? `<span class="meta-pill">${escapeHtml(item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон')}</span>` : ''}
-        </div>
-        <p class="solution-card-note">${escapeHtml(item.description || item.summary)}</p>
         <div class="item-actions">
           <button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(item.id)}">Открыть конструктор</button>
         </div>
@@ -2261,11 +2256,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             <span class="card-kicker">${escapeHtml(definition.category || 'Решение')}</span>
             <h3>${escapeHtml(definition.label || 'Решение')}</h3>
             <p>${escapeHtml(definition.description || definition.summary || 'Готовый каркас носителя с привязкой к каталогу и брендбуку.')}</p>
-          </div>
-          <div class="item-meta">
-            ${definition.formatHint ? `<span class="meta-pill">${escapeHtml(definition.formatHint)}</span>` : ''}
-            <span class="meta-pill">${escapeHtml(generated ? 'Пакет собран' : 'Черновик')}</span>
-            ${previewArtifact?.label ? `<span class="meta-pill">${escapeHtml(previewArtifact.label)}</span>` : ''}
           </div>
           ${buildConstructorStepsMarkup(generated)}
         </section>
