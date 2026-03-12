@@ -961,6 +961,81 @@ function constructor_base_fields(): array
     ];
 }
 
+function constructor_color_variant_labels(): array
+{
+    return [
+        'cmyk' => 'CMYK для печати',
+        'color' => 'Color',
+        'black' => 'Black',
+        'white' => 'White',
+    ];
+}
+
+function constructor_brand_lockup_labels(): array
+{
+    return [
+        'logo' => 'Логотип с надписью',
+        'mark' => 'Фирменный знак',
+    ];
+}
+
+function constructor_background_style_labels(): array
+{
+    return [
+        'clean' => 'Чистый фон',
+        'band' => 'Сигнальная плашка',
+        'frame' => 'Контур и рамка',
+        'watermark' => 'Водяной знак',
+        'pattern' => 'Сетка из знака',
+    ];
+}
+
+function constructor_style_fields(array $defaults = []): array
+{
+    $colorDefault = (string) ($defaults['color_variant'] ?? 'color');
+    $lockupDefault = (string) ($defaults['brand_lockup'] ?? 'logo');
+    $backgroundDefault = (string) ($defaults['background_style'] ?? 'clean');
+
+    return [
+        'color_variant' => [
+            'id' => 'color_variant',
+            'type' => 'select',
+            'label' => 'Цветовая версия',
+            'required' => true,
+            'default' => $colorDefault,
+            'options' => array_map(
+                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
+                array_keys(constructor_color_variant_labels()),
+                constructor_color_variant_labels()
+            ),
+        ],
+        'brand_lockup' => [
+            'id' => 'brand_lockup',
+            'type' => 'select',
+            'label' => 'Логотип / знак',
+            'required' => true,
+            'default' => $lockupDefault,
+            'options' => array_map(
+                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
+                array_keys(constructor_brand_lockup_labels()),
+                constructor_brand_lockup_labels()
+            ),
+        ],
+        'background_style' => [
+            'id' => 'background_style',
+            'type' => 'select',
+            'label' => 'Элементы фона',
+            'required' => true,
+            'default' => $backgroundDefault,
+            'options' => array_map(
+                static fn(string $value, string $label): array => ['value' => $value, 'label' => $label],
+                array_keys(constructor_background_style_labels()),
+                constructor_background_style_labels()
+            ),
+        ],
+    ];
+}
+
 function constructor_solution_definitions(): array
 {
     $base = constructor_base_fields();
@@ -978,7 +1053,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'визитка логотип шрифт брендбук',
             'sectionKeywords' => ['логотип', 'брендбук', 'шрифт'],
             'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'шрифт otf'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'background_style' => 'clean',
+            ]), [
                 'full_name' => [
                     'id' => 'full_name',
                     'type' => 'text',
@@ -1035,7 +1114,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'табличка навигация логотип брендбук',
             'sectionKeywords' => ['логотип', 'брендбук', 'сувенир', 'полиграф'],
             'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'навигация'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'background_style' => 'band',
+            ]), [
                 'variant' => [
                     'id' => 'variant',
                     'type' => 'select',
@@ -1124,7 +1207,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'презентация брендбук логотип шрифт паттерн',
             'sectionKeywords' => ['брендбук', 'логотип', 'шрифт', 'паттер'],
             'queries' => ['брендбук {{city}} pdf', 'логотип svg {{city}}', 'шрифт otf', 'паттерн'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'background_style' => 'watermark',
+            ]), [
                 'presentation_mode' => [
                     'id' => 'presentation_mode',
                     'type' => 'select',
@@ -1218,7 +1305,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'сертификат брендбук логотип паттерн',
             'sectionKeywords' => ['брендбук', 'логотип', 'паттер'],
             'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'паттерн'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'cmyk',
+                'brand_lockup' => 'logo',
+                'background_style' => 'frame',
+            ]), [
                 'recipient' => [
                     'id' => 'recipient',
                     'type' => 'text',
@@ -1273,7 +1364,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'бейдж логотип шрифт брендбук',
             'sectionKeywords' => ['логотип', 'шрифт', 'брендбук'],
             'queries' => ['логотип svg {{city}}', 'шрифт otf', 'брендбук {{city}}'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'background_style' => 'band',
+            ]), [
                 'full_name' => [
                     'id' => 'full_name',
                     'type' => 'text',
@@ -1325,7 +1420,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'соцсети логотип паттерн svg',
             'sectionKeywords' => ['логотип', 'паттер', 'иллюстра', 'svg'],
             'queries' => ['логотип svg {{city}}', 'паттерн', 'иллюстрации svg'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'background_style' => 'pattern',
+            ]), [
                 'headline' => [
                     'id' => 'headline',
                     'type' => 'text',
@@ -1377,7 +1476,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'фирменный бланк логотип брендбук шрифт',
             'sectionKeywords' => ['логотип', 'брендбук', 'шрифт'],
             'queries' => ['логотип pdf {{city}}', 'брендбук {{city}}', 'шрифт otf'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'cmyk',
+                'brand_lockup' => 'logo',
+                'background_style' => 'frame',
+            ]), [
                 'department' => [
                     'id' => 'department',
                     'type' => 'text',
@@ -1424,7 +1527,11 @@ function constructor_solution_definitions(): array
             'consultPrompt' => 'роллап логотип брендбук полиграфия паттерн',
             'sectionKeywords' => ['логотип', 'брендбук', 'паттер', 'сувенир', 'полиграф'],
             'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'паттерн', 'полиграфия'],
-            'fields' => array_values(array_merge($base, [
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'background_style' => 'watermark',
+            ]), [
                 'headline' => [
                     'id' => 'headline',
                     'type' => 'text',
@@ -2610,6 +2717,185 @@ function constructor_asset_data_uri(string $relativePath, string $mimeType): str
     return $cache[$cacheKey];
 }
 
+function constructor_asset_contents(string $relativePath): string
+{
+    static $cache = [];
+    if (isset($cache[$relativePath])) {
+        return $cache[$relativePath];
+    }
+
+    $fullPath = dirname(__DIR__) . '/' . ltrim($relativePath, '/');
+    if (!is_file($fullPath)) {
+        return '';
+    }
+    $content = file_get_contents($fullPath);
+    if ($content === false || $content === '') {
+        return '';
+    }
+    $cache[$relativePath] = $content;
+    return $cache[$relativePath];
+}
+
+function constructor_asset_variant_data_uri(string $relativePath, string $mimeType, string $colorVariant): string
+{
+    static $cache = [];
+    $cacheKey = $relativePath . '|' . $mimeType . '|' . $colorVariant;
+    if (isset($cache[$cacheKey])) {
+        return $cache[$cacheKey];
+    }
+
+    $content = constructor_asset_contents($relativePath);
+    if ($content === '') {
+        return '';
+    }
+
+    $accent = match ($colorVariant) {
+        'cmyk' => '#b6173b',
+        'black' => '#182a31',
+        'white' => '#ffffff',
+        default => '#bf1238',
+    };
+    $content = str_ireplace(['#bf1238', '#BF1238'], $accent, $content);
+
+    $cache[$cacheKey] = 'data:' . $mimeType . ';base64,' . base64_encode($content);
+    return $cache[$cacheKey];
+}
+
+function constructor_theme_palette(string $colorVariant): array
+{
+    return match ($colorVariant) {
+        'cmyk' => [
+            'colorVariant' => 'cmyk',
+            'background' => '#f6f0e7',
+            'surface' => '#fffdfa',
+            'surfaceAlt' => '#efe4d7',
+            'cardStroke' => '#e3d7c9',
+            'accent' => '#b6173b',
+            'accentSoft' => '#eed3d9',
+            'ink' => '#182a31',
+            'muted' => '#5d6972',
+            'badge' => '#b6173b',
+            'line' => '#d3c8bc',
+            'frame' => '#b6173b',
+            'watermarkOpacity' => '0.09',
+        ],
+        'black' => [
+            'colorVariant' => 'black',
+            'background' => '#f5f1ea',
+            'surface' => '#ffffff',
+            'surfaceAlt' => '#ece5da',
+            'cardStroke' => '#d8d1c5',
+            'accent' => '#182a31',
+            'accentSoft' => '#dde3e7',
+            'ink' => '#182a31',
+            'muted' => '#56646d',
+            'badge' => '#182a31',
+            'line' => '#cdd5da',
+            'frame' => '#182a31',
+            'watermarkOpacity' => '0.07',
+        ],
+        'white' => [
+            'colorVariant' => 'white',
+            'background' => '#182a31',
+            'surface' => '#223640',
+            'surfaceAlt' => '#2a404a',
+            'cardStroke' => '#4a616b',
+            'accent' => '#314a54',
+            'accentSoft' => '#415862',
+            'ink' => '#ffffff',
+            'muted' => '#d4dde2',
+            'badge' => '#ffffff',
+            'line' => '#60727b',
+            'frame' => '#ffffff',
+            'watermarkOpacity' => '0.08',
+        ],
+        default => [
+            'colorVariant' => 'color',
+            'background' => '#f8f4ee',
+            'surface' => '#ffffff',
+            'surfaceAlt' => '#f6f0e7',
+            'cardStroke' => '#e3dbcf',
+            'accent' => '#bf1238',
+            'accentSoft' => '#f4d8df',
+            'ink' => '#182a31',
+            'muted' => '#5d6972',
+            'badge' => '#bf1238',
+            'line' => '#d8d1c5',
+            'frame' => '#bf1238',
+            'watermarkOpacity' => '0.08',
+        ],
+    };
+}
+
+function constructor_theme_value(array $theme, string $key, string $fallback = '#000000'): string
+{
+    $value = trim((string) ($theme[$key] ?? ''));
+    return $value !== '' ? $value : $fallback;
+}
+
+function constructor_brand_assets(string $colorVariant): array
+{
+    return [
+        'logo' => constructor_asset_variant_data_uri('assets/brand-logo-main.svg', 'image/svg+xml', $colorVariant),
+        'mark' => constructor_asset_variant_data_uri('assets/brand-mark.svg', 'image/svg+xml', $colorVariant),
+    ];
+}
+
+function constructor_svg_image(string $href, float $x, float $y, float $width, float $height, float $opacity = 1.0): string
+{
+    if ($href === '') {
+        return '';
+    }
+    return '<image href="' . constructor_svg_escape($href) . '" x="' . $x . '" y="' . $y . '" width="' . $width . '" height="' . $height . '" opacity="' . max(0.0, min(1.0, $opacity)) . '"/>';
+}
+
+function constructor_svg_render_brand_lockup(float $x, float $y, string $brandLockup, array $brandAssets, array $options = []): string
+{
+    $useMark = $brandLockup === 'mark';
+    $href = $useMark ? (string) ($brandAssets['mark'] ?? '') : (string) ($brandAssets['logo'] ?? '');
+    if ($href === '') {
+        return '';
+    }
+
+    $width = $useMark
+        ? (float) ($options['markWidth'] ?? 176.0)
+        : (float) ($options['logoWidth'] ?? 188.0);
+    $height = $useMark
+        ? (float) ($options['markHeight'] ?? round($width / 1.5391, 1))
+        : (float) ($options['logoHeight'] ?? round($width / 6.1227, 1));
+
+    return constructor_svg_image($href, $x, $y, $width, $height, (float) ($options['opacity'] ?? 1.0));
+}
+
+function constructor_svg_background_elements(string $backgroundStyle, float $width, float $height, array $theme, array $brandAssets): string
+{
+    $accent = constructor_theme_value($theme, 'accent', '#bf1238');
+    $accentSoft = constructor_theme_value($theme, 'accentSoft', '#f4d8df');
+    $frame = constructor_theme_value($theme, 'frame', $accent);
+    $surfaceAlt = constructor_theme_value($theme, 'surfaceAlt', '#f6f0e7');
+    $mark = (string) ($brandAssets['mark'] ?? '');
+    $opacity = (float) ($theme['watermarkOpacity'] ?? 0.08);
+
+    return match ($backgroundStyle) {
+        'band' => '<rect x="0" y="0" width="' . $width . '" height="' . round(max(88.0, $height * 0.16), 1) . '" fill="' . constructor_svg_escape($accentSoft) . '" opacity="0.9"/>' .
+            '<rect x="' . round($width * 0.82, 1) . '" y="' . round($height * 0.74, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round($height * 0.26, 1) . '" fill="' . constructor_svg_escape($accent) . '" opacity="0.08"/>',
+        'frame' => '<rect x="24" y="24" width="' . max(0.0, $width - 48.0) . '" height="' . max(0.0, $height - 48.0) . '" rx="30" fill="none" stroke="' . constructor_svg_escape($frame) . '" stroke-width="4" opacity="0.4"/>' .
+            '<rect x="48" y="48" width="' . max(0.0, $width - 96.0) . '" height="' . max(0.0, $height - 96.0) . '" rx="24" fill="none" stroke="' . constructor_svg_escape($surfaceAlt) . '" stroke-width="2" opacity="0.7"/>',
+        'watermark' => $mark !== ''
+            ? constructor_svg_image($mark, round($width * 0.72, 1), round($height * 0.08, 1), round($width * 0.24, 1), round(($width * 0.24) / 1.5391, 1), $opacity)
+            : '',
+        'pattern' => $mark !== ''
+            ? '<g opacity="' . max(0.03, min(0.14, $opacity)) . '">' .
+                constructor_svg_image($mark, round($width * 0.08, 1), round($height * 0.16, 1), round($width * 0.14, 1), round(($width * 0.14) / 1.5391, 1)) .
+                constructor_svg_image($mark, round($width * 0.62, 1), round($height * 0.22, 1), round($width * 0.12, 1), round(($width * 0.12) / 1.5391, 1)) .
+                constructor_svg_image($mark, round($width * 0.18, 1), round($height * 0.62, 1), round($width * 0.1, 1), round(($width * 0.1) / 1.5391, 1)) .
+                constructor_svg_image($mark, round($width * 0.74, 1), round($height * 0.72, 1), round($width * 0.16, 1), round(($width * 0.16) / 1.5391, 1)) .
+                '</g>'
+            : '',
+        default => '',
+    };
+}
+
 function constructor_svg_escape(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -2933,22 +3219,31 @@ function constructor_svg_render_label(float $x, float $y, string $text, string $
     return constructor_svg_render_text($x, $y, [$normalized], $className, $options, (string) ($options['anchor'] ?? 'start'));
 }
 
-function constructor_svg_document(float $width, float $height, string $body, string $background = '#ffffff'): string
+function constructor_svg_document(float $width, float $height, string $body, array $theme): string
 {
-    $bg = constructor_svg_escape($background);
+    $bg = constructor_svg_escape(constructor_theme_value($theme, 'background', '#ffffff'));
+    $accent = constructor_svg_escape(constructor_theme_value($theme, 'accent', '#bf1238'));
+    $accentSoft = constructor_svg_escape(constructor_theme_value($theme, 'accentSoft', '#f4d8df'));
+    $ink = constructor_svg_escape(constructor_theme_value($theme, 'ink', '#182a31'));
+    $muted = constructor_svg_escape(constructor_theme_value($theme, 'muted', '#5d6972'));
+    $surfaceAlt = constructor_svg_escape(constructor_theme_value($theme, 'surfaceAlt', '#f6f0e7'));
+    $surface = constructor_svg_escape(constructor_theme_value($theme, 'surface', '#ffffff'));
+    $cardStroke = constructor_svg_escape(constructor_theme_value($theme, 'cardStroke', '#e3dbcf'));
+    $line = constructor_svg_escape(constructor_theme_value($theme, 'line', '#d8d1c5'));
+    $badge = constructor_svg_escape(constructor_theme_value($theme, 'badge', '#bf1238'));
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . $width . ' ' . $height . '" width="' . $width . '" height="' . $height . '">' .
         '<defs><style><![CDATA[' .
         '.bg{fill:' . $bg . ';}' .
-        '.accent{fill:#bf1238;}.accent-soft{fill:#f4d8df;}.ink{fill:#182a31;}.muted{fill:#5d6972;}.sand{fill:#f6f0e7;}.white{fill:#ffffff;}' .
-        '.title{font:700 64px DejaVu Sans,Arial,sans-serif;fill:#182a31;letter-spacing:-0.02em;}' .
-        '.headline{font:700 92px DejaVu Sans,Arial,sans-serif;fill:#182a31;letter-spacing:-0.03em;}' .
-        '.subhead{font:600 36px DejaVu Sans,Arial,sans-serif;fill:#182a31;}' .
-        '.body{font:400 30px DejaVu Sans,Arial,sans-serif;fill:#182a31;}' .
-        '.small{font:400 24px DejaVu Sans,Arial,sans-serif;fill:#5d6972;}' .
-        '.tiny{font:500 20px DejaVu Sans,Arial,sans-serif;fill:#5d6972;letter-spacing:0.04em;text-transform:uppercase;}' .
-        '.badge{font:700 28px DejaVu Sans,Arial,sans-serif;fill:#bf1238;letter-spacing:0.08em;text-transform:uppercase;}' .
-        '.line{stroke:#d8d1c5;stroke-width:2;}' .
-        '.card{fill:#ffffff;stroke:#e3dbcf;stroke-width:2;}' .
+        '.accent{fill:' . $accent . ';}.accent-soft{fill:' . $accentSoft . ';}.ink{fill:' . $ink . ';}.muted{fill:' . $muted . ';}.sand{fill:' . $surfaceAlt . ';}.white{fill:#ffffff;}' .
+        '.title{font:700 64px DejaVu Sans,Arial,sans-serif;fill:' . $ink . ';letter-spacing:-0.02em;}' .
+        '.headline{font:700 92px DejaVu Sans,Arial,sans-serif;fill:' . $ink . ';letter-spacing:-0.03em;}' .
+        '.subhead{font:600 36px DejaVu Sans,Arial,sans-serif;fill:' . $ink . ';}' .
+        '.body{font:400 30px DejaVu Sans,Arial,sans-serif;fill:' . $ink . ';}' .
+        '.small{font:400 24px DejaVu Sans,Arial,sans-serif;fill:' . $muted . ';}' .
+        '.tiny{font:500 20px DejaVu Sans,Arial,sans-serif;fill:' . $muted . ';letter-spacing:0.04em;text-transform:uppercase;}' .
+        '.badge{font:700 28px DejaVu Sans,Arial,sans-serif;fill:' . $badge . ';letter-spacing:0.08em;text-transform:uppercase;}' .
+        '.line{stroke:' . $line . ';stroke-width:2;}' .
+        '.card{fill:' . $surface . ';stroke:' . $cardStroke . ';stroke-width:2;}' .
         'text{white-space:pre;}' .
         ']]></style></defs>' .
         '<rect class="bg" width="100%" height="100%" rx="0"/>' .
@@ -3066,9 +3361,23 @@ function constructor_presentation_outline(string $value): array
     return array_values(array_unique($items));
 }
 
+function constructor_style_display_labels(array $input): array
+{
+    $colorVariant = (string) ($input['color_variant'] ?? 'color');
+    $brandLockup = (string) ($input['brand_lockup'] ?? 'logo');
+    $backgroundStyle = (string) ($input['background_style'] ?? 'clean');
+
+    return [
+        'colorVariantLabel' => constructor_color_variant_labels()[$colorVariant] ?? 'Color',
+        'brandLockupLabel' => constructor_brand_lockup_labels()[$brandLockup] ?? 'Логотип с надписью',
+        'backgroundStyleLabel' => constructor_background_style_labels()[$backgroundStyle] ?? 'Чистый фон',
+    ];
+}
+
 function constructor_derived_payload(array $definition, array $input): array
 {
     $definitionId = (string) ($definition['id'] ?? '');
+    $base = constructor_style_display_labels($input);
 
     if ($definitionId === 'nameplate') {
         $variant = (string) ($input['variant'] ?? 'cabinet');
@@ -3080,25 +3389,25 @@ function constructor_derived_payload(array $definition, array $input): array
             'desktop' => 'Настольное',
         ];
 
-        return [
+        return array_merge($base, [
             'variantLabel' => constructor_nameplate_variant_labels()[$variant] ?? 'Кабинетная',
             'directionLabel' => constructor_nameplate_direction_labels()[$direction] ?? 'Без стрелки',
             'mountLabel' => $mountLabels[$mount] ?? 'Настенное',
             'roomNumber' => trim((string) ($input['room_number'] ?? '')),
-        ];
+        ]);
     }
 
     if ($definitionId === 'presentation_deck') {
         $mode = (string) ($input['presentation_mode'] ?? 'invest');
-        return [
+        return array_merge($base, [
             'presentationModeLabel' => constructor_presentation_mode_labels()[$mode] ?? 'Инвест-питч',
             'eventName' => trim((string) ($input['event_name'] ?? '')),
             'keyMessage' => trim((string) ($input['key_message'] ?? '')),
             'outline' => constructor_presentation_outline((string) ($input['structure'] ?? '')),
-        ];
+        ]);
     }
 
-    return [];
+    return $base;
 }
 
 function constructor_filename_base(array $definition, array $input): string
@@ -3182,6 +3491,9 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
         '<div class="grid">' .
         '<div class="card"><strong>Город</strong><p>' . htmlspecialchars($cityLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
         '<div class="card"><strong>Формат</strong><p>' . htmlspecialchars((string) ($definition['formatHint'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+        '<div class="card"><strong>Цветовая версия</strong><p>' . htmlspecialchars((string) ($derived['colorVariantLabel'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+        '<div class="card"><strong>Логотип / знак</strong><p>' . htmlspecialchars((string) ($derived['brandLockupLabel'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+        '<div class="card"><strong>Элементы фона</strong><p>' . htmlspecialchars((string) ($derived['backgroundStyleLabel'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
         '</div>';
 
     if ($adviceTitle !== '' || $adviceSummary !== '') {
@@ -3254,25 +3566,32 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
 function constructor_svg_artifact(array $definition, array $input): ?array
 {
     $cityLabel = constructor_city_label((string) ($input['city'] ?? ''));
-    $brandMark = constructor_asset_data_uri('assets/brand-mark.svg', 'image/svg+xml');
-    $brandLogo = constructor_asset_data_uri('assets/brand-logo-main.svg', 'image/svg+xml');
+    $colorVariant = (string) ($input['color_variant'] ?? 'color');
+    $brandLockup = (string) ($input['brand_lockup'] ?? 'logo');
+    $backgroundStyle = (string) ($input['background_style'] ?? 'clean');
+    $theme = constructor_theme_palette($colorVariant);
+    $brandAssets = constructor_brand_assets($colorVariant);
+    $brandMark = (string) ($brandAssets['mark'] ?? '');
+    $brandLogo = (string) ($brandAssets['logo'] ?? '');
+    $themeAccent = constructor_theme_value($theme, 'accent', '#bf1238');
+    $themeFrame = constructor_theme_value($theme, 'frame', $themeAccent);
     $body = '';
     $width = 1200.0;
     $height = 675.0;
-    $background = '#ffffff';
     $fileSuffix = 'preview.svg';
 
     switch ((string) ($definition['id'] ?? '')) {
         case 'business_card':
             $width = 900;
             $height = 500;
-            $background = '#f8f4ee';
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="40" y="40" width="820" height="420" rx="36" class="card"/>' .
                 '<rect x="40" y="40" width="260" height="420" rx="36" class="accent"/>' .
-                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="88" y="92" width="164" height="28"/>' : '') .
+                constructor_svg_render_brand_lockup(88, 92, $brandLockup, $brandAssets, ['logoWidth' => 164, 'logoHeight' => 28, 'markWidth' => 110, 'markHeight' => 71]) .
                 constructor_svg_render_fitted_text(348, 158, (string) ($input['full_name'] ?? ''), 'headline', 432, 190, 3, ['minFontSize' => 26]) .
                 constructor_svg_render_fitted_text(348, 282, (string) ($input['role'] ?? ''), 'subhead', 432, 96, 3, ['minFontSize' => 18]) .
+                constructor_svg_render_label(348, 348, 'Контакты', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(348, 366, (string) ($input['department'] ?? ''), 'small', 432, 52, 2, ['minFontSize' => 14]) .
                 constructor_svg_render_fitted_text(348, 418, (string) ($input['phone'] ?? ''), 'body', 432, 34, 1, ['minFontSize' => 15]) .
                 constructor_svg_render_fitted_text(348, 450, (string) ($input['email'] ?? ''), 'small', 432, 24, 1, ['minFontSize' => 11]) .
@@ -3282,7 +3601,6 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         case 'nameplate':
             $width = 1200;
             $height = 420;
-            $background = '#fbf7f0';
             $variant = (string) ($input['variant'] ?? 'cabinet');
             $variantLabel = constructor_nameplate_variant_labels()[$variant] ?? 'Кабинетная';
             $roomNumber = trim((string) ($input['room_number'] ?? ''));
@@ -3294,10 +3612,10 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 default => 'Настенное',
             };
             $arrowPath = match ($direction) {
-                'left' => '<path d="M1032 266H936M936 266l30-30M936 266l30 30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
-                'right' => '<path d="M936 266H1032M1032 266l-30-30M1032 266l-30 30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
-                'up' => '<path d="M984 318V222M984 222l-30 30M984 222l30 30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
-                'down' => '<path d="M984 214v96M984 310l-30-30M984 310l30-30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'left' => '<path d="M1032 266H936M936 266l30-30M936 266l30 30" stroke="' . constructor_svg_escape($themeAccent) . '" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'right' => '<path d="M936 266H1032M1032 266l-30-30M1032 266l-30 30" stroke="' . constructor_svg_escape($themeAccent) . '" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'up' => '<path d="M984 318V222M984 222l-30 30M984 222l30 30" stroke="' . constructor_svg_escape($themeAccent) . '" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'down' => '<path d="M984 214v96M984 310l-30-30M984 310l30-30" stroke="' . constructor_svg_escape($themeAccent) . '" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
                 default => '',
             };
             $locationX = $roomNumber !== '' ? 280 : 62;
@@ -3308,9 +3626,10 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 default => 982.0,
             };
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="30" y="30" width="1140" height="360" rx="28" class="card"/>' .
                 '<rect x="30" y="30" width="1140" height="96" rx="28" class="accent"/>' .
-                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="62" y="62" width="182" height="30"/>' : '') .
+                constructor_svg_render_brand_lockup(62, 62, $brandLockup, $brandAssets, ['logoWidth' => 182, 'logoHeight' => 30, 'markWidth' => 118, 'markHeight' => 76]) .
                 constructor_svg_render_label(1108, 78, $variantLabel, 'badge', ['anchor' => 'end', 'maxWidth' => 270, 'minFontSize' => 18]) .
                 ($roomNumber !== ''
                     ? '<rect x="62" y="146" width="180" height="146" rx="28" class="accent-soft"/>' .
@@ -3331,15 +3650,15 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         case 'presentation_deck':
             $width = 1600;
             $height = 900;
-            $background = '#f7f1ea';
             $presentationMode = constructor_presentation_mode_labels()[(string) ($input['presentation_mode'] ?? 'invest')] ?? 'Инвест-питч';
             $eventName = trim((string) ($input['event_name'] ?? ''));
             $keyMessage = trim((string) ($input['key_message'] ?? ''));
             $outlinePreview = array_slice(constructor_presentation_outline((string) ($input['structure'] ?? '')), 0, 3);
             $outlinePreview = array_map(static fn(string $item): string => '• ' . $item, $outlinePreview);
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="0" y="0" width="520" height="900" class="accent"/>' .
-                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="96" y="96" width="232" height="151"/>' : '') .
+                constructor_svg_render_brand_lockup(96, 96, $brandLockup, $brandAssets, ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => 178, 'markHeight' => 115]) .
                 '<rect x="1184" y="86" width="304" height="72" rx="24" class="accent-soft"/>' .
                 constructor_svg_render_label(1336, 131, $presentationMode, 'badge', ['anchor' => 'middle', 'maxWidth' => 232, 'minFontSize' => 16]) .
                 constructor_svg_render_fitted_text(644, 158, $eventName !== '' ? $eventName : $cityLabel, 'tiny', 460, 58, 2, ['minFontSize' => 11]) .
@@ -3347,6 +3666,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 '<rect x="644" y="476" width="844" height="164" rx="32" class="card"/>' .
                 constructor_svg_render_label(692, 528, 'Ключевое сообщение', 'tiny', ['maxWidth' => 260, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(692, 578, $keyMessage, 'body', 748, 98, 3, ['minFontSize' => 15]) .
+                constructor_svg_render_label(644, 688, 'Спикер', 'tiny', ['maxWidth' => 160, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(644, 712, (string) ($input['speaker'] ?? ''), 'subhead', 420, 54, 2, ['minFontSize' => 16]) .
                 constructor_svg_render_fitted_text(644, 762, (string) ($input['speaker_role'] ?? ''), 'body', 520, 70, 2, ['minFontSize' => 15]) .
                 '<rect x="644" y="796" width="404" height="74" rx="24" class="accent-soft"/>' .
@@ -3362,16 +3682,18 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         case 'certificate':
             $width = 1400;
             $height = 990;
-            $background = '#fbf7f0';
             $body =
-                '<rect x="44" y="44" width="1312" height="902" rx="28" fill="none" stroke="#bf1238" stroke-width="8"/>' .
-                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="86" y="88" width="200" height="32"/>' : '') .
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
+                '<rect x="44" y="44" width="1312" height="902" rx="28" fill="none" stroke="' . constructor_svg_escape($themeFrame) . '" stroke-width="8"/>' .
+                constructor_svg_render_brand_lockup(86, 88, $brandLockup, $brandAssets, ['logoWidth' => 200, 'logoHeight' => 32, 'markWidth' => 124, 'markHeight' => 80]) .
                 constructor_svg_render_label(700, 202, $cityLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 240, 'minFontSize' => 16]) .
                 constructor_svg_render_label(700, 310, 'Сертификат', 'title', ['anchor' => 'middle', 'maxWidth' => 420, 'minFontSize' => 28]) .
                 constructor_svg_render_fitted_text(700, 434, (string) ($input['recipient'] ?? ''), 'headline', 1020, 214, 3, ['anchor' => 'middle', 'minFontSize' => 24], 'middle') .
                 constructor_svg_render_fitted_text(700, 606, (string) ($input['reason'] ?? ''), 'body', 1020, 146, 3, ['anchor' => 'middle', 'minFontSize' => 15], 'middle') .
+                constructor_svg_render_label(160, 786, 'Событие / программа', 'tiny', ['maxWidth' => 240, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(160, 810, (string) ($input['event_name'] ?? ''), 'small', 520, 60, 2, ['minFontSize' => 15]) .
                 '<line x1="968" y1="804" x2="1248" y2="804" class="line"/>' .
+                constructor_svg_render_label(968, 782, 'Подписант', 'tiny', ['maxWidth' => 140, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(968, 846, (string) ($input['signer'] ?? ''), 'small', 260, 56, 2, ['minFontSize' => 13]) .
                 constructor_svg_render_fitted_text(160, 900, constructor_format_date((string) ($input['issue_date'] ?? '')), 'small', 180, 28, 1, ['minFontSize' => 14]);
             break;
@@ -3379,7 +3701,6 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         case 'badge':
             $width = 720;
             $height = 1120;
-            $background = '#f8f4ee';
             $accessMap = [
                 'standard' => 'Стандарт',
                 'speaker' => 'Спикер',
@@ -3388,11 +3709,14 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             ];
             $accessLabel = $accessMap[(string) ($input['access_level'] ?? 'standard')] ?? 'Стандарт';
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="44" y="44" width="632" height="1032" rx="36" class="card"/>' .
                 '<rect x="44" y="44" width="632" height="182" rx="36" class="accent"/>' .
-                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="76" y="70" width="168" height="109"/>' : '') .
+                constructor_svg_render_brand_lockup(76, 70, $brandLockup, $brandAssets, ['logoWidth' => 186, 'logoHeight' => 30, 'markWidth' => 168, 'markHeight' => 109]) .
+                constructor_svg_render_label(76, 274, 'Мероприятие', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(76, 300, (string) ($input['event_name'] ?? $cityLabel), 'small', 560, 58, 2, ['minFontSize' => 15]) .
                 constructor_svg_render_fitted_text(76, 404, (string) ($input['full_name'] ?? ''), 'headline', 560, 326, 4, ['minFontSize' => 22]) .
+                constructor_svg_render_label(76, 704, 'Роль', 'tiny', ['maxWidth' => 120, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(76, 730, (string) ($input['role'] ?? ''), 'subhead', 560, 112, 3, ['minFontSize' => 16]) .
                 '<rect x="76" y="824" width="260" height="72" rx="24" class="accent-soft"/>' .
                 constructor_svg_render_label(206, 870, $accessLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 210, 'minFontSize' => 16]) .
@@ -3411,13 +3735,15 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 $width = 1080;
                 $height = 1350;
             }
-            $background = '#f7f1ea';
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="0" y="0" width="' . $width . '" height="220" class="accent"/>' .
-                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="64" y="50" width="172" height="112"/>' : '') .
+                constructor_svg_render_brand_lockup(64, 50, $brandLockup, $brandAssets, ['logoWidth' => 200, 'logoHeight' => 33, 'markWidth' => 172, 'markHeight' => 112]) .
                 constructor_svg_render_fitted_text(80, 320, (string) ($input['headline'] ?? ''), 'headline', $width - 160, 356, 4, ['minFontSize' => 22]) .
+                constructor_svg_render_label(80, 664, 'Сообщение', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(80, 706, (string) ($input['message'] ?? ''), 'body', $width - 160, 462, 5, ['minFontSize' => 15]) .
                 '<rect x="80" y="' . ($height - 178) . '" width="' . ($width - 160) . '" height="88" rx="28" class="card"/>' .
+                constructor_svg_render_label(124, $height - 150, 'Следующий шаг', 'tiny', ['maxWidth' => 190, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(124, $height - 126, (string) ($input['cta'] ?? ''), 'subhead', $width - 280, 54, 2, ['minFontSize' => 14]) .
                 constructor_svg_render_fitted_text($width - 80, $height - 46, $cityLabel, 'small', 160, 26, 1, ['anchor' => 'end', 'minFontSize' => 13], 'end');
             break;
@@ -3425,28 +3751,31 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         case 'letterhead':
             $width = 1240;
             $height = 1754;
-            $background = '#ffffff';
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="0" y="0" width="1240" height="210" class="sand"/>' .
-                ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="84" y="76" width="220" height="36"/>' : '') .
+                constructor_svg_render_brand_lockup(84, 76, $brandLockup, $brandAssets, ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => 128, 'markHeight' => 83]) .
+                constructor_svg_render_label(84, 138, 'Подразделение', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(84, 162, (string) ($input['department'] ?? ''), 'subhead', 620, 64, 2, ['minFontSize' => 14]) .
                 constructor_svg_render_fitted_text(84, 312, (string) ($input['document_title'] ?? ''), 'title', 1040, 214, 3, ['minFontSize' => 20]) .
                 '<line x1="84" y1="412" x2="1156" y2="412" class="line"/>' .
                 constructor_svg_render_fitted_text(84, 500, 'Текст письма или справки размещается в рабочей области ниже.', 'body', 1040, 84, 2, ['minFontSize' => 18]) .
                 constructor_svg_render_fitted_text(84, 1604, (string) ($input['contact_line'] ?? ''), 'small', 1040, 72, 3, ['minFontSize' => 12]) .
+                constructor_svg_render_label(900, 1462, 'Подписант', 'tiny', ['maxWidth' => 140, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(900, 1488, (string) ($input['signer'] ?? ''), 'small', 240, 54, 2, ['minFontSize' => 12]);
             break;
 
         case 'rollup':
             $width = 1000;
             $height = 2200;
-            $background = '#f8f4ee';
             $body =
+                constructor_svg_background_elements($backgroundStyle, $width, $height, $theme, $brandAssets) .
                 '<rect x="0" y="0" width="1000" height="620" class="accent"/>' .
-                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="88" y="82" width="220" height="143"/>' : '') .
+                constructor_svg_render_brand_lockup(88, 82, $brandLockup, $brandAssets, ['logoWidth' => 224, 'logoHeight' => 36, 'markWidth' => 220, 'markHeight' => 143]) .
                 constructor_svg_render_fitted_text(88, 748, (string) ($input['headline'] ?? ''), 'headline', 824, 548, 5, ['minFontSize' => 24]) .
                 constructor_svg_render_fitted_text(88, 1360, (string) ($input['subline'] ?? ''), 'body', 824, 390, 6, ['minFontSize' => 15]) .
                 '<rect x="88" y="1730" width="824" height="232" rx="34" class="card"/>' .
+                constructor_svg_render_label(132, 1784, 'Событие / площадка', 'tiny', ['maxWidth' => 220, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(132, 1818, (string) ($input['event_name'] ?? ''), 'subhead', 500, 102, 3, ['minFontSize' => 16]) .
                 constructor_svg_render_fitted_text(132, 1908, (string) ($input['size_variant'] ?? ''), 'small', 300, 30, 1, ['minFontSize' => 13]) .
                 constructor_svg_render_fitted_text(912, 2128, $cityLabel, 'small', 160, 26, 1, ['anchor' => 'end', 'minFontSize' => 13], 'end');
@@ -3462,7 +3791,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         'label' => 'SVG-шаблон',
         'mimeType' => 'image/svg+xml',
         'filename' => constructor_filename_base($definition, $input) . '-' . $fileSuffix,
-        'content' => constructor_svg_document($width, $height, $body, $background),
+        'content' => constructor_svg_document($width, $height, $body, $theme),
         'previewType' => 'svg',
     ];
 }
@@ -3470,6 +3799,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
 function constructor_result_summary(array $definition, array $input, array $recommendations, array $artifacts): array
 {
     $cityLabel = constructor_city_label((string) ($input['city'] ?? ''));
+    $styleLabels = constructor_style_display_labels($input);
     $artifactLabels = array_values(array_filter(array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $artifacts)));
     return [
         'title' => (string) ($definition['label'] ?? 'Решение'),
@@ -3477,6 +3807,11 @@ function constructor_result_summary(array $definition, array $input, array $reco
         'bullets' => array_values(array_filter([
             'Город / версия: ' . $cityLabel,
             'Выход: ' . (string) ($definition['formatHint'] ?? ''),
+            'Оформление: ' . implode(' • ', array_filter([
+                (string) ($styleLabels['colorVariantLabel'] ?? ''),
+                (string) ($styleLabels['brandLockupLabel'] ?? ''),
+                (string) ($styleLabels['backgroundStyleLabel'] ?? ''),
+            ])),
             $artifactLabels !== [] ? 'Артефакты: ' . implode(', ', array_slice($artifactLabels, 0, 3)) : '',
             count($recommendations['items'] ?? []) > 0 ? 'Подобраны реальные файлы из каталога: ' . count($recommendations['items']) : '',
         ])),
@@ -3486,6 +3821,7 @@ function constructor_result_summary(array $definition, array $input, array $reco
 function constructor_draft_summary(array $definition, array $input, array $recommendations): array
 {
     $cityLabel = constructor_city_label((string) ($input['city'] ?? ''));
+    $styleLabels = constructor_style_display_labels($input);
     $sectionLabels = array_values(array_filter(array_map(static fn(array $item): string => (string) ($item['label'] ?? $item['name'] ?? ''), $recommendations['sections'] ?? [])));
     return [
         'title' => (string) ($definition['label'] ?? 'Решение'),
@@ -3493,6 +3829,11 @@ function constructor_draft_summary(array $definition, array $input, array $recom
         'bullets' => array_values(array_filter([
             'Город / версия: ' . $cityLabel,
             'Выход: ' . (string) ($definition['formatHint'] ?? ''),
+            'Оформление: ' . implode(' • ', array_filter([
+                (string) ($styleLabels['colorVariantLabel'] ?? ''),
+                (string) ($styleLabels['brandLockupLabel'] ?? ''),
+                (string) ($styleLabels['backgroundStyleLabel'] ?? ''),
+            ])),
             $sectionLabels !== [] ? 'Под рукой уже подобраны разделы: ' . implode(', ', array_slice($sectionLabels, 0, 3)) : '',
             count($recommendations['items'] ?? []) > 0 ? 'Есть реальные файлы для старта: ' . count($recommendations['items']) : '',
         ])),

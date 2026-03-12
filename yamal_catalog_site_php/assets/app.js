@@ -246,11 +246,13 @@ function buildConstructorCategoryFilters(items, activeCategory = DEFAULT_SOLUTIO
 function groupConstructorFields(fields) {
   const groups = [
     { id: 'basics', label: 'Базовые параметры', hint: 'Город, формат и основной режим носителя.', items: [] },
+    { id: 'style', label: 'Оформление', hint: 'Цветовая версия, логотип и фоновые элементы по мотивам брендбука.', items: [] },
     { id: 'content', label: 'Содержание', hint: 'Заголовки, сообщения, событие и смысловой текст.', items: [] },
     { id: 'people', label: 'Люди и контакты', hint: 'ФИО, роли, подписи и контактные данные.', items: [] },
   ];
   const fieldList = Array.isArray(fields) ? fields : [];
   const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
+  const styleIds = new Set(['color_variant', 'brand_lockup', 'background_style']);
   const basicsIds = new Set([
     'city',
     'variant',
@@ -275,11 +277,15 @@ function groupConstructorFields(fields) {
       groups[0].items.push(field);
       return;
     }
-    if (peopleIds.has(fieldId)) {
-      groups[2].items.push(field);
+    if (styleIds.has(fieldId)) {
+      groups[1].items.push(field);
       return;
     }
-    groups[1].items.push(field);
+    if (peopleIds.has(fieldId)) {
+      groups[3].items.push(field);
+      return;
+    }
+    groups[2].items.push(field);
   });
 
   return groups.filter((group) => group.items.length);

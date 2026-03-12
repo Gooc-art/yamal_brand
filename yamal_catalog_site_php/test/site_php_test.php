@@ -160,6 +160,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSolutionLab'), 'frontend contains solution lab renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCategoryFilters'), 'frontend contains solution lab category filter builder');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'groupConstructorFields'), 'frontend contains constructor field grouping helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "label: 'Оформление'"), 'frontend exposes dedicated constructor style group');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, "item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон'"), 'frontend removed verbose solution artifact pills');
@@ -356,6 +357,51 @@ $businessCardFit = constructor_svg_fit_text_block(
 assert_true(($businessCardFit['truncated'] ?? true) === false, 'business card full name fit prefers readable non-truncated layout');
 assert_true(count($businessCardFit['lines'] ?? []) >= 2, 'business card full name fit uses multi-line layout for long fio');
 assert_true((float) ($businessCardFit['fontSize'] ?? 0.0) < 92.0, 'business card full name fit reduces font size from default headline scale');
+$styleLabels = constructor_color_variant_labels();
+assert_true(($styleLabels['cmyk'] ?? '') === 'CMYK для печати', 'constructor exposes grounded cmyk color variant label');
+assert_true((constructor_brand_lockup_labels()['logo'] ?? '') === 'Логотип с надписью', 'constructor exposes grounded logo lockup label');
+assert_true((constructor_background_style_labels()['pattern'] ?? '') === 'Сетка из знака', 'constructor exposes grounded background element label');
+
+$styledConstructorIds = ['business_card', 'nameplate', 'presentation_deck', 'certificate', 'badge', 'social_post', 'letterhead', 'rollup'];
+foreach ($styledConstructorIds as $styledConstructorId) {
+    $styledDefinition = constructor_definition_by_id($styledConstructorId);
+    assert_true($styledDefinition !== null, $styledConstructorId . ' constructor definition exists for style controls');
+    $styledFieldIds = array_map(static fn(array $field): string => (string) ($field['id'] ?? ''), $styledDefinition['fields'] ?? []);
+    assert_true(in_array('color_variant', $styledFieldIds, true), $styledConstructorId . ' exposes color variant field');
+    assert_true(in_array('brand_lockup', $styledFieldIds, true), $styledConstructorId . ' exposes brand lockup field');
+    assert_true(in_array('background_style', $styledFieldIds, true), $styledConstructorId . ' exposes background style field');
+}
+
+$businessCardDefinition = constructor_definition_by_id('business_card');
+assert_true($businessCardDefinition !== null, 'business card constructor definition exists');
+$styledBusinessCardInput = constructor_normalize_input($businessCardDefinition, [
+    'city' => 'салехард',
+    'full_name' => 'Александрова-Виноградова Екатерина Константиновна-Петрова',
+    'role' => 'Руководитель стратегических коммуникаций',
+    'phone' => '+7 999 123-45-67',
+    'email' => 'team@yamal.ru',
+    'department' => 'Департамент коммуникаций',
+    'color_variant' => 'black',
+    'brand_lockup' => 'logo',
+    'background_style' => 'pattern',
+]);
+$styledBusinessCardDerived = constructor_derived_payload($businessCardDefinition, $styledBusinessCardInput);
+assert_true(($styledBusinessCardDerived['colorVariantLabel'] ?? '') === 'Black', 'constructor derived payload exposes selected color variant label');
+assert_true(($styledBusinessCardDerived['brandLockupLabel'] ?? '') === 'Логотип с надписью', 'constructor derived payload exposes selected brand lockup label');
+assert_true(($styledBusinessCardDerived['backgroundStyleLabel'] ?? '') === 'Сетка из знака', 'constructor derived payload exposes selected background style label');
+$styledBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $styledBusinessCardInput);
+assert_true($styledBusinessCardSvg !== null, 'styled business card svg artifact exists');
+$styledBusinessCardContent = (string) ($styledBusinessCardSvg['content'] ?? '');
+assert_true(str_contains($styledBusinessCardContent, '.accent{fill:#182a31;}'), 'black color variant remaps accent color in svg styles');
+assert_true(substr_count($styledBusinessCardContent, '<image ') >= 5, 'pattern background style adds repeated grounded mark elements');
+
+$whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
+    'color_variant' => 'white',
+    'brand_lockup' => 'logo',
+    'background_style' => 'frame',
+]));
+assert_true($whiteBusinessCardSvg !== null, 'white business card svg artifact exists');
+assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '.bg{fill:#182a31;}'), 'white color variant uses dark canvas for reversed lockup');
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
@@ -453,6 +499,9 @@ assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Клю�
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Структура слайдов'), 'presentation html brief exposes outline section');
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Арктический форум'), 'presentation html brief exposes event name');
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Партнёрский питч'), 'presentation html brief exposes selected mode label');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Цветовая версия'), 'presentation html brief exposes constructor color styling section');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Логотип / знак'), 'presentation html brief exposes constructor lockup section');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Элементы фона'), 'presentation html brief exposes constructor background section');
 
 $presentationSvg = constructor_svg_artifact($presentationDefinition, constructor_normalize_input($presentationDefinition, [
     'city' => 'ямал',
