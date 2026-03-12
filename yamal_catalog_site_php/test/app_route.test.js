@@ -120,6 +120,8 @@ test('buildConstructorCategoryFilters keeps all filter and current category stab
 test('groupConstructorFields splits fields into basics, content and people blocks', () => {
   const groups = groupConstructorFields([
     { id: 'city', label: 'Город / версия' },
+    { id: 'presentation_mode', label: 'Сценарий' },
+    { id: 'room_number', label: 'Номер / индекс' },
     { id: 'title', label: 'Название' },
     { id: 'message', label: 'Текст' },
     { id: 'full_name', label: 'ФИО' },
@@ -127,7 +129,7 @@ test('groupConstructorFields splits fields into basics, content and people block
   ]);
 
   assert.deepEqual(groups.map((group) => group.id), ['basics', 'content', 'people']);
-  assert.deepEqual(groups[0].items.map((item) => item.id), ['city']);
+  assert.deepEqual(groups[0].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
   assert.deepEqual(groups[1].items.map((item) => item.id), ['title', 'message']);
   assert.deepEqual(groups[2].items.map((item) => item.id), ['full_name', 'email']);
 });

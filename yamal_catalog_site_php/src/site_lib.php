@@ -1036,6 +1036,18 @@ function constructor_solution_definitions(): array
             'sectionKeywords' => ['логотип', 'брендбук', 'сувенир', 'полиграф'],
             'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'навигация'],
             'fields' => array_values(array_merge($base, [
+                'variant' => [
+                    'id' => 'variant',
+                    'type' => 'select',
+                    'label' => 'Тип таблички',
+                    'required' => true,
+                    'default' => 'cabinet',
+                    'options' => [
+                        ['value' => 'cabinet', 'label' => 'Кабинетная'],
+                        ['value' => 'navigation', 'label' => 'Навигационная'],
+                        ['value' => 'zone', 'label' => 'Зональная'],
+                    ],
+                ],
                 'location' => [
                     'id' => 'location',
                     'type' => 'text',
@@ -1043,6 +1055,14 @@ function constructor_solution_definitions(): array
                     'required' => true,
                     'default' => 'Переговорная Полярная',
                     'maxLength' => 100,
+                ],
+                'room_number' => [
+                    'id' => 'room_number',
+                    'type' => 'text',
+                    'label' => 'Номер / индекс',
+                    'required' => false,
+                    'default' => 'B-204',
+                    'maxLength' => 24,
                 ],
                 'subline' => [
                     'id' => 'subline',
@@ -1076,6 +1096,20 @@ function constructor_solution_definitions(): array
                         ['value' => 'desktop', 'label' => 'Настольное'],
                     ],
                 ],
+                'direction' => [
+                    'id' => 'direction',
+                    'type' => 'select',
+                    'label' => 'Направление',
+                    'required' => false,
+                    'default' => 'none',
+                    'options' => [
+                        ['value' => 'none', 'label' => 'Без стрелки'],
+                        ['value' => 'left', 'label' => 'Налево'],
+                        ['value' => 'right', 'label' => 'Направо'],
+                        ['value' => 'up', 'label' => 'Вверх'],
+                        ['value' => 'down', 'label' => 'Вниз'],
+                    ],
+                ],
             ])),
         ],
         [
@@ -1091,6 +1125,18 @@ function constructor_solution_definitions(): array
             'sectionKeywords' => ['брендбук', 'логотип', 'шрифт', 'паттер'],
             'queries' => ['брендбук {{city}} pdf', 'логотип svg {{city}}', 'шрифт otf', 'паттерн'],
             'fields' => array_values(array_merge($base, [
+                'presentation_mode' => [
+                    'id' => 'presentation_mode',
+                    'type' => 'select',
+                    'label' => 'Сценарий',
+                    'required' => true,
+                    'default' => 'invest',
+                    'options' => [
+                        ['value' => 'invest', 'label' => 'Инвест-питч'],
+                        ['value' => 'report', 'label' => 'Статус / отчёт'],
+                        ['value' => 'pitch', 'label' => 'Партнёрский питч'],
+                    ],
+                ],
                 'title' => [
                     'id' => 'title',
                     'type' => 'text',
@@ -1098,6 +1144,32 @@ function constructor_solution_definitions(): array
                     'required' => true,
                     'default' => 'Инвестиционные возможности Ямала',
                     'maxLength' => 120,
+                ],
+                'event_name' => [
+                    'id' => 'event_name',
+                    'type' => 'text',
+                    'label' => 'Событие / площадка',
+                    'required' => false,
+                    'default' => 'Инвестсовет ЯНАО',
+                    'maxLength' => 100,
+                ],
+                'key_message' => [
+                    'id' => 'key_message',
+                    'type' => 'textarea',
+                    'label' => 'Ключевое сообщение',
+                    'required' => true,
+                    'default' => 'Короткий тезис, который должен остаться у аудитории после встречи.',
+                    'rows' => 3,
+                    'maxLength' => 240,
+                ],
+                'structure' => [
+                    'id' => 'structure',
+                    'type' => 'textarea',
+                    'label' => 'Структура слайдов',
+                    'required' => false,
+                    'default' => "1. Контекст и задача\n2. Что предлагает Ямал\n3. Кейсы и цифры\n4. Следующий шаг",
+                    'rows' => 5,
+                    'maxLength' => 520,
                 ],
                 'speaker' => [
                     'id' => 'speaker',
@@ -2644,6 +2716,139 @@ function constructor_format_date(string $value): string
     return date('d.m.Y', $date);
 }
 
+function constructor_nameplate_variant_labels(): array
+{
+    return [
+        'cabinet' => 'Кабинетная',
+        'navigation' => 'Навигационная',
+        'zone' => 'Зональная',
+    ];
+}
+
+function constructor_nameplate_direction_labels(): array
+{
+    return [
+        'none' => 'Без стрелки',
+        'left' => 'Налево',
+        'right' => 'Направо',
+        'up' => 'Вверх',
+        'down' => 'Вниз',
+    ];
+}
+
+function constructor_presentation_mode_labels(): array
+{
+    return [
+        'invest' => 'Инвест-питч',
+        'report' => 'Статус / отчёт',
+        'pitch' => 'Партнёрский питч',
+    ];
+}
+
+function constructor_field_map(array $definition): array
+{
+    $map = [];
+    foreach (($definition['fields'] ?? []) as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+        $fieldId = trim((string) ($field['id'] ?? ''));
+        if ($fieldId !== '') {
+            $map[$fieldId] = $field;
+        }
+    }
+    return $map;
+}
+
+function constructor_field_display_value(array $field, $value): string
+{
+    $fieldType = (string) ($field['type'] ?? 'text');
+    $normalizedValue = is_scalar($value) ? trim((string) $value) : '';
+    if ($normalizedValue === '') {
+        return '';
+    }
+
+    if ($fieldType === 'select') {
+        foreach (($field['options'] ?? []) as $option) {
+            if (!is_array($option)) {
+                continue;
+            }
+            if ((string) ($option['value'] ?? '') === $normalizedValue) {
+                return trim((string) ($option['label'] ?? $normalizedValue));
+            }
+        }
+    }
+
+    if ($fieldType === 'date') {
+        return constructor_format_date($normalizedValue);
+    }
+
+    if ($fieldType === 'textarea') {
+        return trim(preg_replace('/\s*\R\s*/u', ' / ', $normalizedValue) ?: $normalizedValue);
+    }
+
+    return $normalizedValue;
+}
+
+function constructor_presentation_outline(string $value): array
+{
+    $source = trim($value);
+    if ($source === '') {
+        return [];
+    }
+
+    $lines = preg_split('/\R+/u', $source) ?: [];
+    $items = [];
+    foreach ($lines as $line) {
+        $clean = trim((string) preg_replace('/^\s*(?:[-*•]+|\d+[.)])\s*/u', '', $line));
+        if ($clean !== '') {
+            $items[] = $clean;
+        }
+    }
+
+    if ($items === []) {
+        $items = preg_split('/\s*;\s*/u', $source) ?: [];
+        $items = array_values(array_filter(array_map(static fn(string $item): string => trim($item), $items)));
+    }
+
+    return array_values(array_unique($items));
+}
+
+function constructor_derived_payload(array $definition, array $input): array
+{
+    $definitionId = (string) ($definition['id'] ?? '');
+
+    if ($definitionId === 'nameplate') {
+        $variant = (string) ($input['variant'] ?? 'cabinet');
+        $direction = (string) ($input['direction'] ?? 'none');
+        $mount = (string) ($input['mount'] ?? 'wall');
+        $mountLabels = [
+            'wall' => 'Настенное',
+            'door' => 'На дверь',
+            'desktop' => 'Настольное',
+        ];
+
+        return [
+            'variantLabel' => constructor_nameplate_variant_labels()[$variant] ?? 'Кабинетная',
+            'directionLabel' => constructor_nameplate_direction_labels()[$direction] ?? 'Без стрелки',
+            'mountLabel' => $mountLabels[$mount] ?? 'Настенное',
+            'roomNumber' => trim((string) ($input['room_number'] ?? '')),
+        ];
+    }
+
+    if ($definitionId === 'presentation_deck') {
+        $mode = (string) ($input['presentation_mode'] ?? 'invest');
+        return [
+            'presentationModeLabel' => constructor_presentation_mode_labels()[$mode] ?? 'Инвест-питч',
+            'eventName' => trim((string) ($input['event_name'] ?? '')),
+            'keyMessage' => trim((string) ($input['key_message'] ?? '')),
+            'outline' => constructor_presentation_outline((string) ($input['structure'] ?? '')),
+        ];
+    }
+
+    return [];
+}
+
 function constructor_filename_base(array $definition, array $input): string
 {
     $slug = preg_replace('/[^a-z0-9_-]+/i', '-', (string) ($definition['id'] ?? 'solution')) ?: 'solution';
@@ -2653,7 +2858,7 @@ function constructor_filename_base(array $definition, array $input): string
 
 function constructor_brief_payload(array $definition, array $input, array $recommendations): array
 {
-    return [
+    $payload = [
         'solution' => [
             'id' => (string) ($definition['id'] ?? ''),
             'label' => (string) ($definition['label'] ?? ''),
@@ -2683,6 +2888,13 @@ function constructor_brief_payload(array $definition, array $input, array $recom
         ],
         'generatedAtUtc' => gmdate(DATE_ATOM),
     ];
+
+    $derived = constructor_derived_payload($definition, $input);
+    if ($derived !== []) {
+        $payload['derived'] = $derived;
+    }
+
+    return $payload;
 }
 
 function constructor_json_brief_artifact(array $definition, array $input, array $recommendations): array
@@ -2701,11 +2913,13 @@ function constructor_json_brief_artifact(array $definition, array $input, array 
 function constructor_html_brief_artifact(array $definition, array $input, array $recommendations): array
 {
     $payload = constructor_brief_payload($definition, $input, $recommendations);
+    $fieldMap = constructor_field_map($definition);
     $sections = array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $payload['recommendations']['sections'] ?? []);
     $files = array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $payload['recommendations']['files'] ?? []);
     $adviceTitle = trim((string) (($payload['recommendations']['advice']['title'] ?? '')));
     $adviceSummary = trim((string) (($payload['recommendations']['advice']['summary'] ?? '')));
     $cityLabel = (string) ($payload['cityLabel'] ?? 'Ямал');
+    $derived = is_array($payload['derived'] ?? null) ? $payload['derived'] : [];
 
     $html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>' .
         htmlspecialchars((string) ($definition['label'] ?? 'Решение'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
@@ -2723,6 +2937,34 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
             htmlspecialchars($adviceSummary, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
     }
 
+    if ((string) ($definition['id'] ?? '') === 'presentation_deck') {
+        $presentationMode = trim((string) ($derived['presentationModeLabel'] ?? ''));
+        $eventName = trim((string) ($derived['eventName'] ?? ''));
+        $keyMessage = trim((string) ($derived['keyMessage'] ?? ''));
+        $outline = array_values(array_filter(array_map(static fn($item): string => trim((string) $item), $derived['outline'] ?? [])));
+
+        $html .= '<h2>Паспорт презентации</h2><div class="grid">';
+        if ($presentationMode !== '') {
+            $html .= '<div class="card"><strong>Сценарий</strong><p>' . htmlspecialchars($presentationMode, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>';
+        }
+        if ($eventName !== '') {
+            $html .= '<div class="card"><strong>Событие / площадка</strong><p>' . htmlspecialchars($eventName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>';
+        }
+        $html .= '<div class="card"><strong>Спикер</strong><p>' . htmlspecialchars(trim((string) ($input['speaker'] ?? '')), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+            '<div class="card"><strong>Слайдов</strong><p>' . htmlspecialchars((string) ($input['slide_count'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div></div>';
+
+        if ($keyMessage !== '') {
+            $html .= '<h2>Ключевое сообщение</h2><p>' . htmlspecialchars($keyMessage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
+        }
+
+        if ($outline !== []) {
+            $html .= '<h2>Структура слайдов</h2><ul>' . implode('', array_map(
+                static fn(string $item): string => '<li>' . htmlspecialchars($item, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>',
+                $outline
+            )) . '</ul>';
+        }
+    }
+
     if ($sections !== []) {
         $html .= '<h2>Рекомендуемые разделы</h2><ul>' . implode('', array_map(
             static fn(string $item): string => '<li>' . htmlspecialchars($item, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>',
@@ -2737,7 +2979,12 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
     }
 
     $html .= '<h2>Поля</h2><ul>' . implode('', array_map(
-        static fn(string $key, $value): string => '<li><strong>' . htmlspecialchars((string) $key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ':</strong> ' . htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>',
+        static function (string $key, $value) use ($fieldMap): string {
+            $field = $fieldMap[$key] ?? ['label' => $key];
+            $label = trim((string) ($field['label'] ?? $key));
+            $displayValue = constructor_field_display_value($field, $value);
+            return '<li><strong>' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ':</strong> ' . htmlspecialchars($displayValue, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>';
+        },
         array_keys($input),
         array_values($input)
     )) . '</ul></article></body></html>';
@@ -2784,27 +3031,74 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $width = 1200;
             $height = 420;
             $background = '#fbf7f0';
+            $variant = (string) ($input['variant'] ?? 'cabinet');
+            $variantLabel = constructor_nameplate_variant_labels()[$variant] ?? 'Кабинетная';
+            $roomNumber = trim((string) ($input['room_number'] ?? ''));
+            $direction = (string) ($input['direction'] ?? 'none');
+            $directionLabel = constructor_nameplate_direction_labels()[$direction] ?? 'Без стрелки';
+            $mountLabel = match ((string) ($input['mount'] ?? 'wall')) {
+                'door' => 'На дверь',
+                'desktop' => 'Настольное',
+                default => 'Настенное',
+            };
+            $arrowPath = match ($direction) {
+                'left' => '<path d="M1032 266H936M936 266l30-30M936 266l30 30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'right' => '<path d="M936 266H1032M1032 266l-30-30M1032 266l-30 30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'up' => '<path d="M984 318V222M984 222l-30 30M984 222l30 30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'down' => '<path d="M984 214v96M984 310l-30-30M984 310l30-30" stroke="#bf1238" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                default => '',
+            };
+            $locationX = $roomNumber !== '' ? 280 : 62;
             $body =
                 '<rect x="30" y="30" width="1140" height="360" rx="28" class="card"/>' .
                 '<rect x="30" y="30" width="1140" height="96" rx="28" class="accent"/>' .
                 ($brandLogo !== '' ? '<image href="' . $brandLogo . '" x="62" y="62" width="182" height="30"/>' : '') .
-                constructor_svg_render_text(62, 178, constructor_svg_wrap_lines((string) ($input['location'] ?? ''), 24, 2), 'headline', 88) .
-                constructor_svg_render_text(62, 306, constructor_svg_wrap_lines((string) ($input['subline'] ?? ''), 36, 2), 'subhead', 40) .
-                '<text class="badge" x="1040" y="356" text-anchor="end">' . constructor_svg_escape((string) ($input['size_variant'] ?? '300x120')) . '</text>';
+                '<text class="badge" x="1108" y="78" text-anchor="end">' . constructor_svg_escape($variantLabel) . '</text>' .
+                ($roomNumber !== ''
+                    ? '<rect x="62" y="146" width="180" height="146" rx="28" class="accent-soft"/>' .
+                        '<text class="tiny" x="94" y="190">Номер</text>' .
+                        constructor_svg_render_text(94, 252, constructor_svg_wrap_lines($roomNumber, 8, 2), 'subhead', 36)
+                    : '') .
+                constructor_svg_render_text($locationX, 184, constructor_svg_wrap_lines((string) ($input['location'] ?? ''), 24, 2), 'headline', 88) .
+                constructor_svg_render_text($locationX, 318, constructor_svg_wrap_lines((string) ($input['subline'] ?? ''), 34, 2), 'subhead', 40) .
+                '<text class="small" x="62" y="356">' . constructor_svg_escape($mountLabel) . '</text>' .
+                '<text class="badge" x="762" y="356">' . constructor_svg_escape((string) ($input['size_variant'] ?? '300x120')) . '</text>' .
+                ($direction !== 'none'
+                    ? '<rect x="868" y="200" width="200" height="112" rx="24" class="accent-soft"/>' .
+                        $arrowPath .
+                        '<text class="small" x="968" y="348" text-anchor="middle">' . constructor_svg_escape($directionLabel) . '</text>'
+                    : '');
             break;
 
         case 'presentation_deck':
             $width = 1600;
             $height = 900;
             $background = '#f7f1ea';
+            $presentationMode = constructor_presentation_mode_labels()[(string) ($input['presentation_mode'] ?? 'invest')] ?? 'Инвест-питч';
+            $eventName = trim((string) ($input['event_name'] ?? ''));
+            $keyMessage = trim((string) ($input['key_message'] ?? ''));
+            $outlinePreview = array_slice(constructor_presentation_outline((string) ($input['structure'] ?? '')), 0, 3);
+            $outlinePreview = array_map(static fn(string $item): string => '• ' . $item, $outlinePreview);
             $body =
-                '<rect x="0" y="0" width="560" height="900" class="accent"/>' .
-                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="104" y="92" width="232" height="151"/>' : '') .
-                constructor_svg_render_text(644, 208, constructor_svg_wrap_lines((string) ($input['title'] ?? ''), 20, 3), 'headline', 94) .
-                constructor_svg_render_text(644, 530, constructor_svg_wrap_lines((string) ($input['speaker'] ?? ''), 30, 1), 'subhead', 40) .
-                constructor_svg_render_text(644, 584, constructor_svg_wrap_lines((string) ($input['speaker_role'] ?? ''), 34, 2), 'body', 34) .
-                constructor_svg_render_text(644, 720, constructor_svg_wrap_lines('Аудитория: ' . (string) ($input['audience'] ?? ''), 42, 1), 'small', 28) .
-                constructor_svg_render_text(644, 760, constructor_svg_wrap_lines('Слайдов: ' . (string) ($input['slide_count'] ?? ''), 42, 1), 'small', 28);
+                '<rect x="0" y="0" width="520" height="900" class="accent"/>' .
+                ($brandMark !== '' ? '<image href="' . $brandMark . '" x="96" y="96" width="232" height="151"/>' : '') .
+                '<rect x="1184" y="86" width="304" height="72" rx="24" class="accent-soft"/>' .
+                '<text class="badge" x="1336" y="131" text-anchor="middle">' . constructor_svg_escape($presentationMode) . '</text>' .
+                constructor_svg_render_text(644, 168, constructor_svg_wrap_lines($eventName !== '' ? $eventName : $cityLabel, 28, 2), 'tiny', 28) .
+                constructor_svg_render_text(644, 282, constructor_svg_wrap_lines((string) ($input['title'] ?? ''), 20, 3), 'headline', 94) .
+                '<rect x="644" y="476" width="844" height="164" rx="32" class="card"/>' .
+                '<text class="tiny" x="692" y="528">Ключевое сообщение</text>' .
+                constructor_svg_render_text(692, 582, constructor_svg_wrap_lines($keyMessage, 42, 3), 'body', 34) .
+                constructor_svg_render_text(644, 712, constructor_svg_wrap_lines((string) ($input['speaker'] ?? ''), 30, 1), 'subhead', 40) .
+                constructor_svg_render_text(644, 764, constructor_svg_wrap_lines((string) ($input['speaker_role'] ?? ''), 34, 2), 'body', 34) .
+                '<rect x="644" y="796" width="404" height="74" rx="24" class="accent-soft"/>' .
+                '<text class="badge" x="846" y="842" text-anchor="middle">Слайдов: ' . constructor_svg_escape((string) ($input['slide_count'] ?? '')) . '</text>' .
+                constructor_svg_render_text(1088, 824, constructor_svg_wrap_lines('Аудитория: ' . (string) ($input['audience'] ?? ''), 30, 2), 'small', 28) .
+                ($outlinePreview !== []
+                    ? '<text class="tiny" x="96" y="324">Каркас слайдов</text>' .
+                        constructor_svg_render_text(96, 382, $outlinePreview, 'small', 34)
+                    : '') .
+                '<text class="small" x="1480" y="852" text-anchor="end">' . constructor_svg_escape($cityLabel) . '</text>';
             break;
 
         case 'certificate':

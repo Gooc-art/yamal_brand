@@ -251,7 +251,20 @@ function groupConstructorFields(fields) {
   ];
   const fieldList = Array.isArray(fields) ? fields : [];
   const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
-  const basicsIds = new Set(['city', 'size_variant', 'ratio', 'slide_count', 'access_level', 'mount', 'issue_date']);
+  const basicsIds = new Set([
+    'city',
+    'variant',
+    'size_variant',
+    'room_number',
+    'direction',
+    'mount',
+    'presentation_mode',
+    'audience',
+    'slide_count',
+    'ratio',
+    'access_level',
+    'issue_date',
+  ]);
 
   fieldList.forEach((field) => {
     const fieldId = String(field?.id || '').trim();

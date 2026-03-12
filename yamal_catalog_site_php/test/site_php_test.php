@@ -322,6 +322,102 @@ assert_true(str_contains((string) ($contractorAdvice['title'] ?? ''), 'подр�
 $followUps = consultant_follow_up_suggestions(build_consultant_context('брендбук', ''));
 assert_true(count($followUps) >= 3, 'consultant builds follow-up clarifications for broad query');
 
+$nameplateDefinition = constructor_definition_by_id('nameplate');
+assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
+assert_true(
+    array_reduce(
+        $nameplateDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'variant',
+        false
+    ),
+    'nameplate constructor exposes variant field'
+);
+assert_true(
+    array_reduce(
+        $nameplateDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'room_number',
+        false
+    ),
+    'nameplate constructor exposes room number field'
+);
+assert_true(
+    array_reduce(
+        $nameplateDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'direction',
+        false
+    ),
+    'nameplate constructor exposes direction field'
+);
+
+$nameplateSvg = constructor_svg_artifact($nameplateDefinition, constructor_normalize_input($nameplateDefinition, [
+    'city' => 'салехард',
+    'variant' => 'navigation',
+    'location' => 'Сектор деловой программы',
+    'room_number' => 'B-204',
+    'subline' => '2 этаж • блок Б',
+    'size_variant' => '400x160',
+    'mount' => 'door',
+    'direction' => 'right',
+]));
+assert_true($nameplateSvg !== null, 'nameplate svg artifact exists');
+assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Навигационная'), 'nameplate svg exposes variant label');
+assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'B-204'), 'nameplate svg exposes room number');
+assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Направо'), 'nameplate svg exposes direction label');
+
+$presentationDefinition = constructor_definition_by_id('presentation_deck');
+assert_true($presentationDefinition !== null, 'presentation constructor definition exists');
+assert_true(
+    array_reduce(
+        $presentationDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'presentation_mode',
+        false
+    ),
+    'presentation constructor exposes mode field'
+);
+assert_true(
+    array_reduce(
+        $presentationDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'key_message',
+        false
+    ),
+    'presentation constructor exposes key message field'
+);
+assert_true(
+    array_reduce(
+        $presentationDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'structure',
+        false
+    ),
+    'presentation constructor exposes structure field'
+);
+
+$presentationInput = constructor_normalize_input($presentationDefinition, [
+    'city' => 'салехард',
+    'presentation_mode' => 'pitch',
+    'title' => 'Ямал: пространство для инвестиций',
+    'event_name' => 'Арктический форум',
+    'key_message' => 'Показываем, почему регион удобен для партнёрских проектов.',
+    'structure' => "1. Контекст рынка\n2. Доказательство и кейсы\n3. Следующий шаг",
+    'speaker' => 'Ирина Полярная',
+    'speaker_role' => 'Директор проектов',
+    'audience' => 'Партнёры',
+    'slide_count' => '14',
+]);
+$presentationPayload = constructor_brief_payload($presentationDefinition, $presentationInput, ['sections' => [], 'items' => [], 'advice' => []]);
+assert_true(($presentationPayload['derived']['presentationModeLabel'] ?? '') === 'Партнёрский питч', 'presentation brief payload exposes mode label');
+assert_true(($presentationPayload['derived']['outline'][1] ?? '') === 'Доказательство и кейсы', 'presentation brief payload exposes outline list');
+
+$presentationHtml = constructor_html_brief_artifact($presentationDefinition, $presentationInput, [
+    'sections' => [['label' => 'Брендбук Салехард']],
+    'items' => [['label' => 'Салехард логотип.svg']],
+    'advice' => ['title' => 'По брендбуку', 'summary' => 'Проверьте логотип и мастер-слайды.'],
+]);
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Паспорт презентации'), 'presentation html brief exposes presentation passport section');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Ключевое сообщение'), 'presentation html brief exposes key message section');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Структура слайдов'), 'presentation html brief exposes outline section');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Арктический форум'), 'presentation html brief exposes event name');
+assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Партнёрский питч'), 'presentation html brief exposes selected mode label');
+
 function create_catalog_db(string $path): void
 {
     $pdo = new PDO('sqlite:' . $path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
