@@ -2048,11 +2048,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           <div class="solution-card-copy">
             <span class="card-kicker">${escapeHtml(item.category || 'Решение')}</span>
             <strong>${escapeHtml(item.label)}</strong>
-            <p>${escapeHtml(item.description || item.summary)}</p>
+            <p>${escapeHtml(item.summary || item.description)}</p>
           </div>
         </div>
         <div class="item-actions">
-          <button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(item.id)}">Открыть конструктор</button>
+          <button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(item.id)}">Открыть</button>
         </div>
       </article>
     `).join('');

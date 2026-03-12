@@ -125,6 +125,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solutio
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-filter-chip.active'), 'styles contain active solution filter classes');
 assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.solution-filter-chip small'), 'styles removed solution filter counters');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-webkit-line-clamp: 2'), 'styles clamp solution card copy to two lines');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
@@ -594,6 +595,14 @@ assert_true(array_key_exists('smartMode', $bootstrap['consultant'] ?? []), 'boot
 assert_true(is_bool($bootstrap['consultant']['smartMode']['enabled'] ?? null), 'bootstrap smart mode flag is boolean');
 assert_true(($bootstrap['constructors']['title'] ?? '') === 'Лаборатория решений', 'bootstrap exposes solution lab title');
 assert_true(count($bootstrap['constructors']['items'] ?? []) >= 8, 'bootstrap exposes constructor cards');
+assert_true(
+    array_reduce(
+        $bootstrap['constructors']['items'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || (((string) ($item['id'] ?? '')) === 'business_card' && ((string) ($item['summary'] ?? '')) === 'Контакты сотрудника'),
+        false
+    ),
+    'bootstrap exposes shortened business card summary'
+);
 assert_true(
     array_reduce(
         $bootstrap['constructors']['items'] ?? [],

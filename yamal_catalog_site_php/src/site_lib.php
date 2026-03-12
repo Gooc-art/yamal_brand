@@ -969,7 +969,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'business_card',
             'label' => 'Визитка',
-            'summary' => 'Контактная карточка для сотрудника',
+            'summary' => 'Контакты сотрудника',
             'description' => 'Готовая визитка с ФИО, должностью и контактами на базе бренд-материалов региона или города.',
             'icon' => '▣',
             'category' => 'Печать',
@@ -1026,7 +1026,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'nameplate',
             'label' => 'Табличка',
-            'summary' => 'Навигационная или кабинетная табличка',
+            'summary' => 'Кабинет, навигация, зона',
             'description' => 'Шаблон таблички для кабинета, переговорной или навигации с привязкой к городу и месту.',
             'icon' => '▭',
             'category' => 'Навигация',
@@ -1115,7 +1115,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'presentation_deck',
             'label' => 'Презентация',
-            'summary' => 'Каркас презентации и мастер-слайд',
+            'summary' => 'Обложка и brief встречи',
             'description' => 'Структурированный бриф и обложка презентации с рекомендациями по брендбуку и файловому пакету.',
             'icon' => '▤',
             'category' => 'Презентации',
@@ -1209,7 +1209,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'certificate',
             'label' => 'Сертификат',
-            'summary' => 'Именной сертификат или диплом',
+            'summary' => 'Награда, диплом, сертификат',
             'description' => 'Шаблон сертификата для мероприятий, награждений и внутренних программ.',
             'icon' => '◫',
             'category' => 'Документы',
@@ -1264,7 +1264,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'badge',
             'label' => 'Бейдж',
-            'summary' => 'Именной бейдж для события или команды',
+            'summary' => 'Бейдж участника или команды',
             'description' => 'Вертикальный бейдж для мероприятий, волонтёров, участников и организаторов.',
             'icon' => '◧',
             'category' => 'События',
@@ -1316,7 +1316,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'social_post',
             'label' => 'Пост для соцсетей',
-            'summary' => 'Карточка или анонс для digital',
+            'summary' => 'Анонс и digital-карточка',
             'description' => 'Готовая digital-карточка для анонсов, поздравлений и коротких сообщений.',
             'icon' => '◩',
             'category' => 'Digital',
@@ -1368,7 +1368,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'letterhead',
             'label' => 'Фирменный бланк',
-            'summary' => 'Официальный лист и сопроводительное письмо',
+            'summary' => 'Письмо и официальный лист',
             'description' => 'Шаблон для официальной переписки с шапкой, контактной строкой и местом под подпись.',
             'icon' => '◪',
             'category' => 'Документы',
@@ -1415,7 +1415,7 @@ function constructor_solution_definitions(): array
         [
             'id' => 'rollup',
             'label' => 'Роллап / стенд',
-            'summary' => 'Вертикальный носитель для событий',
+            'summary' => 'Стенд для события или зоны',
             'description' => 'Каркас роллапа или event-стенда с заголовком, подзаголовком и блоком ключевых сообщений.',
             'icon' => '▥',
             'category' => 'События',

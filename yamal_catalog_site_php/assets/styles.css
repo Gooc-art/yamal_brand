@@ -1804,6 +1804,11 @@ input[type="search"]:focus {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.55em * 2);
 }
 
 .solution-card .item-actions {
