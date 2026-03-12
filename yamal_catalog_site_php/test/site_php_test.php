@@ -341,6 +341,21 @@ assert_true(str_contains($adaptiveText, 'font-size:'), 'adaptive svg text inject
 preg_match('/font-size:([0-9.]+)px/', $adaptiveText, $adaptiveTextMatch);
 assert_true(isset($adaptiveTextMatch[1]), 'adaptive svg text exposes computed font size');
 assert_true((float) $adaptiveTextMatch[1] < 92.0, 'adaptive svg text reduces font size for tight blocks');
+$hyphenatedWrap = constructor_svg_wrap_lines_meta('Александрова-Виноградова', 14, 2);
+assert_true(($hyphenatedWrap['lines'][0] ?? '') === 'Александрова-', 'adaptive wrap prefers natural split after hyphen for long tokens');
+assert_true(($hyphenatedWrap['lines'][1] ?? '') === 'Виноградова', 'adaptive wrap keeps remaining token on next line');
+assert_true(($hyphenatedWrap['truncated'] ?? true) === false, 'adaptive wrap does not falsely truncate a clean hyphen split');
+$businessCardFit = constructor_svg_fit_text_block(
+    'Александрова-Виноградова Екатерина Константиновна-Петрова',
+    'headline',
+    432,
+    190,
+    3,
+    ['minFontSize' => 26]
+);
+assert_true(($businessCardFit['truncated'] ?? true) === false, 'business card full name fit prefers readable non-truncated layout');
+assert_true(count($businessCardFit['lines'] ?? []) >= 2, 'business card full name fit uses multi-line layout for long fio');
+assert_true((float) ($businessCardFit['fontSize'] ?? 0.0) < 92.0, 'business card full name fit reduces font size from default headline scale');
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
@@ -454,6 +469,83 @@ $presentationSvg = constructor_svg_artifact($presentationDefinition, constructor
 assert_true($presentationSvg !== null, 'presentation svg artifact exists');
 assert_true(str_contains((string) ($presentationSvg['content'] ?? ''), 'font-size:'), 'presentation svg uses adaptive text sizing');
 assert_true(str_contains((string) ($presentationSvg['content'] ?? ''), 'Статус / отчёт'), 'presentation svg keeps selected mode label');
+
+$overflowCasePayloads = [
+    'business_card' => [
+        'city' => 'салехард',
+        'full_name' => 'Александрова-Виноградова Екатерина Константиновна-Петрова',
+        'role' => 'Руководитель стратегических коммуникаций и территориального брендинга',
+        'department' => 'Департамент внешних коммуникаций и проектного сопровождения',
+        'phone' => '+7 999 123-45-67 доб. 1234',
+        'email' => 'ekaterina.aleksandrova-vinogradova-petrova@brand.yamal.rf',
+    ],
+    'badge' => [
+        'city' => 'салехард',
+        'event_name' => 'Международный форум креативных индустрий Ямала',
+        'full_name' => 'Александрова-Виноградова Екатерина Константиновна-Петрова',
+        'role' => 'Руководитель стратегических коммуникаций и территориального брендинга',
+    ],
+    'nameplate' => [
+        'city' => 'салехард',
+        'variant' => 'navigation',
+        'location' => 'Отдел стратегических коммуникаций и проектного сопровождения бренда территории',
+        'subline' => 'Приёмная, переговорная и рабочая зона команды развития',
+        'room_number' => '214Б-7',
+        'mount' => 'wall',
+        'direction' => 'right',
+        'size_variant' => '400x160',
+    ],
+    'presentation_deck' => [
+        'city' => 'салехард',
+        'presentation_mode' => 'pitch',
+        'title' => 'Комплексная платформа развития бренда Ямала для международных и межрегиональных коммуникаций',
+        'event_name' => 'Международный инвестиционный форум северных территорий и креативной экономики',
+        'key_message' => 'Мы переводим бренд региона в систему готовых решений для власти, бизнеса, туризма и событийной повестки без потери целостности айдентики.',
+        'speaker' => 'Екатерина Александрова-Виноградова',
+        'speaker_role' => 'Руководитель стратегических коммуникаций и территориального брендинга',
+        'audience' => 'Партнёры, инвесторы и представители институтов развития',
+        'slide_count' => 18,
+    ],
+    'certificate' => [
+        'city' => 'салехард',
+        'recipient' => 'Александрова-Виноградова Екатерина Константиновна-Петрова',
+        'reason' => 'за вклад в развитие визуальных коммуникаций и внедрение системы брендированных решений на территории Ямала',
+        'event_name' => 'Форум развития территориального брендинга',
+        'signer' => 'Директор проектного офиса коммуникаций',
+        'issue_date' => '2026-03-12',
+    ],
+    'social_post' => [
+        'city' => 'салехард',
+        'ratio' => '4:5',
+        'headline' => 'Новая система брендированных решений для муниципальных и событийных коммуникаций Ямала',
+        'message' => 'Собрали библиотеку типовых носителей, чтобы команды быстрее запускали согласованные материалы без ручного поиска файлов и расхождения по айдентике.',
+        'cta' => 'Открыть каталог и выбрать подходящий шаблон',
+    ],
+    'letterhead' => [
+        'city' => 'салехард',
+        'department' => 'Департамент внешних коммуникаций и проектного сопровождения бренда территории',
+        'document_title' => 'Служебное письмо о подготовке брендированных материалов к отраслевому форуму',
+        'contact_line' => '629008, Салехард, ул. Республики, 12 • brand@yamal.ru • +7 34922 00-000',
+        'signer' => 'Екатерина Александрова-Виноградова',
+    ],
+    'rollup' => [
+        'city' => 'салехард',
+        'headline' => 'Ямал. Платформа брендированных решений для событий, городов и партнёрских коммуникаций',
+        'subline' => 'Единая библиотека исходников, готовых шаблонов и сценариев применения для команд региона, подрядчиков и организаторов.',
+        'event_name' => 'Форум креативных индустрий',
+        'size_variant' => '85x200',
+    ],
+];
+foreach ($overflowCasePayloads as $definitionId => $payload) {
+    $definition = constructor_definition_by_id($definitionId);
+    assert_true($definition !== null, $definitionId . ' constructor definition exists for overflow check');
+    $normalizedPayload = constructor_normalize_input($definition, $payload);
+    $artifact = constructor_svg_artifact($definition, $normalizedPayload);
+    assert_true($artifact !== null, $definitionId . ' svg artifact exists for overflow check');
+    $content = (string) ($artifact['content'] ?? '');
+    assert_true(str_contains($content, 'font-size:'), $definitionId . ' svg artifact keeps adaptive inline sizing for long copy');
+    assert_true(!str_contains($content, '…'), $definitionId . ' svg artifact avoids truncating representative long copy');
+}
 
 function create_catalog_db(string $path): void
 {
