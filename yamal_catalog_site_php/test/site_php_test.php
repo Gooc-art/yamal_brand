@@ -322,6 +322,18 @@ assert_true(str_contains((string) ($contractorAdvice['title'] ?? ''), 'подр�
 $followUps = consultant_follow_up_suggestions(build_consultant_context('брендбук', ''));
 assert_true(count($followUps) >= 3, 'consultant builds follow-up clarifications for broad query');
 
+$adaptiveText = constructor_svg_render_text(
+    100,
+    100,
+    constructor_svg_wrap_lines('Очень длинный заголовок для проверки автоматического масштаба в ограниченном поле', 16, 2),
+    'headline',
+    ['maxWidth' => 180, 'maxHeight' => 82, 'minFontSize' => 24]
+);
+assert_true(str_contains($adaptiveText, 'font-size:'), 'adaptive svg text injects inline font size');
+preg_match('/font-size:([0-9.]+)px/', $adaptiveText, $adaptiveTextMatch);
+assert_true(isset($adaptiveTextMatch[1]), 'adaptive svg text exposes computed font size');
+assert_true((float) $adaptiveTextMatch[1] < 92.0, 'adaptive svg text reduces font size for tight blocks');
+
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
 assert_true(
@@ -363,6 +375,7 @@ assert_true($nameplateSvg !== null, 'nameplate svg artifact exists');
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Навигационная'), 'nameplate svg exposes variant label');
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'B-204'), 'nameplate svg exposes room number');
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Направо'), 'nameplate svg exposes direction label');
+assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'font-size:'), 'nameplate svg uses adaptive text sizing');
 
 $presentationDefinition = constructor_definition_by_id('presentation_deck');
 assert_true($presentationDefinition !== null, 'presentation constructor definition exists');
@@ -417,6 +430,22 @@ assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Клю�
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Структура слайдов'), 'presentation html brief exposes outline section');
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Арктический форум'), 'presentation html brief exposes event name');
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Партнёрский питч'), 'presentation html brief exposes selected mode label');
+
+$presentationSvg = constructor_svg_artifact($presentationDefinition, constructor_normalize_input($presentationDefinition, [
+    'city' => 'ямал',
+    'presentation_mode' => 'report',
+    'title' => 'Длинный заголовок презентации, который должен аккуратно поместиться в рамку обложки без вылета за правый край',
+    'event_name' => 'Стратегическая сессия по развитию бренда региона',
+    'key_message' => 'Показываем единый тезис для встречи и удерживаем его в безопасной карточке.',
+    'structure' => "1. Контекст\n2. Текущий статус\n3. Следующий шаг",
+    'speaker' => 'Алексей Северный',
+    'speaker_role' => 'Куратор программы',
+    'audience' => 'Команда проекта',
+    'slide_count' => 18,
+]));
+assert_true($presentationSvg !== null, 'presentation svg artifact exists');
+assert_true(str_contains((string) ($presentationSvg['content'] ?? ''), 'font-size:'), 'presentation svg uses adaptive text sizing');
+assert_true(str_contains((string) ($presentationSvg['content'] ?? ''), 'Статус / отчёт'), 'presentation svg keeps selected mode label');
 
 function create_catalog_db(string $path): void
 {
