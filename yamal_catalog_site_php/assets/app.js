@@ -2196,7 +2196,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `).join('');
   }
 
-  function buildConstructorStepsMarkup(generated) {
+function buildConstructorStepsMarkup(generated) {
     const states = generated
       ? ['done', 'done', 'active']
       : ['active', 'muted', 'muted'];
@@ -2217,10 +2217,40 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </div>
         `).join('')}
       </div>
-    `;
-  }
+  `;
+}
 
-  function buildConstructorPreviewMarkup(artifact, layout) {
+function buildConstructorPresetsMarkup(presets) {
+  const items = Array.isArray(presets) ? presets.filter((item) => item && item.id) : [];
+  if (!items.length) {
+    return '';
+  }
+  return `
+    <section class="constructor-preset-block" aria-label="Готовые сценарии">
+      <div class="constructor-panel-head">
+        <strong>Готовые сценарии</strong>
+        <span>Быстро переключают типовой режим носителя и оформление без ручной настройки каждого поля.</span>
+      </div>
+      <div class="constructor-preset-grid">
+        ${items.map((preset) => `
+          <button
+            type="button"
+            class="constructor-preset-card${preset.active ? ' active' : ''}"
+            data-action="apply-constructor-preset"
+            data-preset-id="${escapeHtml(preset.id)}"
+          >
+            <span class="constructor-preset-kicker">${preset.active ? 'Активно' : 'Сценарий'}</span>
+            <strong>${escapeHtml(preset.label || 'Сценарий')}</strong>
+            <span class="constructor-preset-summary">${escapeHtml(preset.summary || preset.description || '')}</span>
+            ${preset.description ? `<small>${escapeHtml(preset.description)}</small>` : ''}
+          </button>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function buildConstructorPreviewMarkup(artifact, layout) {
     const previewLayout = layout || buildConstructorPreviewLayout({}, artifact);
     if (!artifact) {
       return `
@@ -2311,6 +2341,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const previewLayout = buildConstructorPreviewLayout(definition, previewArtifact);
     const summary = payload?.summary || {};
     const generated = Boolean(payload?.generated);
+    const presets = Array.isArray(payload?.presets) ? payload.presets : [];
 
     state.current = { kind: 'constructor', payload };
     state.detail = null;
@@ -2342,6 +2373,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
               <strong>Поля решения</strong>
               <span>Сначала задайте параметры, потом соберите SVG/brief-пакет и откройте реальные материалы каталога.</span>
             </div>
+            ${buildConstructorPresetsMarkup(presets)}
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
               ${buildConstructorFieldGroupsMarkup(fields, input)}
               <div class="constructor-form-actions">
@@ -2388,6 +2420,26 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       </div>
     `;
     setDocumentTitle(definition.label || 'Лаборатория решений');
+  }
+
+  function applyConstructorPreset(presetId) {
+    const currentPayload = state.current?.kind === 'constructor' ? state.current.payload : null;
+    if (!currentPayload?.definition?.id) {
+      return;
+    }
+    const presets = Array.isArray(currentPayload?.presets) ? currentPayload.presets : [];
+    const preset = presets.find((item) => String(item?.id || '').trim() === String(presetId || '').trim());
+    if (!preset) {
+      return;
+    }
+    const form = document.querySelector('#constructor-form');
+    const formInput = form ? collectConstructorFormInput(form) : {};
+    const nextInput = {
+      ...(currentPayload?.input || {}),
+      ...formInput,
+      ...(preset.overrides || {}),
+    };
+    void buildConstructor(String(currentPayload.definition.id || '').trim(), nextInput);
   }
 
   function renderSectionSwitcher(mode = '') {
@@ -2897,6 +2949,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (action === 'open-folder-page') openFolder(target.dataset.id, Number.parseInt(target.dataset.page || '0', 10));
     if (action === 'open-file') openFile(target.dataset.id);
     if (action === 'open-constructor') openConstructor(target.dataset.id);
+    if (action === 'apply-constructor-preset') applyConstructorPreset(target.dataset.presetId);
     if (action === 'search-chip') {
       els.searchInput.value = target.dataset.query || '';
       search(target.dataset.query || '');

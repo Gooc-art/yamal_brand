@@ -1974,6 +1974,69 @@ input[type="search"]:focus {
   line-height: 1.45;
 }
 
+.constructor-preset-block {
+  display: grid;
+  gap: 12px;
+}
+
+.constructor-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.constructor-preset-card {
+  display: grid;
+  gap: 6px;
+  min-height: 118px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(24, 42, 49, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.constructor-preset-card:hover,
+.constructor-preset-card:focus-visible {
+  border-color: rgba(24, 42, 49, 0.16);
+  box-shadow: 0 14px 32px rgba(24, 42, 49, 0.08);
+  transform: translateY(-1px);
+}
+
+.constructor-preset-card.active {
+  border-color: rgba(180, 36, 61, 0.24);
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(248, 244, 238, 0.94));
+  box-shadow: 0 16px 34px rgba(24, 42, 49, 0.1);
+}
+
+.constructor-preset-kicker {
+  color: rgba(24, 42, 49, 0.56);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.constructor-preset-card strong {
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.constructor-preset-summary,
+.constructor-preset-card small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.constructor-preset-summary {
+  font-size: 13px;
+}
+
+.constructor-preset-card small {
+  font-size: 12px;
+}
+
 .constructor-field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3653,6 +3716,10 @@ input[type="search"]:focus {
   .constructor-steps,
   .constructor-layout,
   .constructor-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .constructor-preset-grid {
     grid-template-columns: 1fr;
   }
 }

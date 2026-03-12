@@ -2648,6 +2648,10 @@ function constructor_present_definition(array $definition): array
                         static fn(array $option): array => [
                             'value' => (string) ($option['value'] ?? ''),
                             'label' => (string) ($option['label'] ?? ''),
+                            'description' => (string) ($option['description'] ?? ''),
+                            'mark' => (string) ($option['mark'] ?? ''),
+                            'swatch' => (string) ($option['swatch'] ?? ''),
+                            'dark' => (bool) ($option['dark'] ?? false),
                         ],
                         array_filter($field['options'] ?? [], static fn($item): bool => is_array($item))
                     )),
@@ -2672,6 +2676,236 @@ function constructor_default_input(array $definition): array
         $out[$fieldId] = $field['default'] ?? '';
     }
     return $out;
+}
+
+function constructor_preset_is_active(array $preset, array $input): bool
+{
+    $overrides = is_array($preset['overrides'] ?? null) ? $preset['overrides'] : [];
+    if ($overrides === []) {
+        return false;
+    }
+    foreach ($overrides as $key => $value) {
+        if ((string) ($input[$key] ?? '') !== (string) $value) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function constructor_preset_definitions(array $definition): array
+{
+    return match ((string) ($definition['id'] ?? '')) {
+        'business_card' => [
+            [
+                'id' => 'official',
+                'label' => 'Официальная',
+                'summary' => 'Спокойлая визитка на светлом фоне',
+                'description' => 'Базовый деловой режим для контактов и встреч.',
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'background_style' => 'clean', 'palette_tone' => 'paper'],
+            ],
+            [
+                'id' => 'print',
+                'label' => 'Для печати',
+                'summary' => 'Печатная версия с рамкой',
+                'description' => 'CMYK и спокойная рамка под тираж.',
+                'overrides' => ['color_variant' => 'cmyk', 'brand_lockup' => 'logo', 'background_style' => 'frame', 'palette_tone' => 'paper'],
+            ],
+            [
+                'id' => 'contrast',
+                'label' => 'Контрастный знак',
+                'summary' => 'Белый знак на плотном фоне',
+                'description' => 'Акцентный режим, когда нужен более смелый носитель.',
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'mark', 'background_style' => 'clean', 'palette_tone' => 'ink'],
+            ],
+        ],
+        'nameplate' => [
+            [
+                'id' => 'cabinet',
+                'label' => 'Кабинет',
+                'summary' => 'Спокойлая кабинетная табличка',
+                'description' => 'Для двери, кабинета или переговорной.',
+                'overrides' => ['variant' => 'cabinet', 'background_style' => 'band', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'navigation',
+                'label' => 'Навигация',
+                'summary' => 'Бирюзовый маршрутный режим',
+                'description' => 'Под стрелки и длинные направления.',
+                'overrides' => ['variant' => 'navigation', 'direction' => 'right', 'background_style' => 'band', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'zone_mark',
+                'label' => 'Зональный знак',
+                'summary' => 'Контрастный блок со знаком',
+                'description' => 'Когда нужен акцент на зоне и видимость с расстояния.',
+                'overrides' => ['variant' => 'zone', 'background_style' => 'frame', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+            ],
+        ],
+        'presentation_deck' => [
+            [
+                'id' => 'board',
+                'label' => 'Деловая',
+                'summary' => 'Спокойлая обложка под статус и отчёт',
+                'description' => 'Универсальный вариант для отчёта и внутренних встреч.',
+                'overrides' => ['presentation_mode' => 'report', 'background_style' => 'watermark', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'pitch',
+                'label' => 'Питч',
+                'summary' => 'Акцентный режим для партнёрского выступления',
+                'description' => 'Сильнее выделяет знак и главный тезис.',
+                'overrides' => ['presentation_mode' => 'pitch', 'background_style' => 'watermark', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'invest',
+                'label' => 'Инвест',
+                'summary' => 'Холодный северный тон',
+                'description' => 'Бирюзовая подача для инвестиционного сценария.',
+                'overrides' => ['presentation_mode' => 'invest', 'background_style' => 'pattern', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+            ],
+        ],
+        'certificate' => [
+            [
+                'id' => 'official',
+                'label' => 'Официальный',
+                'summary' => 'Печатный сертификат с рамкой',
+                'description' => 'Стандартная торжественная версия для выдачи.',
+                'overrides' => ['color_variant' => 'cmyk', 'background_style' => 'frame', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'ceremony',
+                'label' => 'Торжественный',
+                'summary' => 'Тёплая церемониальная версия',
+                'description' => 'Охристый тон и знак как главный акцент.',
+                'overrides' => ['color_variant' => 'color', 'background_style' => 'frame', 'palette_tone' => 'gold', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'contrast',
+                'label' => 'Контрастный',
+                'summary' => 'Белый логотип на тёмном фоне',
+                'description' => 'Для сценических сертификатов и экранной выдачи.',
+                'overrides' => ['color_variant' => 'white', 'background_style' => 'clean', 'palette_tone' => 'ink', 'brand_lockup' => 'logo'],
+            ],
+        ],
+        'badge' => [
+            [
+                'id' => 'speaker',
+                'label' => 'Спикер',
+                'summary' => 'Яркий бейдж выступающего',
+                'description' => 'Акцентная версия под сцену и конференции.',
+                'overrides' => ['access_level' => 'speaker', 'background_style' => 'band', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'staff',
+                'label' => 'Команда',
+                'summary' => 'Бирюзовый режим для команды',
+                'description' => 'Спокойлая версия для оргкомитета и волонтёров.',
+                'overrides' => ['access_level' => 'staff', 'background_style' => 'band', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'vip',
+                'label' => 'VIP',
+                'summary' => 'Контрастный тёмный бейдж',
+                'description' => 'Белый знак на плотном фоне для особого доступа.',
+                'overrides' => ['access_level' => 'vip', 'background_style' => 'clean', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+            ],
+        ],
+        'social_post' => [
+            [
+                'id' => 'announce',
+                'label' => 'Анонс',
+                'summary' => 'Красный акцент для публикации',
+                'description' => 'Быстрый сценарий под анонс и сообщение.',
+                'overrides' => ['ratio' => '4:5', 'background_style' => 'band', 'palette_tone' => 'accent', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'editorial',
+                'label' => 'Редакционный',
+                'summary' => 'Тёмный знак и чистая подача',
+                'description' => 'Под длинный заголовок и более строгий тон.',
+                'overrides' => ['ratio' => '1:1', 'background_style' => 'watermark', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'story',
+                'label' => 'Панорама',
+                'summary' => 'Широкий digital-режим',
+                'description' => 'Под горизонтальный пост или обложку анонса.',
+                'overrides' => ['ratio' => '16:9', 'background_style' => 'pattern', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+            ],
+        ],
+        'letterhead' => [
+            [
+                'id' => 'official',
+                'label' => 'Официальный',
+                'summary' => 'Классический деловой бланк',
+                'description' => 'Печатный режим под письма и справки.',
+                'overrides' => ['color_variant' => 'cmyk', 'background_style' => 'frame', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'department',
+                'label' => 'Подразделение',
+                'summary' => 'Тёплый спокойный верхний блок',
+                'description' => 'Для внутренних документов и handoff-пакетов.',
+                'overrides' => ['color_variant' => 'color', 'background_style' => 'clean', 'palette_tone' => 'sand', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'contrast',
+                'label' => 'Контрастный',
+                'summary' => 'Знак на тёмной шапке',
+                'description' => 'Более смелый режим для digital-PDF.',
+                'overrides' => ['color_variant' => 'color', 'background_style' => 'band', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+            ],
+        ],
+        'rollup' => [
+            [
+                'id' => 'expo',
+                'label' => 'Экспо',
+                'summary' => 'Классический выставочный роллап',
+                'description' => 'Акцентный верх и спокойлый блок с событием.',
+                'overrides' => ['background_style' => 'watermark', 'palette_tone' => 'accent', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'contrast',
+                'label' => 'Контрастный',
+                'summary' => 'Белый знак на плотном фоне',
+                'description' => 'Когда нужен дальний акцент и считываемость.',
+                'overrides' => ['background_style' => 'clean', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'nordic',
+                'label' => 'Северный',
+                'summary' => 'Бирюзовый режим под форум и навигацию',
+                'description' => 'Холодный тон и спокойный ритм фона.',
+                'overrides' => ['background_style' => 'pattern', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+            ],
+        ],
+        default => [
+            [
+                'id' => 'official',
+                'label' => 'Официальный',
+                'summary' => 'Базовый grounded-режим',
+                'description' => 'Спокойлая версия без лишнего шума.',
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'background_style' => 'clean', 'palette_tone' => 'paper'],
+            ],
+        ],
+    };
+}
+
+function constructor_present_presets(array $definition, array $input): array
+{
+    return array_values(array_map(
+        static function (array $preset) use ($input): array {
+            return [
+                'id' => (string) ($preset['id'] ?? ''),
+                'label' => (string) ($preset['label'] ?? ''),
+                'summary' => (string) ($preset['summary'] ?? ''),
+                'description' => (string) ($preset['description'] ?? ''),
+                'active' => constructor_preset_is_active($preset, $input),
+                'overrides' => array_map(static fn($value): string => (string) $value, array_filter($preset['overrides'] ?? [], static fn($value): bool => is_scalar($value))),
+            ];
+        },
+        array_filter(constructor_preset_definitions($definition), static fn($item): bool => is_array($item))
+    ));
 }
 
 function constructor_allowed_option_values(array $field): array
@@ -5360,6 +5594,7 @@ class SiteCatalogService
             'generated' => $generated,
             'definition' => constructor_present_definition($definition),
             'input' => $normalizedInput,
+            'presets' => constructor_present_presets($definition, $normalizedInput),
             'summary' => $generated
                 ? constructor_result_summary($definition, $normalizedInput, $recommendations, $artifacts)
                 : constructor_draft_summary($definition, $normalizedInput, $recommendations),

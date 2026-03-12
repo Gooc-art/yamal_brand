@@ -131,6 +131,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card'), 'styles contain constructor choice card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-grid.is-palette'), 'styles contain constructor palette choice grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-card'), 'styles contain constructor preset card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-grid'), 'styles contain constructor preset grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage'), 'styles contain constructor preview stage classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage.is-panorama'), 'styles contain panorama constructor preview profile');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-visual.is-document svg'), 'styles contain document constructor preview profile');
@@ -167,6 +169,9 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'pale
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isConstructorChoiceField'), 'frontend exposes constructor choice field helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldAutoBuildConstructorField'), 'frontend exposes constructor auto-build helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorPreset'), 'frontend applies constructor presets');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend exposes constructor preset action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, "item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон'"), 'frontend removed verbose solution artifact pills');
@@ -385,6 +390,21 @@ foreach ($styledConstructorIds as $styledConstructorId) {
 
 $businessCardDefinition = constructor_definition_by_id('business_card');
 assert_true($businessCardDefinition !== null, 'business card constructor definition exists');
+$presentedBusinessCard = constructor_present_definition($businessCardDefinition);
+$paletteToneField = null;
+foreach (($presentedBusinessCard['fields'] ?? []) as $field) {
+    if (($field['id'] ?? '') === 'palette_tone') {
+        $paletteToneField = $field;
+        break;
+    }
+}
+assert_true(is_array($paletteToneField), 'constructor present definition exposes palette tone field');
+assert_true(str_contains((string) ($paletteToneField['options'][0]['description'] ?? ''), 'Нейтральная'), 'constructor present definition keeps palette option descriptions');
+assert_true((string) ($paletteToneField['options'][2]['swatch'] ?? '') === '#bf1238', 'constructor present definition keeps palette swatch metadata');
+$businessCardPresets = constructor_present_presets($businessCardDefinition, constructor_default_input($businessCardDefinition));
+assert_true(count($businessCardPresets) >= 3, 'constructor exposes multiple grounded presets for business card');
+assert_true(($businessCardPresets[0]['active'] ?? false) === true, 'constructor marks default preset as active');
+assert_true(($businessCardPresets[1]['overrides']['color_variant'] ?? '') === 'cmyk', 'constructor preset exposes override payload');
 $styledBusinessCardInput = constructor_normalize_input($businessCardDefinition, [
     'city' => 'салехард',
     'full_name' => 'Александрова-Виноградова Екатерина Константиновна-Петрова',
