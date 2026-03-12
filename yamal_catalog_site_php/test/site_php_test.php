@@ -133,6 +133,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-grid.is-palette'), 'styles contain constructor palette choice grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-card'), 'styles contain constructor preset card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-grid'), 'styles contain constructor preset grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-handoff-grid'), 'styles contain constructor handoff grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-handoff-card'), 'styles contain constructor handoff card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage'), 'styles contain constructor preview stage classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage.is-panorama'), 'styles contain panorama constructor preview profile');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-visual.is-document svg'), 'styles contain document constructor preview profile');
@@ -168,10 +170,13 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "labe
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'palette_tone'), 'frontend groups constructor palette tone inside style controls');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isConstructorChoiceField'), 'frontend exposes constructor choice field helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldAutoBuildConstructorField'), 'frontend exposes constructor auto-build helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorPreset'), 'frontend applies constructor presets');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend exposes constructor preset action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorHandoff'), 'frontend renders constructor handoff block');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-handoff-panel'), 'frontend exposes constructor handoff panel classes');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, "item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон'"), 'frontend removed verbose solution artifact pills');
@@ -558,6 +563,65 @@ assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Эле�
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Палитра фона'), 'presentation html brief exposes constructor palette section');
 assert_true(str_contains((string) ($presentationHtml['content'] ?? ''), 'Композиция'), 'presentation html brief exposes adaptive composition section');
 
+$handoffArtifacts = array_values(array_filter([
+    constructor_svg_artifact($businessCardDefinition, $styledBusinessCardInput),
+    constructor_html_brief_artifact($businessCardDefinition, $styledBusinessCardInput, [
+        'sections' => [],
+        'items' => [],
+        'advice' => ['title' => 'Проверьте брендбук', 'summary' => 'Сверьте цвет и логотип.', 'nextStep' => 'После согласования передайте подрядчику исходники.'],
+    ]),
+    constructor_json_brief_artifact($businessCardDefinition, $styledBusinessCardInput, [
+        'sections' => [],
+        'items' => [],
+        'advice' => ['title' => 'Проверьте брендбук', 'summary' => 'Сверьте цвет и логотип.', 'nextStep' => 'После согласования передайте подрядчику исходники.'],
+    ]),
+]));
+$handoffPayload = constructor_handoff_payload(
+    $businessCardDefinition,
+    $styledBusinessCardInput,
+    [
+        'context' => ['medium' => 'print', 'sourceMode' => 'editable', 'applicationFocus' => 'contractor_handoff'],
+        'sections' => [
+            ['id' => 'brandbook', 'label' => 'Брендбук ЯМАЛ Мастер бренд', 'name' => 'Брендбук ЯМАЛ Мастер бренд', 'relativePath' => 'Брендбук ЯМАЛ Мастер бренд', 'icon' => '📕', 'kindLabel' => 'Раздел'],
+            ['id' => 'logo', 'label' => 'Логотип', 'name' => 'Логотип', 'relativePath' => 'Логотип', 'icon' => '🏷️', 'kindLabel' => 'Раздел'],
+        ],
+        'items' => [
+            ['id' => 'brandbook-pdf', 'label' => 'Брендбук • PDF', 'relativePath' => 'Брендбук ЯМАЛ Мастер бренд/Брендбук.pdf', 'downloadUrl' => 'download.php?id=brandbook-pdf', 'extension' => 'pdf', 'kindLabel' => 'PDF'],
+            ['id' => 'logo-svg', 'label' => 'Логотип • SVG', 'relativePath' => 'Логотип/2 Color/logo.svg', 'downloadUrl' => 'download.php?id=logo-svg', 'extension' => 'svg', 'kindLabel' => 'SVG'],
+            ['id' => 'logo-ai', 'label' => 'Логотип • AI', 'relativePath' => 'Логотип/1 CMYK/logo.ai', 'downloadUrl' => 'download.php?id=logo-ai', 'extension' => 'ai', 'kindLabel' => 'AI'],
+        ],
+        'advice' => ['title' => 'Проверьте брендбук', 'summary' => 'Сверьте цвет и логотип.', 'nextStep' => 'После согласования передайте подрядчику исходники.'],
+    ],
+    $handoffArtifacts,
+    true
+);
+assert_true(($handoffPayload['approval']['title'] ?? '') === 'На согласование', 'constructor handoff exposes approval package');
+assert_true(
+    array_reduce(
+        $handoffPayload['approval']['files'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['id'] ?? '')) === 'brandbook-pdf',
+        false
+    ),
+    'constructor handoff keeps pdf in approval package'
+);
+assert_true(
+    array_reduce(
+        $handoffPayload['contractor']['files'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || in_array((string) ($item['id'] ?? ''), ['logo-ai', 'logo-svg'], true),
+        false
+    ),
+    'constructor handoff keeps editable/vector source files in contractor package'
+);
+assert_true(
+    array_reduce(
+        $handoffPayload['contractor']['artifacts'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['id'] ?? '')) === 'brief-json',
+        false
+    ),
+    'constructor handoff keeps json brief in contractor package'
+);
+assert_true(str_contains((string) ($handoffPayload['contractor']['nextStep'] ?? ''), 'исходник'), 'constructor handoff contractor package exposes next step copy');
+
 $presentationSvg = constructor_svg_artifact($presentationDefinition, constructor_normalize_input($presentationDefinition, [
     'city' => 'ямал',
     'presentation_mode' => 'report',
@@ -879,6 +943,17 @@ assert_true(
     'presentation constructor build exposes grounded city-aware files'
 );
 assert_true(str_contains((string) ($constructorBuild['summary']['lead'] ?? ''), 'Каркас решения собран'), 'constructor build exposes generated summary');
+assert_true(($constructorBuild['handoff']['approval']['title'] ?? '') === 'На согласование', 'constructor build exposes approval handoff package');
+assert_true(($constructorBuild['handoff']['contractor']['title'] ?? '') === 'Подрядчику', 'constructor build exposes contractor handoff package');
+assert_true(
+    array_reduce(
+        $constructorBuild['handoff']['contractor']['artifacts'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['id'] ?? '')) === 'brief-json',
+        false
+    ),
+    'constructor build exposes json brief inside contractor handoff package'
+);
+assert_true(str_contains((string) ($constructorBuild['handoff']['note'] ?? ''), 'разложен'), 'constructor build exposes handoff note');
 
 $folder = $service->getFolder('logo', 0);
 assert_true($folder !== null, 'logo folder exists');

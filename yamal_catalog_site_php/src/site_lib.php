@@ -4372,6 +4372,374 @@ function constructor_present_artifact(array $artifact): array
     ];
 }
 
+function constructor_artifact_ref(array $artifact, string $note = ''): array
+{
+    $content = (string) ($artifact['content'] ?? '');
+    return [
+        'id' => (string) ($artifact['id'] ?? ''),
+        'label' => (string) ($artifact['label'] ?? ''),
+        'filename' => (string) ($artifact['filename'] ?? 'artifact.txt'),
+        'previewType' => (string) ($artifact['previewType'] ?? 'text'),
+        'sizeBytes' => strlen($content),
+        'note' => $note,
+    ];
+}
+
+function constructor_handoff_artifacts(array $artifacts, string $kind): array
+{
+    $selected = [];
+    $seen = [];
+    $add = static function (?array $artifact, string $note = '') use (&$selected, &$seen): void {
+        if (!is_array($artifact)) {
+            return;
+        }
+        $id = (string) ($artifact['id'] ?? '');
+        if ($id === '' || isset($seen[$id])) {
+            return;
+        }
+        $seen[$id] = true;
+        $selected[] = constructor_artifact_ref($artifact, $note);
+    };
+
+    $findPreviewType = static function (string $previewType) use ($artifacts): ?array {
+        foreach ($artifacts as $artifact) {
+            if ((string) ($artifact['previewType'] ?? '') === $previewType) {
+                return $artifact;
+            }
+        }
+        return null;
+    };
+
+    if ($kind === 'approval') {
+        $add($findPreviewType('svg'), 'Визуальный каркас для показа и комментариев.');
+        $add($findPreviewType('html'), 'Читаемый brief с полями и выбранным оформлением.');
+    } else {
+        $add($findPreviewType('svg'), 'Векторный стартовый макет под адаптацию.');
+        $add($findPreviewType('json'), 'Структурированный brief для передачи в дизайн или продакшн.');
+        $add($findPreviewType('html'), 'Читаемая версия brief для handoff без погружения в JSON.');
+    }
+
+    if ($selected === [] && $artifacts !== []) {
+        $add($artifacts[0], 'Базовый артефакт решения.');
+    }
+
+    return array_slice($selected, 0, 3);
+}
+
+function constructor_handoff_file_score(array $item, string $kind, array $context): int
+{
+    $extension = strtolower((string) ($item['extension'] ?? ''));
+    $source = normalize_text(implode(' ', [
+        (string) ($item['label'] ?? ''),
+        (string) ($item['relativePath'] ?? ''),
+        (string) ($item['kindLabel'] ?? ''),
+    ]));
+    $medium = (string) ($context['medium'] ?? '');
+    $sourceMode = (string) ($context['sourceMode'] ?? '');
+    $applicationFocus = (string) ($context['applicationFocus'] ?? '');
+    $score = 0;
+
+    if ($kind === 'approval') {
+        if (in_array($extension, ['pdf', 'png', 'jpg', 'jpeg', 'webp'], true)) {
+            $score += 100;
+        } elseif ($extension === 'svg') {
+            $score += 44;
+        }
+
+        if (str_contains($source, normalize_text('брендбук'))) {
+            $score += 26;
+        }
+        if (str_contains($source, normalize_text('пример')) || str_contains($source, normalize_text('кейс'))) {
+            $score += 22;
+        }
+        if (str_contains($source, normalize_text('логотип')) || str_contains($source, normalize_text('знак'))) {
+            $score += 12;
+        }
+        if ($sourceMode === 'ready' && in_array($extension, ['pdf', 'png', 'jpg', 'jpeg'], true)) {
+            $score += 24;
+        }
+        if ($medium === 'print' && $extension === 'pdf') {
+            $score += 18;
+        }
+        if ($medium === 'digital' && in_array($extension, ['png', 'jpg', 'jpeg', 'svg'], true)) {
+            $score += 14;
+        }
+        if ($applicationFocus === 'approval_handoff') {
+            $score += 18;
+        }
+    } else {
+        if (in_array($extension, ['ai', 'eps', 'cdr', 'svg', 'zip'], true)) {
+            $score += 100;
+        } elseif ($extension === 'pdf') {
+            $score += 58;
+        } elseif (in_array($extension, ['ttf', 'otf'], true)) {
+            $score += 44;
+        }
+
+        if (
+            str_contains($source, normalize_text('логотип')) ||
+            str_contains($source, normalize_text('знак')) ||
+            str_contains($source, normalize_text('паттер')) ||
+            str_contains($source, normalize_text('шрифт')) ||
+            str_contains($source, normalize_text('svg'))
+        ) {
+            $score += 20;
+        }
+        if ($sourceMode === 'editable' && in_array($extension, ['ai', 'eps', 'cdr', 'svg', 'zip'], true)) {
+            $score += 30;
+        }
+        if (
+            $medium === 'print' &&
+            (
+                in_array($extension, ['pdf', 'ai', 'eps', 'cdr'], true) ||
+                str_contains($source, normalize_text('cmyk')) ||
+                str_contains($source, normalize_text('печать'))
+            )
+        ) {
+            $score += 24;
+        }
+        if ($medium === 'digital' && $extension === 'svg') {
+            $score += 18;
+        }
+        if ($applicationFocus === 'contractor_handoff') {
+            $score += 18;
+        }
+    }
+
+    return $score;
+}
+
+function constructor_handoff_files(array $items, string $kind, array $context): array
+{
+    $scored = [];
+    foreach ($items as $item) {
+        $score = constructor_handoff_file_score($item, $kind, $context);
+        if ($score <= 0) {
+            continue;
+        }
+        $item['__handoff_score'] = $score;
+        $scored[] = $item;
+    }
+
+    usort($scored, static function (array $left, array $right): int {
+        if (($right['__handoff_score'] ?? 0) !== ($left['__handoff_score'] ?? 0)) {
+            return ($right['__handoff_score'] ?? 0) <=> ($left['__handoff_score'] ?? 0);
+        }
+        return strnatcasecmp((string) ($left['relativePath'] ?? ''), (string) ($right['relativePath'] ?? ''));
+    });
+
+    return array_values(array_map(static function (array $item): array {
+        unset($item['__handoff_score']);
+        return $item;
+    }, array_slice($scored, 0, 3)));
+}
+
+function constructor_handoff_section_score(array $section, string $kind, array $context): int
+{
+    $source = normalize_text(implode(' ', [
+        (string) ($section['label'] ?? ''),
+        (string) ($section['name'] ?? ''),
+        (string) ($section['relativePath'] ?? ''),
+    ]));
+    $medium = (string) ($context['medium'] ?? '');
+    $applicationFocus = (string) ($context['applicationFocus'] ?? '');
+    $score = 0;
+
+    if ($kind === 'approval') {
+        if (str_contains($source, normalize_text('брендбук'))) {
+            $score += 80;
+        }
+        if (str_contains($source, normalize_text('пример')) || str_contains($source, normalize_text('кейс'))) {
+            $score += 56;
+        }
+        if (str_contains($source, normalize_text('логотип'))) {
+            $score += 18;
+        }
+        if ($applicationFocus === 'approval_handoff') {
+            $score += 18;
+        }
+    } else {
+        if (str_contains($source, normalize_text('логотип')) || str_contains($source, normalize_text('знак'))) {
+            $score += 64;
+        }
+        if (
+            str_contains($source, normalize_text('шрифт')) ||
+            str_contains($source, normalize_text('svg')) ||
+            str_contains($source, normalize_text('паттер'))
+        ) {
+            $score += 42;
+        }
+        if (str_contains($source, normalize_text('брендбук'))) {
+            $score += 16;
+        }
+        if ($medium === 'print' && str_contains($source, normalize_text('логотип'))) {
+            $score += 18;
+        }
+        if ($applicationFocus === 'contractor_handoff') {
+            $score += 18;
+        }
+    }
+
+    return $score;
+}
+
+function constructor_handoff_sections(array $sections, string $kind, array $context): array
+{
+    $scored = [];
+    foreach ($sections as $section) {
+        $score = constructor_handoff_section_score($section, $kind, $context);
+        if ($score <= 0) {
+            continue;
+        }
+        $section['__handoff_score'] = $score;
+        $scored[] = $section;
+    }
+
+    usort($scored, static function (array $left, array $right): int {
+        if (($right['__handoff_score'] ?? 0) !== ($left['__handoff_score'] ?? 0)) {
+            return ($right['__handoff_score'] ?? 0) <=> ($left['__handoff_score'] ?? 0);
+        }
+        return strnatcasecmp((string) ($left['label'] ?? $left['name'] ?? ''), (string) ($right['label'] ?? $right['name'] ?? ''));
+    });
+
+    return array_values(array_map(static function (array $item): array {
+        unset($item['__handoff_score']);
+        return $item;
+    }, array_slice($scored, 0, 2)));
+}
+
+function constructor_handoff_bullets(
+    string $kind,
+    array $context,
+    array $artifacts,
+    array $files,
+    array $sections
+): array {
+    $artifactLabels = array_values(array_filter(array_map(static fn(array $item): string => trim((string) ($item['label'] ?? '')), $artifacts)));
+    $fileLabels = array_values(array_filter(array_map(static fn(array $item): string => trim((string) ($item['label'] ?? $item['name'] ?? '')), $files)));
+    $sectionLabels = array_values(array_filter(array_map(static fn(array $item): string => trim((string) ($item['label'] ?? $item['name'] ?? '')), $sections)));
+    $medium = (string) ($context['medium'] ?? '');
+    $sourceMode = (string) ($context['sourceMode'] ?? '');
+
+    if ($kind === 'approval') {
+        return array_values(array_filter([
+            $artifactLabels !== [] ? 'Покажите в первую очередь: ' . implode(', ', array_slice($artifactLabels, 0, 2)) . '.' : '',
+            $fileLabels !== [] ? 'Для показа уже подобраны реальные файлы: ' . implode(', ', array_slice($fileLabels, 0, 2)) . '.' : '',
+            $sectionLabels !== [] ? 'Сверьтесь с разделами: ' . implode(', ', array_slice($sectionLabels, 0, 2)) . '.' : '',
+            $medium === 'print' ? 'Если макет пойдёт в печать, держите в согласовании PDF-версии и ссылку на брендбук.' : '',
+        ]));
+    }
+
+    return array_values(array_filter([
+        $artifactLabels !== [] ? 'Передайте подрядчику артефакты: ' . implode(', ', array_slice($artifactLabels, 0, 2)) . '.' : '',
+        $fileLabels !== [] ? 'Из каталога уже подобраны исходники: ' . implode(', ', array_slice($fileLabels, 0, 2)) . '.' : '',
+        $sectionLabels !== [] ? 'Открывайте разделы: ' . implode(', ', array_slice($sectionLabels, 0, 2)) . '.' : '',
+        $sourceMode === 'editable'
+            ? 'Для передачи в продакшн приоритет у editable-форматов и векторных исходников.'
+            : ($medium === 'print'
+                ? 'Для печати приоритет у CMYK/PDF и векторных исходников.'
+                : ''),
+    ]));
+}
+
+function constructor_handoff_next_step(string $kind, array $context, array $advice): string
+{
+    $medium = (string) ($context['medium'] ?? '');
+    $sourceMode = (string) ($context['sourceMode'] ?? '');
+    $adviceNextStep = trim((string) ($advice['nextStep'] ?? ''));
+
+    if ($kind === 'approval') {
+        return 'Сначала утвердите визуальный каркас и brief, затем откройте пакет «Подрядчику» для исходников и передачи в работу.';
+    }
+
+    $parts = [];
+    if ($sourceMode === 'editable') {
+        $parts[] = 'Держите в handoff editable-форматы и векторные исходники.';
+    } elseif ($medium === 'print') {
+        $parts[] = 'Для печати держите приоритет на CMYK/PDF и векторных исходниках.';
+    } elseif ($medium === 'digital') {
+        $parts[] = 'Для digital достаточно SVG/PNG и краткого brief.';
+    }
+    if ($adviceNextStep !== '') {
+        $parts[] = $adviceNextStep;
+    }
+
+    return $parts !== []
+        ? implode(' ', array_slice($parts, 0, 2))
+        : 'Откройте рекомендованные разделы и передайте подрядчику исходники вместе с brief.';
+}
+
+function constructor_handoff_pack(
+    string $id,
+    string $title,
+    string $summary,
+    array $context,
+    array $advice,
+    array $artifacts,
+    array $files,
+    array $sections
+): array {
+    return [
+        'id' => $id,
+        'title' => $title,
+        'summary' => $summary,
+        'bullets' => constructor_handoff_bullets($id, $context, $artifacts, $files, $sections),
+        'artifacts' => $artifacts,
+        'files' => $files,
+        'sections' => $sections,
+        'nextStep' => constructor_handoff_next_step($id, $context, $advice),
+    ];
+}
+
+function constructor_handoff_payload(array $definition, array $input, array $recommendations, array $artifacts, bool $generated): array
+{
+    $context = is_array($recommendations['context'] ?? null) ? $recommendations['context'] : [];
+    $advice = is_array($recommendations['advice'] ?? null) ? $recommendations['advice'] : [];
+    $items = array_values(array_filter(
+        array_map(static fn($item): array => is_array($item) ? $item : [], $recommendations['items'] ?? []),
+        static fn(array $item): bool => $item !== []
+    ));
+    $sections = array_values(array_filter(
+        array_map(static fn($item): array => is_array($item) ? $item : [], $recommendations['sections'] ?? []),
+        static fn(array $item): bool => $item !== []
+    ));
+    $approvalArtifacts = constructor_handoff_artifacts($artifacts, 'approval');
+    $contractorArtifacts = constructor_handoff_artifacts($artifacts, 'contractor');
+    $approvalFiles = constructor_handoff_files($items, 'approval', $context);
+    $contractorFiles = constructor_handoff_files($items, 'contractor', $context);
+    $approvalSections = constructor_handoff_sections($sections, 'approval', $context);
+    $contractorSections = constructor_handoff_sections($sections, 'contractor', $context);
+
+    return [
+        'generated' => $generated,
+        'approval' => constructor_handoff_pack(
+            'approval',
+            'На согласование',
+            'Покажите визуальный каркас, brief и готовые материалы команде, бренд-менеджеру или заказчику.',
+            $context,
+            $advice,
+            $approvalArtifacts,
+            $approvalFiles,
+            $approvalSections
+        ),
+        'contractor' => constructor_handoff_pack(
+            'contractor',
+            'Подрядчику',
+            'Передайте исходники, structured brief и реальные разделы каталога в продакшн, печать или дизайн.',
+            $context,
+            $advice,
+            $contractorArtifacts,
+            $contractorFiles,
+            $contractorSections
+        ),
+        'note' => $generated
+            ? 'Пакет уже разложен по двум сценариям handoff.'
+            : 'После настройки полей пакет можно сразу отдать на согласование или в работу подрядчику.',
+        'cityLabel' => constructor_city_label((string) ($input['city'] ?? '')),
+        'solutionLabel' => (string) ($definition['label'] ?? 'Решение'),
+    ];
+}
+
 function dedicated_examples_roots(): array
 {
     return [
@@ -5600,6 +5968,7 @@ class SiteCatalogService
                 : constructor_draft_summary($definition, $normalizedInput, $recommendations),
             'recommendations' => $recommendations,
             'artifacts' => array_map(static fn(array $artifact): array => constructor_present_artifact($artifact), $artifacts),
+            'handoff' => constructor_handoff_payload($definition, $normalizedInput, $recommendations, $artifacts, $generated),
         ];
     }
 

@@ -11,6 +11,7 @@ const {
   isConstructorChoiceField,
   shouldAutoBuildConstructorField,
   groupConstructorFields,
+  normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
   computeRevealScrollLeft,
@@ -148,6 +149,33 @@ test('constructor choice fields and auto-build fields are detected consistently'
   assert.equal(shouldAutoBuildConstructorField('city', 'select'), true);
   assert.equal(shouldAutoBuildConstructorField('slide_count', 'number'), true);
   assert.equal(shouldAutoBuildConstructorField('full_name', 'text'), false);
+});
+
+test('normalizeConstructorHandoff keeps approval and contractor packages structured', () => {
+  const normalized = normalizeConstructorHandoff({
+    generated: true,
+    note: 'Пакет разложен.',
+    approval: {
+      title: 'На согласование',
+      bullets: ['Покажите SVG.'],
+      artifacts: [{ id: 'preview-svg', label: 'SVG', filename: 'preview.svg', sizeBytes: 1200 }],
+      files: [{ id: 'pdf-1', label: 'PDF', relativePath: 'Брендбук/file.pdf', downloadUrl: 'download.php?id=pdf-1', extension: 'pdf' }],
+      sections: [{ id: 'brandbook', label: 'Брендбук', icon: '📕' }],
+    },
+    contractor: {
+      title: 'Подрядчику',
+      bullets: ['Передайте JSON.'],
+      artifacts: [{ id: 'brief-json', label: 'JSON', filename: 'brief.json', sizeBytes: 400 }],
+      files: [{ id: 'svg-1', label: 'SVG', relativePath: 'Логотип/file.svg', downloadUrl: 'download.php?id=svg-1', extension: 'svg' }],
+      sections: [{ id: 'logo', label: 'Логотип', icon: '🏷️' }],
+    },
+  });
+
+  assert.equal(normalized.generated, true);
+  assert.equal(normalized.approval.artifacts[0].id, 'preview-svg');
+  assert.equal(normalized.approval.files[0].extension, 'pdf');
+  assert.equal(normalized.contractor.sections[0].id, 'logo');
+  assert.equal(normalized.contractor.bullets[0], 'Передайте JSON.');
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {

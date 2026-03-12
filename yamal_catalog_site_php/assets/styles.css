@@ -2393,6 +2393,68 @@ input[type="search"]:focus {
   line-height: 1.5;
 }
 
+.constructor-handoff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.constructor-handoff-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(250, 247, 242, 0.92));
+}
+
+.constructor-handoff-head {
+  display: grid;
+  gap: 6px;
+}
+
+.constructor-handoff-head strong {
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.constructor-handoff-head span:last-child {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.constructor-handoff-block {
+  display: grid;
+  gap: 10px;
+}
+
+.constructor-handoff-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.constructor-handoff-downloads {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.constructor-handoff-download-card {
+  min-height: 108px;
+}
+
+.constructor-handoff-download-card small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.constructor-handoff-file-list,
+.constructor-handoff-section-grid {
+  gap: 10px;
+}
+
 .constructor-support-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3734,6 +3796,7 @@ input[type="search"]:focus {
   .solution-lab-grid,
   .constructor-steps,
   .constructor-field-grid,
+  .constructor-handoff-grid,
   .constructor-support-grid,
   .constructor-downloads {
     grid-template-columns: 1fr;

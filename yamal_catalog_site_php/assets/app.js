@@ -421,6 +421,72 @@ function collectConstructorFormInput(form) {
   return input;
 }
 
+function normalizeConstructorHandoff(handoff) {
+  const normalizeArtifacts = (items) => (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      id: String(item?.id || '').trim(),
+      label: String(item?.label || '').trim(),
+      filename: String(item?.filename || '').trim(),
+      previewType: String(item?.previewType || '').trim(),
+      sizeBytes: Number(item?.sizeBytes || 0),
+      note: String(item?.note || '').trim(),
+    }))
+    .filter((item) => item.id && item.label);
+
+  const normalizeFiles = (items) => (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      id: String(item?.id || '').trim(),
+      label: String(item?.label || item?.name || '').trim(),
+      relativePath: String(item?.relativePath || '').trim(),
+      downloadUrl: String(item?.downloadUrl || '').trim(),
+      extension: String(item?.extension || '').trim(),
+      kindLabel: String(item?.kindLabel || '').trim(),
+    }))
+    .filter((item) => item.id && item.label);
+
+  const normalizeSections = (items) => (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      id: String(item?.id || '').trim(),
+      label: String(item?.label || item?.name || '').trim(),
+      name: String(item?.name || '').trim(),
+      icon: String(item?.icon || '📁').trim() || '📁',
+      kindLabel: String(item?.kindLabel || 'Раздел').trim() || 'Раздел',
+    }))
+    .filter((item) => item.id && item.label);
+
+  const normalizePack = (pack, fallbackId, fallbackTitle, fallbackSummary) => ({
+    id: String(pack?.id || fallbackId).trim(),
+    title: String(pack?.title || fallbackTitle).trim(),
+    summary: String(pack?.summary || fallbackSummary).trim(),
+    bullets: (Array.isArray(pack?.bullets) ? pack.bullets : [])
+      .map((item) => String(item || '').trim())
+      .filter(Boolean),
+    nextStep: String(pack?.nextStep || '').trim(),
+    artifacts: normalizeArtifacts(pack?.artifacts),
+    files: normalizeFiles(pack?.files),
+    sections: normalizeSections(pack?.sections),
+  });
+
+  return {
+    generated: Boolean(handoff?.generated),
+    note: String(handoff?.note || '').trim(),
+    cityLabel: String(handoff?.cityLabel || '').trim(),
+    solutionLabel: String(handoff?.solutionLabel || '').trim(),
+    approval: normalizePack(
+      handoff?.approval,
+      'approval',
+      'На согласование',
+      'Покажите визуальный каркас и brief команде или заказчику.',
+    ),
+    contractor: normalizePack(
+      handoff?.contractor,
+      'contractor',
+      'Подрядчику',
+      'Передайте подрядчику артефакты, исходники и разделы каталога.',
+    ),
+  };
+}
+
 function computeRevealScrollLeft({
   currentScrollLeft = 0,
   maxScrollLeft = 0,
@@ -639,6 +705,7 @@ if (typeof module !== 'undefined' && module.exports) {
     isConstructorChoiceField,
     shouldAutoBuildConstructorField,
     groupConstructorFields,
+    normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
     computeRevealScrollLeft,
@@ -2203,7 +2270,7 @@ function buildConstructorStepsMarkup(generated) {
     const labels = [
       { title: 'Параметры', note: 'Заполните поля шаблона.' },
       { title: 'Сборка', note: 'Получите стартовый пакет.' },
-      { title: 'Handoff', note: 'Скачайте и откройте реальные материалы.' },
+      { title: 'Handoff', note: 'Разделите пакет: согласование и подрядчик.' },
     ];
     return `
       <div class="constructor-steps" aria-label="Этапы решения">
@@ -2332,6 +2399,91 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     `;
   }
 
+  function renderConstructorHandoff(handoff) {
+    const normalized = normalizeConstructorHandoff(handoff);
+    const packages = [normalized.approval, normalized.contractor].filter((item) => item.id);
+    if (!packages.length) {
+      return '';
+    }
+
+    return `
+      <section class="constructor-panel constructor-handoff-panel">
+        <div class="constructor-panel-head">
+          <strong>Пакеты handoff</strong>
+          <span>${escapeHtml(normalized.note || 'Сначала согласование, затем передача подрядчику с реальными файлами и разделами каталога.')}</span>
+        </div>
+        <div class="constructor-handoff-grid">
+          ${packages.map((pack, index) => `
+            <article class="constructor-handoff-card" data-handoff-kind="${escapeHtml(pack.id)}">
+              <div class="constructor-handoff-head">
+                <span class="card-kicker">${index === 0 ? 'Сначала' : 'Дальше'}</span>
+                <strong>${escapeHtml(pack.title)}</strong>
+                <span>${escapeHtml(pack.summary)}</span>
+              </div>
+              ${pack.bullets.length ? `
+                <ul class="constructor-summary-list">
+                  ${pack.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                </ul>
+              ` : ''}
+              ${pack.artifacts.length ? `
+                <div class="constructor-handoff-block">
+                  <div class="constructor-handoff-label">Артефакты пакета</div>
+                  <div class="constructor-downloads constructor-handoff-downloads">
+                    ${pack.artifacts.map((artifact) => `
+                      <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
+                        <strong>${escapeHtml(artifact.label)}</strong>
+                        <span>${escapeHtml(artifact.filename)}</span>
+                        <small>${escapeHtml(artifact.note || formatDataSize(artifact.sizeBytes))}</small>
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+              ${pack.files.length ? `
+                <div class="constructor-handoff-block">
+                  <div class="constructor-handoff-label">Реальные файлы каталога</div>
+                  <div class="constructor-file-list constructor-handoff-file-list">
+                    ${pack.files.map((item) => `
+                      <article class="constructor-file-card">
+                        <div class="constructor-file-copy">
+                          <strong>${escapeHtml(item.label)}</strong>
+                          <small>${escapeHtml(item.relativePath || item.kindLabel || '')}</small>
+                        </div>
+                        <div class="constructor-file-actions">
+                          <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
+                          ${item.downloadUrl
+                            ? `<a class="link-button" href="${escapeHtml(item.downloadUrl)}">Скачать</a>`
+                            : '<span class="ghost-button" aria-disabled="true">Нет файла</span>'}
+                        </div>
+                      </article>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+              ${pack.sections.length ? `
+                <div class="constructor-handoff-block">
+                  <div class="constructor-handoff-label">Разделы для открытия</div>
+                  <div class="constructor-mini-grid constructor-handoff-section-grid">
+                    ${pack.sections.map((section) => `
+                      <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
+                        <span class="constructor-mini-icon" aria-hidden="true">${escapeHtml(section.icon || '📁')}</span>
+                        <span class="constructor-mini-copy">
+                          <strong>${escapeHtml(section.label || section.name || 'Раздел')}</strong>
+                          <small>${escapeHtml(section.kindLabel || 'Раздел')}</small>
+                        </span>
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+              ${pack.nextStep ? `<p class="constructor-next-step">${escapeHtml(pack.nextStep)}</p>` : ''}
+            </article>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
   function renderConstructor(payload) {
     const definition = payload?.definition || {};
     const fields = Array.isArray(definition?.fields) ? definition.fields : [];
@@ -2415,6 +2567,8 @@ function buildConstructorPreviewMarkup(artifact, layout) {
             </ul>
           ` : ''}
         </section>
+
+        ${renderConstructorHandoff(payload?.handoff)}
 
         ${renderConstructorRecommendations(payload?.recommendations)}
       </div>
