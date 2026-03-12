@@ -119,9 +119,10 @@ test('buildConstructorCategoryFilters keeps all filter and current category stab
   assert.deepEqual(result.visibleItems.map((item) => item.id), ['certificate']);
 });
 
-test('groupConstructorFields splits fields into basics, content and people blocks', () => {
+test('groupConstructorFields splits fields into basics, style, content and people blocks', () => {
   const groups = groupConstructorFields([
     { id: 'city', label: 'Город / версия' },
+    { id: 'palette_tone', label: 'Палитра фона' },
     { id: 'presentation_mode', label: 'Сценарий' },
     { id: 'room_number', label: 'Номер / индекс' },
     { id: 'title', label: 'Название' },
@@ -130,10 +131,11 @@ test('groupConstructorFields splits fields into basics, content and people block
     { id: 'email', label: 'Email' },
   ]);
 
-  assert.deepEqual(groups.map((group) => group.id), ['basics', 'content', 'people']);
+  assert.deepEqual(groups.map((group) => group.id), ['basics', 'style', 'content', 'people']);
   assert.deepEqual(groups[0].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
-  assert.deepEqual(groups[1].items.map((item) => item.id), ['title', 'message']);
-  assert.deepEqual(groups[2].items.map((item) => item.id), ['full_name', 'email']);
+  assert.deepEqual(groups[1].items.map((item) => item.id), ['palette_tone']);
+  assert.deepEqual(groups[2].items.map((item) => item.id), ['title', 'message']);
+  assert.deepEqual(groups[3].items.map((item) => item.id), ['full_name', 'email']);
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {

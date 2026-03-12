@@ -252,7 +252,7 @@ function groupConstructorFields(fields) {
   ];
   const fieldList = Array.isArray(fields) ? fields : [];
   const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
-  const styleIds = new Set(['color_variant', 'brand_lockup', 'background_style']);
+  const styleIds = new Set(['color_variant', 'brand_lockup', 'background_style', 'palette_tone']);
   const basicsIds = new Set([
     'city',
     'variant',
