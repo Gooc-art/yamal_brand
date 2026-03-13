@@ -186,6 +186,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'norm
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-field-accordion'), 'frontend renders constructor field accordions');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorGroupMeta'), 'frontend builds compact constructor accordion meta');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'captureConstructorViewState'), 'frontend captures constructor view state before silent rebuilds');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'restoreConstructorViewState'), 'frontend restores constructor view state after silent rebuilds');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorPreset'), 'frontend applies constructor presets');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend exposes constructor preset action');
@@ -821,6 +823,17 @@ foreach ($overflowCasePayloads as $definitionId => $payload) {
     assert_true(str_contains($content, 'font-size:'), $definitionId . ' svg artifact keeps adaptive inline sizing for long copy');
     assert_true(!str_contains($content, '…'), $definitionId . ' svg artifact avoids truncating representative long copy');
 }
+
+$badgeNameFit = constructor_svg_fit_text_block(
+    'Александрова-Виноградова Екатерина Константиновна-Петрова',
+    'headline',
+    548,
+    356,
+    6,
+    ['minFontSize' => 15, 'widthSafety' => 0.8, 'heightSafety' => 0.78]
+);
+assert_true(($badgeNameFit['truncated'] ?? true) === false, 'badge full name fit keeps the full long name inside the safer badge area');
+assert_true(count($badgeNameFit['lines'] ?? []) >= 3, 'badge full name fit uses multiline layout for long full names');
 
 function create_catalog_db(string $path): void
 {

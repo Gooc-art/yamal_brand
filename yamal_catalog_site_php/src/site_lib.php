@@ -4636,12 +4636,12 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 constructor_svg_render_brand_lockup(76, $isMarkBadge ? 58 : 70, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 186, 'logoHeight' => 30, 'markWidth' => $isMarkBadge ? 186 : 168, 'markHeight' => $isMarkBadge ? 121 : 109]) .
                 constructor_svg_render_label(76, 274, 'Мероприятие', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
                 constructor_svg_render_fitted_text(76, 300, (string) ($input['event_name'] ?? $cityLabel), 'small', 560, 58, 2, ['minFontSize' => 15]) .
-                constructor_svg_render_fitted_text(76, 404, (string) ($input['full_name'] ?? ''), 'headline', 560, 326, 5, ['minFontSize' => 18, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
-                constructor_svg_render_label(76, 704, 'Роль', 'tiny', ['maxWidth' => 120, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(76, 730, (string) ($input['role'] ?? ''), 'subhead', 560, 112, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
-                '<rect x="76" y="824" width="260" height="72" rx="24" class="tone-soft"/>' .
-                constructor_svg_render_label(206, 870, $accessLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 210, 'minFontSize' => 16]) .
-                constructor_svg_render_fitted_text(76, 974, $cityLabel, 'small', 560, 30, 1, ['minFontSize' => 15]);
+                constructor_svg_render_fitted_text(76, 392, (string) ($input['full_name'] ?? ''), 'headline', 548, 356, 6, ['minFontSize' => 15, 'widthSafety' => 0.8, 'heightSafety' => 0.78]) .
+                constructor_svg_render_label(76, 780, 'Роль', 'tiny', ['maxWidth' => 120, 'minFontSize' => 12]) .
+                constructor_svg_render_fitted_text(76, 806, (string) ($input['role'] ?? ''), 'subhead', 548, 118, 3, ['minFontSize' => 14, 'widthSafety' => 0.86, 'heightSafety' => 0.84]) .
+                '<rect x="76" y="936" width="260" height="72" rx="24" class="tone-soft"/>' .
+                constructor_svg_render_label(206, 982, $accessLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 210, 'minFontSize' => 16]) .
+                constructor_svg_render_fitted_text(76, 1048, $cityLabel, 'small', 560, 30, 1, ['minFontSize' => 15]);
             break;
 
         case 'social_post':

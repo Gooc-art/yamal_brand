@@ -1243,6 +1243,71 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     strip.querySelector('.constructor-progress-bar')?.setAttribute('aria-valuenow', String(completion.percent));
   }
 
+  function captureConstructorViewState() {
+    const shell = document.querySelector('.constructor-shell');
+    if (!shell) {
+      return null;
+    }
+
+    const scrollingElement = document.scrollingElement;
+    const pageScrollTop = scrollingElement ? scrollingElement.scrollTop : window.scrollY;
+    const previewPanel = shell.querySelector('.constructor-preview-panel');
+    const previewStage = shell.querySelector('.constructor-preview-stage');
+    const accordionIds = Array.from(shell.querySelectorAll('.constructor-field-accordion[open]'))
+      .map((node) => String(node.getAttribute('data-constructor-group-id') || '').trim())
+      .filter(Boolean);
+
+    return {
+      pageScrollTop: Number.isFinite(pageScrollTop) ? pageScrollTop : 0,
+      previewPanelScrollTop: previewPanel ? previewPanel.scrollTop : 0,
+      previewStageScrollTop: previewStage ? previewStage.scrollTop : 0,
+      openAccordionIds: accordionIds,
+      styleMoreOpen: Boolean(shell.querySelector('.constructor-style-more[open]')),
+    };
+  }
+
+  function restoreConstructorViewState(viewState) {
+    if (!viewState) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      const shell = document.querySelector('.constructor-shell');
+      if (!shell) {
+        return;
+      }
+
+      const openIds = new Set(Array.isArray(viewState.openAccordionIds) ? viewState.openAccordionIds : []);
+      shell.querySelectorAll('.constructor-field-accordion').forEach((node) => {
+        const groupId = String(node.getAttribute('data-constructor-group-id') || '').trim();
+        if (groupId) {
+          node.open = openIds.has(groupId);
+        }
+      });
+
+      const styleMore = shell.querySelector('.constructor-style-more');
+      if (styleMore instanceof HTMLDetailsElement) {
+        styleMore.open = Boolean(viewState.styleMoreOpen);
+      }
+
+      const previewPanel = shell.querySelector('.constructor-preview-panel');
+      if (previewPanel) {
+        previewPanel.scrollTop = Number(viewState.previewPanelScrollTop || 0);
+      }
+      const previewStage = shell.querySelector('.constructor-preview-stage');
+      if (previewStage) {
+        previewStage.scrollTop = Number(viewState.previewStageScrollTop || 0);
+      }
+
+      const scrollingElement = document.scrollingElement;
+      if (scrollingElement) {
+        scrollingElement.scrollTop = Number(viewState.pageScrollTop || 0);
+      } else {
+        window.scrollTo(0, Number(viewState.pageScrollTop || 0));
+      }
+    });
+  }
+
   function applyConstructorLivePreview(input) {
     if (state.current?.kind !== 'constructor') {
       return false;
@@ -3035,7 +3100,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     `;
   }
 
-  function renderConstructor(payload) {
+  function renderConstructor(payload, options = {}) {
     const definition = payload?.definition || {};
     const fields = Array.isArray(definition?.fields) ? definition.fields : [];
     const input = payload?.input || {};
@@ -3116,6 +3181,10 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       </div>
     `;
     setDocumentTitle(definition.label || 'Лаборатория решений');
+
+    if (options?.preserveViewState) {
+      restoreConstructorViewState(options.preserveViewState);
+    }
   }
 
   function applyConstructorPreset(presetId) {
@@ -3561,6 +3630,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     const normalizedInput = input && typeof input === 'object' ? input : {};
     const cacheKey = constructorBuildCacheKey(constructorId, normalizedInput);
     const silent = Boolean(options?.silent);
+    const preservedViewState = silent ? captureConstructorViewState() : null;
     ensureWorkspaceVisible();
     if (!silent) {
       setLoading('Собираю решение', 'Генерирую стартовый пакет и подтягиваю реальные материалы каталога.');
@@ -3569,8 +3639,10 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     }
 
     if (constructorBuildCache.has(cacheKey)) {
-      renderConstructor(constructorBuildCache.get(cacheKey));
-      focusWorkspace();
+      renderConstructor(constructorBuildCache.get(cacheKey), { preserveViewState: preservedViewState });
+      if (!silent) {
+        focusWorkspace();
+      }
       syncRouteWithState('replace');
       setConstructorSyncState(false);
       return;
@@ -3590,8 +3662,10 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       }
       constructorBuildCache.set(cacheKey, payload);
       pruneConstructorBuildCache();
-      renderConstructor(payload);
-      focusWorkspace();
+      renderConstructor(payload, { preserveViewState: preservedViewState });
+      if (!silent) {
+        focusWorkspace();
+      }
       syncRouteWithState('replace');
     } catch (error) {
       if (error?.name === 'AbortError') {
