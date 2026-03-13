@@ -225,21 +225,21 @@ test('buildConstructorCompletion tracks non-style fields and required state', ()
 test('live constructor theme mirrors dark palette and white brand fallback', () => {
   const theme = buildConstructorLiveTheme({
     color_variant: 'color',
-    palette_tone: 'ink',
+    palette_tone: 'accent',
   });
 
-  assert.equal(theme.tone, '#182a31');
+  assert.equal(theme.tone, '#C40E3D');
   assert.equal(theme.toneIsDark, true);
-  assert.equal(resolveConstructorLiveBrandVariant({ color_variant: 'color', palette_tone: 'ink' }, theme), 'white');
+  assert.equal(resolveConstructorLiveBrandVariant({ color_variant: 'color', palette_tone: 'accent' }, theme), 'white');
   assert.deepEqual(buildConstructorLiveLockupSurface(theme, 'white'), {
-    fill: '#182a31',
+    fill: '#C40E3D',
     ink: '#ffffff',
   });
 });
 
-test('constructorPaletteToneDefinition falls back to paper tone', () => {
-  assert.equal(constructorPaletteToneDefinition('teal').label, 'Северная бирюза');
-  assert.equal(constructorPaletteToneDefinition('missing').id, 'paper');
+test('constructorPaletteToneDefinition falls back to supplied palette catalog', () => {
+  assert.equal(constructorPaletteToneDefinition('p621').label, 'Pantone 621 C');
+  assert.equal(constructorPaletteToneDefinition('missing').id, 'ivory');
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {

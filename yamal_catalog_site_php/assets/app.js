@@ -412,10 +412,12 @@ function buildConstructorChoicePreview(fieldId, option) {
   const token = String(option?.mark || option?.label || option?.value || '').trim().slice(0, 10);
   if (fieldId === 'palette_tone') {
     const swatch = String(option?.swatch || '').trim() || '#f6f0e7';
+    const swatchSoft = String(option?.swatchSoft || '').trim() || '#fffdfa';
     const dark = Boolean(option?.dark);
     return `
-      <span class="constructor-choice-visual constructor-choice-visual-swatch${dark ? ' is-dark' : ''}" style="--choice-tone:${escapeHtml(swatch)};">
-        <span class="constructor-choice-swatch" aria-hidden="true"></span>
+      <span class="constructor-choice-visual constructor-choice-visual-swatch${dark ? ' is-dark' : ''}" style="--choice-tone:${escapeHtml(swatch)};--choice-tone-soft:${escapeHtml(swatchSoft)};">
+        <span class="constructor-choice-swatch constructor-choice-swatch-primary" aria-hidden="true"></span>
+        <span class="constructor-choice-swatch constructor-choice-swatch-secondary" aria-hidden="true"></span>
       </span>
     `;
   }
@@ -437,19 +439,18 @@ function buildConstructorChoicePreview(fieldId, option) {
 
 function constructorPaletteToneDefinition(paletteTone) {
   const definitions = {
-    paper: { id: 'paper', label: 'Светлый фон', tone: '#f6f0e7', toneSoft: '#fffdfa', toneInk: '#182a31', dark: false },
-    sand: { id: 'sand', label: 'Песочный', tone: '#d6c0a3', toneSoft: '#efe4d7', toneInk: '#182a31', dark: false },
-    accent: { id: 'accent', label: 'Фирменный красный', tone: '#bf1238', toneSoft: '#f4d8df', toneInk: '#ffffff', dark: true },
-    teal: { id: 'teal', label: 'Северная бирюза', tone: '#1d6770', toneSoft: '#d8ecee', toneInk: '#ffffff', dark: true },
-    gold: { id: 'gold', label: 'Тёплая охра', tone: '#9e6f2d', toneSoft: '#efe2cf', toneInk: '#ffffff', dark: true },
-    ink: { id: 'ink', label: 'Тёмный графит', tone: '#182a31', toneSoft: '#dde3e7', toneInk: '#ffffff', dark: true },
+    accent: { id: 'accent', label: 'Фирменный красный', tone: '#C40E3D', toneSoft: '#F4D7E0', toneInk: '#ffffff', frame: '#C40E3D', dark: true },
+    ivory: { id: 'ivory', label: 'Мамонтовая кость', tone: '#F9F0E1', toneSoft: '#FFF9F0', toneInk: '#182a31', frame: '#F9F0E1', dark: false },
+    lichen: { id: 'lichen', label: 'Ягель снежный', tone: '#F0EAED', toneSoft: '#FBF9FA', toneInk: '#182a31', frame: '#F0EAED', dark: false },
+    p621: { id: 'p621', label: 'Pantone 621 C', tone: '#E1ECE7', toneSoft: '#F7FBF8', toneInk: '#182a31', frame: '#E1ECE7', dark: false },
+    r6034: { id: 'r6034', label: 'RAL 6034', tone: '#D1E2E2', toneSoft: '#F1F7F7', toneInk: '#182a31', frame: '#D1E2E2', dark: false },
   };
-  return definitions[String(paletteTone || '').trim()] || definitions.paper;
+  return definitions[String(paletteTone || '').trim()] || definitions.ivory;
 }
 
 function buildConstructorLiveTheme(input = {}) {
   const colorVariant = String(input?.color_variant || 'color').trim() || 'color';
-  const paletteTone = String(input?.palette_tone || 'paper').trim() || 'paper';
+  const paletteTone = String(input?.palette_tone || 'ivory').trim() || 'ivory';
   const base = colorVariant === 'cmyk'
     ? {
       colorVariant: 'cmyk',
@@ -457,13 +458,13 @@ function buildConstructorLiveTheme(input = {}) {
       surface: '#fffdfa',
       surfaceAlt: '#efe4d7',
       cardStroke: '#e3d7c9',
-      accent: '#b6173b',
-      accentSoft: '#eed3d9',
+      accent: '#C40E3D',
+      accentSoft: '#F4D7E0',
       ink: '#182a31',
       muted: '#5d6972',
-      badge: '#b6173b',
+      badge: '#C40E3D',
       line: '#d3c8bc',
-      frame: '#b6173b',
+      frame: '#C40E3D',
       watermarkOpacity: '0.09',
     }
     : colorVariant === 'black'
@@ -504,18 +505,26 @@ function buildConstructorLiveTheme(input = {}) {
           surface: '#ffffff',
           surfaceAlt: '#f6f0e7',
           cardStroke: '#e3dbcf',
-          accent: '#bf1238',
-          accentSoft: '#f4d8df',
+          accent: '#C40E3D',
+          accentSoft: '#F4D7E0',
           ink: '#182a31',
           muted: '#5d6972',
-          badge: '#bf1238',
+          badge: '#C40E3D',
           line: '#d8d1c5',
-          frame: '#bf1238',
+          frame: '#C40E3D',
           watermarkOpacity: '0.08',
         };
   const tone = constructorPaletteToneDefinition(paletteTone);
   return {
     ...base,
+    background: colorVariant === 'white'
+      ? base.background
+      : (tone.dark ? base.background : String(tone.toneSoft || base.background || '#f8f4ee').trim() || '#f8f4ee'),
+    surfaceAlt: String(tone.toneSoft || base.surfaceAlt || '#f6f0e7').trim() || '#f6f0e7',
+    cardStroke: String(tone.frame || tone.tone || base.cardStroke || '#e3dbcf').trim() || '#e3dbcf',
+    accentSoft: String(tone.toneSoft || base.accentSoft || '#F4D7E0').trim() || '#F4D7E0',
+    line: String(tone.frame || tone.tone || base.line || '#d8d1c5').trim() || '#d8d1c5',
+    frame: String(tone.frame || tone.tone || base.frame || '#C40E3D').trim() || '#C40E3D',
     paletteTone: tone.id,
     paletteToneLabel: tone.label,
     tone: tone.tone,

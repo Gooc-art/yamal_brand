@@ -995,13 +995,66 @@ function constructor_background_style_labels(): array
 
 function constructor_palette_tone_labels(): array
 {
+    $labels = [];
+    foreach (constructor_palette_tone_catalog() as $value => $tone) {
+        $labels[$value] = (string) ($tone['label'] ?? $value);
+    }
+    return $labels;
+}
+
+function constructor_palette_tone_catalog(): array
+{
     return [
-        'paper' => 'Светлый фон',
-        'sand' => 'Песочный',
-        'accent' => 'Фирменный красный',
-        'teal' => 'Северная бирюза',
-        'gold' => 'Тёплая охра',
-        'ink' => 'Тёмный графит',
+        'accent' => [
+            'id' => 'accent',
+            'label' => 'Фирменный красный',
+            'description' => 'Pantone 193 C • RAL 3002',
+            'tone' => '#C40E3D',
+            'toneSoft' => '#F4D7E0',
+            'toneInk' => '#FFFFFF',
+            'frame' => '#C40E3D',
+            'dark' => true,
+        ],
+        'ivory' => [
+            'id' => 'ivory',
+            'label' => 'Мамонтовая кость',
+            'description' => 'Pantone 7506 C • RAL 1015',
+            'tone' => '#F9F0E1',
+            'toneSoft' => '#FFF9F0',
+            'toneInk' => '#182A31',
+            'frame' => '#F9F0E1',
+            'dark' => false,
+        ],
+        'lichen' => [
+            'id' => 'lichen',
+            'label' => 'Ягель снежный',
+            'description' => 'Pantone 5245 C • RAL 4009',
+            'tone' => '#F0EAED',
+            'toneSoft' => '#FBF9FA',
+            'toneInk' => '#182A31',
+            'frame' => '#F0EAED',
+            'dark' => false,
+        ],
+        'p621' => [
+            'id' => 'p621',
+            'label' => 'Pantone 621 C',
+            'description' => 'RAL 6027 • #E1ECE7',
+            'tone' => '#E1ECE7',
+            'toneSoft' => '#F7FBF8',
+            'toneInk' => '#182A31',
+            'frame' => '#E1ECE7',
+            'dark' => false,
+        ],
+        'r6034' => [
+            'id' => 'r6034',
+            'label' => 'RAL 6034',
+            'description' => 'Pantone 523 C • #D1E2E2',
+            'tone' => '#D1E2E2',
+            'toneSoft' => '#F1F7F7',
+            'toneInk' => '#182A31',
+            'frame' => '#D1E2E2',
+            'dark' => false,
+        ],
     ];
 }
 
@@ -1049,22 +1102,15 @@ function constructor_background_style_options(): array
 function constructor_palette_tone_options(): array
 {
     $items = [];
-    foreach (constructor_palette_tone_labels() as $value => $label) {
-        $tone = constructor_palette_tone_definition($value);
+    foreach (constructor_palette_tone_catalog() as $value => $tone) {
+        $label = (string) ($tone['label'] ?? $value);
         $items[] = [
             'value' => $value,
             'label' => $label,
-            'description' => match ($value) {
-                'paper' => 'Нейтральная светлая подложка',
-                'sand' => 'Тёплый спокойный фон',
-                'accent' => 'Насыщенный фирменный акцент',
-                'teal' => 'Холодный северный акцент',
-                'gold' => 'Тёплый статусный акцент',
-                'ink' => 'Глубокий тёмный фон',
-                default => 'Фоновый тон',
-            },
+            'description' => (string) ($tone['description'] ?? 'Фоновый тон'),
             'mark' => mb_strtoupper(mb_substr($label, 0, 1, 'UTF-8'), 'UTF-8'),
             'swatch' => (string) ($tone['tone'] ?? '#f6f0e7'),
+            'swatchSoft' => (string) ($tone['toneSoft'] ?? '#fffdfa'),
             'dark' => !empty($tone['dark']),
         ];
     }
@@ -1077,7 +1123,7 @@ function constructor_style_fields(array $defaults = []): array
     $lockupDefault = (string) ($defaults['brand_lockup'] ?? 'logo');
     $designDefault = (string) ($defaults['design_variant'] ?? 'calm');
     $backgroundDefault = (string) ($defaults['background_style'] ?? 'clean');
-    $paletteDefault = (string) ($defaults['palette_tone'] ?? 'paper');
+    $paletteDefault = (string) ($defaults['palette_tone'] ?? 'ivory');
 
     return [
         'color_variant' => [
@@ -1145,7 +1191,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'calm',
                 'background_style' => 'clean',
-                'palette_tone' => 'paper',
+                'palette_tone' => 'ivory',
             ]), [
                 'full_name' => [
                     'id' => 'full_name',
@@ -1208,7 +1254,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'editorial',
                 'background_style' => 'band',
-                'palette_tone' => 'teal',
+                'palette_tone' => 'p621',
             ]), [
                 'variant' => [
                     'id' => 'variant',
@@ -1303,7 +1349,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'editorial',
                 'background_style' => 'watermark',
-                'palette_tone' => 'accent',
+                'palette_tone' => 'lichen',
             ]), [
                 'presentation_mode' => [
                     'id' => 'presentation_mode',
@@ -1403,7 +1449,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'editorial',
                 'background_style' => 'frame',
-                'palette_tone' => 'paper',
+                'palette_tone' => 'ivory',
             ]), [
                 'recipient' => [
                     'id' => 'recipient',
@@ -1522,7 +1568,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'poster',
                 'background_style' => 'pattern',
-                'palette_tone' => 'teal',
+                'palette_tone' => 'r6034',
             ]), [
                 'headline' => [
                     'id' => 'headline',
@@ -1580,7 +1626,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'calm',
                 'background_style' => 'frame',
-                'palette_tone' => 'paper',
+                'palette_tone' => 'ivory',
             ]), [
                 'department' => [
                     'id' => 'department',
@@ -1633,7 +1679,7 @@ function constructor_solution_definitions(): array
                 'brand_lockup' => 'logo',
                 'design_variant' => 'poster',
                 'background_style' => 'watermark',
-                'palette_tone' => 'ink',
+                'palette_tone' => 'accent',
             ]), [
                 'headline' => [
                     'id' => 'headline',
@@ -2733,21 +2779,21 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Официальная',
                 'summary' => 'Спокойлая визитка на светлом фоне',
                 'description' => 'Базовый деловой режим для контактов и встреч.',
-                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'design_variant' => 'calm', 'background_style' => 'clean', 'palette_tone' => 'paper'],
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'design_variant' => 'calm', 'background_style' => 'clean', 'palette_tone' => 'ivory'],
             ],
             [
                 'id' => 'print',
                 'label' => 'Для печати',
                 'summary' => 'Печатная версия с рамкой',
                 'description' => 'CMYK и спокойная рамка под тираж.',
-                'overrides' => ['color_variant' => 'cmyk', 'brand_lockup' => 'logo', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'paper'],
+                'overrides' => ['color_variant' => 'cmyk', 'brand_lockup' => 'logo', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory'],
             ],
             [
                 'id' => 'contrast',
                 'label' => 'Контрастный знак',
                 'summary' => 'Белый знак на плотном фоне',
                 'description' => 'Акцентный режим, когда нужен более смелый носитель.',
-                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'mark', 'design_variant' => 'signal', 'background_style' => 'halo', 'palette_tone' => 'ink'],
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'mark', 'design_variant' => 'signal', 'background_style' => 'halo', 'palette_tone' => 'accent'],
             ],
         ],
         'nameplate' => [
@@ -2756,21 +2802,21 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Кабинет',
                 'summary' => 'Спокойлая кабинетная табличка',
                 'description' => 'Для двери, кабинета или переговорной.',
-                'overrides' => ['variant' => 'cabinet', 'design_variant' => 'editorial', 'background_style' => 'band', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+                'overrides' => ['variant' => 'cabinet', 'design_variant' => 'editorial', 'background_style' => 'band', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'navigation',
                 'label' => 'Навигация',
-                'summary' => 'Бирюзовый маршрутный режим',
+                'summary' => 'Светлый маршрутный режим',
                 'description' => 'Под стрелки и длинные направления.',
-                'overrides' => ['variant' => 'navigation', 'direction' => 'right', 'design_variant' => 'signal', 'background_style' => 'corner', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+                'overrides' => ['variant' => 'navigation', 'direction' => 'right', 'design_variant' => 'signal', 'background_style' => 'corner', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'zone_mark',
                 'label' => 'Зональный знак',
                 'summary' => 'Контрастный блок со знаком',
                 'description' => 'Когда нужен акцент на зоне и видимость с расстояния.',
-                'overrides' => ['variant' => 'zone', 'design_variant' => 'poster', 'background_style' => 'frame', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+                'overrides' => ['variant' => 'zone', 'design_variant' => 'poster', 'background_style' => 'frame', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
         ],
         'presentation_deck' => [
@@ -2779,7 +2825,7 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Деловая',
                 'summary' => 'Спокойлая обложка под статус и отчёт',
                 'description' => 'Универсальный вариант для отчёта и внутренних встреч.',
-                'overrides' => ['presentation_mode' => 'report', 'design_variant' => 'editorial', 'background_style' => 'watermark', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+                'overrides' => ['presentation_mode' => 'report', 'design_variant' => 'editorial', 'background_style' => 'watermark', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'pitch',
@@ -2792,8 +2838,8 @@ function constructor_preset_definitions(array $definition): array
                 'id' => 'invest',
                 'label' => 'Инвест',
                 'summary' => 'Холодный северный тон',
-                'description' => 'Бирюзовая подача для инвестиционного сценария.',
-                'overrides' => ['presentation_mode' => 'invest', 'design_variant' => 'poster', 'background_style' => 'pattern', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+                'description' => 'Светлая холодная подача для инвестиционного сценария.',
+                'overrides' => ['presentation_mode' => 'invest', 'design_variant' => 'poster', 'background_style' => 'pattern', 'palette_tone' => 'r6034', 'brand_lockup' => 'logo'],
             ],
         ],
         'certificate' => [
@@ -2802,21 +2848,21 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Официальный',
                 'summary' => 'Печатный сертификат с рамкой',
                 'description' => 'Стандартная торжественная версия для выдачи.',
-                'overrides' => ['color_variant' => 'cmyk', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+                'overrides' => ['color_variant' => 'cmyk', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'ceremony',
                 'label' => 'Торжественный',
                 'summary' => 'Тёплая церемониальная версия',
                 'description' => 'Охристый тон и знак как главный акцент.',
-                'overrides' => ['color_variant' => 'color', 'design_variant' => 'signal', 'background_style' => 'halo', 'palette_tone' => 'gold', 'brand_lockup' => 'mark'],
+                'overrides' => ['color_variant' => 'color', 'design_variant' => 'signal', 'background_style' => 'halo', 'palette_tone' => 'lichen', 'brand_lockup' => 'mark'],
             ],
             [
                 'id' => 'contrast',
                 'label' => 'Контрастный',
                 'summary' => 'Белый логотип на тёмном фоне',
                 'description' => 'Для сценических сертификатов и экранной выдачи.',
-                'overrides' => ['color_variant' => 'white', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'ink', 'brand_lockup' => 'logo'],
+                'overrides' => ['color_variant' => 'white', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'logo'],
             ],
         ],
         'badge' => [
@@ -2830,16 +2876,16 @@ function constructor_preset_definitions(array $definition): array
             [
                 'id' => 'staff',
                 'label' => 'Команда',
-                'summary' => 'Бирюзовый режим для команды',
+                'summary' => 'Светлый режим для команды',
                 'description' => 'Спокойлая версия для оргкомитета и волонтёров.',
-                'overrides' => ['access_level' => 'staff', 'design_variant' => 'editorial', 'background_style' => 'band', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+                'overrides' => ['access_level' => 'staff', 'design_variant' => 'editorial', 'background_style' => 'band', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'vip',
                 'label' => 'VIP',
                 'summary' => 'Контрастный тёмный бейдж',
                 'description' => 'Белый знак на плотном фоне для особого доступа.',
-                'overrides' => ['access_level' => 'vip', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+                'overrides' => ['access_level' => 'vip', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
         ],
         'social_post' => [
@@ -2855,14 +2901,14 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Редакционный',
                 'summary' => 'Тёмный знак и чистая подача',
                 'description' => 'Под длинный заголовок и более строгий тон.',
-                'overrides' => ['ratio' => '1:1', 'design_variant' => 'editorial', 'background_style' => 'watermark', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+                'overrides' => ['ratio' => '1:1', 'design_variant' => 'editorial', 'background_style' => 'watermark', 'palette_tone' => 'lichen', 'brand_lockup' => 'mark'],
             ],
             [
                 'id' => 'story',
                 'label' => 'Панорама',
                 'summary' => 'Широкий digital-режим',
                 'description' => 'Под горизонтальный пост или обложку анонса.',
-                'overrides' => ['ratio' => '16:9', 'design_variant' => 'poster', 'background_style' => 'pattern', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+                'overrides' => ['ratio' => '16:9', 'design_variant' => 'poster', 'background_style' => 'pattern', 'palette_tone' => 'r6034', 'brand_lockup' => 'logo'],
             ],
         ],
         'letterhead' => [
@@ -2871,21 +2917,21 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Официальный',
                 'summary' => 'Классический деловой бланк',
                 'description' => 'Печатный режим под письма и справки.',
-                'overrides' => ['color_variant' => 'cmyk', 'design_variant' => 'calm', 'background_style' => 'frame', 'palette_tone' => 'paper', 'brand_lockup' => 'logo'],
+                'overrides' => ['color_variant' => 'cmyk', 'design_variant' => 'calm', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'department',
                 'label' => 'Подразделение',
                 'summary' => 'Тёплый спокойный верхний блок',
                 'description' => 'Для внутренних документов и handoff-пакетов.',
-                'overrides' => ['color_variant' => 'color', 'design_variant' => 'editorial', 'background_style' => 'corner', 'palette_tone' => 'sand', 'brand_lockup' => 'logo'],
+                'overrides' => ['color_variant' => 'color', 'design_variant' => 'editorial', 'background_style' => 'corner', 'palette_tone' => 'lichen', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'contrast',
                 'label' => 'Контрастный',
                 'summary' => 'Знак на тёмной шапке',
                 'description' => 'Более смелый режим для digital-PDF.',
-                'overrides' => ['color_variant' => 'color', 'design_variant' => 'poster', 'background_style' => 'band', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+                'overrides' => ['color_variant' => 'color', 'design_variant' => 'poster', 'background_style' => 'band', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
         ],
         'rollup' => [
@@ -2901,14 +2947,14 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Контрастный',
                 'summary' => 'Белый знак на плотном фоне',
                 'description' => 'Когда нужен дальний акцент и считываемость.',
-                'overrides' => ['design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'ink', 'brand_lockup' => 'mark'],
+                'overrides' => ['design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
             [
                 'id' => 'nordic',
                 'label' => 'Северный',
-                'summary' => 'Бирюзовый режим под форум и навигацию',
+                'summary' => 'Прохладный режим под форум и навигацию',
                 'description' => 'Холодный тон и спокойный ритм фона.',
-                'overrides' => ['design_variant' => 'editorial', 'background_style' => 'pattern', 'palette_tone' => 'teal', 'brand_lockup' => 'logo'],
+                'overrides' => ['design_variant' => 'editorial', 'background_style' => 'pattern', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
             ],
         ],
         default => [
@@ -2917,7 +2963,7 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Официальный',
                 'summary' => 'Базовый grounded-режим',
                 'description' => 'Спокойлая версия без лишнего шума.',
-                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'design_variant' => 'calm', 'background_style' => 'clean', 'palette_tone' => 'paper'],
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'design_variant' => 'calm', 'background_style' => 'clean', 'palette_tone' => 'ivory'],
             ],
         ],
     };
@@ -3090,12 +3136,12 @@ function constructor_asset_variant_data_uri(string $relativePath, string $mimeTy
     }
 
     $accent = match ($colorVariant) {
-        'cmyk' => '#b6173b',
+        'cmyk' => '#C40E3D',
         'black' => '#182a31',
         'white' => '#ffffff',
-        default => '#bf1238',
+        default => '#C40E3D',
     };
-    $content = str_ireplace(['#bf1238', '#BF1238'], $accent, $content);
+    $content = str_ireplace(['#bf1238', '#BF1238', '#c40e3d', '#C40E3D'], $accent, $content);
 
     $cache[$cacheKey] = 'data:' . $mimeType . ';base64,' . base64_encode($content);
     return $cache[$cacheKey];
@@ -3103,61 +3149,11 @@ function constructor_asset_variant_data_uri(string $relativePath, string $mimeTy
 
 function constructor_palette_tone_definition(string $paletteTone): array
 {
-    $definitions = [
-        'paper' => [
-            'id' => 'paper',
-            'label' => 'Светлый фон',
-            'tone' => '#f6f0e7',
-            'toneSoft' => '#fffdfa',
-            'toneInk' => '#182a31',
-            'dark' => false,
-        ],
-        'sand' => [
-            'id' => 'sand',
-            'label' => 'Песочный',
-            'tone' => '#d6c0a3',
-            'toneSoft' => '#efe4d7',
-            'toneInk' => '#182a31',
-            'dark' => false,
-        ],
-        'accent' => [
-            'id' => 'accent',
-            'label' => 'Фирменный красный',
-            'tone' => '#bf1238',
-            'toneSoft' => '#f4d8df',
-            'toneInk' => '#ffffff',
-            'dark' => true,
-        ],
-        'teal' => [
-            'id' => 'teal',
-            'label' => 'Северная бирюза',
-            'tone' => '#1d6770',
-            'toneSoft' => '#d8ecee',
-            'toneInk' => '#ffffff',
-            'dark' => true,
-        ],
-        'gold' => [
-            'id' => 'gold',
-            'label' => 'Тёплая охра',
-            'tone' => '#9e6f2d',
-            'toneSoft' => '#efe2cf',
-            'toneInk' => '#ffffff',
-            'dark' => true,
-        ],
-        'ink' => [
-            'id' => 'ink',
-            'label' => 'Тёмный графит',
-            'tone' => '#182a31',
-            'toneSoft' => '#dde3e7',
-            'toneInk' => '#ffffff',
-            'dark' => true,
-        ],
-    ];
-
-    return $definitions[$paletteTone] ?? $definitions['paper'];
+    $definitions = constructor_palette_tone_catalog();
+    return $definitions[$paletteTone] ?? $definitions['ivory'];
 }
 
-function constructor_theme_palette(string $colorVariant, string $paletteTone = 'paper'): array
+function constructor_theme_palette(string $colorVariant, string $paletteTone = 'ivory'): array
 {
     $base = match ($colorVariant) {
         'cmyk' => [
@@ -3166,13 +3162,13 @@ function constructor_theme_palette(string $colorVariant, string $paletteTone = '
             'surface' => '#fffdfa',
             'surfaceAlt' => '#efe4d7',
             'cardStroke' => '#e3d7c9',
-            'accent' => '#b6173b',
-            'accentSoft' => '#eed3d9',
+            'accent' => '#C40E3D',
+            'accentSoft' => '#F4D7E0',
             'ink' => '#182a31',
             'muted' => '#5d6972',
-            'badge' => '#b6173b',
+            'badge' => '#C40E3D',
             'line' => '#d3c8bc',
-            'frame' => '#b6173b',
+            'frame' => '#C40E3D',
             'watermarkOpacity' => '0.09',
         ],
         'black' => [
@@ -3211,13 +3207,13 @@ function constructor_theme_palette(string $colorVariant, string $paletteTone = '
             'surface' => '#ffffff',
             'surfaceAlt' => '#f6f0e7',
             'cardStroke' => '#e3dbcf',
-            'accent' => '#bf1238',
-            'accentSoft' => '#f4d8df',
+            'accent' => '#C40E3D',
+            'accentSoft' => '#F4D7E0',
             'ink' => '#182a31',
             'muted' => '#5d6972',
-            'badge' => '#bf1238',
+            'badge' => '#C40E3D',
             'line' => '#d8d1c5',
-            'frame' => '#bf1238',
+            'frame' => '#C40E3D',
             'watermarkOpacity' => '0.08',
         ],
     };
@@ -3225,8 +3221,16 @@ function constructor_theme_palette(string $colorVariant, string $paletteTone = '
     $tone = constructor_palette_tone_definition($paletteTone);
 
     return array_merge($base, [
-        'paletteTone' => (string) ($tone['id'] ?? 'paper'),
-        'paletteToneLabel' => (string) ($tone['label'] ?? 'Светлый фон'),
+        'background' => ($colorVariant === 'white' || !empty($tone['dark']))
+            ? (string) ($base['background'] ?? '#f8f4ee')
+            : (string) ($tone['toneSoft'] ?? ($base['background'] ?? '#f8f4ee')),
+        'surfaceAlt' => (string) ($tone['toneSoft'] ?? ($base['surfaceAlt'] ?? '#f6f0e7')),
+        'cardStroke' => (string) ($tone['frame'] ?? ($tone['tone'] ?? ($base['cardStroke'] ?? '#e3dbcf'))),
+        'accentSoft' => (string) ($tone['toneSoft'] ?? ($base['accentSoft'] ?? '#F4D7E0')),
+        'line' => (string) ($tone['frame'] ?? ($tone['tone'] ?? ($base['line'] ?? '#d8d1c5'))),
+        'frame' => (string) ($tone['frame'] ?? ($tone['tone'] ?? ($base['frame'] ?? '#C40E3D'))),
+        'paletteTone' => (string) ($tone['id'] ?? 'ivory'),
+        'paletteToneLabel' => (string) ($tone['label'] ?? 'Мамонтовая кость'),
         'tone' => (string) ($tone['tone'] ?? '#f6f0e7'),
         'toneSoft' => (string) ($tone['toneSoft'] ?? '#fffdfa'),
         'toneInk' => (string) ($tone['toneInk'] ?? '#182a31'),
@@ -3799,8 +3803,8 @@ function constructor_svg_theme_style_vars(array $theme, array $lockupSurface = [
 {
     $variables = [
         '--ctor-bg' => constructor_theme_value($theme, 'background', '#ffffff'),
-        '--ctor-accent' => constructor_theme_value($theme, 'accent', '#bf1238'),
-        '--ctor-accent-soft' => constructor_theme_value($theme, 'accentSoft', '#f4d8df'),
+        '--ctor-accent' => constructor_theme_value($theme, 'accent', '#C40E3D'),
+        '--ctor-accent-soft' => constructor_theme_value($theme, 'accentSoft', '#F4D7E0'),
         '--ctor-tone' => constructor_theme_value($theme, 'tone', '#f6f0e7'),
         '--ctor-tone-soft' => constructor_theme_value($theme, 'toneSoft', '#fffdfa'),
         '--ctor-tone-ink' => constructor_theme_value($theme, 'toneInk', '#182a31'),
@@ -3810,8 +3814,8 @@ function constructor_svg_theme_style_vars(array $theme, array $lockupSurface = [
         '--ctor-surface' => constructor_theme_value($theme, 'surface', '#ffffff'),
         '--ctor-card-stroke' => constructor_theme_value($theme, 'cardStroke', '#e3dbcf'),
         '--ctor-line' => constructor_theme_value($theme, 'line', '#d8d1c5'),
-        '--ctor-badge' => constructor_theme_value($theme, 'badge', '#bf1238'),
-        '--ctor-frame' => constructor_theme_value($theme, 'frame', constructor_theme_value($theme, 'accent', '#bf1238')),
+        '--ctor-badge' => constructor_theme_value($theme, 'badge', '#C40E3D'),
+        '--ctor-frame' => constructor_theme_value($theme, 'frame', constructor_theme_value($theme, 'accent', '#C40E3D')),
         '--ctor-watermark-opacity' => (string) ($theme['watermarkOpacity'] ?? '0.08'),
         '--ctor-lockup-fill' => (string) ($lockupSurface['fill'] ?? constructor_theme_value($theme, 'tone', '#f6f0e7')),
         '--ctor-lockup-ink' => (string) ($lockupSurface['ink'] ?? constructor_theme_value($theme, 'toneInk', '#182a31')),
@@ -3965,14 +3969,14 @@ function constructor_style_display_labels(array $input): array
     $brandLockup = (string) ($input['brand_lockup'] ?? 'logo');
     $designVariant = (string) ($input['design_variant'] ?? 'calm');
     $backgroundStyle = (string) ($input['background_style'] ?? 'clean');
-    $paletteTone = (string) ($input['palette_tone'] ?? 'paper');
+    $paletteTone = (string) ($input['palette_tone'] ?? 'ivory');
 
     return [
         'colorVariantLabel' => constructor_color_variant_labels()[$colorVariant] ?? 'Color',
         'brandLockupLabel' => constructor_brand_lockup_labels()[$brandLockup] ?? 'Логотип с надписью',
         'designVariantLabel' => constructor_design_variant_labels()[$designVariant] ?? 'Спокойный',
         'backgroundStyleLabel' => constructor_background_style_labels()[$backgroundStyle] ?? 'Чистый фон',
-        'paletteToneLabel' => constructor_palette_tone_labels()[$paletteTone] ?? 'Светлый фон',
+        'paletteToneLabel' => constructor_palette_tone_labels()[$paletteTone] ?? 'Мамонтовая кость',
     ];
 }
 
@@ -3982,7 +3986,7 @@ function constructor_derived_payload(array $definition, array $input): array
     $base = constructor_style_display_labels($input);
     $theme = constructor_theme_palette(
         (string) ($input['color_variant'] ?? 'color'),
-        (string) ($input['palette_tone'] ?? 'paper')
+        (string) ($input['palette_tone'] ?? 'ivory')
     );
     $composition = constructor_template_profile($input, $theme);
     $base['compositionLabel'] = (string) ($composition['label'] ?? 'Классическая композиция');
@@ -4093,7 +4097,7 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
 
     $html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>' .
         htmlspecialchars((string) ($definition['label'] ?? 'Решение'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
-        '</title><style>body{font-family:Arial,sans-serif;background:#f6f0e7;color:#182a31;margin:0;padding:40px;}article{max-width:920px;margin:0 auto;background:#fff;border:1px solid #e3dbcf;border-radius:28px;padding:36px;box-shadow:0 20px 60px rgba(24,42,49,.08);}h1{margin:0 0 8px;font-size:40px;}h2{margin:28px 0 10px;font-size:22px;}p,li{line-height:1.6;font-size:16px;}ul{margin:0;padding-left:18px;} .eyebrow{color:#bf1238;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;} .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;} .card{background:#faf7f2;border:1px solid #eee1d4;border-radius:18px;padding:14px;}</style></head><body><article>' .
+        '</title><style>body{font-family:Arial,sans-serif;background:#f6f0e7;color:#182a31;margin:0;padding:40px;}article{max-width:920px;margin:0 auto;background:#fff;border:1px solid #e3dbcf;border-radius:28px;padding:36px;box-shadow:0 20px 60px rgba(24,42,49,.08);}h1{margin:0 0 8px;font-size:40px;}h2{margin:28px 0 10px;font-size:22px;}p,li{line-height:1.6;font-size:16px;}ul{margin:0;padding-left:18px;} .eyebrow{color:#C40E3D;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;} .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;} .card{background:#faf7f2;border:1px solid #eee1d4;border-radius:18px;padding:14px;}</style></head><body><article>' .
         '<p class="eyebrow">Лаборатория решений</p>' .
         '<h1>' . htmlspecialchars((string) ($definition['label'] ?? 'Решение'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1>' .
         '<p>' . htmlspecialchars((string) ($definition['description'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>' .
@@ -4182,7 +4186,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
     $brandLockup = (string) ($input['brand_lockup'] ?? 'logo');
     $designVariant = (string) ($input['design_variant'] ?? 'calm');
     $backgroundStyle = (string) ($input['background_style'] ?? 'clean');
-    $paletteTone = (string) ($input['palette_tone'] ?? 'paper');
+    $paletteTone = (string) ($input['palette_tone'] ?? 'ivory');
     $theme = constructor_theme_palette($colorVariant, $paletteTone);
     $brandVariant = constructor_resolve_brand_asset_variant($input, $theme);
     $brandAssetBundle = constructor_brand_asset_bundle();
