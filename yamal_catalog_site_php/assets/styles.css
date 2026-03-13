@@ -2041,6 +2041,10 @@ input[type="search"]:focus {
   background: rgba(255, 255, 255, 0.7);
 }
 
+.constructor-field-group-style {
+  gap: 14px;
+}
+
 .constructor-group-head {
   display: grid;
   gap: 4px;
@@ -2175,6 +2179,10 @@ input[type="search"]:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.constructor-choice-grid.is-design {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .constructor-choice-card {
   position: relative;
   display: grid;
@@ -2239,6 +2247,37 @@ input[type="search"]:focus {
   color: #fffdf9;
 }
 
+.constructor-choice-visual-layout {
+  min-width: 72px;
+  background: linear-gradient(180deg, rgba(24, 42, 49, 0.05), rgba(24, 42, 49, 0.09));
+}
+
+.constructor-choice-layout {
+  display: grid;
+  gap: 6px;
+  width: 36px;
+}
+
+.constructor-choice-layout-bar {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(24, 42, 49, 0.24);
+}
+
+.constructor-choice-layout-row {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 4px;
+}
+
+.constructor-choice-layout-row span {
+  display: block;
+  min-height: 14px;
+  border-radius: 8px;
+  background: rgba(24, 42, 49, 0.14);
+}
+
 .constructor-choice-swatch {
   width: 18px;
   height: 18px;
@@ -2292,6 +2331,45 @@ input[type="search"]:focus {
 
 .constructor-choice-grid.is-palette .constructor-choice-copy small {
   display: none;
+}
+
+.constructor-style-primary,
+.constructor-style-more-body {
+  display: grid;
+  gap: 14px;
+}
+
+.constructor-style-more {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(24, 42, 49, 0.08);
+}
+
+.constructor-style-more summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--accent-deep);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.constructor-style-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.constructor-style-more summary::after {
+  content: 'Показать';
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.constructor-style-more[open] summary::after {
+  content: 'Скрыть';
 }
 
 .constructor-choice-card.active .constructor-choice-copy strong {

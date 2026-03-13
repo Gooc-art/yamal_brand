@@ -2,8 +2,9 @@ const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
-const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'background_style', 'palette_tone']);
-const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'design_variant', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['design_variant', 'palette_tone']);
+const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'design_variant', 'background_style', 'palette_tone']);
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
@@ -415,6 +416,19 @@ function buildConstructorChoicePreview(fieldId, option) {
     return `
       <span class="constructor-choice-visual constructor-choice-visual-swatch${dark ? ' is-dark' : ''}" style="--choice-tone:${escapeHtml(swatch)};">
         <span class="constructor-choice-swatch" aria-hidden="true"></span>
+      </span>
+    `;
+  }
+  if (fieldId === 'design_variant') {
+    return `
+      <span class="constructor-choice-visual constructor-choice-visual-layout">
+        <span class="constructor-choice-layout">
+          <span class="constructor-choice-layout-bar"></span>
+          <span class="constructor-choice-layout-row">
+            <span></span>
+            <span></span>
+          </span>
+        </span>
       </span>
     `;
   }
@@ -1259,6 +1273,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const backgroundStyle = String(nextInput.background_style || 'clean').trim() || 'clean';
     previewRoot.querySelectorAll('[data-constructor-bg-style]').forEach((node) => {
       node.style.display = String(node.getAttribute('data-constructor-bg-style') || '') === backgroundStyle ? 'inline' : 'none';
+    });
+    const designVariant = String(nextInput.design_variant || 'calm').trim() || 'calm';
+    previewRoot.querySelectorAll('[data-constructor-design-style]').forEach((node) => {
+      node.style.display = String(node.getAttribute('data-constructor-design-style') || '') === designVariant ? 'inline' : 'none';
     });
 
     previewRoot.querySelectorAll('[data-constructor-variant-image]').forEach((node) => {
@@ -2517,7 +2535,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return `
         <fieldset class="constructor-field constructor-choice-field">
           <legend class="constructor-field-label">${escapeHtml(label)}${required ? ' *' : ''}</legend>
-          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}">
+          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}${fieldId === 'design_variant' ? ' is-design' : ''}">
             ${options.map((option, index) => {
               const optionValue = String(option?.value || '').trim();
               const optionLabel = String(option?.label || optionValue || '').trim();
@@ -2588,8 +2606,52 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
-  function buildConstructorFieldGroupsMarkup(fields, input) {
-    return groupConstructorFields(fields).map((group) => `
+  function isConstructorFieldDefaultValue(field, input) {
+    const fieldId = String(field?.id || '').trim();
+    if (!fieldId) {
+      return true;
+    }
+    const currentValue = input?.[fieldId] ?? field?.default ?? '';
+    return String(currentValue ?? '') === String(field?.default ?? '');
+  }
+
+  function buildConstructorStyleGroupMarkup(group, input) {
+    const items = Array.isArray(group?.items) ? group.items : [];
+    if (!items.length) {
+      return '';
+    }
+    const primaryFields = items.filter((field) => CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS.has(String(field?.id || '').trim()));
+    const advancedFields = items.filter((field) => !CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS.has(String(field?.id || '').trim()));
+    const resolvedPrimary = primaryFields.length ? primaryFields : items;
+    const resolvedAdvanced = primaryFields.length ? advancedFields : [];
+    const advancedOpen = resolvedAdvanced.some((field) => !isConstructorFieldDefaultValue(field, input));
+
+    return `
+      <section class="constructor-field-group constructor-field-group-style">
+        <div class="constructor-group-head">
+          <strong>${escapeHtml(group.label)}</strong>
+          <span>${escapeHtml(group.hint)}</span>
+        </div>
+        <div class="constructor-style-primary">
+          ${resolvedPrimary.map((field) => renderConstructorField(field, input[field.id])).join('')}
+        </div>
+        ${resolvedAdvanced.length ? `
+          <details class="constructor-style-more"${advancedOpen ? ' open' : ''}>
+            <summary>Ещё настройки оформления</summary>
+            <div class="constructor-style-more-body">
+              ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id])).join('')}
+            </div>
+          </details>
+        ` : ''}
+      </section>
+    `;
+  }
+
+  function buildConstructorFieldGroupMarkup(group, input) {
+    if (group?.id === 'style') {
+      return buildConstructorStyleGroupMarkup(group, input);
+    }
+    return `
       <section class="constructor-field-group">
         <div class="constructor-group-head">
           <strong>${escapeHtml(group.label)}</strong>
@@ -2599,7 +2661,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           ${group.items.map((field) => renderConstructorField(field, input[field.id])).join('')}
         </div>
       </section>
-    `).join('');
+    `;
+  }
+
+  function buildConstructorFieldGroupsMarkup(fields, input) {
+    return groupConstructorFields(fields).map((group) => buildConstructorFieldGroupMarkup(group, input)).join('');
   }
 
 function buildConstructorStepsMarkup(generated) {

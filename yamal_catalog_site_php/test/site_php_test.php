@@ -179,6 +179,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shou
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCompletion'), 'frontend exposes constructor completion helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorLivePreview'), 'frontend exposes local constructor live preview helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS'), 'frontend exposes live constructor preview field set');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-style-more'), 'frontend exposes compact advanced style block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
@@ -389,10 +390,13 @@ assert_true((float) ($businessCardFit['fontSize'] ?? 0.0) < 92.0, 'business card
 $styleLabels = constructor_color_variant_labels();
 assert_true(($styleLabels['cmyk'] ?? '') === 'CMYK для печати', 'constructor exposes grounded cmyk color variant label');
 assert_true((constructor_brand_lockup_labels()['logo'] ?? '') === 'Логотип с надписью', 'constructor exposes grounded logo lockup label');
+assert_true((constructor_design_variant_labels()['poster'] ?? '') === 'Плакатный', 'constructor exposes grounded design variant label');
 assert_true((constructor_background_style_labels()['pattern'] ?? '') === 'Сетка из знака', 'constructor exposes grounded background element label');
+assert_true((constructor_background_style_labels()['corner'] ?? '') === 'Угловой акцент', 'constructor exposes extended grounded background option');
 assert_true((constructor_palette_tone_labels()['teal'] ?? '') === 'Северная бирюза', 'constructor exposes grounded palette tone label');
 assert_true((constructor_palette_tone_options()[2]['swatch'] ?? '') === '#bf1238', 'constructor exposes palette swatch metadata for style cards');
 assert_true(str_contains((string) (constructor_color_variant_options()[3]['description'] ?? ''), 'Белая'), 'constructor exposes descriptive text for color variant cards');
+assert_true(str_contains((string) (constructor_design_variant_options()[1]['description'] ?? ''), 'Редак'), 'constructor exposes descriptive text for design cards');
 assert_true((constructor_theme_palette('color', 'gold')['tone'] ?? '') === '#9e6f2d', 'constructor theme palette exposes gold background tone');
 
 $styledConstructorIds = ['business_card', 'nameplate', 'presentation_deck', 'certificate', 'badge', 'social_post', 'letterhead', 'rollup'];
@@ -402,6 +406,7 @@ foreach ($styledConstructorIds as $styledConstructorId) {
     $styledFieldIds = array_map(static fn(array $field): string => (string) ($field['id'] ?? ''), $styledDefinition['fields'] ?? []);
     assert_true(in_array('color_variant', $styledFieldIds, true), $styledConstructorId . ' exposes color variant field');
     assert_true(in_array('brand_lockup', $styledFieldIds, true), $styledConstructorId . ' exposes brand lockup field');
+    assert_true(in_array('design_variant', $styledFieldIds, true), $styledConstructorId . ' exposes design variant field');
     assert_true(in_array('background_style', $styledFieldIds, true), $styledConstructorId . ' exposes background style field');
     assert_true(in_array('palette_tone', $styledFieldIds, true), $styledConstructorId . ' exposes palette tone field');
 }
@@ -410,10 +415,14 @@ $businessCardDefinition = constructor_definition_by_id('business_card');
 assert_true($businessCardDefinition !== null, 'business card constructor definition exists');
 $presentedBusinessCard = constructor_present_definition($businessCardDefinition);
 $cityField = null;
+$designField = null;
 $paletteToneField = null;
 foreach (($presentedBusinessCard['fields'] ?? []) as $field) {
     if (($field['id'] ?? '') === 'city') {
         $cityField = $field;
+    }
+    if (($field['id'] ?? '') === 'design_variant') {
+        $designField = $field;
     }
     if (($field['id'] ?? '') === 'palette_tone') {
         $paletteToneField = $field;
@@ -423,6 +432,8 @@ assert_true(is_array($cityField), 'constructor present definition exposes free l
 assert_true(($cityField['type'] ?? '') === 'text', 'constructor locality field is free text');
 assert_true(($cityField['label'] ?? '') === 'Населённый пункт', 'constructor locality field uses settlement label');
 assert_true(($cityField['default'] ?? '__missing__') === '', 'constructor locality field defaults to empty state');
+assert_true(is_array($designField), 'constructor present definition exposes design field');
+assert_true(($designField['default'] ?? '') === 'calm', 'constructor design field defaults to calm mode');
 assert_true(is_array($paletteToneField), 'constructor present definition exposes palette tone field');
 assert_true(str_contains((string) ($paletteToneField['options'][0]['description'] ?? ''), 'Нейтральная'), 'constructor present definition keeps palette option descriptions');
 assert_true((string) ($paletteToneField['options'][2]['swatch'] ?? '') === '#bf1238', 'constructor present definition keeps palette swatch metadata');
@@ -430,6 +441,7 @@ $businessCardPresets = constructor_present_presets($businessCardDefinition, cons
 assert_true(count($businessCardPresets) >= 3, 'constructor exposes multiple grounded presets for business card');
 assert_true(($businessCardPresets[0]['active'] ?? false) === true, 'constructor marks default preset as active');
 assert_true(($businessCardPresets[1]['overrides']['color_variant'] ?? '') === 'cmyk', 'constructor preset exposes override payload');
+assert_true(($businessCardPresets[1]['overrides']['design_variant'] ?? '') === 'editorial', 'constructor preset exposes grounded design override');
 $styledBusinessCardInput = constructor_normalize_input($businessCardDefinition, [
     'city' => 'салехард',
     'full_name' => 'Александрова-Виноградова Екатерина Константиновна-Петрова',
@@ -439,15 +451,17 @@ $styledBusinessCardInput = constructor_normalize_input($businessCardDefinition, 
     'department' => 'Департамент коммуникаций',
     'color_variant' => 'black',
     'brand_lockup' => 'logo',
+    'design_variant' => 'poster',
     'background_style' => 'pattern',
     'palette_tone' => 'teal',
 ]);
 $styledBusinessCardDerived = constructor_derived_payload($businessCardDefinition, $styledBusinessCardInput);
 assert_true(($styledBusinessCardDerived['colorVariantLabel'] ?? '') === 'Black', 'constructor derived payload exposes selected color variant label');
 assert_true(($styledBusinessCardDerived['brandLockupLabel'] ?? '') === 'Логотип с надписью', 'constructor derived payload exposes selected brand lockup label');
+assert_true(($styledBusinessCardDerived['designVariantLabel'] ?? '') === 'Плакатный', 'constructor derived payload exposes selected design variant label');
 assert_true(($styledBusinessCardDerived['backgroundStyleLabel'] ?? '') === 'Сетка из знака', 'constructor derived payload exposes selected background style label');
 assert_true(($styledBusinessCardDerived['paletteToneLabel'] ?? '') === 'Северная бирюза', 'constructor derived payload exposes selected palette tone label');
-assert_true(($styledBusinessCardDerived['compositionLabel'] ?? '') === 'Фоновая композиция', 'constructor derived payload exposes adaptive composition label');
+assert_true(($styledBusinessCardDerived['compositionLabel'] ?? '') === 'Плакатная композиция', 'constructor derived payload exposes adaptive composition label');
 assert_true(
     constructor_resolve_brand_asset_variant($styledBusinessCardInput, constructor_theme_palette('black', 'teal')) === 'white',
     'constructor auto-selects white brand assets for dark palette tone'
@@ -458,10 +472,12 @@ $styledBusinessCardContent = (string) ($styledBusinessCardSvg['content'] ?? '');
 assert_true(str_contains($styledBusinessCardContent, '--ctor-accent:#182a31'), 'black color variant remaps accent color in live svg theme vars');
 assert_true(substr_count($styledBusinessCardContent, '<image ') >= 5, 'pattern background style adds repeated grounded mark elements');
 assert_true(str_contains($styledBusinessCardContent, '--ctor-lockup-fill:#1d6770'), 'business card svg uses selected palette tone for adaptive lockup panel');
+assert_true(str_contains($styledBusinessCardContent, 'data-constructor-design-style="poster"'), 'constructor svg exposes design variant layers for live preview');
 
 $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'white',
     'brand_lockup' => 'logo',
+    'design_variant' => 'editorial',
     'background_style' => 'frame',
 ]));
 assert_true($whiteBusinessCardSvg !== null, 'white business card svg artifact exists');
@@ -470,6 +486,7 @@ assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '--c
 $goldMarkBusinessCard = constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'color',
     'brand_lockup' => 'mark',
+    'design_variant' => 'signal',
     'background_style' => 'clean',
     'palette_tone' => 'gold',
 ]);
@@ -477,6 +494,17 @@ assert_true(
     constructor_resolve_brand_asset_variant($goldMarkBusinessCard, constructor_theme_palette('color', 'gold')) === 'white',
     'white firm mark can be laid over a grounded palette color'
 );
+
+$socialHeadlineFit = constructor_svg_fit_text_block(
+    'Новая система брендированных решений для муниципальных и событийных коммуникаций Ямала в едином цифровом каркасе',
+    'headline',
+    920,
+    356,
+    5,
+    ['minFontSize' => 18, 'widthSafety' => 0.82, 'heightSafety' => 0.84]
+);
+assert_true(($socialHeadlineFit['truncated'] ?? true) === false, 'social post headline fit keeps full long headline inside safe area');
+assert_true(count($socialHeadlineFit['lines'] ?? []) >= 3, 'social post headline fit uses multiline layout for long headline');
 $goldMarkBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $goldMarkBusinessCard);
 assert_true($goldMarkBusinessCardSvg !== null, 'gold mark business card svg artifact exists');
 assert_true(str_contains((string) ($goldMarkBusinessCardSvg['content'] ?? ''), '--ctor-lockup-fill:#9e6f2d'), 'business card svg uses grounded gold palette tone');
@@ -937,6 +965,7 @@ assert_true(
 );
 $constructorDraftPreview = (string) (($constructorDraft['artifacts'][0]['content'] ?? ''));
 assert_true(str_contains($constructorDraftPreview, 'data-constructor-bg-style="band"'), 'constructor draft preview exposes toggleable background layers');
+assert_true(str_contains($constructorDraftPreview, 'data-constructor-design-style="editorial"') || str_contains($constructorDraftPreview, 'data-constructor-design-style="calm"'), 'constructor draft preview exposes toggleable design layers');
 assert_true(str_contains($constructorDraftPreview, 'data-constructor-variant-image="lockup"'), 'constructor draft preview exposes variant-aware lockup image');
 assert_true(str_contains($constructorDraftPreview, 'data-href-white='), 'constructor draft preview exposes white asset variant for local switching');
 assert_true(str_contains($constructorDraftPreview, '--ctor-lockup-fill'), 'constructor draft preview exposes live theme variables');
