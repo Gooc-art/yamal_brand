@@ -893,6 +893,33 @@ function normalizeConsultantDeepAnswer(answer) {
   };
 }
 
+function normalizeWorkspaceErrorMessage(error, fallbackMessage = '') {
+  const rawMessage = String(error?.message || '').trim();
+  const source = rawMessage || String(error || '').trim();
+  if (!rawMessage && (source === 'Error' || source === '[object Error]')) {
+    return String(fallbackMessage || 'Попробуйте повторить действие чуть позже.').trim();
+  }
+  if (!source) {
+    return String(fallbackMessage || 'Попробуйте повторить действие чуть позже.').trim();
+  }
+  if (source === 'Failed to fetch') {
+    return 'Сеть не ответила вовремя или API сайта временно недоступен.';
+  }
+  if (source === 'folder_not_found') {
+    return 'Раздел не найден. Возможно, каталог уже обновился и ссылка устарела.';
+  }
+  if (source === 'file_not_found') {
+    return 'Файл не найден. Возможно, материал был перемещён или ссылка устарела.';
+  }
+  if (source === 'constructor_not_found') {
+    return 'Конструктор не найден. Возможно, шаблон был отключён или переименован.';
+  }
+  if (source === 'internal_error') {
+    return 'Сайт вернул внутреннюю ошибку. Повторите действие чуть позже.';
+  }
+  return source;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -910,6 +937,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildConstructorLiveTheme,
     resolveConstructorLiveBrandVariant,
     buildConstructorLiveLockupSurface,
+    normalizeWorkspaceErrorMessage,
     normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
@@ -2250,34 +2278,54 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.pagination.innerHTML = '';
   }
 
-  function renderConstructorErrorState(title, message, constructorId = '') {
-    const safeTitle = String(title || '').trim() || 'Не удалось открыть конструктор';
-    const safeMessage = String(message || '').trim() || 'Попробуйте повторить открытие ещё раз.';
-    const safeHtml = (value) => String(value || '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
-    els.contentMode.textContent = 'Конструктор';
+  function buildWorkspaceRetryActionMarkup(retry = null) {
+    if (!retry || !retry.action) {
+      return '';
+    }
+    const action = String(retry.action || '').trim();
+    const label = String(retry.label || 'Повторить').trim() || 'Повторить';
+    const attrs = [
+      `data-action="${escapeHtml(action)}"`,
+      retry.id ? `data-id="${escapeHtml(retry.id)}"` : '',
+      retry.page !== undefined && retry.page !== null ? `data-page="${escapeHtml(retry.page)}"` : '',
+      retry.query ? `data-query="${escapeHtml(retry.query)}"` : '',
+    ].filter(Boolean).join(' ');
+    return `<button type="button" class="item-action" ${attrs}>${escapeHtml(label)}</button>`;
+  }
+
+  function renderWorkspaceErrorState(title, message, options = {}) {
+    const safeTitle = String(title || '').trim() || 'Не удалось открыть раздел';
+    const safeMessage = normalizeWorkspaceErrorMessage(message, 'Попробуйте повторить действие ещё раз.');
+    const mode = String(options.mode || 'Раздел').trim() || 'Раздел';
+    const hint = String(options.hint || 'Рабочая область открыта, но сайт не получил нужные данные.').trim()
+      || 'Рабочая область открыта, но сайт не получил нужные данные.';
+    els.contentMode.textContent = mode;
     els.contentTitle.textContent = safeTitle;
-    els.contentHint.textContent = 'Рабочая область открыта, но конструктор не получил данные.';
+    els.contentHint.textContent = hint;
     els.contentItems.innerHTML = `
-      <div class="empty-state constructor-error-state">
+      <div class="empty-state workspace-error-state">
         <div class="empty-mark" aria-hidden="true">!</div>
         <div class="constructor-error-copy">
-          <h3>${safeHtml(safeTitle)}</h3>
-          <p class="detail-empty">${safeHtml(safeMessage)}</p>
+          <h3>${escapeHtml(safeTitle)}</h3>
+          <p class="detail-empty">${escapeHtml(safeMessage)}</p>
           <div class="item-actions">
-            ${constructorId
-              ? `<button type="button" class="item-action" data-action="open-constructor" data-id="${safeHtml(constructorId)}">Повторить</button>`
-              : ''}
+            ${buildWorkspaceRetryActionMarkup(options.retry)}
             <button type="button" class="ghost-button" data-action="go-root">Вернуться на витрину</button>
           </div>
         </div>
       </div>
     `;
     els.pagination.innerHTML = '';
+  }
+
+  function renderConstructorErrorState(title, message, constructorId = '') {
+    renderWorkspaceErrorState(title, message, {
+      mode: 'Конструктор',
+      hint: 'Рабочая область открыта, но конструктор не получил данные.',
+      retry: constructorId
+        ? { action: 'open-constructor', id: constructorId, label: 'Повторить' }
+        : null,
+    });
   }
 
   function setWorkspaceCollapsed(nextValue) {
@@ -3355,15 +3403,25 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     setLoading('Открываю раздел');
     setInspectorOpen(false);
     renderDetailPlaceholder();
-    const payload = await api('folder', { id, page: page || 0 });
-    const topRouteId = payload.root ? '' : (payload.breadcrumbs && payload.breadcrumbs[1] ? payload.breadcrumbs[1].id : payload.folder.id);
-    setActiveRoute(topRouteId);
-    renderFolder(payload);
-    if (els.searchInput) {
-      els.searchInput.value = '';
-    }
-    if (options.history !== 'none') {
-      syncRouteWithState(options.history || 'push');
+    try {
+      const payload = await api('folder', { id, page: page || 0 });
+      const topRouteId = payload.root ? '' : (payload.breadcrumbs && payload.breadcrumbs[1] ? payload.breadcrumbs[1].id : payload.folder.id);
+      setActiveRoute(topRouteId);
+      renderFolder(payload);
+      if (els.searchInput) {
+        els.searchInput.value = '';
+      }
+      if (options.history !== 'none') {
+        syncRouteWithState(options.history || 'push');
+      }
+    } catch (error) {
+      console.error(error);
+      setActiveRoute('');
+      renderWorkspaceErrorState('Не удалось открыть раздел', error, {
+        mode: 'Раздел',
+        hint: 'Рабочая область открыта, но каталог не вернул содержимое выбранной ветки.',
+        retry: { action: 'open-folder', id, page: page || 0, label: 'Повторить раздел' },
+      });
     }
   }
 
@@ -3377,21 +3435,40 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     setInspectorOpen(false);
     setActiveRoute('');
     renderDetailPlaceholder();
-    const payload = await api('search', { q: normalizedQuery });
-    renderSearch(payload);
-    if (els.searchInput) {
-      els.searchInput.value = payload.query || normalizedQuery;
-    }
-    if (options.history !== 'none') {
-      syncRouteWithState(options.history || 'push');
+    try {
+      const payload = await api('search', { q: normalizedQuery });
+      renderSearch(payload);
+      if (els.searchInput) {
+        els.searchInput.value = payload.query || normalizedQuery;
+      }
+      if (options.history !== 'none') {
+        syncRouteWithState(options.history || 'push');
+      }
+    } catch (error) {
+      console.error(error);
+      renderWorkspaceErrorState('Не удалось выполнить поиск', error, {
+        mode: 'Поиск',
+        hint: 'Рабочая область открыта, но поиск не получил ответ от API.',
+        retry: { action: 'search-chip', query: normalizedQuery, label: 'Повторить поиск' },
+      });
     }
   }
 
   async function openFile(id, options = {}) {
-    const payload = await api('file', { id });
-    renderDetail(payload);
-    if (options.history !== 'none') {
-      syncRouteWithState(options.history || 'push');
+    try {
+      const payload = await api('file', { id });
+      renderDetail(payload);
+      if (options.history !== 'none') {
+        syncRouteWithState(options.history || 'push');
+      }
+    } catch (error) {
+      console.error(error);
+      setInspectorOpen(false);
+      renderWorkspaceErrorState('Не удалось открыть карточку файла', error, {
+        mode: 'Файл',
+        hint: 'Каталог открыт, но карточка выбранного файла не получила данные.',
+        retry: { action: 'open-file', id, label: 'Повторить файл' },
+      });
     }
   }
 

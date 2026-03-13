@@ -190,6 +190,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'if (
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-handoff-panel'), 'frontend exposes constructor handoff panel classes');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorErrorState'), 'frontend exposes constructor error state helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Не удалось открыть конструктор'), 'frontend exposes constructor retry copy');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderWorkspaceErrorState'), 'frontend exposes generic workspace error state helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeWorkspaceErrorMessage'), 'frontend exposes readable workspace error message normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'constructor-summary-panel'), 'frontend removed verbose constructor summary panel');

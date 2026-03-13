@@ -17,6 +17,7 @@ const {
   buildConstructorLiveTheme,
   resolveConstructorLiveBrandVariant,
   buildConstructorLiveLockupSurface,
+  normalizeWorkspaceErrorMessage,
   normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
@@ -253,6 +254,21 @@ test('live constructor theme mirrors dark palette and white brand fallback', () 
 test('constructorPaletteToneDefinition falls back to supplied palette catalog', () => {
   assert.equal(constructorPaletteToneDefinition('p621').label, 'Pantone 621 C');
   assert.equal(constructorPaletteToneDefinition('missing').id, 'ivory');
+});
+
+test('normalizeWorkspaceErrorMessage translates transport and api failures into user copy', () => {
+  assert.equal(
+    normalizeWorkspaceErrorMessage(new Error('Failed to fetch')),
+    'Сеть не ответила вовремя или API сайта временно недоступен.',
+  );
+  assert.equal(
+    normalizeWorkspaceErrorMessage(new Error('folder_not_found')),
+    'Раздел не найден. Возможно, каталог уже обновился и ссылка устарела.',
+  );
+  assert.equal(
+    normalizeWorkspaceErrorMessage(new Error('')),
+    'Попробуйте повторить действие чуть позже.',
+  );
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {
