@@ -390,10 +390,15 @@ assert_true((float) ($businessCardFit['fontSize'] ?? 0.0) < 92.0, 'business card
 $styleLabels = constructor_color_variant_labels();
 assert_true(($styleLabels['cmyk'] ?? '') === 'CMYK для печати', 'constructor exposes grounded cmyk color variant label');
 assert_true((constructor_brand_lockup_labels()['logo'] ?? '') === 'Логотип с надписью', 'constructor exposes grounded logo lockup label');
+assert_true((constructor_graphic_element_labels()['mark_yamal'] ?? '') === 'Знак Ямал', 'constructor exposes grounded graphic element label');
 assert_true((constructor_design_variant_labels()['poster'] ?? '') === 'Плакатный', 'constructor exposes grounded design variant label');
 assert_true((constructor_background_style_labels()['pattern'] ?? '') === 'Сетка из знака', 'constructor exposes grounded background element label');
 assert_true((constructor_background_style_labels()['corner'] ?? '') === 'Угловой акцент', 'constructor exposes extended grounded background option');
 assert_true((constructor_palette_tone_labels()['ivory'] ?? '') === 'Мамонтовая кость', 'constructor exposes grounded palette tone label from supplied palette');
+$graphicElementOptions = constructor_graphic_element_options();
+assert_true(count($graphicElementOptions) >= 6, 'constructor exposes extended grounded graphic element options');
+assert_true((string) ($graphicElementOptions[1]['label'] ?? '') === 'Group 1410103616', 'constructor exposes first grounded group option by supplied id');
+assert_true(str_contains((string) ($graphicElementOptions[5]['label'] ?? ''), 'White'), 'constructor exposes white graphic lockup option copy');
 $paletteOptions = constructor_palette_tone_options();
 $accentPaletteOption = null;
 $ivoryPaletteOption = null;
@@ -418,6 +423,7 @@ foreach ($styledConstructorIds as $styledConstructorId) {
     $styledFieldIds = array_map(static fn(array $field): string => (string) ($field['id'] ?? ''), $styledDefinition['fields'] ?? []);
     assert_true(in_array('color_variant', $styledFieldIds, true), $styledConstructorId . ' exposes color variant field');
     assert_true(in_array('brand_lockup', $styledFieldIds, true), $styledConstructorId . ' exposes brand lockup field');
+    assert_true(in_array('graphic_element', $styledFieldIds, true), $styledConstructorId . ' exposes graphic element field');
     assert_true(in_array('design_variant', $styledFieldIds, true), $styledConstructorId . ' exposes design variant field');
     assert_true(in_array('background_style', $styledFieldIds, true), $styledConstructorId . ' exposes background style field');
     assert_true(in_array('palette_tone', $styledFieldIds, true), $styledConstructorId . ' exposes palette tone field');
@@ -428,10 +434,14 @@ assert_true($businessCardDefinition !== null, 'business card constructor definit
 $presentedBusinessCard = constructor_present_definition($businessCardDefinition);
 $cityField = null;
 $designField = null;
+$graphicElementField = null;
 $paletteToneField = null;
 foreach (($presentedBusinessCard['fields'] ?? []) as $field) {
     if (($field['id'] ?? '') === 'city') {
         $cityField = $field;
+    }
+    if (($field['id'] ?? '') === 'graphic_element') {
+        $graphicElementField = $field;
     }
     if (($field['id'] ?? '') === 'design_variant') {
         $designField = $field;
@@ -444,6 +454,9 @@ assert_true(is_array($cityField), 'constructor present definition exposes free l
 assert_true(($cityField['type'] ?? '') === 'text', 'constructor locality field is free text');
 assert_true(($cityField['label'] ?? '') === 'Населённый пункт', 'constructor locality field uses settlement label');
 assert_true(($cityField['default'] ?? '__missing__') === '', 'constructor locality field defaults to empty state');
+assert_true(is_array($graphicElementField), 'constructor present definition exposes graphic element field');
+assert_true(($graphicElementField['default'] ?? '') === 'mark_yamal', 'constructor graphic element field defaults to grounded sign mode');
+assert_true((string) (($graphicElementField['options'][2]['label'] ?? '')) === 'Group 2087328779', 'constructor present definition keeps supplied group option label');
 assert_true(is_array($designField), 'constructor present definition exposes design field');
 assert_true(($designField['default'] ?? '') === 'calm', 'constructor design field defaults to calm mode');
 assert_true(is_array($paletteToneField), 'constructor present definition exposes palette tone field');
@@ -474,6 +487,7 @@ $styledBusinessCardInput = constructor_normalize_input($businessCardDefinition, 
     'department' => 'Департамент коммуникаций',
     'color_variant' => 'black',
     'brand_lockup' => 'logo',
+    'graphic_element' => 'group_2087328779',
     'design_variant' => 'poster',
     'background_style' => 'pattern',
     'palette_tone' => 'accent',
@@ -481,6 +495,7 @@ $styledBusinessCardInput = constructor_normalize_input($businessCardDefinition, 
 $styledBusinessCardDerived = constructor_derived_payload($businessCardDefinition, $styledBusinessCardInput);
 assert_true(($styledBusinessCardDerived['colorVariantLabel'] ?? '') === 'Black', 'constructor derived payload exposes selected color variant label');
 assert_true(($styledBusinessCardDerived['brandLockupLabel'] ?? '') === 'Логотип с надписью', 'constructor derived payload exposes selected brand lockup label');
+assert_true(($styledBusinessCardDerived['graphicElementLabel'] ?? '') === 'Group 2087328779', 'constructor derived payload exposes selected graphic element label');
 assert_true(($styledBusinessCardDerived['designVariantLabel'] ?? '') === 'Плакатный', 'constructor derived payload exposes selected design variant label');
 assert_true(($styledBusinessCardDerived['backgroundStyleLabel'] ?? '') === 'Сетка из знака', 'constructor derived payload exposes selected background style label');
 assert_true(($styledBusinessCardDerived['paletteToneLabel'] ?? '') === 'Фирменный красный', 'constructor derived payload exposes selected supplied palette tone label');
@@ -496,6 +511,7 @@ assert_true(str_contains($styledBusinessCardContent, '--ctor-accent:#182a31'), '
 assert_true(substr_count($styledBusinessCardContent, '<image ') >= 5, 'pattern background style adds repeated grounded mark elements');
 assert_true(str_contains($styledBusinessCardContent, '--ctor-lockup-fill:#C40E3D'), 'business card svg uses selected supplied palette tone for adaptive lockup panel');
 assert_true(str_contains($styledBusinessCardContent, 'data-constructor-design-style="poster"'), 'constructor svg exposes design variant layers for live preview');
+assert_true(str_contains($styledBusinessCardContent, 'data-constructor-graphic-element="group_2087328779"'), 'constructor svg exposes toggleable graphic element groups for live preview');
 
 $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'white',
@@ -505,6 +521,18 @@ $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constr
 ]));
 assert_true($whiteBusinessCardSvg !== null, 'white business card svg artifact exists');
 assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '--ctor-bg:#182a31'), 'white color variant uses dark canvas for reversed lockup');
+
+$logoWhiteGraphicBusinessCard = constructor_normalize_input($businessCardDefinition, [
+    'color_variant' => 'color',
+    'brand_lockup' => 'logo',
+    'graphic_element' => 'logo_white',
+    'design_variant' => 'poster',
+    'background_style' => 'watermark',
+    'palette_tone' => 'ivory',
+]);
+$logoWhiteGraphicBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $logoWhiteGraphicBusinessCard);
+assert_true($logoWhiteGraphicBusinessCardSvg !== null, 'logo white graphic business card svg artifact exists');
+assert_true(str_contains((string) ($logoWhiteGraphicBusinessCardSvg['content'] ?? ''), 'data-constructor-force-variant="white"'), 'constructor svg keeps forced white variant metadata for dedicated white graphic elements');
 
 $lightMarkBusinessCard = constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'white',
@@ -989,6 +1017,7 @@ assert_true(
 $constructorDraftPreview = (string) (($constructorDraft['artifacts'][0]['content'] ?? ''));
 assert_true(str_contains($constructorDraftPreview, 'data-constructor-bg-style="band"'), 'constructor draft preview exposes toggleable background layers');
 assert_true(str_contains($constructorDraftPreview, 'data-constructor-design-style="editorial"') || str_contains($constructorDraftPreview, 'data-constructor-design-style="calm"'), 'constructor draft preview exposes toggleable design layers');
+assert_true(str_contains($constructorDraftPreview, 'data-constructor-graphic-element="mark_yamal"'), 'constructor draft preview exposes toggleable graphic element layers');
 assert_true(str_contains($constructorDraftPreview, 'data-constructor-variant-image="lockup"'), 'constructor draft preview exposes variant-aware lockup image');
 assert_true(str_contains($constructorDraftPreview, 'data-href-white='), 'constructor draft preview exposes white asset variant for local switching');
 assert_true(str_contains($constructorDraftPreview, '--ctor-lockup-fill'), 'constructor draft preview exposes live theme variables');

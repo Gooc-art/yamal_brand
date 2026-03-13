@@ -2,9 +2,9 @@ const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
-const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'design_variant', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['design_variant', 'palette_tone']);
-const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'design_variant', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
@@ -1287,9 +1287,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     previewRoot.querySelectorAll('[data-constructor-design-style]').forEach((node) => {
       node.style.display = String(node.getAttribute('data-constructor-design-style') || '') === designVariant ? 'inline' : 'none';
     });
+    const graphicElement = String(nextInput.graphic_element || 'mark_yamal').trim() || 'mark_yamal';
+    previewRoot.querySelectorAll('[data-constructor-graphic-element]').forEach((node) => {
+      node.style.display = String(node.getAttribute('data-constructor-graphic-element') || '') === graphicElement ? 'inline' : 'none';
+    });
 
     previewRoot.querySelectorAll('[data-constructor-variant-image]').forEach((node) => {
-      const nextHref = node.getAttribute(`data-href-${brandVariant}`) || '';
+      const forcedVariant = String(node.getAttribute('data-constructor-force-variant') || '').trim();
+      const resolvedVariant = forcedVariant || brandVariant;
+      const nextHref = node.getAttribute(`data-href-${resolvedVariant}`) || node.getAttribute(`data-href-${brandVariant}`) || '';
       if (nextHref) {
         node.setAttribute('href', nextHref);
       }
@@ -2544,7 +2550,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return `
         <fieldset class="constructor-field constructor-choice-field">
           <legend class="constructor-field-label">${escapeHtml(label)}${required ? ' *' : ''}</legend>
-          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}${fieldId === 'design_variant' ? ' is-design' : ''}">
+          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}${fieldId === 'design_variant' ? ' is-design' : ''}${fieldId === 'graphic_element' ? ' is-graphic' : ''}">
             ${options.map((option, index) => {
               const optionValue = String(option?.value || '').trim();
               const optionLabel = String(option?.label || optionValue || '').trim();

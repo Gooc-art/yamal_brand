@@ -2183,6 +2183,10 @@ input[type="search"]:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.constructor-choice-grid.is-graphic {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .constructor-choice-card {
   position: relative;
   display: grid;
@@ -2340,6 +2344,10 @@ input[type="search"]:focus {
 .constructor-choice-grid.is-palette .constructor-choice-copy strong {
   font-size: 12px;
   line-height: 1.24;
+}
+
+.constructor-choice-grid.is-graphic .constructor-choice-card {
+  min-height: 124px;
 }
 
 .constructor-choice-grid.is-palette .constructor-choice-copy small {
@@ -4048,6 +4056,10 @@ input[type="search"]:focus {
   }
 
   .constructor-choice-grid.is-palette {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .constructor-choice-grid.is-graphic {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

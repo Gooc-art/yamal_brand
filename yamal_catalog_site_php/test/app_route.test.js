@@ -131,6 +131,7 @@ test('buildConstructorCategoryFilters keeps all filter and current category stab
 test('groupConstructorFields prioritizes fill fields before setup and style blocks', () => {
   const groups = groupConstructorFields([
     { id: 'city', label: 'Населённый пункт' },
+    { id: 'graphic_element', label: 'Графический элемент' },
     { id: 'design_variant', label: 'Дизайн' },
     { id: 'palette_tone', label: 'Палитра фона' },
     { id: 'presentation_mode', label: 'Сценарий' },
@@ -144,15 +145,17 @@ test('groupConstructorFields prioritizes fill fields before setup and style bloc
   assert.deepEqual(groups.map((group) => group.id), ['fill', 'setup', 'style']);
   assert.deepEqual(groups[0].items.map((item) => item.id), ['title', 'message', 'full_name', 'email']);
   assert.deepEqual(groups[1].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
-  assert.deepEqual(groups[2].items.map((item) => item.id), ['design_variant', 'palette_tone']);
+  assert.deepEqual(groups[2].items.map((item) => item.id), ['graphic_element', 'design_variant', 'palette_tone']);
 });
 
 test('constructor choice fields and auto-build fields are detected consistently', () => {
   assert.equal(isConstructorChoiceField('design_variant'), true);
+  assert.equal(isConstructorChoiceField('graphic_element'), true);
   assert.equal(isConstructorChoiceField('palette_tone'), true);
   assert.equal(isConstructorChoiceField('background_style'), true);
   assert.equal(isConstructorChoiceField('title'), false);
   assert.equal(shouldAutoBuildConstructorField('design_variant', 'radio'), true);
+  assert.equal(shouldAutoBuildConstructorField('graphic_element', 'radio'), true);
   assert.equal(shouldAutoBuildConstructorField('palette_tone', 'radio'), true);
   assert.equal(shouldAutoBuildConstructorField('city', 'text'), false);
   assert.equal(shouldAutoBuildConstructorField('slide_count', 'number'), true);
@@ -194,6 +197,16 @@ test('buildConstructorChoicePreview escapes palette swatches and marks safely', 
 
   assert.match(markup, /--choice-tone:#bf1238&quot; onclick=&quot;alert\(1\)/);
   assert.doesNotMatch(markup, /constructor-choice-token/);
+});
+
+test('buildConstructorChoicePreview keeps graphic element token safe', () => {
+  const markup = buildConstructorChoicePreview('graphic_element', {
+    value: 'group_2087328779',
+    mark: 'G208<script>',
+  });
+
+  assert.match(markup, /constructor-choice-visual-token/);
+  assert.match(markup, /G208&lt;scrip/);
 });
 
 test('buildConstructorCompletion tracks non-style fields and required state', () => {
