@@ -143,6 +143,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-progress-strip'), 'styles contain constructor progress strip classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-panel'), 'styles contain compact constructor support panel classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-note'), 'styles contain compact constructor support note classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-shell.is-syncing'), 'styles contain constructor syncing state classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-form-actions > *'), 'styles normalize constructor action buttons');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-download-card'), 'styles contain constructor artifact download classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
@@ -175,6 +176,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'pale
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isConstructorChoiceField'), 'frontend exposes constructor choice field helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldAutoBuildConstructorField'), 'frontend exposes constructor auto-build helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCompletion'), 'frontend exposes constructor completion helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorLivePreview'), 'frontend exposes local constructor live preview helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS'), 'frontend exposes live constructor preview field set');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
@@ -444,9 +447,9 @@ assert_true(
 $styledBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $styledBusinessCardInput);
 assert_true($styledBusinessCardSvg !== null, 'styled business card svg artifact exists');
 $styledBusinessCardContent = (string) ($styledBusinessCardSvg['content'] ?? '');
-assert_true(str_contains($styledBusinessCardContent, '.accent{fill:#182a31;}'), 'black color variant remaps accent color in svg styles');
+assert_true(str_contains($styledBusinessCardContent, '--ctor-accent:#182a31'), 'black color variant remaps accent color in live svg theme vars');
 assert_true(substr_count($styledBusinessCardContent, '<image ') >= 5, 'pattern background style adds repeated grounded mark elements');
-assert_true(str_contains($styledBusinessCardContent, 'fill="#1d6770"'), 'business card svg uses selected palette tone for adaptive lockup panel');
+assert_true(str_contains($styledBusinessCardContent, '--ctor-lockup-fill:#1d6770'), 'business card svg uses selected palette tone for adaptive lockup panel');
 
 $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'white',
@@ -454,7 +457,7 @@ $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constr
     'background_style' => 'frame',
 ]));
 assert_true($whiteBusinessCardSvg !== null, 'white business card svg artifact exists');
-assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '.bg{fill:#182a31;}'), 'white color variant uses dark canvas for reversed lockup');
+assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '--ctor-bg:#182a31'), 'white color variant uses dark canvas for reversed lockup');
 
 $goldMarkBusinessCard = constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'color',
@@ -468,7 +471,7 @@ assert_true(
 );
 $goldMarkBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $goldMarkBusinessCard);
 assert_true($goldMarkBusinessCardSvg !== null, 'gold mark business card svg artifact exists');
-assert_true(str_contains((string) ($goldMarkBusinessCardSvg['content'] ?? ''), 'fill="#9e6f2d"'), 'business card svg uses grounded gold palette tone');
+assert_true(str_contains((string) ($goldMarkBusinessCardSvg['content'] ?? ''), '--ctor-lockup-fill:#9e6f2d'), 'business card svg uses grounded gold palette tone');
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
@@ -924,6 +927,11 @@ assert_true(
     ),
     'constructor draft exposes grounded recommended sections'
 );
+$constructorDraftPreview = (string) (($constructorDraft['artifacts'][0]['content'] ?? ''));
+assert_true(str_contains($constructorDraftPreview, 'data-constructor-bg-style="band"'), 'constructor draft preview exposes toggleable background layers');
+assert_true(str_contains($constructorDraftPreview, 'data-constructor-variant-image="lockup"'), 'constructor draft preview exposes variant-aware lockup image');
+assert_true(str_contains($constructorDraftPreview, 'data-href-white='), 'constructor draft preview exposes white asset variant for local switching');
+assert_true(str_contains($constructorDraftPreview, '--ctor-lockup-fill'), 'constructor draft preview exposes live theme variables');
 
 $constructorBuild = $service->buildConstructor('presentation_deck', [
     'city' => 'салехард',

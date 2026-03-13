@@ -13,6 +13,10 @@ const {
   groupConstructorFields,
   buildConstructorChoicePreview,
   buildConstructorCompletion,
+  constructorPaletteToneDefinition,
+  buildConstructorLiveTheme,
+  resolveConstructorLiveBrandVariant,
+  buildConstructorLiveLockupSurface,
   normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
@@ -214,6 +218,26 @@ test('buildConstructorCompletion tracks non-style fields and required state', ()
     percent: 75,
     ready: false,
   });
+});
+
+test('live constructor theme mirrors dark palette and white brand fallback', () => {
+  const theme = buildConstructorLiveTheme({
+    color_variant: 'color',
+    palette_tone: 'ink',
+  });
+
+  assert.equal(theme.tone, '#182a31');
+  assert.equal(theme.toneIsDark, true);
+  assert.equal(resolveConstructorLiveBrandVariant({ color_variant: 'color', palette_tone: 'ink' }, theme), 'white');
+  assert.deepEqual(buildConstructorLiveLockupSurface(theme, 'white'), {
+    fill: '#182a31',
+    ink: '#ffffff',
+  });
+});
+
+test('constructorPaletteToneDefinition falls back to paper tone', () => {
+  assert.equal(constructorPaletteToneDefinition('teal').label, 'Северная бирюза');
+  assert.equal(constructorPaletteToneDefinition('missing').id, 'paper');
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {

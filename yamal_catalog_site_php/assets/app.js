@@ -3,6 +3,7 @@ const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
 const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'background_style', 'palette_tone']);
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
@@ -421,6 +422,120 @@ function buildConstructorChoicePreview(fieldId, option) {
   return `<span class="constructor-choice-visual constructor-choice-visual-token">${escapeHtml(token)}</span>`;
 }
 
+function constructorPaletteToneDefinition(paletteTone) {
+  const definitions = {
+    paper: { id: 'paper', label: 'Светлый фон', tone: '#f6f0e7', toneSoft: '#fffdfa', toneInk: '#182a31', dark: false },
+    sand: { id: 'sand', label: 'Песочный', tone: '#d6c0a3', toneSoft: '#efe4d7', toneInk: '#182a31', dark: false },
+    accent: { id: 'accent', label: 'Фирменный красный', tone: '#bf1238', toneSoft: '#f4d8df', toneInk: '#ffffff', dark: true },
+    teal: { id: 'teal', label: 'Северная бирюза', tone: '#1d6770', toneSoft: '#d8ecee', toneInk: '#ffffff', dark: true },
+    gold: { id: 'gold', label: 'Тёплая охра', tone: '#9e6f2d', toneSoft: '#efe2cf', toneInk: '#ffffff', dark: true },
+    ink: { id: 'ink', label: 'Тёмный графит', tone: '#182a31', toneSoft: '#dde3e7', toneInk: '#ffffff', dark: true },
+  };
+  return definitions[String(paletteTone || '').trim()] || definitions.paper;
+}
+
+function buildConstructorLiveTheme(input = {}) {
+  const colorVariant = String(input?.color_variant || 'color').trim() || 'color';
+  const paletteTone = String(input?.palette_tone || 'paper').trim() || 'paper';
+  const base = colorVariant === 'cmyk'
+    ? {
+      colorVariant: 'cmyk',
+      background: '#f6f0e7',
+      surface: '#fffdfa',
+      surfaceAlt: '#efe4d7',
+      cardStroke: '#e3d7c9',
+      accent: '#b6173b',
+      accentSoft: '#eed3d9',
+      ink: '#182a31',
+      muted: '#5d6972',
+      badge: '#b6173b',
+      line: '#d3c8bc',
+      frame: '#b6173b',
+      watermarkOpacity: '0.09',
+    }
+    : colorVariant === 'black'
+      ? {
+        colorVariant: 'black',
+        background: '#f5f1ea',
+        surface: '#ffffff',
+        surfaceAlt: '#ece5da',
+        cardStroke: '#d8d1c5',
+        accent: '#182a31',
+        accentSoft: '#dde3e7',
+        ink: '#182a31',
+        muted: '#56646d',
+        badge: '#182a31',
+        line: '#cdd5da',
+        frame: '#182a31',
+        watermarkOpacity: '0.07',
+      }
+      : colorVariant === 'white'
+        ? {
+          colorVariant: 'white',
+          background: '#182a31',
+          surface: '#223640',
+          surfaceAlt: '#2a404a',
+          cardStroke: '#4a616b',
+          accent: '#314a54',
+          accentSoft: '#415862',
+          ink: '#ffffff',
+          muted: '#d4dde2',
+          badge: '#ffffff',
+          line: '#60727b',
+          frame: '#ffffff',
+          watermarkOpacity: '0.08',
+        }
+        : {
+          colorVariant: 'color',
+          background: '#f8f4ee',
+          surface: '#ffffff',
+          surfaceAlt: '#f6f0e7',
+          cardStroke: '#e3dbcf',
+          accent: '#bf1238',
+          accentSoft: '#f4d8df',
+          ink: '#182a31',
+          muted: '#5d6972',
+          badge: '#bf1238',
+          line: '#d8d1c5',
+          frame: '#bf1238',
+          watermarkOpacity: '0.08',
+        };
+  const tone = constructorPaletteToneDefinition(paletteTone);
+  return {
+    ...base,
+    paletteTone: tone.id,
+    paletteToneLabel: tone.label,
+    tone: tone.tone,
+    toneSoft: tone.toneSoft,
+    toneInk: tone.toneInk,
+    toneIsDark: Boolean(tone.dark),
+  };
+}
+
+function resolveConstructorLiveBrandVariant(input = {}, theme = null) {
+  const currentTheme = theme && typeof theme === 'object' ? theme : buildConstructorLiveTheme(input);
+  const requestedVariant = String(input?.color_variant || 'color').trim() || 'color';
+  if (requestedVariant === 'white') {
+    return 'white';
+  }
+  return currentTheme.toneIsDark ? 'white' : requestedVariant;
+}
+
+function buildConstructorLiveLockupSurface(theme, brandVariant) {
+  const tone = String(theme?.tone || '#f6f0e7').trim() || '#f6f0e7';
+  const toneInk = String(theme?.toneInk || '#182a31').trim() || '#182a31';
+  if (brandVariant === 'white' && !theme?.toneIsDark) {
+    return {
+      fill: String(theme?.accent || '#182a31').trim() || '#182a31',
+      ink: '#ffffff',
+    };
+  }
+  return {
+    fill: tone,
+    ink: toneInk,
+  };
+}
+
 function hasConstructorFieldValue(value) {
   if (Array.isArray(value)) {
     return value.some((item) => hasConstructorFieldValue(item));
@@ -769,6 +884,10 @@ if (typeof module !== 'undefined' && module.exports) {
     groupConstructorFields,
     buildConstructorChoicePreview,
     buildConstructorCompletion,
+    constructorPaletteToneDefinition,
+    buildConstructorLiveTheme,
+    resolveConstructorLiveBrandVariant,
+    buildConstructorLiveLockupSurface,
     normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
@@ -824,6 +943,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     consultantHistory: [],
     consultantContext: null,
   };
+  const constructorBuildCache = new Map();
+  let constructorBuildAbortController = null;
+  let constructorBuildRequestId = 0;
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
@@ -1032,6 +1154,125 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       console.warn(error);
       setCopyButtonFeedback(button, 'Не удалось скопировать', 'error');
     }
+  }
+
+  function constructorBuildCacheKey(id, input) {
+    return `${String(id || '').trim()}::${JSON.stringify(input || {})}`;
+  }
+
+  function pruneConstructorBuildCache(maxEntries = 36) {
+    if (constructorBuildCache.size <= maxEntries) {
+      return;
+    }
+    const overflow = constructorBuildCache.size - maxEntries;
+    const keys = constructorBuildCache.keys();
+    for (let index = 0; index < overflow; index += 1) {
+      const next = keys.next();
+      if (next.done) {
+        break;
+      }
+      constructorBuildCache.delete(next.value);
+    }
+  }
+
+  function setConstructorSyncState(active) {
+    const shell = document.querySelector('.constructor-shell');
+    if (!shell) {
+      return;
+    }
+    shell.classList.toggle('is-syncing', Boolean(active));
+  }
+
+  function updateConstructorProgressStrip(fields, input, previewArtifact) {
+    const strip = document.querySelector('.constructor-progress-strip');
+    if (!strip) {
+      return;
+    }
+    const completion = buildConstructorCompletion(fields, input);
+    const artifactLabel = String(previewArtifact?.label || 'Черновое превью').trim() || 'Черновое превью';
+    const statusTitle = completion.ready ? 'Шаблон готов к сборке' : 'Заполнение шаблона';
+    const statusNote = completion.ready
+      ? 'Все обязательные поля на месте. Можно собирать пакет и проверять handoff.'
+      : completion.requiredTotal > 0
+        ? `Обязательные поля: ${completion.requiredFilled} из ${completion.requiredTotal}.`
+        : 'Шаблон можно заполнять постепенно, превью обновляется рядом.';
+    const titleNode = strip.querySelector('[data-constructor-progress-title]');
+    const noteNode = strip.querySelector('[data-constructor-progress-note]');
+    const meterNode = strip.querySelector('[data-constructor-progress-meter]');
+    const filledNode = strip.querySelector('[data-constructor-progress-filled]');
+    const artifactNode = strip.querySelector('[data-constructor-progress-artifact]');
+    const requiredNode = strip.querySelector('[data-constructor-progress-required]');
+    const statusCard = strip.querySelector('[data-constructor-progress-status-card]');
+
+    if (titleNode) titleNode.textContent = statusTitle;
+    if (noteNode) noteNode.textContent = statusNote;
+    if (meterNode) meterNode.style.width = `${Math.max(0, Math.min(100, completion.percent))}%`;
+    if (filledNode) filledNode.textContent = `${completion.filled}/${completion.total || 0}`;
+    if (artifactNode) artifactNode.textContent = artifactLabel;
+    if (requiredNode) requiredNode.textContent = completion.ready ? 'Готово' : `${completion.requiredFilled}/${completion.requiredTotal || 0}`;
+    if (statusCard) {
+      statusCard.classList.toggle('is-ready', completion.ready);
+    }
+    strip.querySelector('.constructor-progress-bar')?.setAttribute('aria-valuenow', String(completion.percent));
+  }
+
+  function applyConstructorLivePreview(input) {
+    if (state.current?.kind !== 'constructor') {
+      return false;
+    }
+    const previewSvg = document.querySelector('.constructor-preview-visual svg');
+    const previewRoot = previewSvg?.querySelector('[data-constructor-preview-root="1"]') || previewSvg;
+    if (!previewSvg || !previewRoot) {
+      return false;
+    }
+
+    const nextInput = {
+      ...(state.current?.payload?.input || {}),
+      ...(input || {}),
+    };
+    const theme = buildConstructorLiveTheme(nextInput);
+    const brandVariant = resolveConstructorLiveBrandVariant(nextInput, theme);
+    const lockupSurface = buildConstructorLiveLockupSurface(theme, brandVariant);
+    const rootVars = {
+      '--ctor-bg': theme.background,
+      '--ctor-accent': theme.accent,
+      '--ctor-accent-soft': theme.accentSoft,
+      '--ctor-tone': theme.tone,
+      '--ctor-tone-soft': theme.toneSoft,
+      '--ctor-tone-ink': theme.toneInk,
+      '--ctor-ink': theme.ink,
+      '--ctor-muted': theme.muted,
+      '--ctor-surface-alt': theme.surfaceAlt,
+      '--ctor-surface': theme.surface,
+      '--ctor-card-stroke': theme.cardStroke,
+      '--ctor-line': theme.line,
+      '--ctor-badge': theme.badge,
+      '--ctor-frame': theme.frame,
+      '--ctor-watermark-opacity': theme.watermarkOpacity,
+      '--ctor-lockup-fill': lockupSurface.fill,
+      '--ctor-lockup-ink': lockupSurface.ink,
+    };
+
+    Object.entries(rootVars).forEach(([name, value]) => {
+      previewRoot.style.setProperty(name, String(value || ''));
+    });
+
+    const backgroundStyle = String(nextInput.background_style || 'clean').trim() || 'clean';
+    previewRoot.querySelectorAll('[data-constructor-bg-style]').forEach((node) => {
+      node.style.display = String(node.getAttribute('data-constructor-bg-style') || '') === backgroundStyle ? 'inline' : 'none';
+    });
+
+    previewRoot.querySelectorAll('[data-constructor-variant-image]').forEach((node) => {
+      const nextHref = node.getAttribute(`data-href-${brandVariant}`) || '';
+      if (nextHref) {
+        node.setAttribute('href', nextHref);
+      }
+    });
+
+    const fields = Array.isArray(state.current?.payload?.definition?.fields) ? state.current.payload.definition.fields : [];
+    const previewArtifact = pickConstructorPreviewArtifact(state.current?.payload?.artifacts || []);
+    updateConstructorProgressStrip(fields, nextInput, previewArtifact);
+    return true;
   }
 
   function closeInspector(mode = 'replace') {
@@ -1481,6 +1722,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       method,
       headers: { Accept: 'application/json' },
     };
+    if (options.signal) {
+      fetchOptions.signal = options.signal;
+    }
     let requestUrl = actionUrl(action, method === 'GET' ? params : {});
 
     if (method !== 'GET') {
@@ -2449,20 +2693,20 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     return `
       <div class="constructor-progress-strip">
         <div class="constructor-progress-copy">
-          <strong>${escapeHtml(statusTitle)}</strong>
-          <span>${escapeHtml(statusNote)}</span>
+          <strong data-constructor-progress-title>${escapeHtml(statusTitle)}</strong>
+          <span data-constructor-progress-note>${escapeHtml(statusNote)}</span>
         </div>
         <div class="constructor-progress-bar" role="progressbar" aria-label="Заполнение шаблона" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${stats.percent}">
-          <span style="width:${Math.max(0, Math.min(100, stats.percent))}%;"></span>
+          <span data-constructor-progress-meter style="width:${Math.max(0, Math.min(100, stats.percent))}%;"></span>
         </div>
         <div class="constructor-progress-stats">
           <div class="constructor-progress-card">
             <small>Поля шаблона</small>
-            <strong>${escapeHtml(`${stats.filled}/${stats.total || 0}`)}</strong>
+            <strong data-constructor-progress-filled>${escapeHtml(`${stats.filled}/${stats.total || 0}`)}</strong>
           </div>
-          <div class="constructor-progress-card${stats.ready ? ' is-ready' : ''}">
-            <small>${escapeHtml(artifactLabel)}</small>
-            <strong>${stats.ready ? 'Готово' : escapeHtml(`${stats.requiredFilled}/${stats.requiredTotal || 0}`)}</strong>
+          <div class="constructor-progress-card${stats.ready ? ' is-ready' : ''}" data-constructor-progress-status-card>
+            <small data-constructor-progress-artifact>${escapeHtml(artifactLabel)}</small>
+            <strong data-constructor-progress-required>${stats.ready ? 'Готово' : escapeHtml(`${stats.requiredFilled}/${stats.requiredTotal || 0}`)}</strong>
           </div>
         </div>
       </div>
@@ -2707,7 +2951,8 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       ...formInput,
       ...(preset.overrides || {}),
     };
-    void buildConstructor(String(currentPayload.definition.id || '').trim(), nextInput);
+    applyConstructorLivePreview(nextInput);
+    void buildConstructor(String(currentPayload.definition.id || '').trim(), nextInput, { silent: true });
   }
 
   function renderSectionSwitcher(mode = '') {
@@ -3095,21 +3340,57 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     }
   }
 
-  async function buildConstructor(id, input) {
+  async function buildConstructor(id, input, options = {}) {
     const constructorId = String(id || '').trim();
     if (!constructorId) {
       return;
     }
+    const normalizedInput = input && typeof input === 'object' ? input : {};
+    const cacheKey = constructorBuildCacheKey(constructorId, normalizedInput);
+    const silent = Boolean(options?.silent);
     ensureWorkspaceVisible();
-    setLoading('Собираю решение', 'Генерирую стартовый пакет и подтягиваю реальные материалы каталога.');
+    if (!silent) {
+      setLoading('Собираю решение', 'Генерирую стартовый пакет и подтягиваю реальные материалы каталога.');
+    } else {
+      setConstructorSyncState(true);
+    }
+
+    if (constructorBuildCache.has(cacheKey)) {
+      renderConstructor(constructorBuildCache.get(cacheKey));
+      focusWorkspace();
+      syncRouteWithState('replace');
+      setConstructorSyncState(false);
+      return;
+    }
+
+    if (constructorBuildAbortController) {
+      constructorBuildAbortController.abort();
+    }
+    const controller = new AbortController();
+    constructorBuildAbortController = controller;
+    const requestId = ++constructorBuildRequestId;
+
     try {
-      const payload = await api('construct', { id: constructorId, input }, { method: 'POST' });
+      const payload = await api('construct', { id: constructorId, input: normalizedInput }, { method: 'POST', signal: controller.signal });
+      if (requestId !== constructorBuildRequestId) {
+        return;
+      }
+      constructorBuildCache.set(cacheKey, payload);
+      pruneConstructorBuildCache();
       renderConstructor(payload);
       focusWorkspace();
       syncRouteWithState('replace');
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        return;
+      }
       console.error(error);
       renderConstructorErrorState('Не удалось собрать решение', String(error?.message || 'Попробуйте повторить сборку ещё раз.'), constructorId);
+    } finally {
+      if (requestId === constructorBuildRequestId) {
+        constructorBuildAbortController = null;
+        setConstructorSyncState(false);
+      }
     }
   }
 
@@ -3284,13 +3565,17 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     if (!shouldAutoBuildConstructorField(fieldName, fieldType)) {
       return;
     }
+    const nextInput = collectConstructorFormInput(form);
+    if (CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS.has(fieldName)) {
+      applyConstructorLivePreview(nextInput);
+    }
     clearTimeout(constructorAutoBuildTimer);
     constructorAutoBuildTimer = window.setTimeout(() => {
       if (!document.body.contains(form)) {
         return;
       }
-      void buildConstructor(constructorId, collectConstructorFormInput(form));
-    }, 140);
+      void buildConstructor(constructorId, collectConstructorFormInput(form), { silent: true });
+    }, 180);
   });
 
   document.addEventListener('keydown', (event) => {
