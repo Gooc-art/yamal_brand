@@ -415,11 +415,64 @@ function buildConstructorChoicePreview(fieldId, option) {
     return `
       <span class="constructor-choice-visual constructor-choice-visual-swatch${dark ? ' is-dark' : ''}" style="--choice-tone:${escapeHtml(swatch)};">
         <span class="constructor-choice-swatch" aria-hidden="true"></span>
-        <span class="constructor-choice-token">${escapeHtml(token)}</span>
       </span>
     `;
   }
   return `<span class="constructor-choice-visual constructor-choice-visual-token">${escapeHtml(token)}</span>`;
+}
+
+function hasConstructorFieldValue(value) {
+  if (Array.isArray(value)) {
+    return value.some((item) => hasConstructorFieldValue(item));
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value);
+  }
+  return String(value ?? '').trim() !== '';
+}
+
+function buildConstructorCompletion(fields, input) {
+  const fieldList = Array.isArray(fields) ? fields : [];
+  const source = input && typeof input === 'object' ? input : {};
+  let total = 0;
+  let filled = 0;
+  let requiredTotal = 0;
+  let requiredFilled = 0;
+
+  fieldList.forEach((field) => {
+    const fieldId = String(field?.id || '').trim();
+    const fieldType = String(field?.type || 'text').trim().toLowerCase();
+    if (!fieldId || fieldType === 'hidden' || isConstructorChoiceField(fieldId)) {
+      return;
+    }
+
+    total += 1;
+    const value = source[fieldId] ?? field?.default ?? '';
+    const filledValue = hasConstructorFieldValue(value);
+    if (filledValue) {
+      filled += 1;
+    }
+
+    if (Boolean(field?.required)) {
+      requiredTotal += 1;
+      if (filledValue) {
+        requiredFilled += 1;
+      }
+    }
+  });
+
+  const percent = total > 0 ? Math.round((filled / total) * 100) : 100;
+  const remainingRequired = Math.max(0, requiredTotal - requiredFilled);
+
+  return {
+    total,
+    filled,
+    requiredTotal,
+    requiredFilled,
+    remainingRequired,
+    percent,
+    ready: remainingRequired === 0,
+  };
 }
 
 function collectConstructorFormInput(form) {
@@ -715,6 +768,7 @@ if (typeof module !== 'undefined' && module.exports) {
     shouldAutoBuildConstructorField,
     groupConstructorFields,
     buildConstructorChoicePreview,
+    buildConstructorCompletion,
     normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
@@ -2224,7 +2278,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             ${options.map((option, index) => {
               const optionValue = String(option?.value || '').trim();
               const optionLabel = String(option?.label || optionValue || '').trim();
-              const optionDescription = String(option?.description || option?.note || '').trim();
+              const optionDescription = fieldId === 'palette_tone'
+                ? ''
+                : String(option?.description || option?.note || '').trim();
               const optionId = `constructor-field-${fieldId}-${index}`;
               const checked = optionValue === String(currentValue);
               return `
@@ -2376,18 +2432,73 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     return `<pre class="${previewLayout.codeClass}">${escapeHtml(artifact.content || '')}</pre>`;
   }
 
-  function renderConstructorRecommendations(recommendations) {
+  function buildConstructorProgressMarkup(completion, previewArtifact) {
+    const stats = completion && typeof completion === 'object'
+      ? completion
+      : buildConstructorCompletion([], {});
+    const artifactLabel = String(previewArtifact?.label || 'Черновое превью').trim() || 'Черновое превью';
+    const statusTitle = stats.ready
+      ? 'Шаблон готов к сборке'
+      : 'Заполнение шаблона';
+    const statusNote = stats.ready
+      ? 'Все обязательные поля на месте. Можно собирать пакет и проверять handoff.'
+      : stats.requiredTotal > 0
+        ? `Обязательные поля: ${stats.requiredFilled} из ${stats.requiredTotal}.`
+        : 'Шаблон можно заполнять постепенно, превью обновляется рядом.';
+
+    return `
+      <div class="constructor-progress-strip">
+        <div class="constructor-progress-copy">
+          <strong>${escapeHtml(statusTitle)}</strong>
+          <span>${escapeHtml(statusNote)}</span>
+        </div>
+        <div class="constructor-progress-bar" role="progressbar" aria-label="Заполнение шаблона" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${stats.percent}">
+          <span style="width:${Math.max(0, Math.min(100, stats.percent))}%;"></span>
+        </div>
+        <div class="constructor-progress-stats">
+          <div class="constructor-progress-card">
+            <small>Поля шаблона</small>
+            <strong>${escapeHtml(`${stats.filled}/${stats.total || 0}`)}</strong>
+          </div>
+          <div class="constructor-progress-card${stats.ready ? ' is-ready' : ''}">
+            <small>${escapeHtml(artifactLabel)}</small>
+            <strong>${stats.ready ? 'Готово' : escapeHtml(`${stats.requiredFilled}/${stats.requiredTotal || 0}`)}</strong>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderConstructorRecommendations(recommendations, generated = false) {
+    if (generated) {
+      return '';
+    }
+
     const sections = Array.isArray(recommendations?.sections) ? recommendations.sections : [];
     const items = Array.isArray(recommendations?.items) ? recommendations.items : [];
     const advice = recommendations?.advice || {};
+    const note = advice?.summary
+      ? String(advice.summary).trim()
+      : 'Откройте нужный раздел и только потом собирайте итоговый handoff.';
+    const nextStep = String(advice?.nextStep || '').trim();
+
+    if (!sections.length && !items.length && !note) {
+      return '';
+    }
+
     return `
-      <div class="constructor-support-grid">
-        <section class="constructor-support-card">
-          <div class="constructor-support-head">
-            <strong>Разделы каталога</strong>
-            <span>Куда идти за исходниками и правилами.</span>
+      <section class="constructor-panel constructor-support-panel">
+        <div class="constructor-panel-head">
+          <strong>Основа из каталога</strong>
+          <span>Снизу только то, что помогает быстро стартовать. Полный handoff появится после сборки.</span>
+        </div>
+        <div class="constructor-support-card constructor-support-card-compact">
+          <div class="constructor-support-meta">
+            <span class="meta-pill">Разделов: ${escapeHtml(String(sections.length))}</span>
+            <span class="meta-pill">Файлов: ${escapeHtml(String(items.length))}</span>
+            <span class="meta-pill">Совет: ${advice?.summary ? 'готов' : 'после сборки'}</span>
           </div>
-          <div class="constructor-mini-grid">
+          <div class="constructor-mini-grid constructor-support-section-grid">
             ${sections.length ? sections.map((section) => `
               <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
                 <span class="constructor-mini-icon" aria-hidden="true">${escapeHtml(section.icon || '📁')}</span>
@@ -2396,46 +2507,15 @@ function buildConstructorPreviewMarkup(artifact, layout) {
                   <small>${escapeHtml(section.kindLabel || 'Раздел')}</small>
                 </span>
               </button>
-            `).join('') : '<p class="detail-empty">Подходящие разделы появятся после загрузки каталога.</p>'}
+            `).join('') : '<p class="detail-empty">Разделы появятся после загрузки каталога.</p>'}
           </div>
-        </section>
-        <section class="constructor-support-card">
-          <div class="constructor-support-head">
-            <strong>Файлы для старта</strong>
-            <span>Реальные материалы из каталога под этот носитель.</span>
+          <div class="constructor-support-note">
+            <strong>${items.length ? `Файлы для старта уже найдены: ${items.length}` : 'Файлы для старта появятся после сборки'}</strong>
+            <span>${escapeHtml(note)}</span>
+            ${nextStep ? `<small>${escapeHtml(nextStep)}</small>` : ''}
           </div>
-          <div class="constructor-file-list">
-            ${items.length ? items.map((item) => `
-              <article class="constructor-file-card">
-                <div class="constructor-file-copy">
-                  <strong>${escapeHtml(item.label || item.name || 'Файл')}</strong>
-                  <small>${escapeHtml(item.relativePath || item.kindLabel || '')}</small>
-                </div>
-                <div class="constructor-file-actions">
-                  <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
-                  <a class="link-button" href="${escapeHtml(item.downloadUrl || '#')}">Скачать</a>
-                </div>
-              </article>
-            `).join('') : '<p class="detail-empty">Реальные файлы будут подобраны после индексации каталога.</p>'}
-          </div>
-        </section>
-        <section class="constructor-support-card constructor-support-advice">
-          <div class="constructor-support-head">
-            <strong>По брендбуку</strong>
-            <span>Grounded-подсказка перед handoff в дизайн или печать.</span>
-          </div>
-          <div class="constructor-advice-copy">
-            ${advice?.title ? `<strong>${escapeHtml(advice.title)}</strong>` : ''}
-            ${advice?.summary ? `<p>${escapeHtml(advice.summary)}</p>` : '<p>Откройте брендбук и логотипы, затем заберите нужный формат под задачу.</p>'}
-            ${Array.isArray(advice?.bullets) && advice.bullets.length ? `
-              <ul class="constructor-summary-list">
-                ${advice.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
-              </ul>
-            ` : ''}
-            ${advice?.nextStep ? `<p class="constructor-next-step">${escapeHtml(advice.nextStep)}</p>` : ''}
-          </div>
-        </section>
-      </div>
+        </div>
+      </section>
     `;
   }
 
@@ -2467,7 +2547,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
               ` : ''}
               ${pack.artifacts.length ? `
                 <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Артефакты пакета</div>
+                  <div class="constructor-handoff-label">Артефакты</div>
                   <div class="constructor-downloads constructor-handoff-downloads">
                     ${pack.artifacts.map((artifact) => `
                       <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
@@ -2481,7 +2561,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
               ` : ''}
               ${pack.files.length ? `
                 <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Реальные файлы каталога</div>
+                  <div class="constructor-handoff-label">Файлы каталога</div>
                   <div class="constructor-file-list constructor-handoff-file-list">
                     ${pack.files.map((item) => `
                       <article class="constructor-file-card">
@@ -2502,7 +2582,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
               ` : ''}
               ${pack.sections.length ? `
                 <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Разделы для открытия</div>
+                  <div class="constructor-handoff-label">Открыть разделы</div>
                   <div class="constructor-mini-grid constructor-handoff-section-grid">
                     ${pack.sections.map((section) => `
                       <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
@@ -2531,16 +2611,18 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
     const previewArtifact = pickConstructorPreviewArtifact(artifacts);
     const previewLayout = buildConstructorPreviewLayout(definition, previewArtifact);
-    const summary = payload?.summary || {};
     const generated = Boolean(payload?.generated);
     const presets = Array.isArray(payload?.presets) ? payload.presets : [];
+    const completion = buildConstructorCompletion(fields, input);
 
     state.current = { kind: 'constructor', payload };
     state.detail = null;
     renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Конструктор';
     els.contentTitle.textContent = definition.label || 'Лаборатория решений';
-    els.contentHint.textContent = summary.lead || definition.description || 'Соберите шаблон под реальную задачу.';
+    els.contentHint.textContent = generated
+      ? 'Пакет собран: превью, handoff и grounded-файлы уже на месте.'
+      : 'Заполните ключевые поля и соберите компактный grounded-пакет под задачу.';
     renderSectionSwitcher('');
     els.breadcrumbs.innerHTML = `
       <span class="breadcrumb current">Лаборатория решений</span>
@@ -2563,7 +2645,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
           <section class="constructor-panel constructor-form-panel">
             <div class="constructor-panel-head">
               <strong>Поля решения</strong>
-              <span>Сначала задайте параметры, потом соберите SVG/brief-пакет и откройте реальные материалы каталога.</span>
+              <span>Задайте только ключевые параметры. Превью справа обновляется сразу, полный handoff появится после сборки.</span>
             </div>
             ${buildConstructorPresetsMarkup(presets)}
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
@@ -2579,8 +2661,9 @@ function buildConstructorPreviewMarkup(artifact, layout) {
           <section class="constructor-panel constructor-preview-panel">
             <div class="constructor-panel-head">
               <strong>Превью и файлы</strong>
-              <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или бриф')} • На ПК этот блок закреплён и остаётся в поле зрения.</span>
+              <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или brief')} • Рядом видно, насколько шаблон уже заполнен.</span>
             </div>
+            ${buildConstructorProgressMarkup(completion, previewArtifact)}
             <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">
               ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
             </div>
@@ -2596,21 +2679,9 @@ function buildConstructorPreviewMarkup(artifact, layout) {
           </section>
         </div>
 
-        <section class="constructor-panel constructor-summary-panel">
-          <div class="constructor-panel-head">
-            <strong>${escapeHtml(summary.title || 'Результат')}</strong>
-            <span>${escapeHtml(summary.lead || 'Готовый стартовый пакет для handoff.')}</span>
-          </div>
-          ${Array.isArray(summary?.bullets) && summary.bullets.length ? `
-            <ul class="constructor-summary-list">
-              ${summary.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
-            </ul>
-          ` : ''}
-        </section>
-
         ${renderConstructorHandoff(payload?.handoff)}
 
-        ${renderConstructorRecommendations(payload?.recommendations)}
+        ${renderConstructorRecommendations(payload?.recommendations, generated)}
       </div>
     `;
     setDocumentTitle(definition.label || 'Лаборатория решений');

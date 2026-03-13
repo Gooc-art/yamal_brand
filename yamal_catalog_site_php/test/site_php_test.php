@@ -140,9 +140,11 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage'), 'styles contain constructor preview stage classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage.is-panorama'), 'styles contain panorama constructor preview profile');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-visual.is-document svg'), 'styles contain document constructor preview profile');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-progress-strip'), 'styles contain constructor progress strip classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-panel'), 'styles contain compact constructor support panel classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-note'), 'styles contain compact constructor support note classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-form-actions > *'), 'styles normalize constructor action buttons');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-download-card'), 'styles contain constructor artifact download classes');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-grid'), 'styles contain constructor recommendation grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-auto-flow: column'), 'styles contain horizontal rail flow');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
@@ -172,6 +174,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "labe
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'palette_tone'), 'frontend groups constructor palette tone inside style controls');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isConstructorChoiceField'), 'frontend exposes constructor choice field helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldAutoBuildConstructorField'), 'frontend exposes constructor auto-build helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCompletion'), 'frontend exposes constructor completion helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
@@ -183,6 +186,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Не удалось открыть конструктор'), 'frontend exposes constructor retry copy');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'constructor-summary-panel'), 'frontend removed verbose constructor summary panel');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, "item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон'"), 'frontend removed verbose solution artifact pills');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'openConstructor'), 'frontend contains constructor opener');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructor('), 'frontend contains constructor build action');

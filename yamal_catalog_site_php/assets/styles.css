@@ -1883,6 +1883,80 @@ input[type="search"]:focus {
   line-height: 1.08;
 }
 
+.constructor-progress-strip {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 242, 235, 0.94));
+}
+
+.constructor-progress-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.constructor-progress-copy strong {
+  font-size: 16px;
+  line-height: 1.14;
+}
+
+.constructor-progress-copy span,
+.constructor-support-note span,
+.constructor-support-note small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.constructor-progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(24, 42, 49, 0.08);
+  overflow: hidden;
+}
+
+.constructor-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(180, 36, 61, 0.92), rgba(24, 42, 49, 0.88));
+}
+
+.constructor-progress-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.constructor-progress-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.constructor-progress-card small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+
+.constructor-progress-card strong {
+  font-size: 19px;
+  line-height: 1.05;
+}
+
+.constructor-progress-card.is-ready strong {
+  color: var(--accent-deep);
+}
+
 .constructor-steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2089,7 +2163,7 @@ input[type="search"]:focus {
 }
 
 .constructor-choice-grid.is-palette {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .constructor-choice-card {
@@ -2146,9 +2220,8 @@ input[type="search"]:focus {
 
 .constructor-choice-visual-swatch {
   position: relative;
-  gap: 8px;
-  min-width: 74px;
-  justify-content: flex-start;
+  min-width: 64px;
+  justify-content: center;
   background: linear-gradient(180deg, rgba(24, 42, 49, 0.03), rgba(24, 42, 49, 0.08));
   color: var(--ink);
 }
@@ -2191,6 +2264,25 @@ input[type="search"]:focus {
   font-size: 11px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.constructor-choice-grid.is-palette .constructor-choice-card {
+  min-height: 104px;
+  gap: 10px;
+  padding: 12px;
+}
+
+.constructor-choice-grid.is-palette .constructor-choice-copy {
+  gap: 4px;
+}
+
+.constructor-choice-grid.is-palette .constructor-choice-copy strong {
+  font-size: 12px;
+  line-height: 1.24;
+}
+
+.constructor-choice-grid.is-palette .constructor-choice-copy small {
+  display: none;
 }
 
 .constructor-choice-card.active .constructor-choice-copy strong {
@@ -2465,10 +2557,9 @@ input[type="search"]:focus {
   gap: 10px;
 }
 
-.constructor-support-grid {
+.constructor-support-panel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .constructor-support-card {
@@ -2478,6 +2569,10 @@ input[type="search"]:focus {
   border-radius: var(--radius-lg);
   border: 1px solid rgba(24, 42, 49, 0.08);
   background: rgba(255, 255, 255, 0.72);
+}
+
+.constructor-support-card-compact {
+  gap: 12px;
 }
 
 .constructor-support-head {
@@ -2499,6 +2594,31 @@ input[type="search"]:focus {
 .constructor-file-list {
   display: grid;
   gap: 10px;
+}
+
+.constructor-support-section-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.constructor-support-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.constructor-support-note {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 42, 49, 0.08);
+  background: rgba(248, 244, 238, 0.8);
+}
+
+.constructor-support-note strong {
+  font-size: 15px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .constructor-mini-card,
@@ -3787,7 +3907,7 @@ input[type="search"]:focus {
 
   .constructor-steps,
   .constructor-layout,
-  .constructor-support-grid {
+  .constructor-progress-stats {
     grid-template-columns: 1fr;
   }
 
@@ -3807,7 +3927,6 @@ input[type="search"]:focus {
   .constructor-steps,
   .constructor-field-grid,
   .constructor-handoff-grid,
-  .constructor-support-grid,
   .constructor-downloads {
     grid-template-columns: 1fr;
   }
@@ -3828,6 +3947,11 @@ input[type="search"]:focus {
 
   .constructor-choice-grid.is-palette {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .constructor-progress-strip,
+  .constructor-support-card {
+    padding: 14px;
   }
 
   .constructor-preview-stage {

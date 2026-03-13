@@ -12,6 +12,7 @@ const {
   shouldAutoBuildConstructorField,
   groupConstructorFields,
   buildConstructorChoicePreview,
+  buildConstructorCompletion,
   normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
@@ -186,7 +187,33 @@ test('buildConstructorChoicePreview escapes palette swatches and marks safely', 
   });
 
   assert.match(markup, /--choice-tone:#bf1238&quot; onclick=&quot;alert\(1\)/);
-  assert.match(markup, /&lt;SVG&gt;/);
+  assert.doesNotMatch(markup, /constructor-choice-token/);
+});
+
+test('buildConstructorCompletion tracks non-style fields and required state', () => {
+  const stats = buildConstructorCompletion([
+    { id: 'city', type: 'select', required: true },
+    { id: 'color_variant', type: 'select', required: true },
+    { id: 'full_name', type: 'text', required: true },
+    { id: 'role', type: 'text', required: true },
+    { id: 'email', type: 'email', required: false },
+  ], {
+    city: 'salekhard',
+    color_variant: 'white',
+    full_name: 'Ирина Петрова',
+    role: '',
+    email: 'team@yamal.test',
+  });
+
+  assert.deepEqual(stats, {
+    total: 4,
+    filled: 3,
+    requiredTotal: 3,
+    requiredFilled: 2,
+    remainingRequired: 1,
+    percent: 75,
+    ready: false,
+  });
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {
