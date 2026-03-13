@@ -1913,6 +1913,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function renderConstructorErrorState(title, message, constructorId = '') {
     const safeTitle = String(title || '').trim() || 'Не удалось открыть конструктор';
     const safeMessage = String(message || '').trim() || 'Попробуйте повторить открытие ещё раз.';
+    const safeHtml = (value) => String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
     els.contentMode.textContent = 'Конструктор';
     els.contentTitle.textContent = safeTitle;
     els.contentHint.textContent = 'Рабочая область открыта, но конструктор не получил данные.';
@@ -1920,11 +1926,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       <div class="empty-state constructor-error-state">
         <div class="empty-mark" aria-hidden="true">!</div>
         <div class="constructor-error-copy">
-          <h3>${escapeHtml(safeTitle)}</h3>
-          <p class="detail-empty">${escapeHtml(safeMessage)}</p>
+          <h3>${safeHtml(safeTitle)}</h3>
+          <p class="detail-empty">${safeHtml(safeMessage)}</p>
           <div class="item-actions">
             ${constructorId
-              ? `<button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(constructorId)}">Повторить</button>`
+              ? `<button type="button" class="item-action" data-action="open-constructor" data-id="${safeHtml(constructorId)}">Повторить</button>`
               : ''}
             <button type="button" class="ghost-button" data-action="go-root">Вернуться на витрину</button>
           </div>
