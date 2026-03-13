@@ -906,6 +906,7 @@ assert_true(($constructorDraft['generated'] ?? null) === false, 'constructor dra
 assert_true(($constructorDraft['definition']['id'] ?? '') === 'business_card', 'constructor draft exposes definition id');
 assert_true(($constructorDraft['input']['city'] ?? '') === 'ямал', 'constructor draft exposes normalized default city');
 assert_true(count($constructorDraft['artifacts'] ?? []) >= 2, 'constructor draft exposes starter artifacts');
+assert_true(count($constructorDraft['recommendations']['items'] ?? []) === 0, 'constructor draft keeps lightweight file recommendations');
 assert_true(
     array_reduce(
         $constructorDraft['recommendations']['sections'] ?? [],

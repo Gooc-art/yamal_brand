@@ -5856,6 +5856,32 @@ class SiteCatalogService
         return array_slice($queries, 0, 8);
     }
 
+    private function constructorDraftRecommendations(array $definition, array $input): array
+    {
+        $context = $this->constructorContext($definition, $input);
+        $queries = $this->constructorQueries($definition, $input);
+        $sections = $this->constructorMergeSections(
+            $this->constructorKeywordSections($definition),
+            $this->selectConsultSections($context)
+        );
+
+        return [
+            'query' => (string) ($queries[0] ?? ''),
+            'queries' => array_slice($queries, 0, 3),
+            'context' => [
+                'intentId' => (string) (($context['intent']['id'] ?? '')),
+                'city' => (string) ($context['city'] ?? ''),
+                'formats' => array_values($context['formats'] ?? []),
+                'medium' => (string) ($context['medium'] ?? ''),
+                'sourceMode' => (string) ($context['sourceMode'] ?? ''),
+                'applicationFocus' => (string) ($context['applicationFocus'] ?? ''),
+            ],
+            'sections' => array_map(static fn(array $item): array => present_item($item), $sections),
+            'items' => [],
+            'advice' => consultant_brandbook_advice($context, $sections),
+        ];
+    }
+
     private function constructorRecommendations(array $definition, array $input): array
     {
         $context = $this->constructorContext($definition, $input);
@@ -5955,7 +5981,9 @@ class SiteCatalogService
     private function constructorResponsePayload(array $definition, array $input, bool $generated): array
     {
         $normalizedInput = constructor_normalize_input($definition, $input);
-        $recommendations = $this->constructorRecommendations($definition, $normalizedInput);
+        $recommendations = $generated
+            ? $this->constructorRecommendations($definition, $normalizedInput)
+            : $this->constructorDraftRecommendations($definition, $normalizedInput);
         $artifacts = $this->constructorArtifacts($definition, $normalizedInput, $recommendations);
 
         return [
