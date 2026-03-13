@@ -2085,7 +2085,7 @@ input[type="search"]:focus {
 .constructor-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .constructor-choice-grid.is-palette {
@@ -2095,11 +2095,12 @@ input[type="search"]:focus {
 .constructor-choice-card {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 10px;
-  min-height: 84px;
-  padding: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  justify-items: start;
+  gap: 12px;
+  min-height: 118px;
+  padding: 14px;
   border-radius: 18px;
   border: 1px solid rgba(24, 42, 49, 0.1);
   background: rgba(255, 255, 255, 0.92);
@@ -2131,10 +2132,10 @@ input[type="search"]:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  height: 48px;
-  padding: 0 10px;
-  border-radius: 16px;
+  min-width: 54px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 15px;
   background: rgba(24, 42, 49, 0.08);
   color: var(--accent-deep);
   font-size: 11px;
@@ -2146,7 +2147,7 @@ input[type="search"]:focus {
 .constructor-choice-visual-swatch {
   position: relative;
   gap: 8px;
-  min-width: 64px;
+  min-width: 74px;
   justify-content: flex-start;
   background: linear-gradient(180deg, rgba(24, 42, 49, 0.03), rgba(24, 42, 49, 0.08));
   color: var(--ink);
@@ -2172,19 +2173,28 @@ input[type="search"]:focus {
 
 .constructor-choice-copy {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
+  width: 100%;
 }
 
 .constructor-choice-copy strong {
-  font-size: 14px;
-  line-height: 1.1;
+  font-size: 13px;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 .constructor-choice-copy small {
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.constructor-choice-card.active .constructor-choice-copy strong {
+  color: var(--accent-deep);
 }
 
 .constructor-form-actions {

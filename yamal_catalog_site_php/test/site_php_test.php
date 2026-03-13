@@ -131,6 +131,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card'), 'styles contain constructor choice card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-grid.is-palette'), 'styles contain constructor palette choice grid classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'text-wrap: balance'), 'styles balance constructor choice labels');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'overflow-wrap: anywhere'), 'styles keep constructor choice copy inside cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-card'), 'styles contain constructor preset card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-grid'), 'styles contain constructor preset grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-handoff-grid'), 'styles contain constructor handoff grid classes');
