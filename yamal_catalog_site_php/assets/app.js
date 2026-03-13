@@ -13,6 +13,15 @@ const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'graphics', label: 'SVG, паттерны, графика', summary: 'SVG и паттерны', description: 'SVG, паттерны и векторная графика.', prompt: 'svg паттерн' },
 ];
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function clampRoutePage(value) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
@@ -705,6 +714,7 @@ if (typeof module !== 'undefined' && module.exports) {
     isConstructorChoiceField,
     shouldAutoBuildConstructorField,
     groupConstructorFields,
+    buildConstructorChoicePreview,
     normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,

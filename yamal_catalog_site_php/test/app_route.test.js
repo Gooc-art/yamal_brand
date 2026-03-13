@@ -11,6 +11,7 @@ const {
   isConstructorChoiceField,
   shouldAutoBuildConstructorField,
   groupConstructorFields,
+  buildConstructorChoicePreview,
   normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
@@ -176,6 +177,16 @@ test('normalizeConstructorHandoff keeps approval and contractor packages structu
   assert.equal(normalized.approval.files[0].extension, 'pdf');
   assert.equal(normalized.contractor.sections[0].id, 'logo');
   assert.equal(normalized.contractor.bullets[0], 'Передайте JSON.');
+});
+
+test('buildConstructorChoicePreview escapes palette swatches and marks safely', () => {
+  const markup = buildConstructorChoicePreview('palette_tone', {
+    swatch: '#bf1238" onclick="alert(1)',
+    mark: '<SVG>',
+  });
+
+  assert.match(markup, /--choice-tone:#bf1238&quot; onclick=&quot;alert\(1\)/);
+  assert.match(markup, /&lt;SVG&gt;/);
 });
 
 test('readConstructorPreviewBoxMetrics extracts svg dimensions from viewBox', () => {
