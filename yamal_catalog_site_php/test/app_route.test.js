@@ -236,15 +236,16 @@ test('buildConstructorCompletion tracks non-style fields and required state', ()
   });
 });
 
-test('live constructor theme mirrors dark palette and white brand fallback', () => {
+test('live constructor theme keeps palette visible while preserving white brand fallback', () => {
   const theme = buildConstructorLiveTheme({
-    color_variant: 'color',
-    palette_tone: 'accent',
+    color_variant: 'white',
+    palette_tone: 'p621',
   });
 
-  assert.equal(theme.tone, '#C40E3D');
-  assert.equal(theme.toneIsDark, true);
-  assert.equal(resolveConstructorLiveBrandVariant({ color_variant: 'color', palette_tone: 'accent' }, theme), 'white');
+  assert.equal(theme.background, '#F7FBF8');
+  assert.equal(theme.ink, '#182A31');
+  assert.equal(theme.toneIsDark, false);
+  assert.equal(resolveConstructorLiveBrandVariant({ color_variant: 'white', palette_tone: 'p621' }, theme), 'white');
   assert.deepEqual(buildConstructorLiveLockupSurface(theme, 'white'), {
     fill: '#C40E3D',
     ink: '#ffffff',

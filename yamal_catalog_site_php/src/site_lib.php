@@ -3228,89 +3228,78 @@ function constructor_palette_tone_definition(string $paletteTone): array
     return $definitions[$paletteTone] ?? $definitions['ivory'];
 }
 
+function constructor_hex_to_rgb(string $hex): ?array
+{
+    $normalized = ltrim(trim($hex), '#');
+    if ($normalized === '') {
+        return null;
+    }
+    if (strlen($normalized) === 3) {
+        $normalized = preg_replace('/(.)/', '$1$1', $normalized);
+    }
+    if (!is_string($normalized) || !preg_match('/^[a-f0-9]{6}$/i', $normalized)) {
+        return null;
+    }
+
+    return [
+        'r' => hexdec(substr($normalized, 0, 2)),
+        'g' => hexdec(substr($normalized, 2, 2)),
+        'b' => hexdec(substr($normalized, 4, 2)),
+    ];
+}
+
+function constructor_mix_hex(string $baseHex, string $overlayHex, float $overlayWeight): string
+{
+    $base = constructor_hex_to_rgb($baseHex);
+    $overlay = constructor_hex_to_rgb($overlayHex);
+    if ($base === null || $overlay === null) {
+        return trim($baseHex) !== '' ? trim($baseHex) : '#000000';
+    }
+
+    $weight = max(0.0, min(1.0, $overlayWeight));
+    $inverse = 1.0 - $weight;
+
+    return sprintf(
+        '#%02X%02X%02X',
+        (int) round(($base['r'] * $inverse) + ($overlay['r'] * $weight)),
+        (int) round(($base['g'] * $inverse) + ($overlay['g'] * $weight)),
+        (int) round(($base['b'] * $inverse) + ($overlay['b'] * $weight))
+    );
+}
+
 function constructor_theme_palette(string $colorVariant, string $paletteTone = 'ivory'): array
 {
-    $base = match ($colorVariant) {
-        'cmyk' => [
-            'colorVariant' => 'cmyk',
-            'background' => '#f6f0e7',
-            'surface' => '#fffdfa',
-            'surfaceAlt' => '#efe4d7',
-            'cardStroke' => '#e3d7c9',
-            'accent' => '#C40E3D',
-            'accentSoft' => '#F4D7E0',
-            'ink' => '#182a31',
-            'muted' => '#5d6972',
-            'badge' => '#C40E3D',
-            'line' => '#d3c8bc',
-            'frame' => '#C40E3D',
-            'watermarkOpacity' => '0.09',
-        ],
-        'black' => [
-            'colorVariant' => 'black',
-            'background' => '#f5f1ea',
-            'surface' => '#ffffff',
-            'surfaceAlt' => '#ece5da',
-            'cardStroke' => '#d8d1c5',
-            'accent' => '#182a31',
-            'accentSoft' => '#dde3e7',
-            'ink' => '#182a31',
-            'muted' => '#56646d',
-            'badge' => '#182a31',
-            'line' => '#cdd5da',
-            'frame' => '#182a31',
-            'watermarkOpacity' => '0.07',
-        ],
-        'white' => [
-            'colorVariant' => 'white',
-            'background' => '#182a31',
-            'surface' => '#223640',
-            'surfaceAlt' => '#2a404a',
-            'cardStroke' => '#4a616b',
-            'accent' => '#314a54',
-            'accentSoft' => '#415862',
-            'ink' => '#ffffff',
-            'muted' => '#d4dde2',
-            'badge' => '#ffffff',
-            'line' => '#60727b',
-            'frame' => '#ffffff',
-            'watermarkOpacity' => '0.08',
-        ],
-        default => [
-            'colorVariant' => 'color',
-            'background' => '#f8f4ee',
-            'surface' => '#ffffff',
-            'surfaceAlt' => '#f6f0e7',
-            'cardStroke' => '#e3dbcf',
-            'accent' => '#C40E3D',
-            'accentSoft' => '#F4D7E0',
-            'ink' => '#182a31',
-            'muted' => '#5d6972',
-            'badge' => '#C40E3D',
-            'line' => '#d8d1c5',
-            'frame' => '#C40E3D',
-            'watermarkOpacity' => '0.08',
-        ],
-    };
-
     $tone = constructor_palette_tone_definition($paletteTone);
+    $accent = $colorVariant === 'black' ? '#182A31' : '#C40E3D';
+    $background = (string) ($tone['toneSoft'] ?? '#FFF9F0');
+    $surface = constructor_mix_hex($background, '#FFFFFF', !empty($tone['dark']) ? 0.36 : 0.52);
+    $surfaceAlt = constructor_mix_hex((string) ($tone['tone'] ?? $background), '#FFFFFF', !empty($tone['dark']) ? 0.42 : 0.24);
+    $frame = (string) ($tone['frame'] ?? ($tone['tone'] ?? '#C40E3D'));
+    $line = constructor_mix_hex($frame, '#FFFFFF', !empty($tone['dark']) ? 0.18 : 0.08);
+    $accentSoft = constructor_mix_hex((string) ($tone['tone'] ?? '#F4D7E0'), '#FFFFFF', !empty($tone['dark']) ? 0.62 : 0.46);
+    $badge = $colorVariant === 'black' ? '#182A31' : $accent;
 
-    return array_merge($base, [
-        'background' => ($colorVariant === 'white' || !empty($tone['dark']))
-            ? (string) ($base['background'] ?? '#f8f4ee')
-            : (string) ($tone['toneSoft'] ?? ($base['background'] ?? '#f8f4ee')),
-        'surfaceAlt' => (string) ($tone['toneSoft'] ?? ($base['surfaceAlt'] ?? '#f6f0e7')),
-        'cardStroke' => (string) ($tone['frame'] ?? ($tone['tone'] ?? ($base['cardStroke'] ?? '#e3dbcf'))),
-        'accentSoft' => (string) ($tone['toneSoft'] ?? ($base['accentSoft'] ?? '#F4D7E0')),
-        'line' => (string) ($tone['frame'] ?? ($tone['tone'] ?? ($base['line'] ?? '#d8d1c5'))),
-        'frame' => (string) ($tone['frame'] ?? ($tone['tone'] ?? ($base['frame'] ?? '#C40E3D'))),
+    return [
+        'colorVariant' => in_array($colorVariant, ['cmyk', 'black', 'white'], true) ? $colorVariant : 'color',
+        'background' => $background,
+        'surface' => $surface,
+        'surfaceAlt' => $surfaceAlt,
+        'cardStroke' => $frame,
+        'accent' => $accent,
+        'accentSoft' => $accentSoft,
+        'ink' => '#182A31',
+        'muted' => '#5D6972',
+        'badge' => $badge,
+        'line' => $line,
+        'frame' => $frame,
+        'watermarkOpacity' => !empty($tone['dark']) ? '0.14' : '0.2',
         'paletteTone' => (string) ($tone['id'] ?? 'ivory'),
         'paletteToneLabel' => (string) ($tone['label'] ?? 'Мамонтовая кость'),
         'tone' => (string) ($tone['tone'] ?? '#f6f0e7'),
         'toneSoft' => (string) ($tone['toneSoft'] ?? '#fffdfa'),
         'toneInk' => (string) ($tone['toneInk'] ?? '#182a31'),
         'toneIsDark' => !empty($tone['dark']),
-    ]);
+    ];
 }
 
 function constructor_theme_value(array $theme, string $key, string $fallback = '#000000'): string

@@ -129,6 +129,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-webkit-
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-accordion'), 'styles contain constructor field accordion classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-group-summary-meta'), 'styles contain constructor accordion meta pills');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card'), 'styles contain constructor choice card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-grid.is-palette'), 'styles contain constructor palette choice grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'text-wrap: balance'), 'styles balance constructor choice labels');
@@ -182,6 +184,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONS
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-style-more'), 'frontend exposes compact advanced style block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-field-accordion'), 'frontend renders constructor field accordions');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorGroupMeta'), 'frontend builds compact constructor accordion meta');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorPreset'), 'frontend applies constructor presets');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend exposes constructor preset action');
@@ -509,7 +513,7 @@ assert_true(
 $styledBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $styledBusinessCardInput);
 assert_true($styledBusinessCardSvg !== null, 'styled business card svg artifact exists');
 $styledBusinessCardContent = (string) ($styledBusinessCardSvg['content'] ?? '');
-assert_true(str_contains($styledBusinessCardContent, '--ctor-accent:#182a31'), 'black color variant remaps accent color in live svg theme vars');
+assert_true(str_contains($styledBusinessCardContent, '--ctor-accent:#182A31'), 'black color variant remaps accent color in live svg theme vars');
 assert_true(substr_count($styledBusinessCardContent, '<image ') >= 5, 'pattern background style adds repeated grounded mark elements');
 assert_true(str_contains($styledBusinessCardContent, '--ctor-lockup-fill:#C40E3D'), 'business card svg uses selected supplied palette tone for adaptive lockup panel');
 assert_true(str_contains($styledBusinessCardContent, 'data-constructor-design-style="poster"'), 'constructor svg exposes design variant layers for live preview');
@@ -522,7 +526,8 @@ $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constr
     'background_style' => 'frame',
 ]));
 assert_true($whiteBusinessCardSvg !== null, 'white business card svg artifact exists');
-assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '--ctor-bg:#182a31'), 'white color variant uses dark canvas for reversed lockup');
+assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '--ctor-bg:#FFF9F0'), 'white color variant keeps palette-tinted canvas instead of forcing a dark page theme');
+assert_true(str_contains((string) ($whiteBusinessCardSvg['content'] ?? ''), '--ctor-ink:#182A31'), 'white color variant keeps readable dark text outside the reversed lockup');
 
 $logoWhiteGraphicBusinessCard = constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'color',
@@ -560,7 +565,8 @@ assert_true(($socialHeadlineFit['truncated'] ?? true) === false, 'social post he
 assert_true(count($socialHeadlineFit['lines'] ?? []) >= 3, 'social post headline fit uses multiline layout for long headline');
 $lightMarkBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $lightMarkBusinessCard);
 assert_true($lightMarkBusinessCardSvg !== null, 'light mark business card svg artifact exists');
-assert_true(str_contains((string) ($lightMarkBusinessCardSvg['content'] ?? ''), '--ctor-lockup-fill:#314a54'), 'white firm mark keeps a contrast panel when light palette would be too pale for reversed lockup');
+assert_true(str_contains((string) ($lightMarkBusinessCardSvg['content'] ?? ''), '--ctor-bg:#F7FBF8'), 'white firm mark keeps the selected light palette visible on the canvas');
+assert_true(str_contains((string) ($lightMarkBusinessCardSvg['content'] ?? ''), '--ctor-lockup-fill:#C40E3D'), 'white firm mark keeps a contrast accent panel when light palette would be too pale for reversed lockup');
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');

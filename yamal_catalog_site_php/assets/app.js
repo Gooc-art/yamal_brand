@@ -24,6 +24,35 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+function hexToRgb(hex) {
+  const normalized = String(hex || '').trim().replace(/^#/, '');
+  const expanded = normalized.length === 3
+    ? normalized.split('').map((token) => `${token}${token}`).join('')
+    : normalized;
+  if (!/^[a-f0-9]{6}$/i.test(expanded)) {
+    return null;
+  }
+  return {
+    r: Number.parseInt(expanded.slice(0, 2), 16),
+    g: Number.parseInt(expanded.slice(2, 4), 16),
+    b: Number.parseInt(expanded.slice(4, 6), 16),
+  };
+}
+
+function mixHexColors(baseHex, overlayHex, overlayWeight = 0.5) {
+  const base = hexToRgb(baseHex);
+  const overlay = hexToRgb(overlayHex);
+  if (!base || !overlay) {
+    return String(baseHex || '').trim() || '#000000';
+  }
+
+  const weight = Math.max(0, Math.min(1, Number(overlayWeight) || 0));
+  const inverse = 1 - weight;
+  const toHex = (value) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0').toUpperCase();
+
+  return `#${toHex((base.r * inverse) + (overlay.r * weight))}${toHex((base.g * inverse) + (overlay.g * weight))}${toHex((base.b * inverse) + (overlay.b * weight))}`;
+}
+
 function clampRoutePage(value) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
@@ -451,80 +480,28 @@ function constructorPaletteToneDefinition(paletteTone) {
 function buildConstructorLiveTheme(input = {}) {
   const colorVariant = String(input?.color_variant || 'color').trim() || 'color';
   const paletteTone = String(input?.palette_tone || 'ivory').trim() || 'ivory';
-  const base = colorVariant === 'cmyk'
-    ? {
-      colorVariant: 'cmyk',
-      background: '#f6f0e7',
-      surface: '#fffdfa',
-      surfaceAlt: '#efe4d7',
-      cardStroke: '#e3d7c9',
-      accent: '#C40E3D',
-      accentSoft: '#F4D7E0',
-      ink: '#182a31',
-      muted: '#5d6972',
-      badge: '#C40E3D',
-      line: '#d3c8bc',
-      frame: '#C40E3D',
-      watermarkOpacity: '0.09',
-    }
-    : colorVariant === 'black'
-      ? {
-        colorVariant: 'black',
-        background: '#f5f1ea',
-        surface: '#ffffff',
-        surfaceAlt: '#ece5da',
-        cardStroke: '#d8d1c5',
-        accent: '#182a31',
-        accentSoft: '#dde3e7',
-        ink: '#182a31',
-        muted: '#56646d',
-        badge: '#182a31',
-        line: '#cdd5da',
-        frame: '#182a31',
-        watermarkOpacity: '0.07',
-      }
-      : colorVariant === 'white'
-        ? {
-          colorVariant: 'white',
-          background: '#182a31',
-          surface: '#223640',
-          surfaceAlt: '#2a404a',
-          cardStroke: '#4a616b',
-          accent: '#314a54',
-          accentSoft: '#415862',
-          ink: '#ffffff',
-          muted: '#d4dde2',
-          badge: '#ffffff',
-          line: '#60727b',
-          frame: '#ffffff',
-          watermarkOpacity: '0.08',
-        }
-        : {
-          colorVariant: 'color',
-          background: '#f8f4ee',
-          surface: '#ffffff',
-          surfaceAlt: '#f6f0e7',
-          cardStroke: '#e3dbcf',
-          accent: '#C40E3D',
-          accentSoft: '#F4D7E0',
-          ink: '#182a31',
-          muted: '#5d6972',
-          badge: '#C40E3D',
-          line: '#d8d1c5',
-          frame: '#C40E3D',
-          watermarkOpacity: '0.08',
-        };
   const tone = constructorPaletteToneDefinition(paletteTone);
+  const accent = colorVariant === 'black' ? '#182A31' : '#C40E3D';
+  const background = String(tone.toneSoft || '#FFF9F0').trim() || '#FFF9F0';
+  const surface = mixHexColors(background, '#FFFFFF', tone.dark ? 0.36 : 0.52);
+  const surfaceAlt = mixHexColors(String(tone.tone || background).trim() || background, '#FFFFFF', tone.dark ? 0.42 : 0.24);
+  const frame = String(tone.frame || tone.tone || '#C40E3D').trim() || '#C40E3D';
+  const line = mixHexColors(frame, '#FFFFFF', tone.dark ? 0.18 : 0.08);
+  const accentSoft = mixHexColors(String(tone.tone || '#F4D7E0').trim() || '#F4D7E0', '#FFFFFF', tone.dark ? 0.62 : 0.46);
   return {
-    ...base,
-    background: colorVariant === 'white'
-      ? base.background
-      : (tone.dark ? base.background : String(tone.toneSoft || base.background || '#f8f4ee').trim() || '#f8f4ee'),
-    surfaceAlt: String(tone.toneSoft || base.surfaceAlt || '#f6f0e7').trim() || '#f6f0e7',
-    cardStroke: String(tone.frame || tone.tone || base.cardStroke || '#e3dbcf').trim() || '#e3dbcf',
-    accentSoft: String(tone.toneSoft || base.accentSoft || '#F4D7E0').trim() || '#F4D7E0',
-    line: String(tone.frame || tone.tone || base.line || '#d8d1c5').trim() || '#d8d1c5',
-    frame: String(tone.frame || tone.tone || base.frame || '#C40E3D').trim() || '#C40E3D',
+    colorVariant: ['cmyk', 'black', 'white'].includes(colorVariant) ? colorVariant : 'color',
+    background,
+    surface,
+    surfaceAlt,
+    cardStroke: frame,
+    accent,
+    accentSoft,
+    ink: '#182A31',
+    muted: '#5D6972',
+    badge: colorVariant === 'black' ? '#182A31' : accent,
+    line,
+    frame,
+    watermarkOpacity: tone.dark ? '0.14' : '0.2',
     paletteTone: tone.id,
     paletteToneLabel: tone.label,
     tone: tone.tone,
@@ -2678,6 +2655,67 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return String(currentValue ?? '') === String(field?.default ?? '');
   }
 
+  function findConstructorFieldOptionLabel(field, value) {
+    const options = Array.isArray(field?.options) ? field.options : [];
+    const normalizedValue = String(value ?? '').trim();
+    const match = options.find((option) => String(option?.value ?? '').trim() === normalizedValue);
+    return String(match?.label || normalizedValue).trim();
+  }
+
+  function countFilledConstructorGroupFields(group, input, includeChoiceFields = false) {
+    const items = Array.isArray(group?.items) ? group.items : [];
+    return items.reduce((count, field) => {
+      const fieldId = String(field?.id || '').trim();
+      if (!fieldId) {
+        return count;
+      }
+      if (!includeChoiceFields && isConstructorChoiceField(fieldId)) {
+        return count;
+      }
+      const currentValue = input?.[fieldId] ?? field?.default ?? '';
+      return hasConstructorFieldValue(currentValue) ? count + 1 : count;
+    }, 0);
+  }
+
+  function buildConstructorGroupMeta(group, input) {
+    const items = Array.isArray(group?.items) ? group.items : [];
+    if (!items.length) {
+      return '';
+    }
+
+    if (group?.id === 'style') {
+      const designField = items.find((field) => String(field?.id || '').trim() === 'design_variant');
+      const paletteField = items.find((field) => String(field?.id || '').trim() === 'palette_tone');
+      const backgroundField = items.find((field) => String(field?.id || '').trim() === 'background_style');
+      const parts = [
+        designField ? findConstructorFieldOptionLabel(designField, input?.design_variant ?? designField?.default ?? '') : '',
+        paletteField ? findConstructorFieldOptionLabel(paletteField, input?.palette_tone ?? paletteField?.default ?? '') : '',
+        backgroundField ? findConstructorFieldOptionLabel(backgroundField, input?.background_style ?? backgroundField?.default ?? '') : '',
+      ].filter(Boolean);
+      return parts.slice(0, 2).join(' • ') || `${items.length} настроек`;
+    }
+
+    const filled = countFilledConstructorGroupFields(group, input);
+    const trackable = items.filter((field) => {
+      const fieldId = String(field?.id || '').trim();
+      return fieldId && !isConstructorChoiceField(fieldId);
+    }).length;
+    if (trackable <= 0) {
+      return `${items.length} полей`;
+    }
+    return group?.id === 'fill'
+      ? `${filled}/${trackable} заполнено`
+      : `${filled}/${trackable} задано`;
+  }
+
+  function shouldOpenConstructorFieldGroup(group, input) {
+    if (group?.id === 'fill') {
+      return true;
+    }
+    const items = Array.isArray(group?.items) ? group.items : [];
+    return items.some((field) => !isConstructorFieldDefaultValue(field, input));
+  }
+
   function buildConstructorStyleGroupMarkup(group, input) {
     const items = Array.isArray(group?.items) ? group.items : [];
     if (!items.length) {
@@ -2688,41 +2726,59 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const resolvedPrimary = primaryFields.length ? primaryFields : items;
     const resolvedAdvanced = primaryFields.length ? advancedFields : [];
     const advancedOpen = resolvedAdvanced.some((field) => !isConstructorFieldDefaultValue(field, input));
+    const sectionOpen = shouldOpenConstructorFieldGroup(group, input);
+    const meta = buildConstructorGroupMeta(group, input);
 
     return `
       <section class="constructor-field-group constructor-field-group-style">
-        <div class="constructor-group-head">
-          <strong>${escapeHtml(group.label)}</strong>
-          <span>${escapeHtml(group.hint)}</span>
-        </div>
-        <div class="constructor-style-primary">
-          ${resolvedPrimary.map((field) => renderConstructorField(field, input[field.id])).join('')}
-        </div>
-        ${resolvedAdvanced.length ? `
-          <details class="constructor-style-more"${advancedOpen ? ' open' : ''}>
-            <summary>Ещё настройки оформления</summary>
-            <div class="constructor-style-more-body">
-              ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id])).join('')}
+        <details class="constructor-field-accordion"${sectionOpen ? ' open' : ''} data-constructor-group-id="${escapeHtml(group.id || 'style')}">
+          <summary class="constructor-group-summary">
+            <span class="constructor-group-summary-copy">
+              <strong>${escapeHtml(group.label)}</strong>
+              <span>${escapeHtml(group.hint)}</span>
+            </span>
+            ${meta ? `<span class="constructor-group-summary-meta">${escapeHtml(meta)}</span>` : ''}
+          </summary>
+          <div class="constructor-field-accordion-body">
+            <div class="constructor-style-primary">
+              ${resolvedPrimary.map((field) => renderConstructorField(field, input[field.id])).join('')}
             </div>
-          </details>
-        ` : ''}
+            ${resolvedAdvanced.length ? `
+              <details class="constructor-style-more"${advancedOpen ? ' open' : ''}>
+                <summary>Ещё настройки оформления</summary>
+                <div class="constructor-style-more-body">
+                  ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id])).join('')}
+                </div>
+              </details>
+            ` : ''}
+          </div>
+        </details>
       </section>
     `;
   }
 
   function buildConstructorFieldGroupMarkup(group, input) {
+    const sectionOpen = shouldOpenConstructorFieldGroup(group, input);
+    const meta = buildConstructorGroupMeta(group, input);
     if (group?.id === 'style') {
       return buildConstructorStyleGroupMarkup(group, input);
     }
     return `
       <section class="constructor-field-group">
-        <div class="constructor-group-head">
-          <strong>${escapeHtml(group.label)}</strong>
-          <span>${escapeHtml(group.hint)}</span>
-        </div>
-        <div class="constructor-field-grid">
-          ${group.items.map((field) => renderConstructorField(field, input[field.id])).join('')}
-        </div>
+        <details class="constructor-field-accordion"${sectionOpen ? ' open' : ''} data-constructor-group-id="${escapeHtml(group.id || '')}">
+          <summary class="constructor-group-summary">
+            <span class="constructor-group-summary-copy">
+              <strong>${escapeHtml(group.label)}</strong>
+              <span>${escapeHtml(group.hint)}</span>
+            </span>
+            ${meta ? `<span class="constructor-group-summary-meta">${escapeHtml(meta)}</span>` : ''}
+          </summary>
+          <div class="constructor-field-accordion-body">
+            <div class="constructor-field-grid">
+              ${group.items.map((field) => renderConstructorField(field, input[field.id])).join('')}
+            </div>
+          </div>
+        </details>
       </section>
     `;
   }
