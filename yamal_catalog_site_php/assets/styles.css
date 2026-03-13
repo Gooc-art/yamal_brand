@@ -1868,7 +1868,7 @@ input[type="search"]:focus {
 
 .constructor-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
+  grid-template-columns: minmax(360px, 1.04fr) minmax(340px, 0.96fr);
   gap: 16px;
   align-items: start;
 }

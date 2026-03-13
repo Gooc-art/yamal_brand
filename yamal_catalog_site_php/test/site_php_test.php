@@ -171,6 +171,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSolutionLab'), 'frontend contains solution lab renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCategoryFilters'), 'frontend contains solution lab category filter builder');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'groupConstructorFields'), 'frontend contains constructor field grouping helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "label: 'Заполнение шаблона'"), 'frontend exposes constructor fill group before style controls');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "label: 'Оформление'"), 'frontend exposes dedicated constructor style group');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'palette_tone'), 'frontend groups constructor palette tone inside style controls');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isConstructorChoiceField'), 'frontend exposes constructor choice field helper');
@@ -408,13 +409,20 @@ foreach ($styledConstructorIds as $styledConstructorId) {
 $businessCardDefinition = constructor_definition_by_id('business_card');
 assert_true($businessCardDefinition !== null, 'business card constructor definition exists');
 $presentedBusinessCard = constructor_present_definition($businessCardDefinition);
+$cityField = null;
 $paletteToneField = null;
 foreach (($presentedBusinessCard['fields'] ?? []) as $field) {
+    if (($field['id'] ?? '') === 'city') {
+        $cityField = $field;
+    }
     if (($field['id'] ?? '') === 'palette_tone') {
         $paletteToneField = $field;
-        break;
     }
 }
+assert_true(is_array($cityField), 'constructor present definition exposes free locality field');
+assert_true(($cityField['type'] ?? '') === 'text', 'constructor locality field is free text');
+assert_true(($cityField['label'] ?? '') === 'Населённый пункт', 'constructor locality field uses settlement label');
+assert_true(($cityField['default'] ?? '__missing__') === '', 'constructor locality field defaults to empty state');
 assert_true(is_array($paletteToneField), 'constructor present definition exposes palette tone field');
 assert_true(str_contains((string) ($paletteToneField['options'][0]['description'] ?? ''), 'Нейтральная'), 'constructor present definition keeps palette option descriptions');
 assert_true((string) ($paletteToneField['options'][2]['swatch'] ?? '') === '#bf1238', 'constructor present definition keeps palette swatch metadata');

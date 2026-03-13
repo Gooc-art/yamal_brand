@@ -128,9 +128,9 @@ test('buildConstructorCategoryFilters keeps all filter and current category stab
   assert.deepEqual(result.visibleItems.map((item) => item.id), ['certificate']);
 });
 
-test('groupConstructorFields splits fields into basics, style, content and people blocks', () => {
+test('groupConstructorFields prioritizes fill fields before setup and style blocks', () => {
   const groups = groupConstructorFields([
-    { id: 'city', label: 'Город / версия' },
+    { id: 'city', label: 'Населённый пункт' },
     { id: 'palette_tone', label: 'Палитра фона' },
     { id: 'presentation_mode', label: 'Сценарий' },
     { id: 'room_number', label: 'Номер / индекс' },
@@ -140,11 +140,10 @@ test('groupConstructorFields splits fields into basics, style, content and peopl
     { id: 'email', label: 'Email' },
   ]);
 
-  assert.deepEqual(groups.map((group) => group.id), ['basics', 'style', 'content', 'people']);
-  assert.deepEqual(groups[0].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
-  assert.deepEqual(groups[1].items.map((item) => item.id), ['palette_tone']);
-  assert.deepEqual(groups[2].items.map((item) => item.id), ['title', 'message']);
-  assert.deepEqual(groups[3].items.map((item) => item.id), ['full_name', 'email']);
+  assert.deepEqual(groups.map((group) => group.id), ['fill', 'setup', 'style']);
+  assert.deepEqual(groups[0].items.map((item) => item.id), ['title', 'message', 'full_name', 'email']);
+  assert.deepEqual(groups[1].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
+  assert.deepEqual(groups[2].items.map((item) => item.id), ['palette_tone']);
 });
 
 test('constructor choice fields and auto-build fields are detected consistently', () => {
@@ -152,7 +151,7 @@ test('constructor choice fields and auto-build fields are detected consistently'
   assert.equal(isConstructorChoiceField('background_style'), true);
   assert.equal(isConstructorChoiceField('title'), false);
   assert.equal(shouldAutoBuildConstructorField('palette_tone', 'radio'), true);
-  assert.equal(shouldAutoBuildConstructorField('city', 'select'), true);
+  assert.equal(shouldAutoBuildConstructorField('city', 'text'), false);
   assert.equal(shouldAutoBuildConstructorField('slide_count', 'number'), true);
   assert.equal(shouldAutoBuildConstructorField('full_name', 'text'), false);
 });

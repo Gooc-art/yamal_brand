@@ -937,26 +937,17 @@ function consultant_bootstrap(?array $config = null): array
     ];
 }
 
-function constructor_city_options(): array
-{
-    return [
-        ['value' => 'ямал', 'label' => 'Ямал'],
-        ['value' => 'салехард', 'label' => 'Салехард'],
-        ['value' => 'новый уренгой', 'label' => 'Новый Уренгой'],
-        ['value' => 'ноябрьск', 'label' => 'Ноябрьск'],
-    ];
-}
-
 function constructor_base_fields(): array
 {
     return [
         'city' => [
             'id' => 'city',
-            'type' => 'select',
-            'label' => 'Город / версия',
-            'required' => true,
-            'default' => 'ямал',
-            'options' => constructor_city_options(),
+            'type' => 'text',
+            'label' => 'Населённый пункт',
+            'required' => false,
+            'default' => '',
+            'placeholder' => 'Например: Салехард',
+            'maxLength' => 80,
         ],
     ];
 }
@@ -2983,7 +2974,10 @@ function constructor_normalize_input(array $definition, array $input): array
 
 function constructor_city_label(string $city): string
 {
-    $normalized = normalize_text($city);
+    $normalized = normalize_text(trim($city));
+    if ($normalized === '') {
+        return '';
+    }
     if ($normalized === 'ямал') {
         return 'Ямал';
     }
@@ -3938,7 +3932,8 @@ function constructor_derived_payload(array $definition, array $input): array
 function constructor_filename_base(array $definition, array $input): string
 {
     $slug = preg_replace('/[^a-z0-9_-]+/i', '-', (string) ($definition['id'] ?? 'solution')) ?: 'solution';
-    $city = preg_replace('/[^a-z0-9_-]+/i', '-', strtolower((string) ($input['city'] ?? 'yamal'))) ?: 'yamal';
+    $cityRaw = strtolower(trim((string) ($input['city'] ?? '')));
+    $city = preg_replace('/[^a-z0-9_-]+/i', '-', $cityRaw) ?: 'base';
     return 'yamal-' . trim($slug, '-') . '-' . trim($city, '-');
 }
 
@@ -4004,7 +3999,7 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
     $files = array_map(static fn(array $item): string => (string) ($item['label'] ?? ''), $payload['recommendations']['files'] ?? []);
     $adviceTitle = trim((string) (($payload['recommendations']['advice']['title'] ?? '')));
     $adviceSummary = trim((string) (($payload['recommendations']['advice']['summary'] ?? '')));
-    $cityLabel = (string) ($payload['cityLabel'] ?? 'Ямал');
+    $cityLabel = trim((string) ($payload['cityLabel'] ?? ''));
     $derived = is_array($payload['derived'] ?? null) ? $payload['derived'] : [];
 
     $html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>' .
@@ -4014,7 +4009,7 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
         '<h1>' . htmlspecialchars((string) ($definition['label'] ?? 'Решение'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1>' .
         '<p>' . htmlspecialchars((string) ($definition['description'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>' .
         '<div class="grid">' .
-        '<div class="card"><strong>Город</strong><p>' . htmlspecialchars($cityLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
+        '<div class="card"><strong>Населённый пункт</strong><p>' . htmlspecialchars($cityLabel !== '' ? $cityLabel : 'Не указан', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
         '<div class="card"><strong>Формат</strong><p>' . htmlspecialchars((string) ($definition['formatHint'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
         '<div class="card"><strong>Цветовая версия</strong><p>' . htmlspecialchars((string) ($derived['colorVariantLabel'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
         '<div class="card"><strong>Логотип / знак</strong><p>' . htmlspecialchars((string) ($derived['brandLockupLabel'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></div>' .
@@ -4403,7 +4398,7 @@ function constructor_result_summary(array $definition, array $input, array $reco
         'title' => (string) ($definition['label'] ?? 'Решение'),
         'lead' => 'Каркас решения собран. Его можно использовать как стартовую заготовку и handoff-пакет для дизайнера или подрядчика.',
         'bullets' => array_values(array_filter([
-            'Город / версия: ' . $cityLabel,
+            $cityLabel !== '' ? 'Населённый пункт: ' . $cityLabel : '',
             'Выход: ' . (string) ($definition['formatHint'] ?? ''),
             'Оформление: ' . implode(' • ', array_filter([
                 (string) ($styleLabels['colorVariantLabel'] ?? ''),
@@ -4427,7 +4422,7 @@ function constructor_draft_summary(array $definition, array $input, array $recom
         'title' => (string) ($definition['label'] ?? 'Решение'),
         'lead' => 'Это стартовый каркас решения. Заполните поля и соберите пакет под конкретную задачу, подрядчика или внутреннюю команду.',
         'bullets' => array_values(array_filter([
-            'Город / версия: ' . $cityLabel,
+            $cityLabel !== '' ? 'Населённый пункт: ' . $cityLabel : '',
             'Выход: ' . (string) ($definition['formatHint'] ?? ''),
             'Оформление: ' . implode(' • ', array_filter([
                 (string) ($styleLabels['colorVariantLabel'] ?? ''),

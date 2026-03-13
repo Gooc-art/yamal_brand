@@ -265,10 +265,9 @@ function shouldAutoBuildConstructorField(fieldId, fieldType = '') {
 
 function groupConstructorFields(fields) {
   const groups = [
-    { id: 'basics', label: 'Базовые параметры', hint: 'Город, формат и основной режим носителя.', items: [] },
-    { id: 'style', label: 'Оформление', hint: 'Цветовая версия, логотип и фоновые элементы по мотивам брендбука.', items: [] },
-    { id: 'content', label: 'Содержание', hint: 'Заголовки, сообщения, событие и смысловой текст.', items: [] },
-    { id: 'people', label: 'Люди и контакты', hint: 'ФИО, роли, подписи и контактные данные.', items: [] },
+    { id: 'fill', label: 'Заполнение шаблона', hint: 'Основной текст, ФИО, роли, контакты и смысловые поля носителя.', items: [] },
+    { id: 'setup', label: 'Параметры носителя', hint: 'Населённый пункт и служебные параметры конкретного шаблона.', items: [] },
+    { id: 'style', label: 'Оформление', hint: 'Логотип, цветовая версия и фон по мотивам брендбука.', items: [] },
   ];
   const fieldList = Array.isArray(fields) ? fields : [];
   const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
@@ -293,18 +292,18 @@ function groupConstructorFields(fields) {
       return;
     }
     if (basicsIds.has(fieldId)) {
-      groups[0].items.push(field);
-      return;
-    }
-    if (isConstructorChoiceField(fieldId)) {
       groups[1].items.push(field);
       return;
     }
-    if (peopleIds.has(fieldId)) {
-      groups[3].items.push(field);
+    if (isConstructorChoiceField(fieldId)) {
+      groups[2].items.push(field);
       return;
     }
-    groups[2].items.push(field);
+    if (peopleIds.has(fieldId)) {
+      groups[0].items.push(field);
+      return;
+    }
+    groups[0].items.push(field);
   });
 
   return groups.filter((group) => group.items.length);
@@ -2892,7 +2891,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
           <section class="constructor-panel constructor-form-panel">
             <div class="constructor-panel-head">
               <strong>Поля решения</strong>
-              <span>Задайте только ключевые параметры. Превью справа обновляется сразу, полный handoff появится после сборки.</span>
+              <span>Сначала заполните шаблон напротив превью, затем при желании докрутите оформление ниже. Полный handoff появится после сборки.</span>
             </div>
             ${buildConstructorPresetsMarkup(presets)}
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
