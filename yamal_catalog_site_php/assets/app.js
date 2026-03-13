@@ -2521,6 +2521,9 @@ function buildConstructorPreviewMarkup(artifact, layout) {
 
   function renderConstructorHandoff(handoff) {
     const normalized = normalizeConstructorHandoff(handoff);
+    if (!normalized.generated) {
+      return '';
+    }
     const packages = [normalized.approval, normalized.contractor].filter((item) => item.id);
     if (!packages.length) {
       return '';

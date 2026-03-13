@@ -181,6 +181,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buil
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorPreset'), 'frontend applies constructor presets');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend exposes constructor preset action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorHandoff'), 'frontend renders constructor handoff block');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'if (!normalized.generated)'), 'frontend hides handoff until constructor build');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-handoff-panel'), 'frontend exposes constructor handoff panel classes');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorErrorState'), 'frontend exposes constructor error state helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Не удалось открыть конструктор'), 'frontend exposes constructor retry copy');
