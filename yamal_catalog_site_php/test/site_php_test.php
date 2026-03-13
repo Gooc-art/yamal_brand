@@ -449,13 +449,17 @@ assert_true(($designField['default'] ?? '') === 'calm', 'constructor design fiel
 assert_true(is_array($paletteToneField), 'constructor present definition exposes palette tone field');
 assert_true(str_contains((string) ($paletteToneField['options'][0]['description'] ?? ''), 'Pantone'), 'constructor present definition keeps supplied palette option descriptions');
 $presentedAccentOption = null;
+$presentedIvoryOption = null;
 foreach (($paletteToneField['options'] ?? []) as $option) {
     if (($option['value'] ?? '') === 'accent') {
         $presentedAccentOption = $option;
-        break;
+    }
+    if (($option['value'] ?? '') === 'ivory') {
+        $presentedIvoryOption = $option;
     }
 }
 assert_true((string) ($presentedAccentOption['swatch'] ?? '') === '#C40E3D', 'constructor present definition keeps supplied palette swatch metadata');
+assert_true((string) ($presentedIvoryOption['swatchSoft'] ?? '') === '#FFF9F0', 'constructor present definition keeps supplied palette tint metadata');
 $businessCardPresets = constructor_present_presets($businessCardDefinition, constructor_default_input($businessCardDefinition));
 assert_true(count($businessCardPresets) >= 3, 'constructor exposes multiple grounded presets for business card');
 assert_true(($businessCardPresets[0]['active'] ?? false) === true, 'constructor marks default preset as active');

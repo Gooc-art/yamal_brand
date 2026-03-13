@@ -2729,6 +2729,7 @@ function constructor_present_definition(array $definition): array
                             'description' => (string) ($option['description'] ?? ''),
                             'mark' => (string) ($option['mark'] ?? ''),
                             'swatch' => (string) ($option['swatch'] ?? ''),
+                            'swatchSoft' => (string) ($option['swatchSoft'] ?? ''),
                             'dark' => (bool) ($option['dark'] ?? false),
                         ],
                         array_filter($field['options'] ?? [], static fn($item): bool => is_array($item))
