@@ -1910,6 +1910,30 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     els.pagination.innerHTML = '';
   }
 
+  function renderConstructorErrorState(title, message, constructorId = '') {
+    const safeTitle = String(title || '').trim() || 'Не удалось открыть конструктор';
+    const safeMessage = String(message || '').trim() || 'Попробуйте повторить открытие ещё раз.';
+    els.contentMode.textContent = 'Конструктор';
+    els.contentTitle.textContent = safeTitle;
+    els.contentHint.textContent = 'Рабочая область открыта, но конструктор не получил данные.';
+    els.contentItems.innerHTML = `
+      <div class="empty-state constructor-error-state">
+        <div class="empty-mark" aria-hidden="true">!</div>
+        <div class="constructor-error-copy">
+          <h3>${escapeHtml(safeTitle)}</h3>
+          <p class="detail-empty">${escapeHtml(safeMessage)}</p>
+          <div class="item-actions">
+            ${constructorId
+              ? `<button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(constructorId)}">Повторить</button>`
+              : ''}
+            <button type="button" class="ghost-button" data-action="go-root">Вернуться на витрину</button>
+          </div>
+        </div>
+      </div>
+    `;
+    els.pagination.innerHTML = '';
+  }
+
   function setWorkspaceCollapsed(nextValue) {
     state.workspaceCollapsed = Boolean(nextValue);
     if (els.workspaceShell) {
@@ -2962,14 +2986,22 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       await openRoot(options);
       return;
     }
+    ensureWorkspaceVisible();
+    focusWorkspace();
     setLoading('Открываю конструктор', 'Поднимаю поля, рекомендации и стартовый каркас решения.');
     setInspectorOpen(false);
     setActiveRoute('');
     renderDetailPlaceholder();
-    const payload = await api('constructor', { id: constructorId });
-    renderConstructor(payload);
-    if (options.history !== 'none') {
-      syncRouteWithState(options.history || 'push');
+    try {
+      const payload = await api('constructor', { id: constructorId });
+      renderConstructor(payload);
+      focusWorkspace();
+      if (options.history !== 'none') {
+        syncRouteWithState(options.history || 'push');
+      }
+    } catch (error) {
+      console.error(error);
+      renderConstructorErrorState('Не удалось открыть конструктор', String(error?.message || 'Попробуйте повторить открытие чуть позже.'), constructorId);
     }
   }
 
@@ -2978,10 +3010,17 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     if (!constructorId) {
       return;
     }
+    ensureWorkspaceVisible();
     setLoading('Собираю решение', 'Генерирую стартовый пакет и подтягиваю реальные материалы каталога.');
-    const payload = await api('construct', { id: constructorId, input }, { method: 'POST' });
-    renderConstructor(payload);
-    syncRouteWithState('replace');
+    try {
+      const payload = await api('construct', { id: constructorId, input }, { method: 'POST' });
+      renderConstructor(payload);
+      focusWorkspace();
+      syncRouteWithState('replace');
+    } catch (error) {
+      console.error(error);
+      renderConstructorErrorState('Не удалось собрать решение', String(error?.message || 'Попробуйте повторить сборку ещё раз.'), constructorId);
+    }
   }
 
   function currentConstructorArtifacts() {
