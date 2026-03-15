@@ -41,16 +41,7 @@ const BOT_INTRO_TEXT = [
 ].join('\n\n');
 
 function buildMainMenuText(intro = false) {
-  if (intro) {
-    return BOT_INTRO_TEXT;
-  }
-
-  return [
-    'Главное меню официального каталога бренда Ямала.',
-    'Здесь собраны утвержденные материалы бренда региона: брендбуки, логотипы, шрифты, паттерны и городские версии.',
-    'Откройте нужный раздел, перейдите в Избранное или используйте Поиск для быстрого доступа к материалам.',
-    `Можно просто отправить текст: ${BOT_SEARCH_EXAMPLES}.`,
-  ].join('\n\n');
+  return BOT_INTRO_TEXT;
 }
 
 function buildHelpText() {
