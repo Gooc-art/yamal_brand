@@ -2,7 +2,6 @@ export const ROOT_MENU_FOLDERS = [
   { folderName: 'Логотип', label: 'Логотип', icon: '🏷️' },
   { folderName: 'Фирменный знак', label: 'Фирменный знак', icon: '🔰' },
   { folderName: 'Детский логотип', label: 'Детский логотип', icon: '🧒' },
-  { folderName: 'Логотипы городов', label: 'Логотипы городов', icon: '🏙️' },
   { folderName: 'Паттерны', label: 'Паттерны', icon: '🧩' },
   { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук ЯМАЛ 100', icon: '📘' },
   { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-Бренд', icon: '📕' },
@@ -18,7 +17,6 @@ const HIDDEN_ROOT_FOLDERS = new Set(['Шрифт']);
 export const QUICK_SEARCHES = [
   { key: 'logo', label: 'Логотип', query: 'логотип' },
   { key: 'brandbook', label: 'Брендбук', query: 'брендбук' },
-  { key: 'city', label: 'Город', query: 'город' },
   { key: 'pattern', label: 'Паттерн', query: 'паттерн' },
   { key: 'font', label: 'Шрифт', query: 'шрифт' },
   { key: 'souvenir', label: 'Сувенир', query: 'сувенир' },
@@ -31,7 +29,6 @@ export function getMainMenuQuickSearches() {
 const SECTION_HINTS = {
   'Логотип': 'Выберите тип логотипа или готовый формат.',
   'Фирменный знак': 'Здесь собраны знак отдельно и знак с надписью ЯМАЛ.',
-  'Логотипы городов': 'Выберите город, затем цветовой вариант.',
   'Паттерны': 'Выберите город и скачайте готовые паттерны.',
   'Каталог сувенирной продукции': 'Выберите категорию носителей и материалов.',
   'Шрифт': 'Здесь лежат архивы шрифтов и отдельный файл начертания.',

@@ -19,7 +19,6 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
     { id: 'e', name: 'Фирменный знак', type: 'folder' },
     { id: 'f', name: 'Иллюстрации мастер-бренда SVG-элементы', type: 'folder' },
     { id: 'g', name: 'Детский логотип', type: 'folder' },
-    { id: 'h', name: 'Логотипы городов', type: 'folder' },
     { id: 'i', name: 'Брендбук ЯМАЛ 100', type: 'folder' },
     { id: 'j', name: 'Паттерны', type: 'folder' },
     { id: 'k', name: 'Брендбук Салехард', type: 'folder' },
@@ -34,7 +33,6 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Логотип',
       'Фирменный знак',
       'Детский логотип',
-      'Логотипы городов',
       'Паттерны',
       'Брендбук ЯМАЛ 100',
       'Брендбук ЯМАЛ Мастер бренд',
@@ -51,7 +49,6 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
       'Логотип',
       'Фирменный знак',
       'Детский логотип',
-      'Логотипы городов',
       'Паттерны',
       'Брендбук ЯМАЛ 100',
       'Мастер-Бренд',
@@ -81,12 +78,11 @@ test('resolveRootMenuFolders appends unknown root folders after known sections',
 test('menu helpers return configured quick search and paginate items', () => {
   assert.equal(getQuickSearchByKey('font')?.query, 'шрифт');
   assert.equal(getQuickSearchByKey('pattern')?.query, 'паттерн');
-  assert.equal(QUICK_SEARCHES.length, 6);
+  assert.equal(QUICK_SEARCHES.length, 5);
   assert.deepEqual(getMainMenuQuickSearches().map((item) => item.label), ['Шрифт']);
   assert.deepEqual(QUICK_SEARCHES.map((item) => item.label), [
     'Логотип',
     'Брендбук',
-    'Город',
     'Паттерн',
     'Шрифт',
     'Сувенир',
