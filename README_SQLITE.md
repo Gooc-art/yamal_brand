@@ -7,6 +7,7 @@ This setup stores the file catalog in local SQLite and works well for:
 - runtime analytics and popular-item stats in a separate writable SQLite DB
 - parallel Node.js web interface in `/yamal_catalog_site`
 - parallel PHP + SQLite web interface for shared hosting in `/yamal_catalog_site_php`
+- companion MAX bot can present this base as the official catalog of the Yamal regional brand for public-sector teams and businesses
 
 ## 1) Build DB from your folder tree
 

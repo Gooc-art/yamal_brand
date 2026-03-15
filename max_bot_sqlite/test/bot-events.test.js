@@ -42,9 +42,21 @@ test('help screen includes back and menu buttons', () => {
 test('main menu exposes dedicated search screen with quick shortcuts', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('🔎 Поиск',\s*'search:main'\)/);
   assert.match(botSource, /function buildSearchKeyboard\(\)/);
+  assert.match(botSource, /function buildSearchText\(\)/);
   assert.match(botSource, /if \(data === 'search:main'\)/);
-  assert.match(botSource, /Отправьте слово или фразу, даже если не уверены в точном названии\./);
+  assert.match(botSource, /Поиск по официальному каталогу бренда Ямала:/);
+  assert.match(botSource, /Отправьте слово или фразу, даже если не уверены в точном названии материала\./);
   assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
+});
+
+test('bot onboarding clearly explains official regional brand catalog context', () => {
+  assert.match(botSource, /function buildMainMenuText\(intro = false\)/);
+  assert.match(botSource, /Привет! Добро пожаловать в официальный каталог бренда Ямала\./);
+  assert.match(botSource, /официального бренда региона/);
+  assert.match(botSource, /утвержденные материалы, включая брендбуки, логотипы, шрифты и паттерны/);
+  assert.match(botSource, /function buildHelpText\(\)/);
+  assert.match(botSource, /Как пользоваться каталогом:/);
+  assert.match(botSource, /Каталог содержит утвержденные материалы официального бренда Ямала/);
 });
 
 test('main menu exposes favorites screen and tracks runtime usage', () => {
