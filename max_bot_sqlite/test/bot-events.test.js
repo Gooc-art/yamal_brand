@@ -51,9 +51,15 @@ test('main menu exposes dedicated search screen with quick shortcuts', () => {
 
 test('bot onboarding clearly explains official regional brand catalog context', () => {
   assert.match(botSource, /function buildMainMenuText\(intro = false\)/);
+  assert.match(botSource, /const BOT_INTRO_TEXT = \[/);
   assert.match(botSource, /Привет! Добро пожаловать в официальный каталог бренда Ямала\./);
-  assert.match(botSource, /официального бренда региона/);
-  assert.match(botSource, /утвержденные материалы, включая брендбуки, логотипы, шрифты и паттерны/);
+  assert.match(botSource, /элементы регионального бренда Ямала в своей деятельности/);
+  assert.match(botSource, /которые помогут вам в реализации проектов в регионе и продвижении вашего бизнеса/);
+  assert.match(botSource, /• Ознакомиться с верхними разделами каталога\./);
+  assert.match(botSource, /• Перейти к городским брендбукам и паттернам\./);
+  assert.match(botSource, /• Добавить интересующие материалы в Избранное\./);
+  assert.match(botSource, /• Использовать функцию Поиск для быстрого нахождения нужной информации\./);
+  assert.match(botSource, /Просто отправьте текст: Логотип, Брендбук, Город, Паттерн, Шрифт, Сувенир — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала\./);
   assert.match(botSource, /function buildHelpText\(\)/);
   assert.match(botSource, /Как пользоваться каталогом:/);
   assert.match(botSource, /Каталог содержит утвержденные материалы официального бренда Ямала/);
