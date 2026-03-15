@@ -13,6 +13,7 @@ import {
   decorateFolderItems,
   getMainMenuQuickSearches,
   getQuickSearchByKey,
+  getRootMenuLabel,
   getSectionHint,
   resolveRootMenuFolders,
 } from './menu.js';
@@ -202,35 +203,49 @@ function buildFolderItemRows(items) {
 }
 
 function buildMainMenuKeyboard() {
-  const rootFolders = resolveRootMenuFolders(getRootFolders());
-  const mainItems = [...rootFolders];
+  const rootFolders = new Map(resolveRootMenuFolders(getRootFolders()).map((item) => [item.name, item]));
   const fontShortcut = getMainMenuQuickSearches()[0];
-  if (fontShortcut) {
-    const shortcutItem = {
-      type: 'quick',
-      key: fontShortcut.key,
-      label: fontShortcut.label,
-      icon: '⌨️',
-      name: fontShortcut.label,
-    };
-    const insertIndex = mainItems.findIndex((item) => item.name === 'Каталог сувенирной продукции');
-    if (insertIndex >= 0) {
-      mainItems.splice(insertIndex, 0, shortcutItem);
-    } else {
-      mainItems.push(shortcutItem);
-    }
+  const orderedRows = [
+    [Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')],
+    [Keyboard.button.callback('🔎 Поиск', 'search:main')],
+  ];
+
+  const orderedFolderNames = [
+    'Логотип',
+    'Детский логотип',
+    'Фирменный знак',
+    'Брендбук ЯМАЛ Мастер бренд',
+    'Паттерны',
+    'Иллюстрации мастер-бренда SVG-элементы',
+  ];
+
+  for (const folderName of orderedFolderNames) {
+    const item = rootFolders.get(folderName);
+    if (!item) continue;
+    orderedRows.push([buttonForItem(item)]);
   }
 
-  const rows = packButtonsIntoRows(mainItems, {
-    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
-    maxButtonsPerRow: 2,
-  }).map((row) => row.map((item) => buttonForItem(item)));
-  rows.push([
-    Keyboard.button.callback('⭐ Избранное', 'favorites:main'),
-    Keyboard.button.callback('🔎 Поиск', 'search:main'),
-  ]);
-  rows.push([Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')]);
+  if (fontShortcut) {
+    orderedRows.push([
+      buttonForItem({
+        type: 'quick',
+        key: fontShortcut.key,
+        label: fontShortcut.label,
+        icon: '⌨️',
+        name: fontShortcut.label,
+      }),
+    ]);
+  }
 
+  for (const folderName of ['Каталог сувенирной продукции', 'Брендбук ЯМАЛ 100']) {
+    const item = rootFolders.get(folderName);
+    if (!item) continue;
+    orderedRows.push([buttonForItem(item)]);
+  }
+
+  orderedRows.push([Keyboard.button.callback('⭐ Избранное', 'favorites:main')]);
+
+  const rows = orderedRows.filter((row) => row.length);
   return inlineKeyboardAttachment(rows);
 }
 
@@ -388,7 +403,7 @@ async function renderFolder(ctx, parentId, page = 0) {
   const offset = pageClamped * config.pageSize;
 
   const parent = db.getById(parentId);
-  const title = parentId === ROOT_ID ? 'Бренд ЯМАЛ' : parent?.name || 'Раздел';
+  const title = parentId === ROOT_ID ? 'Бренд ЯМАЛ' : getRootMenuLabel(parent?.name) || parent?.name || 'Раздел';
   const children = decorateFolderItems(parent, db.listChildren(parentId, config.pageSize, offset));
 
   const rows = buildFolderItemRows(children);

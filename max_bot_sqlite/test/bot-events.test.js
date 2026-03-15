@@ -49,6 +49,16 @@ test('main menu exposes dedicated search screen with quick shortcuts', () => {
   assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
 });
 
+test('main menu uses the agreed top-level button order', () => {
+  assert.match(botSource, /const orderedFolderNames = \[/);
+  assert.match(
+    botSource,
+    /'Логотип',[\s\S]*'Детский логотип',[\s\S]*'Фирменный знак',[\s\S]*'Брендбук ЯМАЛ Мастер бренд',[\s\S]*'Паттерны',[\s\S]*'Иллюстрации мастер-бренда SVG-элементы'/
+  );
+  assert.match(botSource, /Keyboard\.button\.callback\('ℹ️ Как пользоваться',\s*'help:main'\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\('⭐ Избранное',\s*'favorites:main'\)/);
+});
+
 test('bot onboarding clearly explains official regional brand catalog context', () => {
   assert.match(botSource, /function buildMainMenuText\(intro = false\)/);
   assert.match(botSource, /const BOT_INTRO_TEXT = \[/);
@@ -76,7 +86,8 @@ test('main menu exposes favorites screen and tracks runtime usage', () => {
 test('main menu keeps only quick font shortcut instead of root font folder button', () => {
   assert.match(botSource, /item\.type === 'quick'/);
   assert.match(botSource, /`quick:\$\{item\.key\}`/);
-  assert.match(botSource, /findIndex\(\(item\) => item\.name === 'Каталог сувенирной продукции'\)/);
+  assert.match(botSource, /const fontShortcut = getMainMenuQuickSearches\(\)\[0\]/);
+  assert.match(botSource, /buttonForItem\(\{\s*type:\s*'quick'/);
 });
 
 test('search empty state shows custom text and menu button', () => {

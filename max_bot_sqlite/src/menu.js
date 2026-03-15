@@ -1,12 +1,12 @@
 export const ROOT_MENU_FOLDERS = [
   { folderName: 'Логотип', label: 'Логотип', icon: '🏷️' },
-  { folderName: 'Фирменный знак', label: 'Фирменный знак', icon: '🔰' },
   { folderName: 'Детский логотип', label: 'Детский логотип', icon: '🧒' },
+  { folderName: 'Фирменный знак', label: 'Фирменный стиль', icon: '🔰' },
   { folderName: 'Паттерны', label: 'Паттерны', icon: '🧩' },
-  { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук ЯМАЛ 100', icon: '📘' },
-  { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-Бренд', icon: '📕' },
-  { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации и SVG', icon: '🖼️' },
+  { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-бренд', icon: '📕' },
+  { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации', icon: '🖼️' },
   { folderName: 'Каталог сувенирной продукции', label: 'Сувенирная продукция', icon: '🎁' },
+  { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук Ямал 100', icon: '📘' },
 ];
 
 const HIDDEN_ROOT_FOLDERS = new Set([
@@ -16,6 +16,8 @@ const HIDDEN_ROOT_FOLDERS = new Set([
   'Брендбук Новый Уренгой',
   'Брендбук Ноябрьск',
 ]);
+
+const ROOT_MENU_LABELS = new Map(ROOT_MENU_FOLDERS.map((item) => [item.folderName, item.label]));
 
 export const QUICK_SEARCHES = [
   { key: 'logo', label: 'Логотип', query: 'логотип' },
@@ -346,6 +348,10 @@ export function resolveRootMenuFolders(rootItems) {
     }));
 
   return [...ordered, ...rest];
+}
+
+export function getRootMenuLabel(name) {
+  return ROOT_MENU_LABELS.get(name) || null;
 }
 
 export function getQuickSearchByKey(key) {
