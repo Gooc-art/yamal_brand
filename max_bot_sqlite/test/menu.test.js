@@ -45,7 +45,7 @@ test('resolveRootMenuFolders builds full top-level button structure in configure
     [
       'Логотип',
       'Детский логотип',
-      'Фирменный стиль',
+      'Фирменный знак',
       'Паттерны',
       'Мастер-бренд',
       'Иллюстрации',

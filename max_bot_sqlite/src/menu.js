@@ -1,7 +1,7 @@
 export const ROOT_MENU_FOLDERS = [
   { folderName: 'Логотип', label: 'Логотип', icon: '🏷️' },
   { folderName: 'Детский логотип', label: 'Детский логотип', icon: '🧒' },
-  { folderName: 'Фирменный знак', label: 'Фирменный стиль', icon: '🔰' },
+  { folderName: 'Фирменный знак', label: 'Фирменный знак', icon: '🔰' },
   { folderName: 'Паттерны', label: 'Паттерны', icon: '🧩' },
   { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-бренд', icon: '📕' },
   { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации', icon: '🖼️' },
