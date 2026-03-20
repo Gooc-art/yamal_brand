@@ -447,7 +447,7 @@ assert_true(str_contains((string) (constructor_color_variant_options()[3]['descr
 assert_true(str_contains((string) (constructor_design_variant_options()[1]['description'] ?? ''), 'Редак'), 'constructor exposes descriptive text for design cards');
 assert_true((constructor_theme_palette('color', 'r6034')['tone'] ?? '') === '#D1E2E2', 'constructor theme palette exposes supplied RAL 6034 background tone');
 
-$styledConstructorIds = ['business_card', 'nameplate', 'presentation_deck', 'certificate', 'badge', 'social_post', 'letterhead', 'rollup'];
+$styledConstructorIds = ['business_card', 'nameplate', 'information_stand', 'room_navigation_sign', 'presentation_deck', 'certificate', 'badge', 'social_post', 'letterhead', 'rollup'];
 foreach ($styledConstructorIds as $styledConstructorId) {
     $styledDefinition = constructor_definition_by_id($styledConstructorId);
     assert_true($styledDefinition !== null, $styledConstructorId . ' constructor definition exists for style controls');
@@ -636,6 +636,91 @@ assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'B-204'), 'n
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Направо'), 'nameplate svg exposes direction label');
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'font-size:'), 'nameplate svg uses adaptive text sizing');
 
+$informationStandDefinition = constructor_definition_by_id('information_stand');
+assert_true($informationStandDefinition !== null, 'information stand constructor definition exists');
+assert_true(
+    array_reduce(
+        $informationStandDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'stand_type',
+        false
+    ),
+    'information stand constructor exposes stand type field'
+);
+assert_true(
+    array_reduce(
+        $informationStandDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'section_one_body',
+        false
+    ),
+    'information stand constructor exposes content block field'
+);
+assert_true(
+    array_reduce(
+        $informationStandDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'size_variant',
+        false
+    ),
+    'information stand constructor exposes size field'
+);
+$informationStandSvg = constructor_svg_artifact($informationStandDefinition, constructor_normalize_input($informationStandDefinition, [
+    'city' => 'салехард',
+    'stand_type' => 'schedule',
+    'headline' => 'Центр поддержки предпринимательства',
+    'subtitle' => 'Режим работы, правила посещения и схема зоны',
+    'section_one_title' => 'Сегодня',
+    'section_one_body' => "Пн-Пт 08:30-18:00\nСб-Вс выходной",
+    'section_two_title' => 'В помещении',
+    'section_two_body' => "Регистрация — 1 этаж\nПереговорные — 2 этаж",
+    'contact_line' => 'brand@yamal.ru • +7 900 000-00-00',
+    'size_variant' => '700x1000',
+]));
+assert_true($informationStandSvg !== null, 'information stand svg artifact exists');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Режим / график'), 'information stand svg exposes stand type label');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Контакты и служебная строка'), 'information stand svg exposes footer support block');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'font-size:'), 'information stand svg uses adaptive text sizing');
+
+$roomNavigationDefinition = constructor_definition_by_id('room_navigation_sign');
+assert_true($roomNavigationDefinition !== null, 'room navigation sign constructor definition exists');
+assert_true(
+    array_reduce(
+        $roomNavigationDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'destination',
+        false
+    ),
+    'room navigation sign constructor exposes destination field'
+);
+assert_true(
+    array_reduce(
+        $roomNavigationDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'floor_label',
+        false
+    ),
+    'room navigation sign constructor exposes floor label field'
+);
+assert_true(
+    array_reduce(
+        $roomNavigationDefinition['fields'] ?? [],
+        static fn(bool $carry, array $field): bool => $carry || (string) ($field['id'] ?? '') === 'direction',
+        false
+    ),
+    'room navigation sign constructor exposes direction field'
+);
+$roomNavigationSvg = constructor_svg_artifact($roomNavigationDefinition, constructor_normalize_input($roomNavigationDefinition, [
+    'city' => 'салехард',
+    'destination' => 'Переговорные и проектные офисы',
+    'route_hint' => 'Через атриум • блок Б',
+    'room_number' => 'B-204',
+    'floor_label' => '3 этаж',
+    'direction' => 'left',
+    'mount' => 'ceiling',
+    'size_variant' => '600x220',
+]));
+assert_true($roomNavigationSvg !== null, 'room navigation sign svg artifact exists');
+assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Навигация по помещениям'), 'room navigation sign svg exposes purpose label');
+assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), '3 этаж'), 'room navigation sign svg exposes floor label');
+assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Налево'), 'room navigation sign svg exposes direction label');
+assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'font-size:'), 'room navigation sign svg uses adaptive text sizing');
+
 $presentationDefinition = constructor_definition_by_id('presentation_deck');
 assert_true($presentationDefinition !== null, 'presentation constructor definition exists');
 assert_true(
@@ -794,6 +879,28 @@ $overflowCasePayloads = [
         'mount' => 'wall',
         'direction' => 'right',
         'size_variant' => '400x160',
+    ],
+    'information_stand' => [
+        'city' => 'салехард',
+        'stand_type' => 'memo',
+        'headline' => 'Центр коммуникаций и проектного сопровождения брендированных решений Ямала',
+        'subtitle' => 'Правила посещения, режим работы и схема движения по общественной зоне офиса',
+        'section_one_title' => 'Режим работы',
+        'section_one_body' => "Пн-Пт 08:30-18:00\nСб-Вс по предварительной записи\nПраздничные дни по отдельному графику",
+        'section_two_title' => 'В помещении',
+        'section_two_body' => "Регистрация и зона ожидания — 1 этаж\nПроектные офисы и переговорные — 2 этаж\nСтойка выдачи материалов — 3 этаж",
+        'contact_line' => 'brand@yamal.ru • +7 34922 00-000 • yamal.brand/office',
+        'size_variant' => '700x1000',
+    ],
+    'room_navigation_sign' => [
+        'city' => 'салехард',
+        'destination' => 'Отдел стратегических коммуникаций и проектного сопровождения бренда территории',
+        'route_hint' => 'Через атриум, направо после стойки регистрации и дальше по коридору блока Б',
+        'room_number' => '214Б-7',
+        'floor_label' => '3 этаж',
+        'mount' => 'ceiling',
+        'direction' => 'left',
+        'size_variant' => '600x220',
     ],
     'presentation_deck' => [
         'city' => 'салехард',
@@ -983,7 +1090,7 @@ if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     );
     assert_true(($fallbackBootstrap['stats']['totalAssets'] ?? -1) === 0, 'fallback bootstrap keeps catalog stats empty without sqlite');
     assert_true(count($fallbackBootstrap['sections'] ?? []) === 0, 'fallback bootstrap keeps sections empty without sqlite');
-    assert_true(count($fallbackBootstrap['constructors']['items'] ?? []) >= 8, 'fallback bootstrap still exposes constructor cards without sqlite');
+    assert_true(count($fallbackBootstrap['constructors']['items'] ?? []) >= 10, 'fallback bootstrap still exposes constructor cards without sqlite');
     $fallbackCatalogDb = new CatalogDb($base . '/fallback_catalog.db', $base . '/upload');
     assert_true($fallbackCatalogDb->isAvailable() === false, 'catalog db stays unavailable without sqlite driver');
     assert_true($fallbackCatalogDb->availabilityReason() === 'pdo_sqlite_missing', 'catalog db exposes missing sqlite reason');
@@ -1020,7 +1127,7 @@ assert_true(count($bootstrap['consultant']['intents'] ?? []) >= 6, 'bootstrap ex
 assert_true(array_key_exists('smartMode', $bootstrap['consultant'] ?? []), 'bootstrap exposes consultant smart mode metadata');
 assert_true(is_bool($bootstrap['consultant']['smartMode']['enabled'] ?? null), 'bootstrap smart mode flag is boolean');
 assert_true(($bootstrap['constructors']['title'] ?? '') === 'Лаборатория решений', 'bootstrap exposes solution lab title');
-assert_true(count($bootstrap['constructors']['items'] ?? []) >= 8, 'bootstrap exposes constructor cards');
+assert_true(count($bootstrap['constructors']['items'] ?? []) >= 10, 'bootstrap exposes constructor cards');
 assert_true(
     array_reduce(
         $bootstrap['constructors']['items'] ?? [],
@@ -1036,6 +1143,22 @@ assert_true(
         false
     ),
     'bootstrap exposes business card constructor'
+);
+assert_true(
+    array_reduce(
+        $bootstrap['constructors']['items'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['id'] ?? '') === 'information_stand' && (string) ($item['label'] ?? '') === 'Инфостенд'),
+        false
+    ),
+    'bootstrap exposes information stand constructor'
+);
+assert_true(
+    array_reduce(
+        $bootstrap['constructors']['items'] ?? [],
+        static fn(bool $carry, array $item): bool => $carry || ((string) ($item['id'] ?? '') === 'room_navigation_sign' && (string) ($item['label'] ?? '') === 'Навигационная табличка'),
+        false
+    ),
+    'bootstrap exposes room navigation sign constructor'
 );
 assert_true(count($bootstrap['examples']['good'] ?? []) >= 1, 'bootstrap good examples exist');
 assert_true(count($bootstrap['examples']['debate'] ?? []) >= 1, 'bootstrap debate examples exist');

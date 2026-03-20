@@ -310,8 +310,10 @@ function groupConstructorFields(fields) {
   const basicsIds = new Set([
     'city',
     'variant',
+    'stand_type',
     'size_variant',
     'room_number',
+    'floor_label',
     'direction',
     'mount',
     'presentation_mode',
@@ -777,13 +779,13 @@ function constructorFieldWarningThreshold(field) {
   if (/^(full_name|recipient)$/u.test(fieldId)) {
     return { soft: 32, hard: 48 };
   }
-  if (/^(headline|title|document_title|location)$/u.test(fieldId)) {
+  if (/^(headline|title|document_title|location|destination)$/u.test(fieldId)) {
     return { soft: 54, hard: 84 };
   }
-  if (/^(role|department|speaker|speaker_role|signer|event_name|cta|subline|reason)$/u.test(fieldId)) {
+  if (/^(role|department|speaker|speaker_role|signer|event_name|cta|subline|reason|subtitle|route_hint|section_one_title|section_two_title)$/u.test(fieldId)) {
     return { soft: 68, hard: 120 };
   }
-  if (/^(message|structure|contact_line)$/u.test(fieldId)) {
+  if (/^(message|structure|contact_line|section_one_body|section_two_body)$/u.test(fieldId)) {
     return { soft: 170, hard: 280 };
   }
   if (fieldType === 'textarea') {

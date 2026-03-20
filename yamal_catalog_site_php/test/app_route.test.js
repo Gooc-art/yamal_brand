@@ -139,11 +139,13 @@ test('buildConstructorCategoryFilters keeps all filter and current category stab
 test('groupConstructorFields prioritizes fill fields before setup and style blocks', () => {
   const groups = groupConstructorFields([
     { id: 'city', label: 'Населённый пункт' },
+    { id: 'stand_type', label: 'Тип стенда' },
     { id: 'graphic_element', label: 'Графический элемент' },
     { id: 'design_variant', label: 'Дизайн' },
     { id: 'palette_tone', label: 'Палитра фона' },
     { id: 'presentation_mode', label: 'Сценарий' },
     { id: 'room_number', label: 'Номер / индекс' },
+    { id: 'floor_label', label: 'Этаж / уровень' },
     { id: 'title', label: 'Название' },
     { id: 'message', label: 'Текст' },
     { id: 'full_name', label: 'ФИО' },
@@ -152,7 +154,7 @@ test('groupConstructorFields prioritizes fill fields before setup and style bloc
 
   assert.deepEqual(groups.map((group) => group.id), ['fill', 'setup', 'style']);
   assert.deepEqual(groups[0].items.map((item) => item.id), ['title', 'message', 'full_name', 'email']);
-  assert.deepEqual(groups[1].items.map((item) => item.id), ['city', 'presentation_mode', 'room_number']);
+  assert.deepEqual(groups[1].items.map((item) => item.id), ['city', 'stand_type', 'presentation_mode', 'room_number', 'floor_label']);
   assert.deepEqual(groups[2].items.map((item) => item.id), ['graphic_element', 'design_variant', 'palette_tone']);
 });
 

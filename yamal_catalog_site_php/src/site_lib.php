@@ -1428,6 +1428,200 @@ function constructor_solution_definitions(): array
             ])),
         ],
         [
+            'id' => 'information_stand',
+            'label' => 'Инфостенд',
+            'summary' => 'Стенд для режима и правил',
+            'description' => 'Вертикальный стенд для входной зоны, режима работы, правил посещения и базовой навигации по помещению.',
+            'icon' => '▦',
+            'category' => 'Навигация',
+            'artifactKind' => 'svg',
+            'formatHint' => 'A1 / 700×1000 мм • SVG + JSON',
+            'consultPrompt' => 'информационный стенд навигация логотип брендбук',
+            'sectionKeywords' => ['логотип', 'брендбук', 'полиграф', 'навигация'],
+            'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'навигация', 'полиграфия'],
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'design_variant' => 'editorial',
+                'background_style' => 'frame',
+                'palette_tone' => 'ivory',
+            ]), [
+                'stand_type' => [
+                    'id' => 'stand_type',
+                    'type' => 'select',
+                    'label' => 'Тип стенда',
+                    'required' => true,
+                    'default' => 'info',
+                    'options' => [
+                        ['value' => 'info', 'label' => 'Информационный'],
+                        ['value' => 'schedule', 'label' => 'Режим / график'],
+                        ['value' => 'memo', 'label' => 'Памятка / правила'],
+                    ],
+                ],
+                'headline' => [
+                    'id' => 'headline',
+                    'type' => 'text',
+                    'label' => 'Заголовок',
+                    'required' => true,
+                    'default' => 'Центр поддержки предпринимательства',
+                    'maxLength' => 110,
+                ],
+                'subtitle' => [
+                    'id' => 'subtitle',
+                    'type' => 'text',
+                    'label' => 'Подзаголовок',
+                    'required' => false,
+                    'default' => 'Режим работы, правила посещения и схема зоны',
+                    'maxLength' => 120,
+                ],
+                'section_one_title' => [
+                    'id' => 'section_one_title',
+                    'type' => 'text',
+                    'label' => 'Заголовок блока 1',
+                    'required' => true,
+                    'default' => 'Сегодня',
+                    'maxLength' => 60,
+                ],
+                'section_one_body' => [
+                    'id' => 'section_one_body',
+                    'type' => 'textarea',
+                    'label' => 'Содержимое блока 1',
+                    'required' => true,
+                    'default' => "Пн-Пт 09:00-18:00\nСб-Вс выходной",
+                    'rows' => 4,
+                    'maxLength' => 240,
+                ],
+                'section_two_title' => [
+                    'id' => 'section_two_title',
+                    'type' => 'text',
+                    'label' => 'Заголовок блока 2',
+                    'required' => false,
+                    'default' => 'В помещении',
+                    'maxLength' => 60,
+                ],
+                'section_two_body' => [
+                    'id' => 'section_two_body',
+                    'type' => 'textarea',
+                    'label' => 'Содержимое блока 2',
+                    'required' => false,
+                    'default' => "Стойка регистрации — 1 этаж\nПереговорные — 2 этаж",
+                    'rows' => 4,
+                    'maxLength' => 240,
+                ],
+                'contact_line' => [
+                    'id' => 'contact_line',
+                    'type' => 'text',
+                    'label' => 'Контакты / строка внизу',
+                    'required' => false,
+                    'default' => 'brand@yamal.ru • +7 900 000-00-00',
+                    'maxLength' => 120,
+                ],
+                'size_variant' => [
+                    'id' => 'size_variant',
+                    'type' => 'select',
+                    'label' => 'Размер',
+                    'required' => true,
+                    'default' => '700x1000',
+                    'options' => [
+                        ['value' => '500x700', 'label' => '500×700 мм'],
+                        ['value' => '700x1000', 'label' => '700×1000 мм'],
+                        ['value' => 'a1', 'label' => 'A1'],
+                    ],
+                ],
+            ])),
+        ],
+        [
+            'id' => 'room_navigation_sign',
+            'label' => 'Навигационная табличка',
+            'summary' => 'Маршрут по помещениям',
+            'description' => 'Отдельная табличка для коридоров и входных групп: маршрут, этаж, номер и направление без кабинетных сценариев.',
+            'icon' => '↦',
+            'category' => 'Навигация',
+            'artifactKind' => 'svg',
+            'formatHint' => '400×180 мм • SVG + JSON',
+            'consultPrompt' => 'навигационная табличка помещение логотип брендбук',
+            'sectionKeywords' => ['логотип', 'брендбук', 'полиграф', 'навигация'],
+            'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'навигация', 'табличка'],
+            'fields' => array_values(array_merge($base, constructor_style_fields([
+                'color_variant' => 'color',
+                'brand_lockup' => 'logo',
+                'design_variant' => 'signal',
+                'background_style' => 'corner',
+                'palette_tone' => 'p621',
+            ]), [
+                'destination' => [
+                    'id' => 'destination',
+                    'type' => 'text',
+                    'label' => 'Куда ведёт',
+                    'required' => true,
+                    'default' => 'Сектор деловой программы',
+                    'maxLength' => 100,
+                ],
+                'route_hint' => [
+                    'id' => 'route_hint',
+                    'type' => 'text',
+                    'label' => 'Подсказка маршрута',
+                    'required' => false,
+                    'default' => 'Через атриум • блок Б',
+                    'maxLength' => 100,
+                ],
+                'room_number' => [
+                    'id' => 'room_number',
+                    'type' => 'text',
+                    'label' => 'Номер / индекс',
+                    'required' => false,
+                    'default' => 'B-204',
+                    'maxLength' => 24,
+                ],
+                'floor_label' => [
+                    'id' => 'floor_label',
+                    'type' => 'text',
+                    'label' => 'Этаж / уровень',
+                    'required' => false,
+                    'default' => '2 этаж',
+                    'maxLength' => 40,
+                ],
+                'direction' => [
+                    'id' => 'direction',
+                    'type' => 'select',
+                    'label' => 'Направление',
+                    'required' => true,
+                    'default' => 'right',
+                    'options' => [
+                        ['value' => 'none', 'label' => 'Без стрелки'],
+                        ['value' => 'left', 'label' => 'Налево'],
+                        ['value' => 'right', 'label' => 'Направо'],
+                        ['value' => 'up', 'label' => 'Вверх'],
+                        ['value' => 'down', 'label' => 'Вниз'],
+                    ],
+                ],
+                'mount' => [
+                    'id' => 'mount',
+                    'type' => 'select',
+                    'label' => 'Крепление',
+                    'required' => false,
+                    'default' => 'wall',
+                    'options' => [
+                        ['value' => 'wall', 'label' => 'Настенное'],
+                        ['value' => 'ceiling', 'label' => 'Подвесное'],
+                        ['value' => 'door', 'label' => 'На дверь'],
+                    ],
+                ],
+                'size_variant' => [
+                    'id' => 'size_variant',
+                    'type' => 'select',
+                    'label' => 'Размер',
+                    'required' => true,
+                    'default' => '400x180',
+                    'options' => [
+                        ['value' => '400x180', 'label' => '400×180 мм'],
+                        ['value' => '600x220', 'label' => '600×220 мм'],
+                        ['value' => '800x280', 'label' => '800×280 мм'],
+                    ],
+                ],
+            ])),
+        ],
+        [
             'id' => 'presentation_deck',
             'label' => 'Презентация',
             'summary' => 'Обложка и brief встречи',
@@ -1836,7 +2030,7 @@ function constructor_bootstrap(): array
 {
     return [
         'title' => 'Лаборатория решений',
-        'description' => 'Шаблоны для типовых носителей: визитки, таблички, бейджи, сертификаты, бланки, digital-карточки, роллапы и презентации.',
+        'description' => 'Шаблоны для типовых носителей: визитки, таблички, инфостенды, навигация по помещениям, бейджи, сертификаты, бланки, digital-карточки, роллапы и презентации.',
         'items' => array_map(
             static fn(array $definition): array => [
                 'id' => (string) ($definition['id'] ?? ''),
@@ -2913,6 +3107,52 @@ function constructor_preset_definitions(array $definition): array
                 'summary' => 'Контрастный блок со знаком',
                 'description' => 'Когда нужен акцент на зоне и видимость с расстояния.',
                 'overrides' => ['variant' => 'zone', 'design_variant' => 'poster', 'background_style' => 'frame', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+            ],
+        ],
+        'information_stand' => [
+            [
+                'id' => 'reception',
+                'label' => 'Входная зона',
+                'summary' => 'Спокойлый стенд у входа',
+                'description' => 'Под режим работы, контакты и базовую навигацию по помещению.',
+                'overrides' => ['stand_type' => 'info', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'schedule',
+                'label' => 'График',
+                'summary' => 'Акцентный режим под время и правила',
+                'description' => 'Когда режим работы и регламент нужно считать быстро.',
+                'overrides' => ['stand_type' => 'schedule', 'design_variant' => 'signal', 'background_style' => 'band', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'memo',
+                'label' => 'Памятка',
+                'summary' => 'Контрастный стенд со знаком',
+                'description' => 'Для правил, схем и коротких инструкций в зоне ожидания.',
+                'overrides' => ['stand_type' => 'memo', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+            ],
+        ],
+        'room_navigation_sign' => [
+            [
+                'id' => 'corridor',
+                'label' => 'Коридор',
+                'summary' => 'Маршрутная табличка со стрелкой',
+                'description' => 'Базовый сценарий для проходов и развилок.',
+                'overrides' => ['direction' => 'right', 'design_variant' => 'signal', 'background_style' => 'corner', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'elevator',
+                'label' => 'Этаж',
+                'summary' => 'Спокойный режим у лифта и лестницы',
+                'description' => 'Собирает этаж и номер в более спокойной подаче.',
+                'overrides' => ['direction' => 'up', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'contrast',
+                'label' => 'Контрастный',
+                'summary' => 'Белый знак и плотный фон',
+                'description' => 'Когда табличка должна считываться с расстояния.',
+                'overrides' => ['direction' => 'left', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
         ],
         'presentation_deck' => [
@@ -4122,6 +4362,16 @@ function constructor_format_date(string $value): string
     return date('d.m.Y', $date);
 }
 
+function constructor_mount_labels(): array
+{
+    return [
+        'wall' => 'Настенное',
+        'door' => 'На дверь',
+        'desktop' => 'Настольное',
+        'ceiling' => 'Подвесное',
+    ];
+}
+
 function constructor_nameplate_variant_labels(): array
 {
     return [
@@ -4139,6 +4389,15 @@ function constructor_nameplate_direction_labels(): array
         'right' => 'Направо',
         'up' => 'Вверх',
         'down' => 'Вниз',
+    ];
+}
+
+function constructor_information_stand_type_labels(): array
+{
+    return [
+        'info' => 'Информационный',
+        'schedule' => 'Режим / график',
+        'memo' => 'Памятка / правила',
     ];
 }
 
@@ -4254,17 +4513,32 @@ function constructor_derived_payload(array $definition, array $input): array
         $variant = (string) ($input['variant'] ?? 'cabinet');
         $direction = (string) ($input['direction'] ?? 'none');
         $mount = (string) ($input['mount'] ?? 'wall');
-        $mountLabels = [
-            'wall' => 'Настенное',
-            'door' => 'На дверь',
-            'desktop' => 'Настольное',
-        ];
 
         return array_merge($base, [
             'variantLabel' => constructor_nameplate_variant_labels()[$variant] ?? 'Кабинетная',
             'directionLabel' => constructor_nameplate_direction_labels()[$direction] ?? 'Без стрелки',
-            'mountLabel' => $mountLabels[$mount] ?? 'Настенное',
+            'mountLabel' => constructor_mount_labels()[$mount] ?? 'Настенное',
             'roomNumber' => trim((string) ($input['room_number'] ?? '')),
+        ]);
+    }
+
+    if ($definitionId === 'information_stand') {
+        $standType = (string) ($input['stand_type'] ?? 'info');
+        return array_merge($base, [
+            'standTypeLabel' => constructor_information_stand_type_labels()[$standType] ?? 'Информационный',
+            'contactLine' => trim((string) ($input['contact_line'] ?? '')),
+            'sizeVariant' => trim((string) ($input['size_variant'] ?? '')),
+        ]);
+    }
+
+    if ($definitionId === 'room_navigation_sign') {
+        $direction = (string) ($input['direction'] ?? 'right');
+        $mount = (string) ($input['mount'] ?? 'wall');
+        return array_merge($base, [
+            'directionLabel' => constructor_nameplate_direction_labels()[$direction] ?? 'Направо',
+            'mountLabel' => constructor_mount_labels()[$mount] ?? 'Настенное',
+            'roomNumber' => trim((string) ($input['room_number'] ?? '')),
+            'floorLabel' => trim((string) ($input['floor_label'] ?? '')),
         ]);
     }
 
@@ -4505,11 +4779,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $roomNumber = trim((string) ($input['room_number'] ?? ''));
             $direction = (string) ($input['direction'] ?? 'none');
             $directionLabel = constructor_nameplate_direction_labels()[$direction] ?? 'Без стрелки';
-            $mountLabel = match ((string) ($input['mount'] ?? 'wall')) {
-                'door' => 'На дверь',
-                'desktop' => 'Настольное',
-                default => 'Настенное',
-            };
+            $mountLabel = constructor_mount_labels()[(string) ($input['mount'] ?? 'wall')] ?? 'Настенное';
             $arrowPath = match ($direction) {
                 'left' => '<path d="M1032 266H936M936 266l30-30M936 266l30 30" stroke="var(--ctor-accent)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
                 'right' => '<path d="M936 266H1032M1032 266l-30-30M1032 266l-30 30" stroke="var(--ctor-accent)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
@@ -4569,6 +4839,78 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                             constructor_svg_render_label(968, 348, $directionLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 150, 'minFontSize' => 14])
                         : '');
             }
+            break;
+
+        case 'information_stand':
+            $width = 1000;
+            $height = 1400;
+            $standType = (string) ($input['stand_type'] ?? 'info');
+            $standTypeLabel = constructor_information_stand_type_labels()[$standType] ?? 'Информационный';
+            $contactLine = trim((string) ($input['contact_line'] ?? ''));
+            $sectionTwoTitle = trim((string) ($input['section_two_title'] ?? ''));
+            $sectionTwoBody = trim((string) ($input['section_two_body'] ?? ''));
+            $body =
+                constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
+                '<rect x="40" y="40" width="920" height="1320" rx="36" class="card"/>' .
+                '<rect x="40" y="40" width="920" height="218" rx="36" fill="var(--ctor-lockup-fill)"/>' .
+                constructor_svg_render_brand_lockup(84, 84, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 196, 'logoHeight' => 32, 'markWidth' => 154, 'markHeight' => 100]) .
+                constructor_svg_render_label(900, 108, $standTypeLabel, 'badge', ['anchor' => 'end', 'maxWidth' => 310, 'minFontSize' => 16, 'fill' => $lockupInk]) .
+                constructor_svg_render_label(84, 264, 'Заголовок', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
+                constructor_svg_render_fitted_text(84, 310, (string) ($input['headline'] ?? ''), 'headline', 832, 224, 4, ['minFontSize' => 22, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
+                constructor_svg_render_fitted_text(84, 520, (string) ($input['subtitle'] ?? ''), 'subhead', 832, 92, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
+                '<rect x="84" y="610" width="380" height="462" rx="28" class="tone-soft"/>' .
+                constructor_svg_render_label(124, 662, (string) ($input['section_one_title'] ?? ''), 'badge', ['maxWidth' => 296, 'minFontSize' => 16]) .
+                constructor_svg_render_fitted_text(124, 724, (string) ($input['section_one_body'] ?? ''), 'body', 300, 284, 7, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
+                '<rect x="536" y="610" width="380" height="462" rx="28" class="card"/>' .
+                constructor_svg_render_label(576, 662, $sectionTwoTitle !== '' ? $sectionTwoTitle : 'Навигация', 'badge', ['maxWidth' => 296, 'minFontSize' => 16]) .
+                constructor_svg_render_fitted_text(576, 724, $sectionTwoBody !== '' ? $sectionTwoBody : 'Добавьте здесь правила зоны, схему помещения или контакты ответственного.', 'body', 300, 284, 7, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
+                '<rect x="84" y="1108" width="832" height="196" rx="30" class="card"/>' .
+                constructor_svg_render_label(128, 1162, 'Контакты и служебная строка', 'tiny', ['maxWidth' => 280, 'minFontSize' => 12]) .
+                constructor_svg_render_fitted_text(128, 1204, $contactLine !== '' ? $contactLine : $cityLabel, 'subhead', 548, 88, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
+                constructor_svg_render_label(872, 1162, (string) ($input['size_variant'] ?? '700x1000'), 'badge', ['anchor' => 'end', 'maxWidth' => 190, 'minFontSize' => 16]) .
+                constructor_svg_render_fitted_text(872, 1262, $cityLabel, 'small', 240, 54, 2, ['anchor' => 'end', 'minFontSize' => 13], 'end');
+            break;
+
+        case 'room_navigation_sign':
+            $width = 1320;
+            $height = 420;
+            $roomNumber = trim((string) ($input['room_number'] ?? ''));
+            $floorLabel = trim((string) ($input['floor_label'] ?? ''));
+            $direction = (string) ($input['direction'] ?? 'right');
+            $directionLabel = constructor_nameplate_direction_labels()[$direction] ?? 'Направо';
+            $mountLabel = constructor_mount_labels()[(string) ($input['mount'] ?? 'wall')] ?? 'Настенное';
+            $arrowPath = match ($direction) {
+                'left' => '<path d="M1168 252H1076M1076 252l28-28M1076 252l28 28" stroke="var(--ctor-accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'right' => '<path d="M1076 252H1168M1168 252l-28-28M1168 252l-28 28" stroke="var(--ctor-accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'up' => '<path d="M1122 302V210M1122 210l-28 28M1122 210l28 28" stroke="var(--ctor-accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                'down' => '<path d="M1122 206v92M1122 298l-28-28M1122 298l28-28" stroke="var(--ctor-accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+                default => '',
+            };
+            $destinationWidth = $direction === 'none' ? 988.0 : 780.0;
+            $body =
+                constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
+                '<rect x="30" y="30" width="1260" height="360" rx="28" class="card"/>' .
+                '<rect x="30" y="30" width="1260" height="108" rx="28" fill="var(--ctor-lockup-fill)"/>' .
+                constructor_svg_render_brand_lockup(64, 64, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 188, 'logoHeight' => 31, 'markWidth' => 126, 'markHeight' => 82]) .
+                constructor_svg_render_label(1224, 84, 'Навигация по помещениям', 'badge', ['anchor' => 'end', 'maxWidth' => 310, 'minFontSize' => 16, 'fill' => $lockupInk]) .
+                constructor_svg_render_fitted_text(64, 180, (string) ($input['destination'] ?? ''), 'headline', $destinationWidth, 148, 4, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
+                constructor_svg_render_fitted_text(64, 304, (string) ($input['route_hint'] ?? ''), 'subhead', $destinationWidth, 74, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
+                ($floorLabel !== ''
+                    ? '<rect x="64" y="330" width="182" height="52" rx="18" class="tone-soft"/>' .
+                        constructor_svg_render_label(155, 362, $floorLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 140, 'minFontSize' => 14])
+                    : '') .
+                ($roomNumber !== ''
+                    ? '<rect x="' . ($floorLabel !== '' ? '266' : '64') . '" y="330" width="164" height="52" rx="18" class="tone-soft"/>' .
+                        constructor_svg_render_label(($floorLabel !== '' ? 348 : 146), 362, $roomNumber, 'small', ['anchor' => 'middle', 'maxWidth' => 124, 'minFontSize' => 14])
+                    : '') .
+                constructor_svg_render_label(64, 152, $mountLabel, 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
+                constructor_svg_render_label(930, 356, (string) ($input['size_variant'] ?? '400x180'), 'badge', ['maxWidth' => 170, 'minFontSize' => 16]) .
+                constructor_svg_render_fitted_text(930, 384, $cityLabel, 'small', 180, 24, 1, ['minFontSize' => 13]) .
+                ($direction !== 'none'
+                    ? '<rect x="1026" y="172" width="192" height="118" rx="24" class="tone-soft"/>' .
+                        $arrowPath .
+                        constructor_svg_render_label(1122, 334, $directionLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 150, 'minFontSize' => 14])
+                    : '');
             break;
 
         case 'presentation_deck':
