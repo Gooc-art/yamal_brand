@@ -968,6 +968,47 @@ foreach ($overflowCasePayloads as $definitionId => $payload) {
     assert_true(!str_contains($content, '…'), $definitionId . ' svg artifact avoids truncating representative long copy');
 }
 
+$compactInformationStandDefinition = constructor_definition_by_id('information_stand');
+assert_true($compactInformationStandDefinition !== null, 'compact information stand definition exists');
+$compactInformationStandPayload = constructor_normalize_input($compactInformationStandDefinition, [
+    'city' => 'салехард',
+    'stand_type' => 'schedule',
+    'headline' => 'График приёма и порядок выдачи брендированных материалов для сотрудников и подрядчиков',
+    'subtitle' => 'Короткий формат стенда не должен рвать подписи, карточки и нижнюю контактную строку даже на длинных значениях',
+    'section_one_title' => 'График посещения и регистрации',
+    'section_one_body' => "Пн-Пт 08:30-18:00\nСб по записи\nПерерыв 12:30-13:30",
+    'section_two_title' => 'Контакты и навигация по выдаче',
+    'section_two_body' => "Стойка выдачи — 1 этаж\nПодрядчики — окно 2\nСогласование — кабинет 214Б",
+    'contact_line' => 'brand@yamal.ru • +7 34922 00-000 • yamal.brand/office',
+    'size_variant' => 'a4x2',
+]);
+$compactInformationStandSvg = constructor_svg_artifact($compactInformationStandDefinition, $compactInformationStandPayload);
+assert_true($compactInformationStandSvg !== null, 'compact information stand svg artifact exists');
+$compactInformationStandContent = (string) ($compactInformationStandSvg['content'] ?? '');
+assert_true(str_contains($compactInformationStandContent, '2 кармана A4'), 'compact information stand keeps the selected pocket label');
+assert_true(str_contains($compactInformationStandContent, 'brand@yamal.ru'), 'compact information stand keeps the bottom contact line');
+assert_true(!str_contains($compactInformationStandContent, '…'), 'compact information stand avoids truncating long footer and contact copy');
+
+$compactInformationStandTitleFit = constructor_svg_fit_text_block(
+    'Контакты и навигация по выдаче',
+    'tiny',
+    212,
+    24,
+    2,
+    ['baseFontSize' => 16, 'minFontSize' => 9, 'widthSafety' => 0.86, 'heightSafety' => 0.88]
+);
+assert_true(($compactInformationStandTitleFit['truncated'] ?? true) === false, 'compact information stand title fit keeps the full section label inside the short footer card');
+
+$compactInformationStandContactFit = constructor_svg_fit_text_block(
+    'brand@yamal.ru • +7 34922 00-000 • yamal.brand/office',
+    'tiny',
+    500,
+    32,
+    3,
+    ['baseFontSize' => 17, 'minFontSize' => 9, 'widthSafety' => 0.88, 'heightSafety' => 0.88, 'anchor' => 'middle']
+);
+assert_true(($compactInformationStandContactFit['truncated'] ?? true) === false, 'compact information stand contact fit keeps the full bottom line inside the reserved strip');
+
 $badgeNameFit = constructor_svg_fit_text_block(
     'Александрова-Виноградова Екатерина Константиновна-Петрова',
     'headline',

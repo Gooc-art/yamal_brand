@@ -5000,39 +5000,83 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $contactLine = trim((string) ($input['contact_line'] ?? ''));
             $sectionTwoTitle = trim((string) ($input['section_two_title'] ?? ''));
             $sectionTwoBody = trim((string) ($input['section_two_body'] ?? ''));
-            $margin = min(36.0, max(18.0, min($width, $height) * 0.045));
-            $gap = min(22.0, max(10.0, min($width, $height) * 0.015));
-            $headerHeight = min(156.0, max(60.0, $height * 0.11));
-            $titleHeight = min(196.0, max(56.0, $height * 0.14));
-            $footerHeight = min(188.0, max(72.0, $height * 0.16));
+            $compactStand = $height <= 620.0 || $width <= 540.0;
+            $denseStand = $height <= 520.0;
+            $margin = $compactStand
+                ? min(28.0, max(16.0, min($width, $height) * 0.04))
+                : min(36.0, max(18.0, min($width, $height) * 0.045));
+            $gap = $compactStand
+                ? min(16.0, max(8.0, min($width, $height) * 0.014))
+                : min(22.0, max(10.0, min($width, $height) * 0.015));
+            $headerHeight = $compactStand
+                ? min(110.0, max(56.0, $height * 0.105))
+                : min(156.0, max(60.0, $height * 0.11));
+            $titleHeight = $compactStand
+                ? min(124.0, max(52.0, $height * 0.125))
+                : min(196.0, max(56.0, $height * 0.14));
+            $footerHeight = $compactStand
+                ? min(144.0, max(82.0, $height * 0.19))
+                : min(188.0, max(72.0, $height * 0.16));
             $headerRadius = min(30.0, max(18.0, $headerHeight * 0.28));
             $infoCardWidth = max(120.0, (($width - ($margin * 2)) - $gap) / 2);
             $pocketAreaY = $margin + $headerHeight + $gap + $titleHeight + $gap;
-            $pocketAreaHeight = max(96.0, $height - $pocketAreaY - $gap - $footerHeight - $margin);
+            $bottomNoteHeight = $compactStand
+                ? max(28.0, min(44.0, $height * 0.065))
+                : max(24.0, min(40.0, $height * 0.05));
+            $pocketAreaHeight = max(
+                $compactStand ? 88.0 : 96.0,
+                $height - $pocketAreaY - $gap - $footerHeight - $gap - $bottomNoteHeight - $margin
+            );
             $footerY = $pocketAreaY + $pocketAreaHeight + $gap;
+            $bottomNoteY = $footerY + $footerHeight + $gap;
             $brandLogoWidth = min(196.0, max(116.0, $width * 0.26));
             $brandLogoHeight = max(24.0, $brandLogoWidth * 0.16);
             $brandMarkWidth = min(154.0, max(94.0, $width * 0.21));
             $brandMarkHeight = max(60.0, $brandMarkWidth * 0.65);
-            $footerBodyHeight = max(30.0, $footerHeight - 62.0);
+            $footerTitleHeight = $compactStand
+                ? min(32.0, max(18.0, $footerHeight * 0.24))
+                : min(44.0, max(26.0, $footerHeight * 0.28));
+            $footerBodyHeight = max($compactStand ? 18.0 : 22.0, $footerHeight - $footerTitleHeight - ($compactStand ? 20.0 : 24.0));
+            $headerBadgeWidth = min($compactStand ? 248.0 : 380.0, $width * ($compactStand ? 0.46 : 0.42));
+            $headerSizeWidth = min($compactStand ? 172.0 : 240.0, $width * ($compactStand ? 0.34 : 0.32));
+            $headlineClass = $compactStand ? 'subhead' : 'headline';
+            $headlineOptions = $compactStand
+                ? ['baseFontSize' => 34, 'minFontSize' => 12, 'widthSafety' => 0.8, 'heightSafety' => 0.84]
+                : ['minFontSize' => 15, 'widthSafety' => 0.82, 'heightSafety' => 0.84];
+            $subtitleClass = $compactStand ? 'small' : 'subhead';
+            $subtitleOptions = $compactStand
+                ? ['baseFontSize' => 20, 'minFontSize' => 10, 'widthSafety' => 0.86, 'heightSafety' => 0.88]
+                : ['minFontSize' => 11, 'widthSafety' => 0.88, 'heightSafety' => 0.9];
+            $footerTitleClass = $compactStand ? 'tiny' : 'badge';
+            $footerTitleOptions = $compactStand
+                ? ['baseFontSize' => 16, 'minFontSize' => 9, 'widthSafety' => 0.86, 'heightSafety' => 0.88]
+                : ['minFontSize' => 10, 'widthSafety' => 0.9, 'heightSafety' => 0.9];
+            $footerBodyClass = $denseStand ? 'tiny' : 'small';
+            $footerBodyOptions = $denseStand
+                ? ['baseFontSize' => 15, 'minFontSize' => 9, 'widthSafety' => 0.84, 'heightSafety' => 0.88]
+                : ['baseFontSize' => $compactStand ? 18 : 24, 'minFontSize' => $compactStand ? 9 : 10, 'widthSafety' => 0.86, 'heightSafety' => 0.9];
+            $contactClass = $compactStand ? 'tiny' : 'small';
+            $contactOptions = $compactStand
+                ? ['baseFontSize' => 17, 'minFontSize' => 9, 'widthSafety' => 0.88, 'heightSafety' => 0.88, 'anchor' => 'middle']
+                : ['anchor' => 'middle', 'minFontSize' => 10, 'widthSafety' => 0.92, 'heightSafety' => 0.9];
             $body =
                 constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
                 '<rect x="' . $margin . '" y="' . $margin . '" width="' . ($width - ($margin * 2)) . '" height="' . ($height - ($margin * 2)) . '" rx="36" class="card"/>' .
                 '<rect x="' . $margin . '" y="' . $margin . '" width="' . ($width - ($margin * 2)) . '" height="' . $headerHeight . '" rx="' . $headerRadius . '" fill="var(--ctor-lockup-fill)"/>' .
                 constructor_svg_render_brand_lockup($margin + 22.0, $margin + 18.0, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => $brandLogoWidth, 'logoHeight' => $brandLogoHeight, 'markWidth' => $brandMarkWidth, 'markHeight' => $brandMarkHeight]) .
-                constructor_svg_render_label($width - $margin - 24.0, $margin + 34.0, $pocketLabel, 'badge', ['anchor' => 'end', 'maxWidth' => min(380.0, $width * 0.42), 'minFontSize' => 15, 'fill' => $lockupInk]) .
-                constructor_svg_render_label($width - $margin - 24.0, $margin + 66.0, $sizeLabel, 'small', ['anchor' => 'end', 'maxWidth' => min(240.0, $width * 0.32), 'minFontSize' => 13, 'fill' => $lockupInk]) .
-                constructor_svg_render_label($margin, $margin + $headerHeight + 18.0, $standTypeLabel, 'tiny', ['maxWidth' => min(260.0, $width * 0.42), 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + 52.0, (string) ($input['headline'] ?? ''), 'headline', $width - ($margin * 2), max(58.0, $titleHeight * 0.62), 3, ['minFontSize' => 18, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
-                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + max(86.0, $titleHeight * 0.72), (string) ($input['subtitle'] ?? ''), 'subhead', $width - ($margin * 2), max(28.0, $titleHeight * 0.34), 2, ['minFontSize' => 13, 'widthSafety' => 0.88]) .
+                constructor_svg_render_fitted_text($width - $margin - 20.0, $margin + 28.0, $pocketLabel, $compactStand ? 'small' : 'badge', $headerBadgeWidth, $compactStand ? 30.0 : 36.0, 2, ['anchor' => 'end', 'baseFontSize' => $compactStand ? 20 : 28, 'minFontSize' => 9, 'fill' => $lockupInk, 'widthSafety' => 0.88, 'heightSafety' => 0.88], 'end') .
+                constructor_svg_render_fitted_text($width - $margin - 20.0, $margin + ($compactStand ? 54.0 : 66.0), $sizeLabel, $compactStand ? 'tiny' : 'small', $headerSizeWidth, $compactStand ? 24.0 : 30.0, 2, ['anchor' => 'end', 'baseFontSize' => $compactStand ? 15 : 18, 'minFontSize' => 9, 'fill' => $lockupInk, 'widthSafety' => 0.88, 'heightSafety' => 0.88], 'end') .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + 16.0, $standTypeLabel, 'tiny', min(260.0, $width * 0.42), 24.0, 2, ['baseFontSize' => $compactStand ? 16 : 20, 'minFontSize' => 10, 'widthSafety' => 0.86, 'heightSafety' => 0.88]) .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + ($compactStand ? 36.0 : 50.0), (string) ($input['headline'] ?? ''), $headlineClass, $width - ($margin * 2), max(40.0, $titleHeight * ($compactStand ? 0.5 : 0.58)), $compactStand ? 4 : 3, $headlineOptions) .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + max($compactStand ? 62.0 : 82.0, $titleHeight * ($compactStand ? 0.64 : 0.68)), (string) ($input['subtitle'] ?? ''), $subtitleClass, $width - ($margin * 2), max(20.0, $titleHeight * ($compactStand ? 0.24 : 0.3)), $compactStand ? 3 : 2, $subtitleOptions) .
                 constructor_svg_render_information_stand_pockets($margin, $pocketAreaY, $width - ($margin * 2), $pocketAreaHeight, $sizeDefinition) .
                 '<rect x="' . $margin . '" y="' . $footerY . '" width="' . $infoCardWidth . '" height="' . $footerHeight . '" rx="24" class="tone-soft"/>' .
-                constructor_svg_render_label($margin + 18.0, $footerY + 30.0, (string) ($input['section_one_title'] ?? ''), 'badge', ['maxWidth' => $infoCardWidth - 36.0, 'minFontSize' => 14]) .
-                constructor_svg_render_fitted_text($margin + 18.0, $footerY + 58.0, (string) ($input['section_one_body'] ?? ''), 'body', $infoCardWidth - 36.0, $footerBodyHeight, $height >= 900 ? 4 : 3, ['minFontSize' => 12, 'widthSafety' => 0.88]) .
+                constructor_svg_render_fitted_text($margin + 16.0, $footerY + ($compactStand ? 18.0 : 28.0), (string) ($input['section_one_title'] ?? ''), $footerTitleClass, $infoCardWidth - 32.0, $footerTitleHeight, 2, $footerTitleOptions) .
+                constructor_svg_render_fitted_text($margin + 16.0, $footerY + $footerTitleHeight + ($compactStand ? 14.0 : 20.0), (string) ($input['section_one_body'] ?? ''), $footerBodyClass, $infoCardWidth - 32.0, $footerBodyHeight, $denseStand ? 3 : ($height >= 900 ? 5 : 4), $footerBodyOptions) .
                 '<rect x="' . ($margin + $infoCardWidth + $gap) . '" y="' . $footerY . '" width="' . $infoCardWidth . '" height="' . $footerHeight . '" rx="24" class="card"/>' .
-                constructor_svg_render_label($margin + $infoCardWidth + $gap + 18.0, $footerY + 30.0, $sectionTwoTitle !== '' ? $sectionTwoTitle : 'Контакты', 'badge', ['maxWidth' => $infoCardWidth - 36.0, 'minFontSize' => 14]) .
-                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 18.0, $footerY + 58.0, $sectionTwoBody !== '' ? $sectionTwoBody : ($contactLine !== '' ? $contactLine : $cityLabel), 'body', $infoCardWidth - 36.0, $footerBodyHeight, $height >= 900 ? 4 : 3, ['minFontSize' => 12, 'widthSafety' => 0.88]) .
-                constructor_svg_render_fitted_text($width / 2, $height - max(12.0, $margin * 0.45), $contactLine !== '' ? $contactLine : $cityLabel, 'small', $width - ($margin * 2), 26.0, 1, ['anchor' => 'middle', 'minFontSize' => 12], 'middle');
+                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 16.0, $footerY + ($compactStand ? 18.0 : 28.0), $sectionTwoTitle !== '' ? $sectionTwoTitle : 'Контакты', $footerTitleClass, $infoCardWidth - 32.0, $footerTitleHeight, 2, $footerTitleOptions) .
+                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 16.0, $footerY + $footerTitleHeight + ($compactStand ? 14.0 : 20.0), $sectionTwoBody !== '' ? $sectionTwoBody : ($contactLine !== '' ? $contactLine : $cityLabel), $footerBodyClass, $infoCardWidth - 32.0, $footerBodyHeight, $denseStand ? 3 : ($height >= 900 ? 5 : 4), $footerBodyOptions) .
+                constructor_svg_render_fitted_text($width / 2, $bottomNoteY + max(12.0, $bottomNoteHeight * 0.48), $contactLine !== '' ? $contactLine : $cityLabel, $contactClass, $width - ($margin * 2), $bottomNoteHeight, $compactStand ? 3 : 2, $contactOptions, 'middle');
             break;
 
         case 'room_navigation_sign':
