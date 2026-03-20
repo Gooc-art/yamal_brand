@@ -28,6 +28,10 @@ const {
   normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
+  constructorArtifactSupportsPngExport,
+  constructorArtifactPngFilename,
+  buildConstructorPngDownloadEntry,
+  resolveConstructorSvgDownloadMarkup,
   computeRevealScrollLeft,
   initialWorkspaceCollapsed,
   isWorkspaceNavigationAction,
@@ -403,6 +407,56 @@ test('buildConstructorPreviewLayout adapts preview profile by artifact type and 
       { previewType: 'html', content: '<html></html>' },
     ).profile,
     'brief',
+  );
+});
+
+test('constructor png export helpers keep derived download grounded on svg artifacts', () => {
+  const svgArtifact = {
+    id: 'preview-svg',
+    label: 'SVG-шаблон',
+    filename: 'navigation-preview.svg',
+    previewType: 'svg',
+    content: '<svg viewBox="0 0 1320 420"></svg>',
+  };
+  const jsonArtifact = {
+    id: 'brief-json',
+    label: 'JSON brief',
+    filename: 'navigation-brief.json',
+    previewType: 'json',
+    content: '{"ok":true}',
+  };
+
+  assert.equal(constructorArtifactSupportsPngExport(svgArtifact), true);
+  assert.equal(constructorArtifactSupportsPngExport(jsonArtifact), false);
+  assert.equal(constructorArtifactPngFilename(svgArtifact), 'navigation-preview.png');
+  assert.equal(constructorArtifactPngFilename('presentation-preview'), 'presentation-preview.png');
+  assert.deepEqual(buildConstructorPngDownloadEntry(svgArtifact), {
+    id: 'preview-svg-png',
+    action: 'download-artifact-png',
+    artifactId: 'preview-svg',
+    label: 'PNG-шаблон',
+    filename: 'navigation-preview.png',
+    note: 'Растровая выгрузка из текущего SVG',
+  });
+  assert.equal(buildConstructorPngDownloadEntry(jsonArtifact), null);
+});
+
+test('svg download markup prefers current preview state when live styling changed locally', () => {
+  const svgArtifact = {
+    id: 'preview-svg',
+    label: 'SVG-шаблон',
+    filename: 'badge-preview.svg',
+    previewType: 'svg',
+    content: '<svg viewBox="0 0 720 1120"><rect fill="#111111"/></svg>',
+  };
+
+  assert.equal(
+    resolveConstructorSvgDownloadMarkup(svgArtifact, '<svg viewBox="0 0 720 1120"><rect fill="#ffffff"/></svg>'),
+    '<svg viewBox="0 0 720 1120"><rect fill="#ffffff"/></svg>',
+  );
+  assert.equal(
+    resolveConstructorSvgDownloadMarkup(svgArtifact, ''),
+    '<svg viewBox="0 0 720 1120"><rect fill="#111111"/></svg>',
   );
 });
 

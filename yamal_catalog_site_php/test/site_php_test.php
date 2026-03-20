@@ -224,12 +224,14 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeWorkspaceErrorMessage'), 'frontend exposes readable workspace error message normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPreviewLayout'), 'frontend contains constructor preview layout helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'readConstructorPreviewBoxMetrics'), 'frontend contains preview box metrics helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'resolveConstructorSvgDownloadMarkup'), 'frontend resolves svg download from current preview state');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'constructor-summary-panel'), 'frontend removed verbose constructor summary panel');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, "item.artifactKind === 'brief' ? 'SVG + brief' : 'SVG шаблон'"), 'frontend removed verbose solution artifact pills');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'openConstructor'), 'frontend contains constructor opener');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructor('), 'frontend contains constructor build action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'reset-constructor'), 'frontend contains constructor reset action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'download-artifact'), 'frontend contains constructor artifact download action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'download-artifact-png'), 'frontend contains constructor png download action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-form'), 'frontend renders constructor form');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildBrandRouteMark'), 'frontend derives route marks from real catalog sections');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'inferBrandRouteTone'), 'frontend derives route tones from real catalog sections');

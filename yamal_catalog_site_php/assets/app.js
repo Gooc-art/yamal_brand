@@ -445,6 +445,63 @@ function buildConstructorPreviewLayout(definition, artifact) {
   };
 }
 
+function constructorArtifactSupportsPngExport(artifact) {
+  return String(artifact?.previewType || '').trim() === 'svg'
+    && /<svg[\s>]/i.test(String(artifact?.content || ''));
+}
+
+function constructorArtifactPngLabel(artifact) {
+  const label = String(artifact?.label || '').trim();
+  if (!label) {
+    return 'PNG';
+  }
+  if (/svg/iu.test(label)) {
+    return label.replace(/svg/iu, 'PNG');
+  }
+  return `PNG • ${label}`;
+}
+
+function constructorArtifactPngFilename(artifactOrFilename) {
+  const source = typeof artifactOrFilename === 'string'
+    ? artifactOrFilename
+    : artifactOrFilename?.filename;
+  const filename = String(source || '').trim() || 'artifact';
+  if (/\.[a-z0-9]{2,8}$/i.test(filename)) {
+    return filename.replace(/\.[a-z0-9]{2,8}$/i, '.png');
+  }
+  return `${filename}.png`;
+}
+
+function buildConstructorPngDownloadEntry(artifactRef, sourceArtifact = null) {
+  const reference = artifactRef && typeof artifactRef === 'object' ? artifactRef : {};
+  const resolvedSource = sourceArtifact && typeof sourceArtifact === 'object'
+    ? sourceArtifact
+    : reference;
+  const artifactId = String(reference?.id || resolvedSource?.id || '').trim();
+  if (!artifactId || !constructorArtifactSupportsPngExport(resolvedSource)) {
+    return null;
+  }
+  return {
+    id: `${artifactId}-png`,
+    action: 'download-artifact-png',
+    artifactId,
+    label: constructorArtifactPngLabel(reference?.label ? reference : resolvedSource),
+    filename: constructorArtifactPngFilename(reference?.filename || resolvedSource?.filename || ''),
+    note: 'Растровая выгрузка из текущего SVG',
+  };
+}
+
+function resolveConstructorSvgDownloadMarkup(artifact, previewMarkup = '') {
+  if (!constructorArtifactSupportsPngExport(artifact)) {
+    return String(artifact?.content || '');
+  }
+  const previewSource = String(previewMarkup || '').trim();
+  if (previewSource) {
+    return previewSource;
+  }
+  return String(artifact?.content || '');
+}
+
 function buildConstructorChoicePreview(fieldId, option) {
   const token = String(option?.mark || option?.label || option?.value || '').trim().slice(0, 10);
   if (fieldId === 'palette_tone') {
@@ -1218,6 +1275,10 @@ if (typeof module !== 'undefined' && module.exports) {
     normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
+    constructorArtifactSupportsPngExport,
+    constructorArtifactPngFilename,
+    buildConstructorPngDownloadEntry,
+    resolveConstructorSvgDownloadMarkup,
     computeRevealScrollLeft,
     initialWorkspaceCollapsed,
     isWorkspaceNavigationAction,
@@ -3534,7 +3595,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     `;
   }
 
-  function renderConstructorHandoff(handoff) {
+  function renderConstructorHandoff(handoff, sourceArtifacts = []) {
     const normalized = normalizeConstructorHandoff(handoff);
     if (!normalized.generated) {
       return '';
@@ -3543,6 +3604,10 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     if (!packages.length) {
       return '';
     }
+    const sourceArtifactMap = new Map(
+      (Array.isArray(sourceArtifacts) ? sourceArtifacts : [])
+        .map((artifact) => [String(artifact?.id || '').trim(), artifact]),
+    );
 
     return `
       <section class="constructor-panel constructor-handoff-panel">
@@ -3567,13 +3632,26 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
                 <div class="constructor-handoff-block">
                   <div class="constructor-handoff-label">Артефакты</div>
                   <div class="constructor-downloads constructor-handoff-downloads">
-                    ${pack.artifacts.map((artifact) => `
-                      <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
-                        <strong>${escapeHtml(artifact.label)}</strong>
-                        <span>${escapeHtml(artifact.filename)}</span>
-                        <small>${escapeHtml(artifact.note || formatDataSize(artifact.sizeBytes))}</small>
-                      </button>
-                    `).join('')}
+                    ${pack.artifacts.map((artifact) => {
+                      const pngEntry = buildConstructorPngDownloadEntry(
+                        artifact,
+                        sourceArtifactMap.get(String(artifact?.id || '').trim()),
+                      );
+                      return `
+                        <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
+                          <strong>${escapeHtml(artifact.label)}</strong>
+                          <span>${escapeHtml(artifact.filename)}</span>
+                          <small>${escapeHtml(artifact.note || formatDataSize(artifact.sizeBytes))}</small>
+                        </button>
+                        ${pngEntry ? `
+                          <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="${escapeHtml(pngEntry.action)}" data-artifact-id="${escapeHtml(pngEntry.artifactId)}">
+                            <strong>${escapeHtml(pngEntry.label)}</strong>
+                            <span>${escapeHtml(pngEntry.filename)}</span>
+                            <small>${escapeHtml(pngEntry.note)}</small>
+                          </button>
+                        ` : ''}
+                      `;
+                    }).join('')}
                   </div>
                 </div>
               ` : ''}
@@ -3689,19 +3767,29 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
                 ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
               </div>
               <div class="constructor-downloads">
-                ${artifacts.map((artifact) => `
-                  <button type="button" class="constructor-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
-                    <strong>${escapeHtml(artifact.label || 'Артефакт')}</strong>
-                    <span>${escapeHtml(artifact.filename || '')}</span>
-                    <small>${escapeHtml(formatDataSize(artifact.sizeBytes))} • Нажмите, чтобы скачать</small>
-                  </button>
-                `).join('')}
+                ${artifacts.map((artifact) => {
+                  const pngEntry = buildConstructorPngDownloadEntry(artifact);
+                  return `
+                    <button type="button" class="constructor-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
+                      <strong>${escapeHtml(artifact.label || 'Артефакт')}</strong>
+                      <span>${escapeHtml(artifact.filename || '')}</span>
+                      <small>${escapeHtml(formatDataSize(artifact.sizeBytes))} • Нажмите, чтобы скачать</small>
+                    </button>
+                    ${pngEntry ? `
+                      <button type="button" class="constructor-download-card" data-action="${escapeHtml(pngEntry.action)}" data-artifact-id="${escapeHtml(pngEntry.artifactId)}">
+                        <strong>${escapeHtml(pngEntry.label)}</strong>
+                        <span>${escapeHtml(pngEntry.filename)}</span>
+                        <small>${escapeHtml(pngEntry.note)}</small>
+                      </button>
+                    ` : ''}
+                  `;
+                }).join('')}
               </div>
             </div>
           </section>
         </div>
 
-        ${renderConstructorHandoff(payload?.handoff)}
+        ${renderConstructorHandoff(payload?.handoff, artifacts)}
 
         ${renderConstructorRecommendations(payload?.recommendations, generated)}
       </div>
@@ -4241,19 +4329,158 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     return Array.isArray(state.current?.payload?.artifacts) ? state.current.payload.artifacts : [];
   }
 
-  function downloadArtifact(artifact) {
-    if (!artifact || !artifact.content) {
+  function downloadArtifactBlob(blob, filename) {
+    if (!blob) {
       return;
     }
-    const blob = new Blob([artifact.content], { type: artifact.mimeType || 'application/octet-stream' });
     const objectUrl = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = objectUrl;
-    anchor.download = artifact.filename || 'artifact';
+    anchor.download = filename || 'artifact';
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  }
+
+  function downloadArtifact(artifact) {
+    if (!artifact || !artifact.content) {
+      return;
+    }
+    const content = constructorArtifactSupportsPngExport(artifact)
+      ? resolveCurrentConstructorSvgMarkup(artifact)
+      : artifact.content;
+    downloadArtifactBlob(
+      new Blob([content], { type: artifact.mimeType || 'application/octet-stream' }),
+      artifact.filename || 'artifact',
+    );
+  }
+
+  function normalizeSvgMarkupForPngExport(markup) {
+    let source = String(markup || '').trim();
+    if (!source || !/<svg[\s>]/i.test(source)) {
+      return '';
+    }
+    source = source.replace(/<svg\b([^>]*)>/i, (match, attrs) => {
+      let nextAttrs = String(attrs || '');
+      if (!/\bxmlns=/.test(nextAttrs)) {
+        nextAttrs += ' xmlns="http://www.w3.org/2000/svg"';
+      }
+      if (!/\bxmlns:xlink=/.test(nextAttrs)) {
+        nextAttrs += ' xmlns:xlink="http://www.w3.org/1999/xlink"';
+      }
+      return `<svg${nextAttrs}>`;
+    });
+    return source;
+  }
+
+  function readCurrentConstructorPreviewSvgMarkup() {
+    const previewSvg = document.querySelector('.constructor-preview-visual svg');
+    if (!previewSvg || typeof XMLSerializer === 'undefined') {
+      return '';
+    }
+    try {
+      const serializer = new XMLSerializer();
+      return normalizeSvgMarkupForPngExport(serializer.serializeToString(previewSvg));
+    } catch (error) {
+      console.error(error);
+      return '';
+    }
+  }
+
+  function resolveCurrentConstructorSvgMarkup(artifact) {
+    return normalizeSvgMarkupForPngExport(
+      resolveConstructorSvgDownloadMarkup(artifact, readCurrentConstructorPreviewSvgMarkup()),
+    );
+  }
+
+  function constructorPngExportDimensions(markup, maxSide = 2400) {
+    const metrics = readConstructorPreviewBoxMetrics(markup);
+    const width = metrics.width > 0 ? metrics.width : 1200;
+    const height = metrics.height > 0 ? metrics.height : 675;
+    const longestSide = Math.max(width, height, 1);
+    const scale = Math.max(1, Math.min(2, maxSide / longestSide));
+    return {
+      width: Math.max(1, Math.round(width * scale)),
+      height: Math.max(1, Math.round(height * scale)),
+    };
+  }
+
+  function loadImageFromObjectUrl(objectUrl) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('png_export_image_error'));
+      image.src = objectUrl;
+    });
+  }
+
+  function canvasToBlob(canvas, type = 'image/png') {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+        reject(new Error('png_export_blob_error'));
+      }, type);
+    });
+  }
+
+  async function rasterizeSvgArtifactToPngBlob(artifact) {
+    if (!constructorArtifactSupportsPngExport(artifact)) {
+      throw new Error('png_export_not_supported');
+    }
+    const svgMarkup = resolveCurrentConstructorSvgMarkup(artifact);
+    if (!svgMarkup) {
+      throw new Error('png_export_empty_svg');
+    }
+    const { width, height } = constructorPngExportDimensions(svgMarkup);
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    try {
+      const image = await loadImageFromObjectUrl(svgUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('png_export_canvas_unavailable');
+      }
+      context.clearRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+      return await canvasToBlob(canvas, 'image/png');
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
+  async function downloadArtifactAsPng(artifact, trigger = null) {
+    if (!constructorArtifactSupportsPngExport(artifact)) {
+      return;
+    }
+    const button = trigger && typeof trigger.setAttribute === 'function'
+      ? trigger
+      : null;
+    if (button) {
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+    }
+    try {
+      const pngBlob = await rasterizeSvgArtifactToPngBlob(artifact);
+      downloadArtifactBlob(pngBlob, constructorArtifactPngFilename(artifact));
+    } catch (error) {
+      console.error(error);
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert('Не удалось выгрузить PNG из текущего SVG. Попробуйте повторить ещё раз или скачайте SVG.');
+      }
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+      }
+    }
   }
 
   function goBack() {
@@ -4338,6 +4565,13 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       const artifact = currentConstructorArtifacts().find((item) => String(item?.id || '') === String(target.dataset.artifactId || ''));
       if (artifact) {
         downloadArtifact(artifact);
+      }
+      return;
+    }
+    if (action === 'download-artifact-png') {
+      const artifact = currentConstructorArtifacts().find((item) => String(item?.id || '') === String(target.dataset.artifactId || ''));
+      if (artifact) {
+        void downloadArtifactAsPng(artifact, target);
       }
       return;
     }
