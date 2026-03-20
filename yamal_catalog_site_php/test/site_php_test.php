@@ -632,9 +632,11 @@ $nameplateSvg = constructor_svg_artifact($nameplateDefinition, constructor_norma
     'direction' => 'right',
 ]));
 assert_true($nameplateSvg !== null, 'nameplate svg artifact exists');
-assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Навигационная'), 'nameplate svg exposes variant label');
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'B-204'), 'nameplate svg exposes room number');
-assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'Направо'), 'nameplate svg exposes direction label');
+assert_true(!str_contains((string) ($nameplateSvg['content'] ?? ''), 'Навигационная'), 'nameplate svg hides variant label from the visible plate');
+assert_true(!str_contains((string) ($nameplateSvg['content'] ?? ''), 'Направо'), 'nameplate svg hides direction copy from the visible plate');
+assert_true(!str_contains((string) ($nameplateSvg['content'] ?? ''), 'Номер'), 'nameplate svg hides the room number caption');
+assert_true(!str_contains((string) ($nameplateSvg['content'] ?? ''), '400x160'), 'nameplate svg hides size metadata from the visible plate');
 assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'font-size:'), 'nameplate svg uses adaptive text sizing');
 
 $informationStandDefinition = constructor_definition_by_id('information_stand');
@@ -687,10 +689,11 @@ $informationStandSvg = constructor_svg_artifact($informationStandDefinition, con
     'size_variant' => 'a4x4',
 ]));
 assert_true($informationStandSvg !== null, 'information stand svg artifact exists');
-assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Режим / график'), 'information stand svg exposes stand type label');
-assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), '4 кармана A4'), 'information stand svg exposes pocket count label');
-assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), '540×800 мм'), 'information stand svg exposes real stand size label');
-assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Карман 4'), 'information stand svg exposes fixed A4 pocket grid');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Центр поддержки предпринимательства'), 'information stand svg keeps the editable headline');
+assert_true(!str_contains((string) ($informationStandSvg['content'] ?? ''), 'Режим / график'), 'information stand svg hides stand type label');
+assert_true(!str_contains((string) ($informationStandSvg['content'] ?? ''), '4 кармана A4'), 'information stand svg hides pocket count metadata');
+assert_true(!str_contains((string) ($informationStandSvg['content'] ?? ''), '540×800 мм'), 'information stand svg hides physical size metadata');
+assert_true(!str_contains((string) ($informationStandSvg['content'] ?? ''), 'Карман 4'), 'information stand svg hides internal pocket captions');
 assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'font-size:'), 'information stand svg uses adaptive text sizing');
 
 $roomNavigationDefinition = constructor_definition_by_id('room_navigation_sign');
@@ -730,9 +733,13 @@ $roomNavigationSvg = constructor_svg_artifact($roomNavigationDefinition, constru
     'size_variant' => '600x220',
 ]));
 assert_true($roomNavigationSvg !== null, 'room navigation sign svg artifact exists');
-assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Навигация по помещениям'), 'room navigation sign svg exposes purpose label');
+assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Переговорные и'), 'room navigation sign svg keeps the first line of the editable destination');
+assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'проектные офисы'), 'room navigation sign svg keeps the second line of the editable destination');
 assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), '3 этаж'), 'room navigation sign svg exposes floor label');
-assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Налево'), 'room navigation sign svg exposes direction label');
+assert_true(!str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Навигация по помещениям'), 'room navigation sign svg hides purpose label');
+assert_true(!str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Налево'), 'room navigation sign svg hides direction label');
+assert_true(!str_contains((string) ($roomNavigationSvg['content'] ?? ''), '600x220'), 'room navigation sign svg hides size metadata');
+assert_true(!str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'Подвесное'), 'room navigation sign svg hides mount metadata');
 assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'font-size:'), 'room navigation sign svg uses adaptive text sizing');
 
 $presentationDefinition = constructor_definition_by_id('presentation_deck');
@@ -867,7 +874,7 @@ $presentationSvg = constructor_svg_artifact($presentationDefinition, constructor
 ]));
 assert_true($presentationSvg !== null, 'presentation svg artifact exists');
 assert_true(str_contains((string) ($presentationSvg['content'] ?? ''), 'font-size:'), 'presentation svg uses adaptive text sizing');
-assert_true(str_contains((string) ($presentationSvg['content'] ?? ''), 'Статус / отчёт'), 'presentation svg keeps selected mode label');
+assert_true(!str_contains((string) ($presentationSvg['content'] ?? ''), 'Статус / отчёт'), 'presentation svg hides the mode chip from the cover');
 
 $overflowCasePayloads = [
     'business_card' => [
@@ -985,8 +992,8 @@ $compactInformationStandPayload = constructor_normalize_input($compactInformatio
 $compactInformationStandSvg = constructor_svg_artifact($compactInformationStandDefinition, $compactInformationStandPayload);
 assert_true($compactInformationStandSvg !== null, 'compact information stand svg artifact exists');
 $compactInformationStandContent = (string) ($compactInformationStandSvg['content'] ?? '');
-assert_true(str_contains($compactInformationStandContent, '2 кармана A4'), 'compact information stand keeps the selected pocket label');
 assert_true(str_contains($compactInformationStandContent, 'brand@yamal.ru'), 'compact information stand keeps the bottom contact line');
+assert_true(!str_contains($compactInformationStandContent, '2 кармана A4'), 'compact information stand hides compact pocket metadata');
 assert_true(!str_contains($compactInformationStandContent, '…'), 'compact information stand avoids truncating long footer and contact copy');
 
 $compactInformationStandTitleFit = constructor_svg_fit_text_block(
@@ -1008,6 +1015,54 @@ $compactInformationStandContactFit = constructor_svg_fit_text_block(
     ['baseFontSize' => 17, 'minFontSize' => 9, 'widthSafety' => 0.88, 'heightSafety' => 0.88, 'anchor' => 'middle']
 );
 assert_true(($compactInformationStandContactFit['truncated'] ?? true) === false, 'compact information stand contact fit keeps the full bottom line inside the reserved strip');
+
+$businessCardCleanupSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
+    'city' => 'салехард',
+    'full_name' => 'Ирина Полярная',
+    'role' => 'Руководитель проектов',
+    'department' => 'Проектный офис',
+    'phone' => '+7 900 000-00-00',
+    'email' => 'brand@yamal.ru',
+]));
+assert_true($businessCardCleanupSvg !== null, 'business card cleanup svg artifact exists');
+assert_true(!str_contains((string) ($businessCardCleanupSvg['content'] ?? ''), 'Контакты'), 'business card svg hides generic contacts caption');
+
+$socialPostCleanupDefinition = constructor_definition_by_id('social_post');
+assert_true($socialPostCleanupDefinition !== null, 'social post definition exists for cleanup check');
+$socialPostCleanupSvg = constructor_svg_artifact($socialPostCleanupDefinition, constructor_normalize_input($socialPostCleanupDefinition, [
+    'headline' => 'Новая система брендированных решений',
+    'message' => 'Показываем короткое сообщение без служебной подписи.',
+    'cta' => 'Открыть каталог',
+    'ratio' => '4:5',
+]));
+assert_true($socialPostCleanupSvg !== null, 'social post cleanup svg artifact exists');
+assert_true(!str_contains((string) ($socialPostCleanupSvg['content'] ?? ''), 'Сообщение'), 'social post svg hides generic message caption');
+assert_true(!str_contains((string) ($socialPostCleanupSvg['content'] ?? ''), 'Следующий шаг'), 'social post svg hides generic cta caption');
+
+$letterheadCleanupDefinition = constructor_definition_by_id('letterhead');
+assert_true($letterheadCleanupDefinition !== null, 'letterhead definition exists for cleanup check');
+$letterheadCleanupSvg = constructor_svg_artifact($letterheadCleanupDefinition, constructor_normalize_input($letterheadCleanupDefinition, [
+    'department' => 'Департамент коммуникаций',
+    'document_title' => 'Служебное письмо',
+    'contact_line' => 'brand@yamal.ru',
+    'signer' => 'Ирина Полярная',
+]));
+assert_true($letterheadCleanupSvg !== null, 'letterhead cleanup svg artifact exists');
+assert_true(!str_contains((string) ($letterheadCleanupSvg['content'] ?? ''), 'Подразделение'), 'letterhead svg hides department caption');
+assert_true(!str_contains((string) ($letterheadCleanupSvg['content'] ?? ''), 'Текст письма или справки размещается в рабочей области ниже.'), 'letterhead svg hides placeholder body copy');
+assert_true(!str_contains((string) ($letterheadCleanupSvg['content'] ?? ''), 'Подписант'), 'letterhead svg hides signer caption');
+
+$rollupCleanupDefinition = constructor_definition_by_id('rollup');
+assert_true($rollupCleanupDefinition !== null, 'rollup definition exists for cleanup check');
+$rollupCleanupSvg = constructor_svg_artifact($rollupCleanupDefinition, constructor_normalize_input($rollupCleanupDefinition, [
+    'headline' => 'Ямал. Библиотека решений',
+    'subline' => 'Единый набор материалов для команд региона.',
+    'event_name' => 'Форум креативных индустрий',
+    'size_variant' => '85x200',
+]));
+assert_true($rollupCleanupSvg !== null, 'rollup cleanup svg artifact exists');
+assert_true(!str_contains((string) ($rollupCleanupSvg['content'] ?? ''), 'Событие / площадка'), 'rollup svg hides event caption');
+assert_true(!str_contains((string) ($rollupCleanupSvg['content'] ?? ''), '85x200'), 'rollup svg hides size metadata');
 
 $badgeNameFit = constructor_svg_fit_text_block(
     'Александрова-Виноградова Екатерина Константиновна-Петрова',

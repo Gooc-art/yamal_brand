@@ -4331,8 +4331,6 @@ function constructor_svg_render_information_stand_pockets(
             '<rect x="' . $pocketX . '" y="' . $pocketY . '" width="' . $pocketWidth . '" height="' . $pocketHeight . '" rx="' . $pocketRadius . '" class="card"/>' .
             '<rect x="' . $innerX . '" y="' . $innerY . '" width="' . $innerWidth . '" height="' . $innerHeight . '" rx="' . $innerRadius . '" class="tone-soft"/>' .
             '<line x1="' . ($pocketX + $innerInset) . '" y1="' . $slotY . '" x2="' . ($pocketX + $pocketWidth - $innerInset) . '" y2="' . $slotY . '" class="line"/>' .
-            constructor_svg_render_label($pocketX + 18.0, $pocketY + 42.0, 'Карман ' . ($index + 1), 'tiny', ['maxWidth' => max(48.0, $pocketWidth - 36.0), 'minFontSize' => 10]) .
-            constructor_svg_render_label($pocketX + ($pocketWidth / 2), $pocketY + $pocketHeight - 24.0, 'A4', 'badge', ['anchor' => 'middle', 'maxWidth' => max(42.0, $pocketWidth - 30.0), 'minFontSize' => 12]) .
             '</g>';
     }
     $markup .= '</g>';
@@ -4897,8 +4895,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     constructor_svg_render_fitted_text(84, 236, (string) ($input['full_name'] ?? ''), 'headline', 732, 148, 4, ['minFontSize' => 22, 'widthSafety' => 0.86, 'heightSafety' => 0.88]) .
                     constructor_svg_render_fitted_text(84, 344, (string) ($input['role'] ?? ''), 'subhead', 732, 72, 2, ['minFontSize' => 16]) .
                     '<rect x="84" y="376" width="732" height="54" rx="18" fill="var(--ctor-tone-soft)"/>' .
-                    constructor_svg_render_label(118, 408, 'Контакты', 'tiny', ['maxWidth' => 130, 'minFontSize' => 12]) .
-                    constructor_svg_render_fitted_text(226, 410, trim((string) ($input['phone'] ?? '')) . ' • ' . trim((string) ($input['email'] ?? '')), 'small', 562, 26, 1, ['minFontSize' => 12]) .
+                    constructor_svg_render_fitted_text(118, 410, trim((string) ($input['phone'] ?? '')) . ' • ' . trim((string) ($input['email'] ?? '')), 'small', 664, 26, 1, ['minFontSize' => 12]) .
                     constructor_svg_render_fitted_text(84, 452, (string) ($input['department'] ?? ''), 'small', 732, 24, 1, ['minFontSize' => 12]);
             } else {
                 $panelWidth = $compositionId === 'mark_focus' || $compositionId === 'mark_contrast' ? 292.0 : 260.0;
@@ -4912,8 +4909,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     constructor_svg_render_label(88, 392, $cityLabel, 'badge', ['maxWidth' => 190, 'minFontSize' => 18, 'fill' => $lockupInk]) .
                     constructor_svg_render_fitted_text($contentX, 158, (string) ($input['full_name'] ?? ''), 'headline', $contentWidth, 190, 4, ['minFontSize' => 22, 'widthSafety' => 0.86, 'heightSafety' => 0.88]) .
                     constructor_svg_render_fitted_text($contentX, 282, (string) ($input['role'] ?? ''), 'subhead', $contentWidth, 96, 3, ['minFontSize' => 16, 'widthSafety' => 0.88]) .
-                    constructor_svg_render_label($contentX, 348, 'Контакты', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
-                    constructor_svg_render_fitted_text($contentX, 366, (string) ($input['department'] ?? ''), 'small', $contentWidth, 52, 2, ['minFontSize' => 14]) .
+                    constructor_svg_render_fitted_text($contentX, 352, (string) ($input['department'] ?? ''), 'small', $contentWidth, 66, 2, ['minFontSize' => 14]) .
                     constructor_svg_render_fitted_text($contentX, 418, (string) ($input['phone'] ?? ''), 'body', $contentWidth, 34, 1, ['minFontSize' => 15]) .
                     constructor_svg_render_fitted_text($contentX, 450, (string) ($input['email'] ?? ''), 'small', $contentWidth, 24, 1, ['minFontSize' => 11]);
             }
@@ -4922,12 +4918,8 @@ function constructor_svg_artifact(array $definition, array $input): ?array
         case 'nameplate':
             $width = 1200;
             $height = 420;
-            $variant = (string) ($input['variant'] ?? 'cabinet');
-            $variantLabel = constructor_nameplate_variant_labels()[$variant] ?? 'Кабинетная';
             $roomNumber = trim((string) ($input['room_number'] ?? ''));
             $direction = (string) ($input['direction'] ?? 'none');
-            $directionLabel = constructor_nameplate_direction_labels()[$direction] ?? 'Без стрелки';
-            $mountLabel = constructor_mount_labels()[(string) ($input['mount'] ?? 'wall')] ?? 'Настенное';
             $arrowPath = match ($direction) {
                 'left' => '<path d="M1032 266H936M936 266l30-30M936 266l30 30" stroke="var(--ctor-accent)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
                 'right' => '<path d="M936 266H1032M1032 266l-30-30M1032 266l-30 30" stroke="var(--ctor-accent)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
@@ -4949,21 +4941,15 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     '<rect x="30" y="30" width="1140" height="360" rx="28" class="card"/>' .
                     '<rect x="30" y="30" width="228" height="360" rx="28" fill="var(--ctor-lockup-fill)"/>' .
                     constructor_svg_render_brand_lockup(72, 72, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 170, 'logoHeight' => 28, 'markWidth' => 140, 'markHeight' => 91]) .
-                    constructor_svg_render_label(72, 334, $variantLabel, 'badge', ['maxWidth' => 150, 'minFontSize' => 15, 'fill' => $lockupInk]) .
-                    constructor_svg_render_label(72, 364, $cityLabel, 'small', ['maxWidth' => 150, 'minFontSize' => 13, 'fill' => $lockupInk]) .
                     ($roomNumber !== ''
                         ? '<rect x="286" y="138" width="164" height="138" rx="26" class="tone-soft"/>' .
-                            constructor_svg_render_label(318, 180, 'Номер', 'tiny', ['maxWidth' => 100, 'minFontSize' => 12]) .
-                            constructor_svg_render_fitted_text(318, 240, $roomNumber, 'subhead', 100, 58, 2, ['minFontSize' => 16])
+                            constructor_svg_render_fitted_text(318, 228, $roomNumber, 'subhead', 100, 92, 2, ['minFontSize' => 16, 'heightSafety' => 0.82])
                         : '') .
                     constructor_svg_render_fitted_text($roomNumber !== '' ? 492 : 286, 182, (string) ($input['location'] ?? ''), 'headline', $roomNumber !== '' ? 482 : 688, 164, 4, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
                     constructor_svg_render_fitted_text($roomNumber !== '' ? 492 : 286, 320, (string) ($input['subline'] ?? ''), 'subhead', $roomNumber !== '' ? 482 : 688, 74, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
-                    constructor_svg_render_label(286, 356, $mountLabel, 'small', ['maxWidth' => 180, 'minFontSize' => 15]) .
-                    constructor_svg_render_label(822, 356, (string) ($input['size_variant'] ?? '300x120'), 'badge', ['maxWidth' => 170, 'minFontSize' => 18]) .
                     ($direction !== 'none'
                         ? '<rect x="912" y="198" width="180" height="112" rx="24" class="tone-soft"/>' .
-                            $arrowPath .
-                            constructor_svg_render_label(1002, 348, $directionLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 150, 'minFontSize' => 14])
+                            $arrowPath
                         : '');
             } else {
                 $body =
@@ -4971,32 +4957,23 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     '<rect x="30" y="30" width="1140" height="360" rx="28" class="card"/>' .
                     '<rect x="30" y="30" width="1140" height="96" rx="28" fill="var(--ctor-lockup-fill)"/>' .
                     constructor_svg_render_brand_lockup(62, 62, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 182, 'logoHeight' => 30, 'markWidth' => 118, 'markHeight' => 76]) .
-                    constructor_svg_render_label(1108, 78, $variantLabel, 'badge', ['anchor' => 'end', 'maxWidth' => 270, 'minFontSize' => 18, 'fill' => $lockupInk]) .
                     ($roomNumber !== ''
                         ? '<rect x="62" y="146" width="180" height="146" rx="28" class="tone-soft"/>' .
-                            constructor_svg_render_label(94, 190, 'Номер', 'tiny', ['maxWidth' => 104, 'minFontSize' => 12]) .
-                            constructor_svg_render_fitted_text(94, 252, $roomNumber, 'subhead', 116, 62, 2, ['minFontSize' => 16])
+                            constructor_svg_render_fitted_text(94, 236, $roomNumber, 'subhead', 116, 94, 2, ['minFontSize' => 16, 'heightSafety' => 0.82])
                         : '') .
                     constructor_svg_render_fitted_text($locationX, 184, (string) ($input['location'] ?? ''), 'headline', $locationMaxWidth, 168, 4, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
                     constructor_svg_render_fitted_text($locationX, 324, (string) ($input['subline'] ?? ''), 'subhead', $locationMaxWidth, 72, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
-                    constructor_svg_render_label(62, 356, $mountLabel, 'small', ['maxWidth' => 180, 'minFontSize' => 15]) .
-                    constructor_svg_render_label(762, 356, (string) ($input['size_variant'] ?? '300x120'), 'badge', ['maxWidth' => 170, 'minFontSize' => 18]) .
                     ($direction !== 'none'
                         ? '<rect x="868" y="200" width="200" height="112" rx="24" class="tone-soft"/>' .
-                            $arrowPath .
-                            constructor_svg_render_label(968, 348, $directionLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 150, 'minFontSize' => 14])
+                            $arrowPath
                         : '');
             }
             break;
 
         case 'information_stand':
-            $standType = (string) ($input['stand_type'] ?? 'info');
-            $standTypeLabel = constructor_information_stand_type_labels()[$standType] ?? 'Информационный';
             $sizeDefinition = constructor_information_stand_size_definition((string) ($input['size_variant'] ?? 'a4x4'));
             $width = (float) ($sizeDefinition['width'] ?? 540.0);
             $height = (float) ($sizeDefinition['height'] ?? 800.0);
-            $pocketLabel = (string) ($sizeDefinition['label'] ?? '4 кармана A4');
-            $sizeLabel = (string) ($sizeDefinition['sizeLabel'] ?? '540×800 мм');
             $contactLine = trim((string) ($input['contact_line'] ?? ''));
             $sectionTwoTitle = trim((string) ($input['section_two_title'] ?? ''));
             $sectionTwoBody = trim((string) ($input['section_two_body'] ?? ''));
@@ -5037,8 +5014,6 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 ? min(32.0, max(18.0, $footerHeight * 0.24))
                 : min(44.0, max(26.0, $footerHeight * 0.28));
             $footerBodyHeight = max($compactStand ? 18.0 : 22.0, $footerHeight - $footerTitleHeight - ($compactStand ? 20.0 : 24.0));
-            $headerBadgeWidth = min($compactStand ? 248.0 : 380.0, $width * ($compactStand ? 0.46 : 0.42));
-            $headerSizeWidth = min($compactStand ? 172.0 : 240.0, $width * ($compactStand ? 0.34 : 0.32));
             $headlineClass = $compactStand ? 'subhead' : 'headline';
             $headlineOptions = $compactStand
                 ? ['baseFontSize' => 34, 'minFontSize' => 12, 'widthSafety' => 0.8, 'heightSafety' => 0.84]
@@ -5059,24 +5034,30 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $contactOptions = $compactStand
                 ? ['baseFontSize' => 17, 'minFontSize' => 9, 'widthSafety' => 0.88, 'heightSafety' => 0.88, 'anchor' => 'middle']
                 : ['anchor' => 'middle', 'minFontSize' => 10, 'widthSafety' => 0.92, 'heightSafety' => 0.9];
+            $sectionTwoTitleVisible = $sectionTwoTitle !== '';
+            $sectionTwoBodyY = $footerY + ($sectionTwoTitleVisible ? $footerTitleHeight + ($compactStand ? 14.0 : 20.0) : ($compactStand ? 20.0 : 30.0));
+            $sectionTwoBodyHeight = $sectionTwoTitleVisible
+                ? $footerBodyHeight
+                : max($compactStand ? 36.0 : 48.0, $footerHeight - ($compactStand ? 32.0 : 44.0));
             $body =
                 constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
                 '<rect x="' . $margin . '" y="' . $margin . '" width="' . ($width - ($margin * 2)) . '" height="' . ($height - ($margin * 2)) . '" rx="36" class="card"/>' .
                 '<rect x="' . $margin . '" y="' . $margin . '" width="' . ($width - ($margin * 2)) . '" height="' . $headerHeight . '" rx="' . $headerRadius . '" fill="var(--ctor-lockup-fill)"/>' .
                 constructor_svg_render_brand_lockup($margin + 22.0, $margin + 18.0, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => $brandLogoWidth, 'logoHeight' => $brandLogoHeight, 'markWidth' => $brandMarkWidth, 'markHeight' => $brandMarkHeight]) .
-                constructor_svg_render_fitted_text($width - $margin - 20.0, $margin + 28.0, $pocketLabel, $compactStand ? 'small' : 'badge', $headerBadgeWidth, $compactStand ? 30.0 : 36.0, 2, ['anchor' => 'end', 'baseFontSize' => $compactStand ? 20 : 28, 'minFontSize' => 9, 'fill' => $lockupInk, 'widthSafety' => 0.88, 'heightSafety' => 0.88], 'end') .
-                constructor_svg_render_fitted_text($width - $margin - 20.0, $margin + ($compactStand ? 54.0 : 66.0), $sizeLabel, $compactStand ? 'tiny' : 'small', $headerSizeWidth, $compactStand ? 24.0 : 30.0, 2, ['anchor' => 'end', 'baseFontSize' => $compactStand ? 15 : 18, 'minFontSize' => 9, 'fill' => $lockupInk, 'widthSafety' => 0.88, 'heightSafety' => 0.88], 'end') .
-                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + 16.0, $standTypeLabel, 'tiny', min(260.0, $width * 0.42), 24.0, 2, ['baseFontSize' => $compactStand ? 16 : 20, 'minFontSize' => 10, 'widthSafety' => 0.86, 'heightSafety' => 0.88]) .
-                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + ($compactStand ? 36.0 : 50.0), (string) ($input['headline'] ?? ''), $headlineClass, $width - ($margin * 2), max(40.0, $titleHeight * ($compactStand ? 0.5 : 0.58)), $compactStand ? 4 : 3, $headlineOptions) .
-                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + max($compactStand ? 62.0 : 82.0, $titleHeight * ($compactStand ? 0.64 : 0.68)), (string) ($input['subtitle'] ?? ''), $subtitleClass, $width - ($margin * 2), max(20.0, $titleHeight * ($compactStand ? 0.24 : 0.3)), $compactStand ? 3 : 2, $subtitleOptions) .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + ($compactStand ? 22.0 : 30.0), (string) ($input['headline'] ?? ''), $headlineClass, $width - ($margin * 2), max(44.0, $titleHeight * ($compactStand ? 0.56 : 0.66)), $compactStand ? 4 : 3, $headlineOptions) .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + max($compactStand ? 54.0 : 74.0, $titleHeight * ($compactStand ? 0.72 : 0.78)), (string) ($input['subtitle'] ?? ''), $subtitleClass, $width - ($margin * 2), max(22.0, $titleHeight * ($compactStand ? 0.28 : 0.32)), $compactStand ? 3 : 2, $subtitleOptions) .
                 constructor_svg_render_information_stand_pockets($margin, $pocketAreaY, $width - ($margin * 2), $pocketAreaHeight, $sizeDefinition) .
                 '<rect x="' . $margin . '" y="' . $footerY . '" width="' . $infoCardWidth . '" height="' . $footerHeight . '" rx="24" class="tone-soft"/>' .
                 constructor_svg_render_fitted_text($margin + 16.0, $footerY + ($compactStand ? 18.0 : 28.0), (string) ($input['section_one_title'] ?? ''), $footerTitleClass, $infoCardWidth - 32.0, $footerTitleHeight, 2, $footerTitleOptions) .
                 constructor_svg_render_fitted_text($margin + 16.0, $footerY + $footerTitleHeight + ($compactStand ? 14.0 : 20.0), (string) ($input['section_one_body'] ?? ''), $footerBodyClass, $infoCardWidth - 32.0, $footerBodyHeight, $denseStand ? 3 : ($height >= 900 ? 5 : 4), $footerBodyOptions) .
                 '<rect x="' . ($margin + $infoCardWidth + $gap) . '" y="' . $footerY . '" width="' . $infoCardWidth . '" height="' . $footerHeight . '" rx="24" class="card"/>' .
-                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 16.0, $footerY + ($compactStand ? 18.0 : 28.0), $sectionTwoTitle !== '' ? $sectionTwoTitle : 'Контакты', $footerTitleClass, $infoCardWidth - 32.0, $footerTitleHeight, 2, $footerTitleOptions) .
-                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 16.0, $footerY + $footerTitleHeight + ($compactStand ? 14.0 : 20.0), $sectionTwoBody !== '' ? $sectionTwoBody : ($contactLine !== '' ? $contactLine : $cityLabel), $footerBodyClass, $infoCardWidth - 32.0, $footerBodyHeight, $denseStand ? 3 : ($height >= 900 ? 5 : 4), $footerBodyOptions) .
-                constructor_svg_render_fitted_text($width / 2, $bottomNoteY + max(12.0, $bottomNoteHeight * 0.48), $contactLine !== '' ? $contactLine : $cityLabel, $contactClass, $width - ($margin * 2), $bottomNoteHeight, $compactStand ? 3 : 2, $contactOptions, 'middle');
+                ($sectionTwoTitleVisible
+                    ? constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 16.0, $footerY + ($compactStand ? 18.0 : 28.0), $sectionTwoTitle, $footerTitleClass, $infoCardWidth - 32.0, $footerTitleHeight, 2, $footerTitleOptions)
+                    : '') .
+                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 16.0, $sectionTwoBodyY, $sectionTwoBody, $footerBodyClass, $infoCardWidth - 32.0, $sectionTwoBodyHeight, $denseStand ? 3 : ($height >= 900 ? 5 : 4), $footerBodyOptions) .
+                ($contactLine !== ''
+                    ? constructor_svg_render_fitted_text($width / 2, $bottomNoteY + max(12.0, $bottomNoteHeight * 0.48), $contactLine, $contactClass, $width - ($margin * 2), $bottomNoteHeight, $compactStand ? 3 : 2, $contactOptions, 'middle')
+                    : '');
             break;
 
         case 'room_navigation_sign':
@@ -5085,8 +5066,6 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $roomNumber = trim((string) ($input['room_number'] ?? ''));
             $floorLabel = trim((string) ($input['floor_label'] ?? ''));
             $direction = (string) ($input['direction'] ?? 'right');
-            $directionLabel = constructor_nameplate_direction_labels()[$direction] ?? 'Направо';
-            $mountLabel = constructor_mount_labels()[(string) ($input['mount'] ?? 'wall')] ?? 'Настенное';
             $arrowPath = match ($direction) {
                 'left' => '<path d="M1168 252H1076M1076 252l28-28M1076 252l28 28" stroke="var(--ctor-accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
                 'right' => '<path d="M1076 252H1168M1168 252l-28-28M1168 252l-28 28" stroke="var(--ctor-accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
@@ -5100,9 +5079,8 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 '<rect x="30" y="30" width="1260" height="360" rx="28" class="card"/>' .
                 '<rect x="30" y="30" width="1260" height="108" rx="28" fill="var(--ctor-lockup-fill)"/>' .
                 constructor_svg_render_brand_lockup(64, 64, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 188, 'logoHeight' => 31, 'markWidth' => 126, 'markHeight' => 82]) .
-                constructor_svg_render_label(1224, 84, 'Навигация по помещениям', 'badge', ['anchor' => 'end', 'maxWidth' => 310, 'minFontSize' => 16, 'fill' => $lockupInk]) .
-                constructor_svg_render_fitted_text(64, 180, (string) ($input['destination'] ?? ''), 'headline', $destinationWidth, 148, 4, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
-                constructor_svg_render_fitted_text(64, 304, (string) ($input['route_hint'] ?? ''), 'subhead', $destinationWidth, 74, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
+                constructor_svg_render_fitted_text(64, 162, (string) ($input['destination'] ?? ''), 'headline', $destinationWidth, 162, 4, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
+                constructor_svg_render_fitted_text(64, 298, (string) ($input['route_hint'] ?? ''), 'subhead', $destinationWidth, 82, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
                 ($floorLabel !== ''
                     ? '<rect x="64" y="330" width="182" height="52" rx="18" class="tone-soft"/>' .
                         constructor_svg_render_label(155, 362, $floorLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 140, 'minFontSize' => 14])
@@ -5111,20 +5089,15 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     ? '<rect x="' . ($floorLabel !== '' ? '266' : '64') . '" y="330" width="164" height="52" rx="18" class="tone-soft"/>' .
                         constructor_svg_render_label(($floorLabel !== '' ? 348 : 146), 362, $roomNumber, 'small', ['anchor' => 'middle', 'maxWidth' => 124, 'minFontSize' => 14])
                     : '') .
-                constructor_svg_render_label(64, 152, $mountLabel, 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
-                constructor_svg_render_label(930, 356, (string) ($input['size_variant'] ?? '400x180'), 'badge', ['maxWidth' => 170, 'minFontSize' => 16]) .
-                constructor_svg_render_fitted_text(930, 384, $cityLabel, 'small', 180, 24, 1, ['minFontSize' => 13]) .
                 ($direction !== 'none'
                     ? '<rect x="1026" y="172" width="192" height="118" rx="24" class="tone-soft"/>' .
-                        $arrowPath .
-                        constructor_svg_render_label(1122, 334, $directionLabel, 'small', ['anchor' => 'middle', 'maxWidth' => 150, 'minFontSize' => 14])
+                        $arrowPath
                     : '');
             break;
 
         case 'presentation_deck':
             $width = 1600;
             $height = 900;
-            $presentationMode = constructor_presentation_mode_labels()[(string) ($input['presentation_mode'] ?? 'invest')] ?? 'Инвест-питч';
             $eventName = trim((string) ($input['event_name'] ?? ''));
             $keyMessage = trim((string) ($input['key_message'] ?? ''));
             $outlinePreview = array_slice(constructor_presentation_outline((string) ($input['structure'] ?? '')), 0, 3);
@@ -5146,23 +5119,15 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => $isMarkDeck ? 204 : 178, 'markHeight' => $isMarkDeck ? 132 : 115]
                 ) .
                 ($outlinePreview !== []
-                    ? constructor_svg_render_label(96, 324, 'Каркас слайдов', 'tiny', ['maxWidth' => 260, 'minFontSize' => 12, 'fill' => $lockupInk]) .
-                        constructor_svg_render_text(96, 382, $outlinePreview, 'small', ['maxWidth' => 320, 'maxHeight' => 176, 'minFontSize' => 16, 'fill' => $lockupInk])
+                    ? constructor_svg_render_text(96, 356, $outlinePreview, 'small', ['maxWidth' => 320, 'maxHeight' => 176, 'minFontSize' => 16, 'fill' => $lockupInk])
                     : '') .
                 constructor_svg_render_label(96, 816, $cityLabel, 'badge', ['maxWidth' => 220, 'minFontSize' => 16, 'fill' => $lockupInk]) .
-                '<rect x="1184" y="86" width="304" height="72" rx="24" class="tone-soft"/>' .
-                constructor_svg_render_label(1336, 131, $presentationMode, 'badge', ['anchor' => 'middle', 'maxWidth' => 232, 'minFontSize' => 16]) .
                 constructor_svg_render_fitted_text($contentX, 158, $eventName !== '' ? $eventName : $cityLabel, 'tiny', 460, 58, 2, ['minFontSize' => 11]) .
                 constructor_svg_render_fitted_text($contentX, 270, (string) ($input['title'] ?? ''), 'headline', $contentWidth, 316, 5, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
                 '<rect x="' . $contentX . '" y="476" width="' . max(640.0, $contentWidth) . '" height="164" rx="32" class="card"/>' .
-                constructor_svg_render_label($contentX + 48.0, 528, 'Ключевое сообщение', 'tiny', ['maxWidth' => 260, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text($contentX + 48.0, 578, $keyMessage, 'body', max(544.0, $contentWidth - 96.0), 98, 3, ['minFontSize' => 15]) .
-                constructor_svg_render_label($contentX, 688, 'Спикер', 'tiny', ['maxWidth' => 160, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text($contentX, 712, (string) ($input['speaker'] ?? ''), 'subhead', 420, 54, 2, ['minFontSize' => 16]) .
-                constructor_svg_render_fitted_text($contentX, 762, (string) ($input['speaker_role'] ?? ''), 'body', 520, 70, 2, ['minFontSize' => 15]) .
-                '<rect x="' . $contentX . '" y="796" width="404" height="74" rx="24" class="tone-soft"/>' .
-                constructor_svg_render_label($contentX + 202.0, 842, 'Слайдов: ' . (string) ($input['slide_count'] ?? ''), 'badge', ['anchor' => 'middle', 'maxWidth' => 320, 'minFontSize' => 16]) .
-                constructor_svg_render_fitted_text($contentX + 444.0, 824, 'Аудитория: ' . (string) ($input['audience'] ?? ''), 'small', 360, 60, 2, ['minFontSize' => 13]);
+                constructor_svg_render_fitted_text($contentX + 48.0, 548, $keyMessage, 'body', max(544.0, $contentWidth - 96.0), 112, 3, ['minFontSize' => 15]) .
+                constructor_svg_render_fitted_text($contentX, 714, (string) ($input['speaker'] ?? ''), 'subhead', 420, 54, 2, ['minFontSize' => 16]) .
+                constructor_svg_render_fitted_text($contentX, 764, (string) ($input['speaker_role'] ?? ''), 'body', 520, 70, 2, ['minFontSize' => 15]);
             break;
 
         case 'certificate':
@@ -5181,11 +5146,9 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 constructor_svg_render_label(700, 310, 'Сертификат', 'title', ['anchor' => 'middle', 'maxWidth' => 420, 'minFontSize' => 28]) .
                 constructor_svg_render_fitted_text(700, 434, (string) ($input['recipient'] ?? ''), 'headline', 1020, 214, 4, ['anchor' => 'middle', 'minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86], 'middle') .
                 constructor_svg_render_fitted_text(700, 606, (string) ($input['reason'] ?? ''), 'body', 1020, 146, 4, ['anchor' => 'middle', 'minFontSize' => 14, 'widthSafety' => 0.88], 'middle') .
-                constructor_svg_render_label(160, 786, 'Событие / программа', 'tiny', ['maxWidth' => 240, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(160, 810, (string) ($input['event_name'] ?? ''), 'small', 520, 60, 2, ['minFontSize' => 15]) .
+                constructor_svg_render_fitted_text(160, 804, (string) ($input['event_name'] ?? ''), 'small', 520, 60, 2, ['minFontSize' => 15]) .
                 '<line x1="968" y1="804" x2="1248" y2="804" class="line"/>' .
-                constructor_svg_render_label(968, 782, 'Подписант', 'tiny', ['maxWidth' => 140, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(968, 846, (string) ($input['signer'] ?? ''), 'small', 260, 56, 2, ['minFontSize' => 13]) .
+                constructor_svg_render_fitted_text(968, 832, (string) ($input['signer'] ?? ''), 'small', 260, 56, 2, ['minFontSize' => 13]) .
                 constructor_svg_render_fitted_text(160, 900, constructor_format_date((string) ($input['issue_date'] ?? '')), 'small', 180, 28, 1, ['minFontSize' => 14]);
             break;
 
@@ -5205,11 +5168,9 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 '<rect x="44" y="44" width="632" height="1032" rx="36" class="card"/>' .
                 '<rect x="44" y="44" width="632" height="182" rx="36" fill="var(--ctor-lockup-fill)"/>' .
                 constructor_svg_render_brand_lockup(76, $isMarkBadge ? 58 : 70, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 186, 'logoHeight' => 30, 'markWidth' => $isMarkBadge ? 186 : 168, 'markHeight' => $isMarkBadge ? 121 : 109]) .
-                constructor_svg_render_label(76, 274, 'Мероприятие', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(76, 300, (string) ($input['event_name'] ?? $cityLabel), 'small', 560, 58, 2, ['minFontSize' => 15]) .
+                constructor_svg_render_fitted_text(76, 290, (string) ($input['event_name'] ?? $cityLabel), 'small', 560, 58, 2, ['minFontSize' => 15]) .
                 constructor_svg_render_fitted_text(76, 392, (string) ($input['full_name'] ?? ''), 'headline', 548, 356, 6, ['minFontSize' => 15, 'widthSafety' => 0.8, 'heightSafety' => 0.78]) .
-                constructor_svg_render_label(76, 780, 'Роль', 'tiny', ['maxWidth' => 120, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(76, 806, (string) ($input['role'] ?? ''), 'subhead', 548, 118, 3, ['minFontSize' => 14, 'widthSafety' => 0.86, 'heightSafety' => 0.84]) .
+                constructor_svg_render_fitted_text(76, 796, (string) ($input['role'] ?? ''), 'subhead', 548, 118, 3, ['minFontSize' => 14, 'widthSafety' => 0.86, 'heightSafety' => 0.84]) .
                 '<rect x="76" y="936" width="260" height="72" rx="24" class="tone-soft"/>' .
                 constructor_svg_render_label(206, 982, $accessLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 210, 'minFontSize' => 16]) .
                 constructor_svg_render_fitted_text(76, 1048, $cityLabel, 'small', 560, 30, 1, ['minFontSize' => 15]);
@@ -5236,11 +5197,9 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                     ? constructor_svg_render_label($width - 80, 92, $cityLabel, 'badge', ['anchor' => 'end', 'maxWidth' => 240, 'minFontSize' => 16, 'fill' => $lockupInk])
                     : '') .
                 constructor_svg_render_fitted_text(80, 320, (string) ($input['headline'] ?? ''), 'headline', $width - 160, 356, 5, ['minFontSize' => 18, 'widthSafety' => 0.82, 'heightSafety' => 0.84]) .
-                constructor_svg_render_label(80, 664, 'Сообщение', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(80, 706, (string) ($input['message'] ?? ''), 'body', $width - 160, 462, 6, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
+                constructor_svg_render_fitted_text(80, 690, (string) ($input['message'] ?? ''), 'body', $width - 160, 470, 6, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
                 '<rect x="80" y="' . ($height - 178) . '" width="' . ($width - 160) . '" height="88" rx="28" class="card"/>' .
-                constructor_svg_render_label(124, $height - 150, 'Следующий шаг', 'tiny', ['maxWidth' => 190, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(124, $height - 126, (string) ($input['cta'] ?? ''), 'subhead', $width - 280, 54, 3, ['minFontSize' => 13, 'widthSafety' => 0.88]) .
+                constructor_svg_render_fitted_text(124, $height - 120, (string) ($input['cta'] ?? ''), 'subhead', $width - 280, 60, 3, ['minFontSize' => 13, 'widthSafety' => 0.88]) .
                 constructor_svg_render_fitted_text($width - 80, $height - 46, $cityLabel, 'small', 160, 26, 1, ['anchor' => 'end', 'minFontSize' => 13], 'end');
             break;
 
@@ -5252,14 +5211,11 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
                 '<rect x="0" y="0" width="1240" height="210" fill="var(--ctor-lockup-fill)" opacity="' . (($isMarkLetterhead || $brandVariant === 'white') ? '1' : '0.18') . '"/>' .
                 constructor_svg_render_brand_lockup(84, 76, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => $isMarkLetterhead ? 152 : 128, 'markHeight' => $isMarkLetterhead ? 99 : 83]) .
-                constructor_svg_render_label(84, 138, 'Подразделение', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12, 'fill' => $brandVariant === 'white' ? $lockupInk : 'var(--ctor-ink)']) .
-                constructor_svg_render_fitted_text(84, 162, (string) ($input['department'] ?? ''), 'subhead', 620, 64, 2, ['minFontSize' => 14, 'fill' => $brandVariant === 'white' ? $lockupInk : 'var(--ctor-ink)']) .
+                constructor_svg_render_fitted_text(84, 150, (string) ($input['department'] ?? ''), 'subhead', 620, 72, 2, ['minFontSize' => 14, 'fill' => $brandVariant === 'white' ? $lockupInk : 'var(--ctor-ink)']) .
                 constructor_svg_render_fitted_text(84, 312, (string) ($input['document_title'] ?? ''), 'title', 1040, 214, 4, ['minFontSize' => 18, 'widthSafety' => 0.86, 'heightSafety' => 0.88]) .
                 '<line x1="84" y1="412" x2="1156" y2="412" class="line"/>' .
-                constructor_svg_render_fitted_text(84, 500, 'Текст письма или справки размещается в рабочей области ниже.', 'body', 1040, 84, 2, ['minFontSize' => 18]) .
                 constructor_svg_render_fitted_text(84, 1604, (string) ($input['contact_line'] ?? ''), 'small', 1040, 72, 3, ['minFontSize' => 12]) .
-                constructor_svg_render_label(900, 1462, 'Подписант', 'tiny', ['maxWidth' => 140, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(900, 1488, (string) ($input['signer'] ?? ''), 'small', 240, 54, 2, ['minFontSize' => 12]);
+                constructor_svg_render_fitted_text(900, 1480, (string) ($input['signer'] ?? ''), 'small', 240, 54, 2, ['minFontSize' => 12]);
             break;
 
         case 'rollup':
@@ -5273,9 +5229,7 @@ function constructor_svg_artifact(array $definition, array $input): ?array
                 constructor_svg_render_fitted_text(88, 748, (string) ($input['headline'] ?? ''), 'headline', 824, 548, 6, ['minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.88]) .
                 constructor_svg_render_fitted_text(88, 1360, (string) ($input['subline'] ?? ''), 'body', 824, 390, 7, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
                 '<rect x="88" y="1730" width="824" height="232" rx="34" class="card"/>' .
-                constructor_svg_render_label(132, 1784, 'Событие / площадка', 'tiny', ['maxWidth' => 220, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(132, 1818, (string) ($input['event_name'] ?? ''), 'subhead', 500, 102, 3, ['minFontSize' => 16]) .
-                constructor_svg_render_fitted_text(132, 1908, (string) ($input['size_variant'] ?? ''), 'small', 300, 30, 1, ['minFontSize' => 13]) .
+                constructor_svg_render_fitted_text(132, 1810, (string) ($input['event_name'] ?? ''), 'subhead', 500, 114, 3, ['minFontSize' => 16]) .
                 constructor_svg_render_fitted_text(912, 2128, $cityLabel, 'small', 160, 26, 1, ['anchor' => 'end', 'minFontSize' => 13], 'end');
             break;
     }
