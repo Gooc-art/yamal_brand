@@ -1723,6 +1723,16 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     resolvedPanel.style.removeProperty('--constructor-preview-frame-width');
   }
 
+  function constructorPreviewPrefersNativeSticky() {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    const supports = window.CSS && typeof window.CSS.supports === 'function'
+      ? window.CSS.supports('position', 'sticky') || window.CSS.supports('position', '-webkit-sticky')
+      : false;
+    return Boolean(supports);
+  }
+
   function syncConstructorPreviewFloatState() {
     constructorPreviewFloatFrame = 0;
     const shell = document.querySelector('.constructor-shell');
@@ -1735,6 +1745,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
 
     if (window.innerWidth < CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT) {
+      clearConstructorPreviewFloatState(panel);
+      return;
+    }
+
+    if (constructorPreviewPrefersNativeSticky()) {
       clearConstructorPreviewFloatState(panel);
       return;
     }

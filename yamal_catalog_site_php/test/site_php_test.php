@@ -198,6 +198,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buil
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorLivePreview'), 'frontend exposes local constructor live preview helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS'), 'frontend exposes live constructor preview field set');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setWorkspaceStageMode'), 'frontend exposes workspace mode helper for constructor sticky preview');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructorPreviewPrefersNativeSticky'), 'frontend prefers native sticky preview before js fallback');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-constructor-mode'), 'frontend toggles constructor workspace mode class');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scheduleConstructorPreviewFloatSync'), 'frontend exposes constructor preview floating sync helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-floating-dock'), 'frontend toggles floating dock mode for constructor preview');
