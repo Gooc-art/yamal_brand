@@ -1018,6 +1018,24 @@ function constructor_graphic_element_catalog(): array
             'description' => 'Диагональная группа на базе фирменного знака',
             'mark' => 'G-1',
         ],
+        'logo_band' => [
+            'id' => 'logo_band',
+            'label' => 'Лента логотипов',
+            'description' => 'Повтор логотипа в линейном фирменном ритме',
+            'mark' => 'ЛЕНТА',
+        ],
+        'mark_constellation' => [
+            'id' => 'mark_constellation',
+            'label' => 'Каскад знаков',
+            'description' => 'Каскад фирменных знаков для маршрутов и диагоналей',
+            'mark' => 'КАСКАД',
+        ],
+        'lockup_bridge' => [
+            'id' => 'lockup_bridge',
+            'label' => 'Логотип + знак',
+            'description' => 'Тандем логотипа и знака для крупных подложек и витрин',
+            'mark' => 'ДУЭТ',
+        ],
         'mark_white' => [
             'id' => 'mark_white',
             'label' => 'Фирменный знак White',
@@ -1049,6 +1067,9 @@ function constructor_design_variant_labels(): array
         'editorial' => 'Редакционный',
         'signal' => 'Акцентный',
         'poster' => 'Плакатный',
+        'monument' => 'Монументальный',
+        'navigator' => 'Маршрутный',
+        'gallery' => 'Галерейный',
     ];
 }
 
@@ -1062,6 +1083,9 @@ function constructor_background_style_labels(): array
         'pattern' => 'Сетка из знака',
         'corner' => 'Угловой акцент',
         'halo' => 'Мягкое пятно',
+        'split' => 'Разделённая сцена',
+        'rail' => 'Опорная рейка',
+        'capsule' => 'Капсулы',
     ];
 }
 
@@ -1169,6 +1193,9 @@ function constructor_design_variant_options(): array
         ['value' => 'editorial', 'label' => 'Редакционный', 'description' => 'Редакционный ритм, сетка и аккуратный текстовый акцент', 'mark' => 'EDIT'],
         ['value' => 'signal', 'label' => 'Акцентный', 'description' => 'Сильнее собирает внимание плашками и контрастом', 'mark' => 'SIGN'],
         ['value' => 'poster', 'label' => 'Плакатный', 'description' => 'Крупнее фон и заметнее декоративный слой', 'mark' => 'POST'],
+        ['value' => 'monument', 'label' => 'Монументальный', 'description' => 'Крупные branded-поля и массивная опорная сцена', 'mark' => 'MONU'],
+        ['value' => 'navigator', 'label' => 'Маршрутный', 'description' => 'Линии, узлы и ритм навигационной системы', 'mark' => 'ROUTE'],
+        ['value' => 'gallery', 'label' => 'Галерейный', 'description' => 'Витринные рамки, подписи и выставочный баланс', 'mark' => 'GALL'],
     ];
 }
 
@@ -1182,6 +1209,9 @@ function constructor_background_style_options(): array
         ['value' => 'pattern', 'label' => 'Сетка из знака', 'description' => 'Повторяемый ритм из фирменного знака', 'mark' => 'GRID'],
         ['value' => 'corner', 'label' => 'Угловой акцент', 'description' => 'Опорный угол и графический баланс', 'mark' => 'ANGLE'],
         ['value' => 'halo', 'label' => 'Мягкое пятно', 'description' => 'Спокойное пятно света под текстом', 'mark' => 'HALO'],
+        ['value' => 'split', 'label' => 'Разделённая сцена', 'description' => 'Разбитая плоскость с крупным блоком и контрастной сценой', 'mark' => 'SPLIT'],
+        ['value' => 'rail', 'label' => 'Опорная рейка', 'description' => 'Вертикальная или горизонтальная фирменная рейка', 'mark' => 'RAIL'],
+        ['value' => 'capsule', 'label' => 'Капсулы', 'description' => 'Несколько округлых плашек для мягкого ритма', 'mark' => 'CAPS'],
     ];
 }
 
@@ -3081,6 +3111,13 @@ function constructor_preset_definitions(array $definition): array
                 'description' => 'Акцентный режим, когда нужен более смелый носитель.',
                 'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'mark', 'design_variant' => 'signal', 'background_style' => 'halo', 'palette_tone' => 'accent'],
             ],
+            [
+                'id' => 'gallery',
+                'label' => 'Галерейная',
+                'summary' => 'Витринная версия с лентой логотипов',
+                'description' => 'Более заметная композиция с линейным фирменным ритмом.',
+                'overrides' => ['color_variant' => 'color', 'brand_lockup' => 'logo', 'graphic_element' => 'logo_band', 'design_variant' => 'gallery', 'background_style' => 'rail', 'palette_tone' => 'p621'],
+            ],
         ],
         'nameplate' => [
             [
@@ -3103,6 +3140,13 @@ function constructor_preset_definitions(array $definition): array
                 'summary' => 'Контрастный блок со знаком',
                 'description' => 'Когда нужен акцент на зоне и видимость с расстояния.',
                 'overrides' => ['variant' => 'zone', 'design_variant' => 'poster', 'background_style' => 'frame', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'route_system',
+                'label' => 'Система',
+                'summary' => 'Маршрутный режим с каскадом знаков',
+                'description' => 'Для целой навигационной линии и более системного ритма.',
+                'overrides' => ['variant' => 'navigation', 'direction' => 'right', 'graphic_element' => 'mark_constellation', 'design_variant' => 'navigator', 'background_style' => 'split', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
             ],
         ],
         'information_stand' => [
@@ -3127,6 +3171,13 @@ function constructor_preset_definitions(array $definition): array
                 'description' => 'Для правил, схем и коротких инструкций в зоне ожидания.',
                 'overrides' => ['stand_type' => 'memo', 'size_variant' => 'a4x6', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
+            [
+                'id' => 'system_wall',
+                'label' => 'Система',
+                'summary' => 'Крупный стенд с тандемом логотипа и знака',
+                'description' => 'Монументальная сцена для входной стены и главной информации.',
+                'overrides' => ['stand_type' => 'info', 'size_variant' => 'a4x8', 'graphic_element' => 'lockup_bridge', 'design_variant' => 'monument', 'background_style' => 'rail', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
+            ],
         ],
         'room_navigation_sign' => [
             [
@@ -3149,6 +3200,13 @@ function constructor_preset_definitions(array $definition): array
                 'summary' => 'Белый знак и плотный фон',
                 'description' => 'Когда табличка должна считываться с расстояния.',
                 'overrides' => ['direction' => 'left', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+            ],
+            [
+                'id' => 'route_system',
+                'label' => 'Система',
+                'summary' => 'Маршрутная система с каскадом знаков',
+                'description' => 'Под длинные коридоры, точки решения и навигационные узлы.',
+                'overrides' => ['direction' => 'right', 'graphic_element' => 'mark_constellation', 'design_variant' => 'navigator', 'background_style' => 'split', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
             ],
         ],
         'presentation_deck' => [
@@ -3173,6 +3231,13 @@ function constructor_preset_definitions(array $definition): array
                 'description' => 'Светлая холодная подача для инвестиционного сценария.',
                 'overrides' => ['presentation_mode' => 'invest', 'design_variant' => 'poster', 'background_style' => 'pattern', 'palette_tone' => 'r6034', 'brand_lockup' => 'logo'],
             ],
+            [
+                'id' => 'gallery',
+                'label' => 'Витрина',
+                'summary' => 'Галерейная обложка с тандемом логотипа и знака',
+                'description' => 'Для keynote и витринной презентации с более собранной сценой.',
+                'overrides' => ['presentation_mode' => 'pitch', 'graphic_element' => 'lockup_bridge', 'design_variant' => 'gallery', 'background_style' => 'split', 'palette_tone' => 'r6034', 'brand_lockup' => 'logo'],
+            ],
         ],
         'certificate' => [
             [
@@ -3195,6 +3260,13 @@ function constructor_preset_definitions(array $definition): array
                 'summary' => 'Белый логотип на тёмном фоне',
                 'description' => 'Для сценических сертификатов и экранной выдачи.',
                 'overrides' => ['color_variant' => 'white', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'gallery',
+                'label' => 'Галерейный',
+                'summary' => 'Витринный сертификат с капсульным фоном',
+                'description' => 'Более мягкая выставочная подача для церемоний и стендов.',
+                'overrides' => ['color_variant' => 'color', 'graphic_element' => 'logo_band', 'design_variant' => 'gallery', 'background_style' => 'capsule', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
         ],
         'badge' => [
@@ -3219,6 +3291,13 @@ function constructor_preset_definitions(array $definition): array
                 'description' => 'Белый знак на плотном фоне для особого доступа.',
                 'overrides' => ['access_level' => 'vip', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
+            [
+                'id' => 'route',
+                'label' => 'Система',
+                'summary' => 'Маршрутный бейдж с каскадом знаков',
+                'description' => 'Для больших событий, где нужен более системный северный ритм.',
+                'overrides' => ['access_level' => 'staff', 'graphic_element' => 'mark_constellation', 'design_variant' => 'navigator', 'background_style' => 'rail', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
+            ],
         ],
         'social_post' => [
             [
@@ -3241,6 +3320,13 @@ function constructor_preset_definitions(array $definition): array
                 'summary' => 'Широкий digital-режим',
                 'description' => 'Под горизонтальный пост или обложку анонса.',
                 'overrides' => ['ratio' => '16:9', 'design_variant' => 'poster', 'background_style' => 'pattern', 'palette_tone' => 'r6034', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'showcase',
+                'label' => 'Витрина',
+                'summary' => 'Галерейный пост с лентой логотипов',
+                'description' => 'Для более витринной и собранной digital-подачи.',
+                'overrides' => ['ratio' => '4:5', 'graphic_element' => 'logo_band', 'design_variant' => 'gallery', 'background_style' => 'capsule', 'palette_tone' => 'r6034', 'brand_lockup' => 'logo'],
             ],
         ],
         'letterhead' => [
@@ -3265,6 +3351,13 @@ function constructor_preset_definitions(array $definition): array
                 'description' => 'Более смелый режим для digital-PDF.',
                 'overrides' => ['color_variant' => 'color', 'design_variant' => 'poster', 'background_style' => 'band', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
+            [
+                'id' => 'gallery',
+                'label' => 'Витринный',
+                'summary' => 'Галерейный бланк с фирменной рейкой',
+                'description' => 'Для сопроводительных материалов и более собранного handoff.',
+                'overrides' => ['color_variant' => 'color', 'graphic_element' => 'lockup_bridge', 'design_variant' => 'gallery', 'background_style' => 'rail', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
+            ],
         ],
         'rollup' => [
             [
@@ -3287,6 +3380,13 @@ function constructor_preset_definitions(array $definition): array
                 'summary' => 'Прохладный режим под форум и навигацию',
                 'description' => 'Холодный тон и спокойный ритм фона.',
                 'overrides' => ['design_variant' => 'editorial', 'background_style' => 'pattern', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
+            ],
+            [
+                'id' => 'monument',
+                'label' => 'Монумент',
+                'summary' => 'Крупный стенд с дуэтом логотипа и знака',
+                'description' => 'Монументальная витрина для зоны, форума или центрального стенда.',
+                'overrides' => ['graphic_element' => 'lockup_bridge', 'design_variant' => 'monument', 'background_style' => 'split', 'palette_tone' => 'accent', 'brand_lockup' => 'logo'],
             ],
         ],
         default => [
@@ -3598,6 +3698,24 @@ function constructor_template_profile(array $input, array $theme): array
     $designVariant = (string) ($input['design_variant'] ?? 'calm');
     $backgroundStyle = (string) ($input['background_style'] ?? 'clean');
     $toneIsDark = !empty($theme['toneIsDark']);
+    $variantLabel = match ($designVariant) {
+        'editorial' => 'Редакционная композиция',
+        'signal' => 'Акцентная композиция',
+        'poster' => 'Плакатная композиция',
+        'monument' => 'Монументальная композиция',
+        'navigator' => 'Маршрутная композиция',
+        'gallery' => 'Галерейная композиция',
+        default => 'Спокойная композиция',
+    };
+    $contrastVariantLabel = match ($designVariant) {
+        'editorial' => 'Контрастная редакционная композиция',
+        'signal' => 'Контрастная акцентная композиция',
+        'poster' => 'Контрастная плакатная композиция',
+        'monument' => 'Контрастная монументальная композиция',
+        'navigator' => 'Контрастная маршрутная композиция',
+        'gallery' => 'Контрастная галерейная композиция',
+        default => 'Контрастная композиция',
+    };
 
     if ($brandLockup === 'mark' && $toneIsDark) {
         return ['id' => 'mark_contrast', 'label' => 'Знак на контрастной плашке'];
@@ -3605,28 +3723,13 @@ function constructor_template_profile(array $input, array $theme): array
     if ($brandLockup === 'mark') {
         return ['id' => 'mark_focus', 'label' => 'Знак как главный акцент'];
     }
-    if (in_array($backgroundStyle, ['pattern', 'watermark', 'corner', 'halo'], true)) {
-        return ['id' => 'immersive', 'label' => match ($designVariant) {
-            'editorial' => 'Редакционная композиция',
-            'signal' => 'Акцентная композиция',
-            'poster' => 'Плакатная композиция',
-            default => 'Фоновая композиция',
-        }];
+    if (in_array($backgroundStyle, ['pattern', 'watermark', 'corner', 'halo', 'split', 'rail', 'capsule'], true)) {
+        return ['id' => 'immersive', 'label' => $variantLabel];
     }
     if ($toneIsDark) {
-        return ['id' => 'contrast', 'label' => match ($designVariant) {
-            'editorial' => 'Контрастная редакционная композиция',
-            'signal' => 'Контрастная акцентная композиция',
-            'poster' => 'Контрастная плакатная композиция',
-            default => 'Контрастная композиция',
-        }];
+        return ['id' => 'contrast', 'label' => $contrastVariantLabel];
     }
-    return ['id' => 'classic', 'label' => match ($designVariant) {
-        'editorial' => 'Редакционная композиция',
-        'signal' => 'Акцентная композиция',
-        'poster' => 'Плакатная композиция',
-        default => 'Спокойная композиция',
-    }];
+    return ['id' => 'classic', 'label' => $variantLabel];
 }
 
 function constructor_brand_assets(string $colorVariant): array
@@ -3871,6 +3974,64 @@ function constructor_svg_graphic_element_scene(
                 '</g>',
             default => '',
         },
+        'logo_band' => match ($scene) {
+            'watermark' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
+                $logo(round($width * 0.46, 1), round($height * 0.08, 1), round($width * 0.22, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.64, 1), round($height * 0.14, 1), round($width * 0.18, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.78, 1), round($height * 0.2, 1), round($width * 0.14, 1), 1.0, 'background-logo-band') .
+                '</g>',
+            'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
+                $logo(round($width * 0.04, 1), round($height * 0.12, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.26, 1), round($height * 0.28, 1), round($width * 0.14, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.52, 1), round($height * 0.16, 1), round($width * 0.18, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.18, 1), round($height * 0.7, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.62, 1), round($height * 0.62, 1), round($width * 0.18, 1), 1.0, 'background-logo-band') .
+                '</g>',
+            'poster' => '<g style="opacity:0.14;">' .
+                $logo(round($width * 0.48, 1), round($height * 0.64, 1), round($width * 0.34, 1), 1.0, 'design-logo-band') .
+                $logo(round($width * 0.62, 1), round($height * 0.78, 1), round($width * 0.2, 1), 1.0, 'design-logo-band') .
+                '</g>',
+            default => '',
+        },
+        'mark_constellation' => match ($scene) {
+            'watermark' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
+                $mark(round($width * 0.62, 1), round($height * 0.1, 1), round($width * 0.1, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.72, 1), round($height * 0.16, 1), round($width * 0.09, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.8, 1), round($height * 0.24, 1), round($width * 0.08, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.86, 1), round($height * 0.34, 1), round($width * 0.07, 1), 1.0, 'background-constellation') .
+                '</g>',
+            'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
+                $mark(round($width * 0.08, 1), round($height * 0.1, 1), round($width * 0.08, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.22, 1), round($height * 0.24, 1), round($width * 0.06, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.38, 1), round($height * 0.4, 1), round($width * 0.08, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.58, 1), round($height * 0.22, 1), round($width * 0.07, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.72, 1), round($height * 0.58, 1), round($width * 0.1, 1), 1.0, 'background-constellation') .
+                $mark(round($width * 0.82, 1), round($height * 0.76, 1), round($width * 0.08, 1), 1.0, 'background-constellation') .
+                '</g>',
+            'poster' => '<g style="opacity:0.14;">' .
+                $mark(round($width * 0.66, 1), round($height * 0.52, 1), round($width * 0.12, 1), 1.0, 'design-constellation') .
+                $mark(round($width * 0.76, 1), round($height * 0.64, 1), round($width * 0.1, 1), 1.0, 'design-constellation') .
+                $mark(round($width * 0.58, 1), round($height * 0.7, 1), round($width * 0.08, 1), 1.0, 'design-constellation') .
+                '</g>',
+            default => '',
+        },
+        'lockup_bridge' => match ($scene) {
+            'watermark' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
+                $logo(round($width * 0.52, 1), round($height * 0.1, 1), round($width * 0.22, 1), 1.0, 'background-bridge-logo') .
+                $mark(round($width * 0.76, 1), round($height * 0.18, 1), round($width * 0.1, 1), 1.0, 'background-bridge-mark') .
+                '</g>',
+            'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
+                $logo(round($width * 0.06, 1), round($height * 0.12, 1), round($width * 0.16, 1), 1.0, 'background-bridge-logo') .
+                $mark(round($width * 0.28, 1), round($height * 0.18, 1), round($width * 0.07, 1), 1.0, 'background-bridge-mark') .
+                $logo(round($width * 0.5, 1), round($height * 0.54, 1), round($width * 0.18, 1), 1.0, 'background-bridge-logo') .
+                $mark(round($width * 0.74, 1), round($height * 0.66, 1), round($width * 0.09, 1), 1.0, 'background-bridge-mark') .
+                '</g>',
+            'poster' => '<g style="opacity:0.15;">' .
+                $logo(round($width * 0.54, 1), round($height * 0.66, 1), round($width * 0.28, 1), 1.0, 'design-bridge-logo') .
+                $mark(round($width * 0.74, 1), round($height * 0.56, 1), round($width * 0.1, 1), 1.0, 'design-bridge-mark') .
+                '</g>',
+            default => '',
+        },
         'logo_white' => match ($scene) {
             'watermark' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
                 $logo(round($width * 0.54, 1), round($height * 0.1, 1), round($width * 0.32, 1), 1.0, 'background-logo') .
@@ -3922,6 +4083,16 @@ function constructor_svg_background_elements(string $backgroundStyle, float $wid
             '<path d="M' . round($width * 0.72, 1) . ' ' . $height . 'H' . $width . 'V' . round($height * 0.72, 1) . 'L' . round($width * 0.86, 1) . ' ' . round($height * 0.78, 1) . 'Z" style="fill:var(--ctor-accent-soft);" opacity="0.36"/>',
         'halo' => '<circle cx="' . round($width * 0.78, 1) . '" cy="' . round($height * 0.24, 1) . '" r="' . round(min($width, $height) * 0.2, 1) . '" style="fill:var(--ctor-tone-soft);" opacity="0.78"/>' .
             '<circle cx="' . round($width * 0.2, 1) . '" cy="' . round($height * 0.78, 1) . '" r="' . round(min($width, $height) * 0.12, 1) . '" style="fill:var(--ctor-accent-soft);" opacity="0.44"/>',
+        'split' => '<rect x="0" y="0" width="' . round($width * 0.38, 1) . '" height="' . $height . '" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
+            '<path d="M' . round($width * 0.22, 1) . ' 0H' . round($width * 0.52, 1) . 'L' . round($width * 0.34, 1) . ' ' . round($height * 0.28, 1) . 'H' . round($width * 0.08, 1) . 'Z" style="fill:var(--ctor-tone-soft);" opacity="0.78"/>' .
+            '<rect x="' . round($width * 0.62, 1) . '" y="' . round($height * 0.68, 1) . '" width="' . round($width * 0.28, 1) . '" height="' . round($height * 0.22, 1) . '" rx="28" style="fill:var(--ctor-accent-soft);" opacity="0.4"/>',
+        'rail' => '<rect x="0" y="0" width="' . round(max(36.0, $width * 0.1), 1) . '" height="' . $height . '" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
+            '<rect x="' . round($width * 0.14, 1) . '" y="0" width="' . round($width * 0.28, 1) . '" height="' . round(max(34.0, $height * 0.08), 1) . '" rx="0" style="fill:var(--ctor-accent-soft);" opacity="0.44"/>' .
+            '<rect x="' . round($width * 0.72, 1) . '" y="' . round($height * 0.86, 1) . '" width="' . round($width * 0.2, 1) . '" height="' . round(max(22.0, $height * 0.05), 1) . '" rx="14" style="fill:var(--ctor-tone-soft);" opacity="0.8"/>',
+        'capsule' => '<rect x="' . round($width * 0.06, 1) . '" y="' . round($height * 0.1, 1) . '" width="' . round($width * 0.24, 1) . '" height="' . round($height * 0.12, 1) . '" rx="' . round(max(22.0, $height * 0.05), 1) . '" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
+            '<rect x="' . round($width * 0.62, 1) . '" y="' . round($height * 0.14, 1) . '" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.1, 1) . '" rx="' . round(max(22.0, $height * 0.05), 1) . '" style="fill:var(--ctor-accent-soft);" opacity="0.46"/>' .
+            '<rect x="' . round($width * 0.18, 1) . '" y="' . round($height * 0.72, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round($height * 0.09, 1) . '" rx="' . round(max(18.0, $height * 0.04), 1) . '" style="fill:var(--ctor-surface-alt);" opacity="0.82"/>' .
+            '<rect x="' . round($width * 0.68, 1) . '" y="' . round($height * 0.76, 1) . '" width="' . round($width * 0.16, 1) . '" height="' . round($height * 0.08, 1) . '" rx="' . round(max(16.0, $height * 0.035), 1) . '" style="fill:var(--ctor-tone);" opacity="0.2"/>',
         'watermark' => constructor_svg_graphic_element_layers($graphicElement, 'watermark', $width, $height, $brandAssetBundle, $brandVariant),
         'pattern' => constructor_svg_graphic_element_layers($graphicElement, 'pattern', $width, $height, $brandAssetBundle, $brandVariant),
         default => '',
@@ -3938,13 +4109,29 @@ function constructor_svg_design_overlay(string $designVariant, float $width, flo
             '<rect x="0" y="' . round($height * 0.82, 1) . '" width="' . round($width * 0.2, 1) . '" height="' . round($height * 0.18, 1) . '" style="fill:var(--ctor-tone);" opacity="0.16"/>',
         'poster' => '<rect x="' . round($width * 0.05, 1) . '" y="' . round($height * 0.07, 1) . '" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.1, 1) . '" rx="28" style="fill:var(--ctor-accent-soft);" opacity="0.6"/>' .
             constructor_svg_graphic_element_layers($graphicElement, 'poster', $width, $height, $brandAssetBundle, $brandVariant),
+        'monument' => '<rect x="' . round($width * 0.72, 1) . '" y="0" width="' . round($width * 0.28, 1) . '" height="' . $height . '" style="fill:var(--ctor-frame);" opacity="0.12"/>' .
+            '<rect x="' . round($width * 0.06, 1) . '" y="' . round($height * 0.08, 1) . '" width="' . round($width * 0.2, 1) . '" height="' . round(max(22.0, $height * 0.028), 1) . '" rx="12" style="fill:var(--ctor-accent-soft);" opacity="0.72"/>' .
+            '<rect x="' . round($width * 0.66, 1) . '" y="' . round($height * 0.6, 1) . '" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.28, 1) . '" rx="30" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
+            constructor_svg_graphic_element_layers($graphicElement, 'poster', $width, $height, $brandAssetBundle, $brandVariant),
+        'navigator' => '<path d="M' . round($width * 0.08, 1) . ' ' . round($height * 0.84, 1) . 'H' . round($width * 0.4, 1) . 'V' . round($height * 0.64, 1) . 'H' . round($width * 0.72, 1) . '" style="fill:none;stroke:var(--ctor-frame);stroke-width:4;opacity:0.28"/>' .
+            '<circle cx="' . round($width * 0.08, 1) . '" cy="' . round($height * 0.84, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-accent);opacity:0.64"/>' .
+            '<circle cx="' . round($width * 0.4, 1) . '" cy="' . round($height * 0.84, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-tone);opacity:0.56"/>' .
+            '<circle cx="' . round($width * 0.4, 1) . '" cy="' . round($height * 0.64, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-tone-soft);opacity:0.9"/>' .
+            '<circle cx="' . round($width * 0.72, 1) . '" cy="' . round($height * 0.64, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-accent-soft);opacity:0.9"/>' .
+            '<rect x="' . round($width * 0.08, 1) . '" y="' . round($height * 0.12, 1) . '" width="' . round($width * 0.16, 1) . '" height="' . round(max(20.0, $height * 0.022), 1) . '" rx="10" style="fill:var(--ctor-accent-soft);" opacity="0.68"/>' .
+            constructor_svg_graphic_element_layers($graphicElement, 'watermark', $width, $height, $brandAssetBundle, $brandVariant),
+        'gallery' => '<rect x="' . round($width * 0.05, 1) . '" y="' . round($height * 0.08, 1) . '" width="' . round($width * 0.9, 1) . '" height="' . round($height * 0.84, 1) . '" rx="30" fill="none" style="stroke:var(--ctor-frame);" stroke-width="3" opacity="0.2"/>' .
+            '<rect x="' . round($width * 0.08, 1) . '" y="' . round($height * 0.12, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round(max(20.0, $height * 0.024), 1) . '" rx="10" style="fill:var(--ctor-tone-soft);" opacity="0.86"/>' .
+            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.18, 1) . '" x2="' . round($width * 0.24, 1) . '" y2="' . round($height * 0.18, 1) . '" style="stroke:var(--ctor-frame);stroke-width:3;opacity:0.18"/>' .
+            '<line x1="' . round($width * 0.78, 1) . '" y1="' . round($height * 0.82, 1) . '" x2="' . round($width * 0.92, 1) . '" y2="' . round($height * 0.82, 1) . '" style="stroke:var(--ctor-frame);stroke-width:3;opacity:0.2"/>' .
+            constructor_svg_graphic_element_layers($graphicElement, 'watermark', $width, $height, $brandAssetBundle, $brandVariant),
         default => '',
     };
 }
 
 function constructor_svg_background_layers(string $activeStyle, float $width, float $height, array $brandAssetBundle, string $brandVariant, string $designVariant = 'calm', string $graphicElement = 'mark_yamal'): string
 {
-    $styles = ['clean', 'band', 'frame', 'watermark', 'pattern', 'corner', 'halo'];
+    $styles = ['clean', 'band', 'frame', 'watermark', 'pattern', 'corner', 'halo', 'split', 'rail', 'capsule'];
     $out = '';
     foreach ($styles as $style) {
         $content = $style === 'clean'
@@ -3953,7 +4140,7 @@ function constructor_svg_background_layers(string $activeStyle, float $width, fl
         $display = $style === $activeStyle ? 'inline' : 'none';
         $out .= '<g data-constructor-bg-style="' . constructor_svg_escape($style) . '" style="display:' . $display . ';">' . $content . '</g>';
     }
-    foreach (['calm', 'editorial', 'signal', 'poster'] as $variant) {
+    foreach (['calm', 'editorial', 'signal', 'poster', 'monument', 'navigator', 'gallery'] as $variant) {
         $content = constructor_svg_design_overlay($variant, $width, $height, $brandAssetBundle, $brandVariant, $graphicElement);
         $display = $variant === $designVariant ? 'inline' : 'none';
         $out .= '<g data-constructor-design-style="' . constructor_svg_escape($variant) . '" style="display:' . $display . ';">' . $content . '</g>';

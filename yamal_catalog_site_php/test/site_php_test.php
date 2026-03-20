@@ -11,6 +11,22 @@ function assert_true(bool $condition, string $message): void
     }
 }
 
+function constructor_test_defaults(array $definition): array
+{
+    $defaults = [];
+    foreach (($definition['fields'] ?? []) as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+        $fieldId = (string) ($field['id'] ?? '');
+        if ($fieldId === '') {
+            continue;
+        }
+        $defaults[$fieldId] = $field['default'] ?? '';
+    }
+    return $defaults;
+}
+
 $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-ribbon'), 'index contains hero ribbon block');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Официальная библиотека фирменного стиля'), 'index contains official library ribbon text');
@@ -425,14 +441,25 @@ $styleLabels = constructor_color_variant_labels();
 assert_true(($styleLabels['cmyk'] ?? '') === 'CMYK для печати', 'constructor exposes grounded cmyk color variant label');
 assert_true((constructor_brand_lockup_labels()['logo'] ?? '') === 'Логотип с надписью', 'constructor exposes grounded logo lockup label');
 assert_true((constructor_graphic_element_labels()['mark_yamal'] ?? '') === 'Знак Ямал', 'constructor exposes grounded graphic element label');
+assert_true((constructor_graphic_element_labels()['logo_band'] ?? '') === 'Лента логотипов', 'constructor exposes expanded logo band graphic element label');
+assert_true((constructor_graphic_element_labels()['lockup_bridge'] ?? '') === 'Логотип + знак', 'constructor exposes expanded bridge graphic element label');
 assert_true((constructor_design_variant_labels()['poster'] ?? '') === 'Плакатный', 'constructor exposes grounded design variant label');
+assert_true((constructor_design_variant_labels()['monument'] ?? '') === 'Монументальный', 'constructor exposes expanded monument design variant label');
+assert_true((constructor_design_variant_labels()['gallery'] ?? '') === 'Галерейный', 'constructor exposes expanded gallery design variant label');
 assert_true((constructor_background_style_labels()['pattern'] ?? '') === 'Сетка из знака', 'constructor exposes grounded background element label');
 assert_true((constructor_background_style_labels()['corner'] ?? '') === 'Угловой акцент', 'constructor exposes extended grounded background option');
+assert_true((constructor_background_style_labels()['split'] ?? '') === 'Разделённая сцена', 'constructor exposes expanded split background option');
+assert_true((constructor_background_style_labels()['rail'] ?? '') === 'Опорная рейка', 'constructor exposes expanded rail background option');
 assert_true((constructor_palette_tone_labels()['ivory'] ?? '') === 'Мамонтовая кость', 'constructor exposes grounded palette tone label from supplied palette');
 $graphicElementOptions = constructor_graphic_element_options();
-assert_true(count($graphicElementOptions) >= 6, 'constructor exposes extended grounded graphic element options');
-assert_true((string) ($graphicElementOptions[1]['label'] ?? '') === 'Group 1410103616', 'constructor exposes first grounded group option by supplied id');
-assert_true(str_contains((string) ($graphicElementOptions[5]['label'] ?? ''), 'White'), 'constructor exposes white graphic lockup option copy');
+assert_true(count($graphicElementOptions) >= 9, 'constructor exposes expanded grounded graphic element options');
+$graphicOptionLabels = [];
+foreach ($graphicElementOptions as $option) {
+    $graphicOptionLabels[(string) ($option['value'] ?? '')] = (string) ($option['label'] ?? '');
+}
+assert_true(($graphicOptionLabels['group_1410103616'] ?? '') === 'Group 1410103616', 'constructor keeps grounded supplied group option by id');
+assert_true(($graphicOptionLabels['logo_band'] ?? '') === 'Лента логотипов', 'constructor exposes logo band option in style controls');
+assert_true(str_contains(($graphicOptionLabels['logo_white'] ?? ''), 'White'), 'constructor exposes white graphic lockup option copy');
 $paletteOptions = constructor_palette_tone_options();
 $accentPaletteOption = null;
 $ivoryPaletteOption = null;
@@ -448,6 +475,14 @@ assert_true((string) ($accentPaletteOption['swatch'] ?? '') === '#C40E3D', 'cons
 assert_true((string) ($ivoryPaletteOption['swatchSoft'] ?? '') === '#FFF9F0', 'constructor exposes supplied light palette tint metadata for style cards');
 assert_true(str_contains((string) (constructor_color_variant_options()[3]['description'] ?? ''), 'Белая'), 'constructor exposes descriptive text for color variant cards');
 assert_true(str_contains((string) (constructor_design_variant_options()[1]['description'] ?? ''), 'Редак'), 'constructor exposes descriptive text for design cards');
+assert_true(
+    array_reduce(
+        constructor_background_style_options(),
+        static fn(bool $carry, array $item): bool => $carry || (($item['value'] ?? '') === 'capsule' && str_contains((string) ($item['description'] ?? ''), 'округл')),
+        false
+    ),
+    'constructor exposes descriptive text for capsule background cards'
+);
 assert_true((constructor_theme_palette('color', 'r6034')['tone'] ?? '') === '#D1E2E2', 'constructor theme palette exposes supplied RAL 6034 background tone');
 
 $styledConstructorIds = ['business_card', 'nameplate', 'information_stand', 'room_navigation_sign', 'presentation_deck', 'certificate', 'badge', 'social_post', 'letterhead', 'rollup'];
@@ -547,6 +582,30 @@ assert_true(str_contains($styledBusinessCardContent, '--ctor-lockup-fill:#C40E3D
 assert_true(str_contains($styledBusinessCardContent, 'data-constructor-design-style="poster"'), 'constructor svg exposes design variant layers for live preview');
 assert_true(str_contains($styledBusinessCardContent, 'data-constructor-graphic-element="group_2087328779"'), 'constructor svg exposes toggleable graphic element groups for live preview');
 
+$expandedBusinessCardInput = constructor_normalize_input($businessCardDefinition, [
+    'full_name' => 'Анна Куликова',
+    'role' => 'Руководитель направления',
+    'phone' => '+7 900 000-00-01',
+    'email' => 'design@yamal.ru',
+    'department' => 'Лаборатория решений',
+    'graphic_element' => 'lockup_bridge',
+    'design_variant' => 'monument',
+    'background_style' => 'split',
+    'palette_tone' => 'p621',
+    'brand_lockup' => 'logo',
+]);
+$expandedBusinessCardDerived = constructor_derived_payload($businessCardDefinition, $expandedBusinessCardInput);
+assert_true(($expandedBusinessCardDerived['graphicElementLabel'] ?? '') === 'Логотип + знак', 'constructor derived payload exposes expanded bridge graphic element label');
+assert_true(($expandedBusinessCardDerived['designVariantLabel'] ?? '') === 'Монументальный', 'constructor derived payload exposes expanded monument design variant label');
+assert_true(($expandedBusinessCardDerived['backgroundStyleLabel'] ?? '') === 'Разделённая сцена', 'constructor derived payload exposes expanded split background label');
+$expandedBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $expandedBusinessCardInput);
+assert_true($expandedBusinessCardSvg !== null, 'expanded business card svg artifact exists');
+$expandedBusinessCardContent = (string) ($expandedBusinessCardSvg['content'] ?? '');
+assert_true(str_contains($expandedBusinessCardContent, 'data-constructor-design-style="monument"'), 'constructor svg exposes expanded monument design layer for live preview');
+assert_true(str_contains($expandedBusinessCardContent, 'data-constructor-bg-style="split"'), 'constructor svg exposes expanded split background layer for live preview');
+assert_true(str_contains($expandedBusinessCardContent, 'data-constructor-graphic-element="lockup_bridge"'), 'constructor svg exposes expanded bridge graphic element group for live preview');
+assert_true(substr_count($expandedBusinessCardContent, '<image ') >= 4, 'expanded business card svg uses additional grounded brand assets in monument scene');
+
 $whiteBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
     'color_variant' => 'white',
     'brand_lockup' => 'logo',
@@ -598,6 +657,7 @@ assert_true(str_contains((string) ($lightMarkBusinessCardSvg['content'] ?? ''), 
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
+assert_true(count(constructor_present_presets($nameplateDefinition, constructor_test_defaults($nameplateDefinition))) >= 4, 'nameplate constructor exposes expanded preset set');
 assert_true(
     array_reduce(
         $nameplateDefinition['fields'] ?? [],
@@ -643,6 +703,7 @@ assert_true(str_contains((string) ($nameplateSvg['content'] ?? ''), 'font-size:'
 
 $informationStandDefinition = constructor_definition_by_id('information_stand');
 assert_true($informationStandDefinition !== null, 'information stand constructor definition exists');
+assert_true(count(constructor_present_presets($informationStandDefinition, constructor_test_defaults($informationStandDefinition))) >= 4, 'information stand constructor exposes expanded preset set');
 assert_true(
     array_reduce(
         $informationStandDefinition['fields'] ?? [],
@@ -700,6 +761,7 @@ assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'font
 
 $roomNavigationDefinition = constructor_definition_by_id('room_navigation_sign');
 assert_true($roomNavigationDefinition !== null, 'room navigation sign constructor definition exists');
+assert_true(count(constructor_present_presets($roomNavigationDefinition, constructor_test_defaults($roomNavigationDefinition))) >= 4, 'room navigation sign constructor exposes expanded preset set');
 assert_true(
     array_reduce(
         $roomNavigationDefinition['fields'] ?? [],
@@ -746,6 +808,7 @@ assert_true(str_contains((string) ($roomNavigationSvg['content'] ?? ''), 'font-s
 
 $presentationDefinition = constructor_definition_by_id('presentation_deck');
 assert_true($presentationDefinition !== null, 'presentation constructor definition exists');
+assert_true(count(constructor_present_presets($presentationDefinition, constructor_test_defaults($presentationDefinition))) >= 4, 'presentation constructor exposes expanded preset set');
 assert_true(
     array_reduce(
         $presentationDefinition['fields'] ?? [],
