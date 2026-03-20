@@ -6,21 +6,21 @@ require __DIR__ . '/src/site_lib.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-$service = new SiteCatalogService();
-$action = trim((string) ($_GET['action'] ?? ''));
-$rawBody = file_get_contents('php://input');
-$jsonBody = [];
-if (is_string($rawBody) && trim($rawBody) !== '') {
-    $decodedBody = json_decode($rawBody, true);
-    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedBody)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'invalid_json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
-    }
-    $jsonBody = $decodedBody;
-}
-
 try {
+    $service = new SiteCatalogService();
+    $action = trim((string) ($_GET['action'] ?? ''));
+    $rawBody = file_get_contents('php://input');
+    $jsonBody = [];
+    if (is_string($rawBody) && trim($rawBody) !== '') {
+        $decodedBody = json_decode($rawBody, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedBody)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'invalid_json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+        $jsonBody = $decodedBody;
+    }
+
     switch ($action) {
         case 'bootstrap':
             echo json_encode($service->getBootstrap(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

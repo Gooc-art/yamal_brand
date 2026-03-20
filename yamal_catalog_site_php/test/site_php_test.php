@@ -143,11 +143,22 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage.is-panorama'), 'styles contain panorama constructor preview profile');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-visual.is-document svg'), 'styles contain document constructor preview profile');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-progress-strip'), 'styles contain constructor progress strip classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-draft-status'), 'styles contain constructor draft status classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-list'), 'styles contain constructor warning list classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-card.tone-warn'), 'styles contain constructor warning warn state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-panel'), 'styles contain compact constructor support panel classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-note'), 'styles contain compact constructor support note classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-shell.is-syncing'), 'styles contain constructor syncing state classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-form-actions > *'), 'styles normalize constructor action buttons');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-download-card'), 'styles contain constructor artifact download classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.workspace-stage.is-constructor-mode'), 'styles expose constructor workspace mode override for sticky preview');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '@media (min-width: 981px)'), 'styles expose sticky preview breakpoint for two-column constructor layout');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '@media (max-width: 980px) and (min-width: 761px)'), 'styles expose sticky preview breakpoint for single-column tablet constructor layout');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel-frame'), 'styles expose preview frame wrapper for floating constructor preview');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating .constructor-preview-panel-frame'), 'styles expose fixed constructor preview fallback');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-preview-panel-frame'), 'styles expose floating dock fallback for constructor preview');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group-style .constructor-choice-card'), 'styles expose compact constructor style card layout');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-style-primary,'), 'styles expose dense constructor style grids');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-auto-flow: column'), 'styles contain horizontal rail flow');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
@@ -179,8 +190,18 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'pale
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'isConstructorChoiceField'), 'frontend exposes constructor choice field helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldAutoBuildConstructorField'), 'frontend exposes constructor auto-build helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCompletion'), 'frontend exposes constructor completion helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_DRAFT_STORAGE_KEY'), 'frontend exposes constructor draft storage key');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'loadConstructorDraft'), 'frontend exposes constructor draft restore helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'saveConstructorDraft'), 'frontend exposes constructor draft save helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'removeConstructorDraft'), 'frontend exposes constructor draft clear helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorWarnings'), 'frontend exposes constructor warning helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorLivePreview'), 'frontend exposes local constructor live preview helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS'), 'frontend exposes live constructor preview field set');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'setWorkspaceStageMode'), 'frontend exposes workspace mode helper for constructor sticky preview');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-constructor-mode'), 'frontend toggles constructor workspace mode class');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scheduleConstructorPreviewFloatSync'), 'frontend exposes constructor preview floating sync helper');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-floating-dock'), 'frontend toggles floating dock mode for constructor preview');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-preview-panel-frame'), 'frontend renders preview frame wrapper for floating constructor preview');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-style-more'), 'frontend exposes compact advanced style block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');
@@ -188,6 +209,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'cons
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorGroupMeta'), 'frontend builds compact constructor accordion meta');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'captureConstructorViewState'), 'frontend captures constructor view state before silent rebuilds');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'restoreConstructorViewState'), 'frontend restores constructor view state after silent rebuilds');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-warning-list'), 'frontend renders constructor warnings near progress');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-draft-status'), 'frontend renders constructor draft status near progress');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'applyConstructorPreset'), 'frontend applies constructor presets');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend exposes constructor preset action');
@@ -944,7 +967,30 @@ assert_true(in_array('Брендбук Салехард/Брендбук Сал�
 assert_true(str_contains(implode(' ', array_column($builtRows, 'search_text')), 'логотип'), 'search text includes normalized file words');
 
 if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-    fwrite(STDOUT, "skipped: pdo_sqlite not available in local PHP CLI; pure scan checks passed\n");
+    $fallbackService = new SiteCatalogService([
+        'title' => 'Fallback Site',
+        'catalog_db_path' => $base . '/fallback_catalog.db',
+        'runtime_db_path' => $base . '/fallback_runtime.db',
+        'catalog_root_path' => $base . '/upload',
+        'page_size' => 12,
+        'favorites_limit' => 5,
+        'public_base' => '',
+    ]);
+    $fallbackBootstrap = $fallbackService->getBootstrap();
+    assert_true(
+        $fallbackBootstrap['setupMessage'] === 'В PHP не подключен драйвер pdo_sqlite, поэтому каталог и аналитика SQLite сейчас недоступны. Подключите расширение и перезапустите сайт.',
+        'fallback bootstrap explains missing sqlite driver'
+    );
+    assert_true(($fallbackBootstrap['stats']['totalAssets'] ?? -1) === 0, 'fallback bootstrap keeps catalog stats empty without sqlite');
+    assert_true(count($fallbackBootstrap['sections'] ?? []) === 0, 'fallback bootstrap keeps sections empty without sqlite');
+    assert_true(count($fallbackBootstrap['constructors']['items'] ?? []) >= 8, 'fallback bootstrap still exposes constructor cards without sqlite');
+    $fallbackCatalogDb = new CatalogDb($base . '/fallback_catalog.db', $base . '/upload');
+    assert_true($fallbackCatalogDb->isAvailable() === false, 'catalog db stays unavailable without sqlite driver');
+    assert_true($fallbackCatalogDb->availabilityReason() === 'pdo_sqlite_missing', 'catalog db exposes missing sqlite reason');
+    $fallbackRuntimeDb = new RuntimeDb($base . '/fallback_runtime.db');
+    assert_true($fallbackRuntimeDb->isAvailable() === false, 'runtime db stays unavailable without sqlite driver');
+    assert_true($fallbackRuntimeDb->availabilityReason() === 'pdo_sqlite_missing', 'runtime db exposes missing sqlite reason');
+    fwrite(STDOUT, "ok: fallback checks passed without pdo_sqlite\n");
     exit(0);
 }
 

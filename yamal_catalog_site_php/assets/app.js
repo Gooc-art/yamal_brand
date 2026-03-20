@@ -5,6 +5,11 @@ const DEFAULT_SOLUTION_FILTER = 'all';
 const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['design_variant', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
+const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
+const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 981;
+const CONSTRUCTOR_PREVIEW_TOP_OFFSET = 18;
+const CONSTRUCTOR_PREVIEW_VIEWPORT_GAP = 28;
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
@@ -14,6 +19,7 @@ const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'merch', label: 'Сувенирка и носители', summary: 'Сувенирка', description: 'Сувениры, полиграфия и диджитал.', prompt: 'сувенирка наклейки' },
   { id: 'graphics', label: 'SVG, паттерны, графика', summary: 'SVG и паттерны', description: 'SVG, паттерны и векторная графика.', prompt: 'svg паттерн' },
 ];
+let constructorPreviewFloatFrame = 0;
 
 function escapeHtml(value) {
   return String(value || '')
@@ -589,6 +595,281 @@ function buildConstructorCompletion(fields, input) {
   };
 }
 
+function normalizeConstructorDraftInput(fields, input) {
+  const fieldList = Array.isArray(fields) ? fields : [];
+  const source = input && typeof input === 'object' ? input : {};
+  const normalized = {};
+
+  fieldList.forEach((field) => {
+    const fieldId = String(field?.id || '').trim();
+    if (!fieldId || !Object.prototype.hasOwnProperty.call(source, fieldId)) {
+      return;
+    }
+
+    const fieldType = String(field?.type || 'text').trim().toLowerCase();
+    const rawValue = source[fieldId];
+    const value = Array.isArray(rawValue) ? String(rawValue[0] ?? '') : String(rawValue ?? '');
+    const defaultValue = String(field?.default ?? '');
+
+    if ((fieldType === 'select' || fieldType === 'radio') && Array.isArray(field?.options) && field.options.length) {
+      const allowedValues = new Set(field.options.map((option) => String(option?.value ?? '')));
+      if (value !== '' && !allowedValues.has(value)) {
+        return;
+      }
+    }
+
+    if (value === defaultValue) {
+      return;
+    }
+
+    normalized[fieldId] = value;
+  });
+
+  return normalized;
+}
+
+function buildConstructorDraftEntry(fields, input, nowValue = new Date()) {
+  const normalizedInput = normalizeConstructorDraftInput(fields, input);
+  if (!Object.keys(normalizedInput).length) {
+    return null;
+  }
+
+  const updatedAt = nowValue instanceof Date
+    ? nowValue.toISOString()
+    : String(nowValue || '').trim() || new Date().toISOString();
+
+  return {
+    input: normalizedInput,
+    updatedAt,
+  };
+}
+
+function normalizeStoredConstructorDraft(entry, fields) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    return null;
+  }
+
+  const normalizedInput = normalizeConstructorDraftInput(fields, entry.input);
+  if (!Object.keys(normalizedInput).length) {
+    return null;
+  }
+
+  return {
+    input: normalizedInput,
+    updatedAt: String(entry.updatedAt || '').trim(),
+  };
+}
+
+function readConstructorDraftStore(storage = null) {
+  if (!storage || typeof storage.getItem !== 'function') {
+    return {};
+  }
+
+  try {
+    const raw = storage.getItem(CONSTRUCTOR_DRAFT_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeConstructorDraftStore(store, storage = null) {
+  if (!storage || typeof storage.setItem !== 'function') {
+    return false;
+  }
+
+  try {
+    storage.setItem(CONSTRUCTOR_DRAFT_STORAGE_KEY, JSON.stringify(store || {}));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function loadConstructorDraft(constructorId, fields, storage = null) {
+  const normalizedId = String(constructorId || '').trim();
+  if (!normalizedId) {
+    return null;
+  }
+
+  const store = readConstructorDraftStore(storage);
+  return normalizeStoredConstructorDraft(store[normalizedId], fields);
+}
+
+function saveConstructorDraft(constructorId, fields, input, storage = null, nowValue = new Date()) {
+  const normalizedId = String(constructorId || '').trim();
+  if (!normalizedId) {
+    return null;
+  }
+
+  const nextEntry = buildConstructorDraftEntry(fields, input, nowValue);
+  const store = readConstructorDraftStore(storage);
+
+  if (!nextEntry) {
+    delete store[normalizedId];
+    writeConstructorDraftStore(store, storage);
+    return null;
+  }
+
+  store[normalizedId] = nextEntry;
+  return writeConstructorDraftStore(store, storage) ? nextEntry : null;
+}
+
+function removeConstructorDraft(constructorId, storage = null) {
+  const normalizedId = String(constructorId || '').trim();
+  if (!normalizedId) {
+    return false;
+  }
+
+  const store = readConstructorDraftStore(storage);
+  if (!Object.prototype.hasOwnProperty.call(store, normalizedId)) {
+    return true;
+  }
+
+  delete store[normalizedId];
+  return writeConstructorDraftStore(store, storage);
+}
+
+function buildConstructorDraftState(draftMeta) {
+  const meta = draftMeta && typeof draftMeta === 'object' ? draftMeta : {};
+  if (meta.restored) {
+    return {
+      title: 'Черновик восстановлен',
+      note: 'Последняя локальная версия формы подставлена автоматически и будет сохраняться дальше в этом браузере.',
+    };
+  }
+  if (String(meta.updatedAt || '').trim()) {
+    return {
+      title: 'Черновик сохраняется локально',
+      note: 'Изменения формы останутся в этом браузере даже после обновления страницы.',
+    };
+  }
+  return {
+    title: 'Черновик включен',
+    note: 'Форма сохраняется локально в этом браузере без отдельного проекта на сервере.',
+  };
+}
+
+function summarizeConstructorFieldLabels(labels, maxItems = 3) {
+  const normalized = Array.from(new Set((Array.isArray(labels) ? labels : [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)));
+  if (!normalized.length) {
+    return '';
+  }
+  if (normalized.length <= maxItems) {
+    return normalized.join(', ');
+  }
+  return `${normalized.slice(0, maxItems).join(', ')} и ещё ${normalized.length - maxItems}`;
+}
+
+function constructorFieldWarningThreshold(field) {
+  const fieldId = String(field?.id || '').trim();
+  const fieldType = String(field?.type || 'text').trim().toLowerCase();
+
+  if (/^(full_name|recipient)$/u.test(fieldId)) {
+    return { soft: 32, hard: 48 };
+  }
+  if (/^(headline|title|document_title|location)$/u.test(fieldId)) {
+    return { soft: 54, hard: 84 };
+  }
+  if (/^(role|department|speaker|speaker_role|signer|event_name|cta|subline|reason)$/u.test(fieldId)) {
+    return { soft: 68, hard: 120 };
+  }
+  if (/^(message|structure|contact_line)$/u.test(fieldId)) {
+    return { soft: 170, hard: 280 };
+  }
+  if (fieldType === 'textarea') {
+    return { soft: 150, hard: 260 };
+  }
+  if (fieldType === 'email') {
+    return { soft: 34, hard: 54 };
+  }
+  if (fieldType === 'text') {
+    return { soft: 64, hard: 110 };
+  }
+  return null;
+}
+
+function buildConstructorWarnings(fields, input, options = {}) {
+  const fieldList = Array.isArray(fields) ? fields : [];
+  const source = input && typeof input === 'object' ? input : {};
+  const warnings = [];
+  const missingRequired = [];
+  const longFields = [];
+
+  fieldList.forEach((field) => {
+    const fieldId = String(field?.id || '').trim();
+    const fieldType = String(field?.type || 'text').trim().toLowerCase();
+    if (!fieldId || fieldType === 'hidden') {
+      return;
+    }
+
+    const label = String(field?.label || fieldId).trim() || fieldId;
+    const value = source[fieldId] ?? field?.default ?? '';
+    const hasValue = hasConstructorFieldValue(value);
+
+    if (Boolean(field?.required) && !hasValue) {
+      missingRequired.push(label);
+    }
+
+    if (!hasValue || isConstructorChoiceField(fieldId)) {
+      return;
+    }
+
+    const threshold = constructorFieldWarningThreshold(field);
+    if (!threshold) {
+      return;
+    }
+
+    const compactLength = String(value ?? '').replace(/\s+/gu, ' ').trim().length;
+    if (compactLength >= threshold.hard) {
+      longFields.push({ label, severity: 'hard' });
+    } else if (compactLength >= threshold.soft) {
+      longFields.push({ label, severity: 'soft' });
+    }
+  });
+
+  if (missingRequired.length) {
+    warnings.push({
+      id: 'missing_required',
+      tone: 'warn',
+      title: 'Заполните обязательные поля',
+      message: `Нужно ещё: ${summarizeConstructorFieldLabels(missingRequired, 3)}.`,
+    });
+  }
+
+  if (longFields.length) {
+    const severe = longFields.some((item) => item.severity === 'hard');
+    warnings.push({
+      id: 'long_text',
+      tone: severe ? 'warn' : 'info',
+      title: severe ? 'Текст уже упирается в safe-area' : 'Проверьте длинные поля',
+      message: severe
+        ? `Поля ${summarizeConstructorFieldLabels(longFields.map((item) => item.label), 2)} могут сильнее ужать кегль или переносы в макете.`
+        : `Поля ${summarizeConstructorFieldLabels(longFields.map((item) => item.label), 2)} уже выглядят плотными. Проверьте их в превью перед handoff.`,
+    });
+  }
+
+  if (String(options?.previewArtifact?.previewType || '').trim() === 'svg' && longFields.length) {
+    warnings.push({
+      id: 'preview_review',
+      tone: 'info',
+      title: 'Сверьте SVG перед передачей',
+      message: 'Перед согласованием и handoff откройте превью и проверьте переносы, охранные поля и читаемость длинного текста.',
+    });
+  }
+
+  return warnings.slice(0, 3);
+}
+
 function collectConstructorFormInput(form) {
   const input = {};
   new FormData(form).forEach((value, key) => {
@@ -897,6 +1178,16 @@ function normalizeWorkspaceErrorMessage(error, fallbackMessage = '') {
   return source;
 }
 
+function buildConstructorWarningsMarkup(warnings) {
+  const items = Array.isArray(warnings) ? warnings.filter((item) => item && item.title && item.message) : [];
+  return items.map((item) => `
+    <article class="constructor-warning-card tone-${escapeHtml(item.tone || 'info')}">
+      <strong>${escapeHtml(item.title)}</strong>
+      <span>${escapeHtml(item.message)}</span>
+    </article>
+  `).join('');
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     normalizeRoute,
@@ -910,6 +1201,13 @@ if (typeof module !== 'undefined' && module.exports) {
     groupConstructorFields,
     buildConstructorChoicePreview,
     buildConstructorCompletion,
+    normalizeConstructorDraftInput,
+    buildConstructorDraftEntry,
+    loadConstructorDraft,
+    saveConstructorDraft,
+    removeConstructorDraft,
+    buildConstructorDraftState,
+    buildConstructorWarnings,
     constructorPaletteToneDefinition,
     buildConstructorLiveTheme,
     resolveConstructorLiveBrandVariant,
@@ -973,6 +1271,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   const constructorBuildCache = new Map();
   let constructorBuildAbortController = null;
   let constructorBuildRequestId = 0;
+  let constructorDraftSaveTimer = 0;
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
@@ -1015,6 +1314,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     consultantResult: document.querySelector('#consultant-result'),
     workspaceShell: document.querySelector('#workspace-shell'),
     workspaceGrid: document.querySelector('#workspace-grid'),
+    workspaceStage: document.querySelector('.workspace-stage'),
     workspaceToggle: document.querySelector('#workspace-toggle'),
     workspaceCopy: document.querySelector('#workspace-copy'),
     workspaceInspector: document.querySelector('#workspace-inspector'),
@@ -1210,12 +1510,64 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     shell.classList.toggle('is-syncing', Boolean(active));
   }
 
-  function updateConstructorProgressStrip(fields, input, previewArtifact) {
+  function decorateConstructorPayload(payload, draftMeta) {
+    if (!payload || typeof payload !== 'object') {
+      return payload;
+    }
+    const { draftMeta: existingDraftMeta, ...rest } = payload;
+    if (!draftMeta) {
+      return rest;
+    }
+    return {
+      ...rest,
+      draftMeta: {
+        ...(existingDraftMeta && typeof existingDraftMeta === 'object' ? existingDraftMeta : {}),
+        ...draftMeta,
+      },
+    };
+  }
+
+  function currentConstructorFields(constructorId = '') {
+    const currentId = String(state.current?.payload?.definition?.id || '').trim();
+    if (constructorId && currentId && constructorId !== currentId) {
+      return [];
+    }
+    return Array.isArray(state.current?.payload?.definition?.fields) ? state.current.payload.definition.fields : [];
+  }
+
+  function currentConstructorPreviewArtifact() {
+    return pickConstructorPreviewArtifact(state.current?.payload?.artifacts || []);
+  }
+
+  function setCurrentConstructorDraftMeta(draftMeta) {
+    if (state.current?.kind !== 'constructor' || !state.current?.payload) {
+      return;
+    }
+    state.current = {
+      ...state.current,
+      payload: decorateConstructorPayload(state.current.payload, draftMeta),
+    };
+  }
+
+  function persistConstructorDraft(constructorId, fields, input, options = {}) {
+    const draftEntry = saveConstructorDraft(constructorId, fields, input, window.localStorage);
+    const draftMeta = draftEntry
+      ? { updatedAt: draftEntry.updatedAt, restored: Boolean(options.restored) }
+      : null;
+    setCurrentConstructorDraftMeta(draftMeta);
+    return draftMeta;
+  }
+
+  function updateConstructorProgressStrip(fields, input, previewArtifact, options = {}) {
     const strip = document.querySelector('.constructor-progress-strip');
     if (!strip) {
       return;
     }
     const completion = buildConstructorCompletion(fields, input);
+    const warnings = buildConstructorWarnings(fields, input, {
+      previewArtifact,
+    });
+    const draftState = buildConstructorDraftState(options?.draftMeta ?? state.current?.payload?.draftMeta);
     const artifactLabel = String(previewArtifact?.label || 'Черновое превью').trim() || 'Черновое превью';
     const statusTitle = completion.ready ? 'Шаблон готов к сборке' : 'Заполнение шаблона';
     const statusNote = completion.ready
@@ -1230,6 +1582,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const artifactNode = strip.querySelector('[data-constructor-progress-artifact]');
     const requiredNode = strip.querySelector('[data-constructor-progress-required]');
     const statusCard = strip.querySelector('[data-constructor-progress-status-card]');
+    const draftTitleNode = strip.querySelector('[data-constructor-draft-title]');
+    const draftNoteNode = strip.querySelector('[data-constructor-draft-note]');
+    const warningListNode = strip.querySelector('[data-constructor-warning-list]');
 
     if (titleNode) titleNode.textContent = statusTitle;
     if (noteNode) noteNode.textContent = statusNote;
@@ -1240,7 +1595,52 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (statusCard) {
       statusCard.classList.toggle('is-ready', completion.ready);
     }
+    if (draftTitleNode) draftTitleNode.textContent = draftState.title;
+    if (draftNoteNode) draftNoteNode.textContent = draftState.note;
+    if (warningListNode) {
+      warningListNode.innerHTML = buildConstructorWarningsMarkup(warnings);
+      warningListNode.hidden = warnings.length === 0;
+    }
     strip.querySelector('.constructor-progress-bar')?.setAttribute('aria-valuenow', String(completion.percent));
+    scheduleConstructorPreviewFloatSync();
+  }
+
+  function refreshConstructorProgressFromForm(form, options = {}) {
+    if (!form || state.current?.kind !== 'constructor') {
+      return;
+    }
+    const fields = currentConstructorFields(String(form.dataset.constructorId || '').trim());
+    const nextInput = options?.input && typeof options.input === 'object'
+      ? options.input
+      : collectConstructorFormInput(form);
+    updateConstructorProgressStrip(fields, nextInput, currentConstructorPreviewArtifact(), {
+      draftMeta: options?.draftMeta,
+    });
+  }
+
+  function scheduleConstructorDraftSave(form, options = {}) {
+    if (!form) {
+      return;
+    }
+
+    const constructorId = String(form.dataset.constructorId || '').trim();
+    const fields = currentConstructorFields(constructorId);
+    if (!constructorId || !fields.length) {
+      return;
+    }
+
+    const nextInput = options?.input && typeof options.input === 'object'
+      ? options.input
+      : collectConstructorFormInput(form);
+
+    window.clearTimeout(constructorDraftSaveTimer);
+    constructorDraftSaveTimer = window.setTimeout(() => {
+      if (!document.body.contains(form)) {
+        return;
+      }
+      const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
+      refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
+    }, CONSTRUCTOR_DRAFT_SAVE_DELAY);
   }
 
   function captureConstructorViewState() {
@@ -1251,7 +1651,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
     const scrollingElement = document.scrollingElement;
     const pageScrollTop = scrollingElement ? scrollingElement.scrollTop : window.scrollY;
-    const previewPanel = shell.querySelector('.constructor-preview-panel');
+    const previewPanel = shell.querySelector('.constructor-preview-panel-frame') || shell.querySelector('.constructor-preview-panel');
     const previewStage = shell.querySelector('.constructor-preview-stage');
     const accordionIds = Array.from(shell.querySelectorAll('.constructor-field-accordion[open]'))
       .map((node) => String(node.getAttribute('data-constructor-group-id') || '').trim())
@@ -1290,7 +1690,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         styleMore.open = Boolean(viewState.styleMoreOpen);
       }
 
-      const previewPanel = shell.querySelector('.constructor-preview-panel');
+      const previewPanel = shell.querySelector('.constructor-preview-panel-frame') || shell.querySelector('.constructor-preview-panel');
       if (previewPanel) {
         previewPanel.scrollTop = Number(viewState.previewPanelScrollTop || 0);
       }
@@ -1305,6 +1705,88 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       } else {
         window.scrollTo(0, Number(viewState.pageScrollTop || 0));
       }
+
+      scheduleConstructorPreviewFloatSync();
+    });
+  }
+
+  function clearConstructorPreviewFloatState(panel = null) {
+    const resolvedPanel = panel || document.querySelector('.constructor-preview-panel');
+    if (!resolvedPanel) {
+      return;
+    }
+    resolvedPanel.classList.remove('is-floating', 'is-bottom-anchored', 'is-floating-dock');
+    resolvedPanel.style.removeProperty('--constructor-preview-panel-height');
+    resolvedPanel.style.removeProperty('--constructor-preview-frame-left');
+    resolvedPanel.style.removeProperty('--constructor-preview-frame-width');
+  }
+
+  function syncConstructorPreviewFloatState() {
+    constructorPreviewFloatFrame = 0;
+    const shell = document.querySelector('.constructor-shell');
+    const layout = shell?.querySelector('.constructor-layout');
+    const panel = shell?.querySelector('.constructor-preview-panel');
+    const frame = shell?.querySelector('.constructor-preview-panel-frame');
+    if (state.current?.kind !== 'constructor' || !shell || !layout || !panel || !frame) {
+      clearConstructorPreviewFloatState(panel || null);
+      return;
+    }
+
+    if (window.innerWidth < CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT) {
+      clearConstructorPreviewFloatState(panel);
+      return;
+    }
+
+    const panelRect = panel.getBoundingClientRect();
+    const layoutRect = layout.getBoundingClientRect();
+    const shellRect = shell.getBoundingClientRect();
+    const panelStyles = window.getComputedStyle(panel);
+    const panelPaddingLeft = Number.parseFloat(panelStyles.paddingLeft || '0') || 0;
+    const panelPaddingRight = Number.parseFloat(panelStyles.paddingRight || '0') || 0;
+    const panelBorderLeft = Number.parseFloat(panelStyles.borderLeftWidth || '0') || 0;
+    const frameWidth = Math.max(0, panel.clientWidth - panelPaddingLeft - panelPaddingRight);
+    const frameLeft = panelRect.left + panelBorderLeft + panelPaddingLeft;
+    const panelHeight = Math.ceil(frame.scrollHeight);
+    if (!Number.isFinite(frameWidth) || frameWidth <= 0 || panelHeight <= 0) {
+      clearConstructorPreviewFloatState(panel);
+      return;
+    }
+
+    const floatingHeight = Math.min(
+      panelHeight,
+      Math.max(220, window.innerHeight - CONSTRUCTOR_PREVIEW_VIEWPORT_GAP),
+    );
+
+    panel.style.setProperty('--constructor-preview-panel-height', `${panelHeight}px`);
+    panel.style.setProperty('--constructor-preview-frame-left', `${Math.round(frameLeft)}px`);
+    panel.style.setProperty('--constructor-preview-frame-width', `${Math.round(frameWidth)}px`);
+
+    const reachedTop = layoutRect.top <= CONSTRUCTOR_PREVIEW_TOP_OFFSET;
+    const reachedBottom = layoutRect.bottom <= CONSTRUCTOR_PREVIEW_TOP_OFFSET + floatingHeight;
+    const shouldAnchorBottom = reachedTop && reachedBottom;
+    const shouldFloat = reachedTop && !reachedBottom;
+    const panelVisible = panelRect.bottom > CONSTRUCTOR_PREVIEW_TOP_OFFSET
+      && panelRect.top < window.innerHeight - CONSTRUCTOR_PREVIEW_TOP_OFFSET;
+    const shouldDock = window.innerWidth >= 761
+      && shellRect.bottom > 120
+      && shellRect.top < window.innerHeight - 120
+      && !panelVisible;
+
+    panel.classList.toggle('is-floating', shouldFloat || shouldAnchorBottom);
+    panel.classList.toggle('is-bottom-anchored', shouldAnchorBottom);
+    panel.classList.toggle('is-floating-dock', shouldDock);
+
+    if (!shouldFloat && !shouldAnchorBottom && !shouldDock) {
+      clearConstructorPreviewFloatState(panel);
+    }
+  }
+
+  function scheduleConstructorPreviewFloatSync() {
+    if (constructorPreviewFloatFrame) {
+      return;
+    }
+    constructorPreviewFloatFrame = window.requestAnimationFrame(() => {
+      syncConstructorPreviewFloatState();
     });
   }
 
@@ -2305,6 +2787,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function setLoading(title, hint) {
+    setWorkspaceStageMode('');
     els.contentMode.textContent = 'Раздел';
     els.contentTitle.textContent = title;
     els.contentHint.textContent = hint || 'Загрузка раздела.';
@@ -2318,6 +2801,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       </div>
     `;
     els.pagination.innerHTML = '';
+  }
+
+  function setWorkspaceStageMode(mode = '') {
+    if (!els.workspaceStage) {
+      return;
+    }
+    const isConstructorMode = String(mode || '').trim() === 'constructor';
+    els.workspaceStage.classList.toggle('is-constructor-mode', isConstructorMode);
   }
 
   function buildWorkspaceRetryActionMarkup(retry = null) {
@@ -2341,6 +2832,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const mode = String(options.mode || 'Раздел').trim() || 'Раздел';
     const hint = String(options.hint || 'Рабочая область открыта, но сайт не получил нужные данные.').trim()
       || 'Рабочая область открыта, но сайт не получил нужные данные.';
+    setWorkspaceStageMode(options.workspaceMode || '');
     els.contentMode.textContent = mode;
     els.contentTitle.textContent = safeTitle;
     els.contentHint.textContent = hint;
@@ -2363,6 +2855,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function renderConstructorErrorState(title, message, constructorId = '') {
     renderWorkspaceErrorState(title, message, {
       mode: 'Конструктор',
+      workspaceMode: 'constructor',
       hint: 'Рабочая область открыта, но конструктор не получил данные.',
       retry: constructorId
         ? { action: 'open-constructor', id: constructorId, label: 'Повторить' }
@@ -2625,7 +3118,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `).join('');
   }
 
-  function renderConstructorField(field, value) {
+  function renderConstructorField(field, value, options = {}) {
     const fieldId = String(field?.id || '').trim();
     if (!fieldId) {
       return '';
@@ -2635,22 +3128,25 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const placeholder = String(field?.placeholder || '').trim();
     const required = Boolean(field?.required);
     const currentValue = value ?? field?.default ?? '';
+    const compactChoice = Boolean(options?.compactChoice);
     if (fieldType === 'select' && isConstructorChoiceField(fieldId)) {
       const options = Array.isArray(field?.options) ? field.options : [];
       return `
-        <fieldset class="constructor-field constructor-choice-field">
+        <fieldset class="constructor-field constructor-choice-field${compactChoice ? ' is-compact' : ''}">
           <legend class="constructor-field-label">${escapeHtml(label)}${required ? ' *' : ''}</legend>
-          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}${fieldId === 'design_variant' ? ' is-design' : ''}${fieldId === 'graphic_element' ? ' is-graphic' : ''}">
+          <div class="constructor-choice-grid${fieldId === 'palette_tone' ? ' is-palette' : ''}${fieldId === 'design_variant' ? ' is-design' : ''}${fieldId === 'graphic_element' ? ' is-graphic' : ''}${compactChoice ? ' is-compact' : ''}">
             ${options.map((option, index) => {
               const optionValue = String(option?.value || '').trim();
               const optionLabel = String(option?.label || optionValue || '').trim();
-              const optionDescription = fieldId === 'palette_tone'
+              const optionDescription = compactChoice
+                ? ''
+                : fieldId === 'palette_tone'
                 ? ''
                 : String(option?.description || option?.note || '').trim();
               const optionId = `constructor-field-${fieldId}-${index}`;
               const checked = optionValue === String(currentValue);
               return `
-                <label class="constructor-choice-card${checked ? ' active' : ''}" for="${escapeHtml(optionId)}">
+                <label class="constructor-choice-card${checked ? ' active' : ''}${compactChoice ? ' is-compact' : ''}" for="${escapeHtml(optionId)}">
                   <input
                     class="constructor-choice-input"
                     type="radio"
@@ -2806,13 +3302,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </summary>
           <div class="constructor-field-accordion-body">
             <div class="constructor-style-primary">
-              ${resolvedPrimary.map((field) => renderConstructorField(field, input[field.id])).join('')}
+              ${resolvedPrimary.map((field) => renderConstructorField(field, input[field.id], { compactChoice: true })).join('')}
             </div>
             ${resolvedAdvanced.length ? `
               <details class="constructor-style-more"${advancedOpen ? ' open' : ''}>
                 <summary>Ещё настройки оформления</summary>
                 <div class="constructor-style-more-body">
-                  ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id])).join('')}
+                  ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id], { compactChoice: true })).join('')}
                 </div>
               </details>
             ` : ''}
@@ -2925,7 +3421,9 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     return `<pre class="${previewLayout.codeClass}">${escapeHtml(artifact.content || '')}</pre>`;
   }
 
-  function buildConstructorProgressMarkup(completion, previewArtifact) {
+function buildConstructorProgressMarkup(completion, previewArtifact, options = {}) {
+    const warnings = Array.isArray(options?.warnings) ? options.warnings : [];
+    const draftState = buildConstructorDraftState(options?.draftMeta);
     const stats = completion && typeof completion === 'object'
       ? completion
       : buildConstructorCompletion([], {});
@@ -2957,6 +3455,13 @@ function buildConstructorPreviewMarkup(artifact, layout) {
             <small data-constructor-progress-artifact>${escapeHtml(artifactLabel)}</small>
             <strong data-constructor-progress-required>${stats.ready ? 'Готово' : escapeHtml(`${stats.requiredFilled}/${stats.requiredTotal || 0}`)}</strong>
           </div>
+        </div>
+        <div class="constructor-draft-status">
+          <strong data-constructor-draft-title>${escapeHtml(draftState.title)}</strong>
+          <span data-constructor-draft-note>${escapeHtml(draftState.note)}</span>
+        </div>
+        <div class="constructor-warning-list" data-constructor-warning-list${warnings.length ? '' : ' hidden'}>
+          ${buildConstructorWarningsMarkup(warnings)}
         </div>
       </div>
     `;
@@ -3110,9 +3615,11 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     const generated = Boolean(payload?.generated);
     const presets = Array.isArray(payload?.presets) ? payload.presets : [];
     const completion = buildConstructorCompletion(fields, input);
+    const warnings = buildConstructorWarnings(fields, input, { previewArtifact });
 
     state.current = { kind: 'constructor', payload };
     state.detail = null;
+    setWorkspaceStageMode('constructor');
     renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Конструктор';
     els.contentTitle.textContent = definition.label || 'Лаборатория решений';
@@ -3155,22 +3662,24 @@ function buildConstructorPreviewMarkup(artifact, layout) {
           </section>
 
           <section class="constructor-panel constructor-preview-panel">
-            <div class="constructor-panel-head">
-              <strong>Превью и файлы</strong>
-              <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или brief')} • Рядом видно, насколько шаблон уже заполнен.</span>
-            </div>
-            ${buildConstructorProgressMarkup(completion, previewArtifact)}
-            <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">
-              ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
-            </div>
-            <div class="constructor-downloads">
-              ${artifacts.map((artifact) => `
-                <button type="button" class="constructor-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
-                  <strong>${escapeHtml(artifact.label || 'Артефакт')}</strong>
-                  <span>${escapeHtml(artifact.filename || '')}</span>
-                  <small>${escapeHtml(formatDataSize(artifact.sizeBytes))} • Нажмите, чтобы скачать</small>
-                </button>
-              `).join('')}
+            <div class="constructor-preview-panel-frame">
+              <div class="constructor-panel-head">
+                <strong>Превью и файлы</strong>
+                <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или brief')} • Рядом видно, насколько шаблон уже заполнен.</span>
+              </div>
+              ${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}
+              <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">
+                ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
+              </div>
+              <div class="constructor-downloads">
+                ${artifacts.map((artifact) => `
+                  <button type="button" class="constructor-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
+                    <strong>${escapeHtml(artifact.label || 'Артефакт')}</strong>
+                    <span>${escapeHtml(artifact.filename || '')}</span>
+                    <small>${escapeHtml(formatDataSize(artifact.sizeBytes))} • Нажмите, чтобы скачать</small>
+                  </button>
+                `).join('')}
+              </div>
             </div>
           </section>
         </div>
@@ -3181,6 +3690,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       </div>
     `;
     setDocumentTitle(definition.label || 'Лаборатория решений');
+    scheduleConstructorPreviewFloatSync();
 
     if (options?.preserveViewState) {
       restoreConstructorViewState(options.preserveViewState);
@@ -3204,8 +3714,10 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       ...formInput,
       ...(preset.overrides || {}),
     };
+    const fields = currentConstructorFields(String(currentPayload.definition.id || '').trim());
+    const draftMeta = persistConstructorDraft(String(currentPayload.definition.id || '').trim(), fields, nextInput);
     applyConstructorLivePreview(nextInput);
-    void buildConstructor(String(currentPayload.definition.id || '').trim(), nextInput, { silent: true });
+    void buildConstructor(String(currentPayload.definition.id || '').trim(), nextInput, { silent: true, draftMeta });
   }
 
   function renderSectionSwitcher(mode = '') {
@@ -3339,6 +3851,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
   function renderFolder(payload) {
     state.current = { kind: 'folder', payload };
     state.detail = null;
+    setWorkspaceStageMode('');
     renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = payload.root ? 'Главная' : 'Раздел';
     els.contentTitle.textContent = payload.folder.label || payload.folder.name;
@@ -3353,6 +3866,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
   function renderSearch(payload) {
     state.current = { kind: 'search', payload };
     state.detail = null;
+    setWorkspaceStageMode('');
     renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Поиск';
     els.contentTitle.textContent = payload.query ? `Поиск: ${payload.query}` : 'Поиск';
@@ -3610,8 +4124,32 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     setActiveRoute('');
     renderDetailPlaceholder();
     try {
-      const payload = await api('constructor', { id: constructorId });
-      renderConstructor(payload);
+      const initialPayload = await api('constructor', { id: constructorId });
+      const fields = Array.isArray(initialPayload?.definition?.fields) ? initialPayload.definition.fields : [];
+      const savedDraft = options.ignoreDraft ? null : loadConstructorDraft(constructorId, fields, window.localStorage);
+      let nextPayload = initialPayload;
+      let draftMeta = null;
+
+      if (savedDraft?.input && Object.keys(savedDraft.input).length) {
+        const restoredInput = {
+          ...(initialPayload?.input || {}),
+          ...savedDraft.input,
+        };
+        draftMeta = { updatedAt: savedDraft.updatedAt, restored: true };
+        try {
+          nextPayload = await api('construct', { id: constructorId, input: restoredInput }, { method: 'POST' });
+          constructorBuildCache.set(constructorBuildCacheKey(constructorId, restoredInput), nextPayload);
+          pruneConstructorBuildCache();
+        } catch (restoreError) {
+          console.warn(restoreError);
+          nextPayload = {
+            ...initialPayload,
+            input: restoredInput,
+          };
+        }
+      }
+
+      renderConstructor(decorateConstructorPayload(nextPayload, draftMeta));
       focusWorkspace();
       if (options.history !== 'none') {
         syncRouteWithState(options.history || 'push');
@@ -3630,6 +4168,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     const normalizedInput = input && typeof input === 'object' ? input : {};
     const cacheKey = constructorBuildCacheKey(constructorId, normalizedInput);
     const silent = Boolean(options?.silent);
+    const draftMeta = options?.draftMeta ?? state.current?.payload?.draftMeta ?? null;
     const preservedViewState = silent ? captureConstructorViewState() : null;
     ensureWorkspaceVisible();
     if (!silent) {
@@ -3639,7 +4178,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     }
 
     if (constructorBuildCache.has(cacheKey)) {
-      renderConstructor(constructorBuildCache.get(cacheKey), { preserveViewState: preservedViewState });
+      renderConstructor(decorateConstructorPayload(constructorBuildCache.get(cacheKey), draftMeta), { preserveViewState: preservedViewState });
       if (!silent) {
         focusWorkspace();
       }
@@ -3662,7 +4201,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       }
       constructorBuildCache.set(cacheKey, payload);
       pruneConstructorBuildCache();
-      renderConstructor(payload, { preserveViewState: preservedViewState });
+      renderConstructor(decorateConstructorPayload(payload, draftMeta), { preserveViewState: preservedViewState });
       if (!silent) {
         focusWorkspace();
       }
@@ -3786,7 +4325,9 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       return;
     }
     if (action === 'reset-constructor') {
-      void openConstructor(target.dataset.id, { history: 'replace' });
+      window.clearTimeout(constructorDraftSaveTimer);
+      removeConstructorDraft(String(target.dataset.id || '').trim(), window.localStorage);
+      void openConstructor(target.dataset.id, { history: 'replace', ignoreDraft: true });
       return;
     }
     if (isWorkspaceNavigationAction(action)) {
@@ -3834,10 +4375,23 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     if (!constructorId) {
       return;
     }
-    void buildConstructor(constructorId, collectConstructorFormInput(form));
+    const fields = currentConstructorFields(constructorId);
+    const nextInput = collectConstructorFormInput(form);
+    const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
+    refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
+    void buildConstructor(constructorId, nextInput, { draftMeta });
   });
 
   let constructorAutoBuildTimer = 0;
+  document.addEventListener('input', (event) => {
+    const form = event.target.closest('#constructor-form');
+    if (!form) {
+      return;
+    }
+    refreshConstructorProgressFromForm(form);
+    scheduleConstructorDraftSave(form);
+  });
+
   document.addEventListener('change', (event) => {
     const form = event.target.closest('#constructor-form');
     if (!form) {
@@ -3847,12 +4401,14 @@ function buildConstructorPreviewMarkup(artifact, layout) {
     if (!constructorId) {
       return;
     }
+    const nextInput = collectConstructorFormInput(form);
+    refreshConstructorProgressFromForm(form, { input: nextInput });
+    scheduleConstructorDraftSave(form, { input: nextInput });
     const fieldName = String(event.target?.name || '').trim();
     const fieldType = String(event.target?.type || event.target?.tagName || '').trim().toLowerCase();
     if (!shouldAutoBuildConstructorField(fieldName, fieldType)) {
       return;
     }
-    const nextInput = collectConstructorFormInput(form);
     if (CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS.has(fieldName)) {
       applyConstructorLivePreview(nextInput);
     }
@@ -3864,6 +4420,13 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       void buildConstructor(constructorId, collectConstructorFormInput(form), { silent: true });
     }, 180);
   });
+
+  document.addEventListener('toggle', (event) => {
+    if (!event.target?.closest?.('.constructor-shell')) {
+      return;
+    }
+    scheduleConstructorPreviewFloatSync();
+  }, true);
 
   document.addEventListener('keydown', (event) => {
     const targetTag = String(event.target?.tagName || '').toLowerCase();
@@ -3919,12 +4482,21 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       return;
     }
     scheduleExampleAutoplay();
+    scheduleConstructorPreviewFloatSync();
   });
 
   window.addEventListener('popstate', () => {
     restoreRouteFromLocation().catch((error) => {
       console.error(error);
     });
+  });
+
+  window.addEventListener('scroll', () => {
+    scheduleConstructorPreviewFloatSync();
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    scheduleConstructorPreviewFloatSync();
   });
 
   try {

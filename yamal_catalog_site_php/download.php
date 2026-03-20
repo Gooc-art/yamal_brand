@@ -3,10 +3,17 @@ declare(strict_types=1);
 
 require __DIR__ . '/src/site_lib.php';
 
-$service = new SiteCatalogService();
-$fileId = trim((string) ($_GET['id'] ?? ''));
-$inline = isset($_GET['inline']) && $_GET['inline'] !== '0';
-$result = $service->resolveDownload($fileId, !$inline);
+try {
+    $service = new SiteCatalogService();
+    $fileId = trim((string) ($_GET['id'] ?? ''));
+    $inline = isset($_GET['inline']) && $_GET['inline'] !== '0';
+    $result = $service->resolveDownload($fileId, !$inline);
+} catch (Throwable) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Внутренняя ошибка сайта';
+    exit;
+}
 
 if ($result === null || !is_file($result['fullPath'])) {
     http_response_code(404);

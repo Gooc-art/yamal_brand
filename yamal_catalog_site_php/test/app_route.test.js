@@ -13,6 +13,13 @@ const {
   groupConstructorFields,
   buildConstructorChoicePreview,
   buildConstructorCompletion,
+  normalizeConstructorDraftInput,
+  buildConstructorDraftEntry,
+  loadConstructorDraft,
+  saveConstructorDraft,
+  removeConstructorDraft,
+  buildConstructorDraftState,
+  buildConstructorWarnings,
   constructorPaletteToneDefinition,
   buildConstructorLiveTheme,
   resolveConstructorLiveBrandVariant,
@@ -234,6 +241,94 @@ test('buildConstructorCompletion tracks non-style fields and required state', ()
     percent: 75,
     ready: false,
   });
+});
+
+test('normalizeConstructorDraftInput keeps only changed known fields and valid options', () => {
+  const normalized = normalizeConstructorDraftInput([
+    { id: 'city', type: 'text', default: 'ямал' },
+    { id: 'design_variant', type: 'radio', default: 'calm', options: [{ value: 'calm' }, { value: 'signal' }] },
+    { id: 'headline', type: 'textarea', default: '' },
+  ], {
+    city: '',
+    design_variant: 'signal',
+    headline: 'Навигатор по мерам поддержки',
+    unknown: 'skip me',
+  });
+
+  assert.deepEqual(normalized, {
+    city: '',
+    design_variant: 'signal',
+    headline: 'Навигатор по мерам поддержки',
+  });
+});
+
+test('constructor draft helpers roundtrip through storage and preserve blank override', () => {
+  const storage = {
+    state: new Map(),
+    getItem(key) {
+      return this.state.has(key) ? this.state.get(key) : null;
+    },
+    setItem(key, value) {
+      this.state.set(key, String(value));
+    },
+    removeItem(key) {
+      this.state.delete(key);
+    },
+  };
+  const fields = [
+    { id: 'city', type: 'text', default: 'ямал' },
+    { id: 'headline', type: 'textarea', default: '' },
+    { id: 'design_variant', type: 'radio', default: 'calm', options: [{ value: 'calm' }, { value: 'signal' }] },
+  ];
+
+  const entry = buildConstructorDraftEntry(fields, {
+    city: '',
+    headline: 'Большой заголовок',
+    design_variant: 'calm',
+  }, '2026-03-20T10:15:00Z');
+
+  assert.deepEqual(entry, {
+    input: {
+      city: '',
+      headline: 'Большой заголовок',
+    },
+    updatedAt: '2026-03-20T10:15:00Z',
+  });
+
+  assert.deepEqual(
+    saveConstructorDraft('business_card', fields, {
+      city: '',
+      headline: 'Большой заголовок',
+      design_variant: 'calm',
+    }, storage, '2026-03-20T10:15:00Z'),
+    entry,
+  );
+
+  assert.deepEqual(loadConstructorDraft('business_card', fields, storage), entry);
+  assert.equal(buildConstructorDraftState({ updatedAt: entry.updatedAt }).title, 'Черновик сохраняется локально');
+  assert.equal(buildConstructorDraftState({ updatedAt: entry.updatedAt, restored: true }).title, 'Черновик восстановлен');
+
+  assert.equal(removeConstructorDraft('business_card', storage), true);
+  assert.equal(loadConstructorDraft('business_card', fields, storage), null);
+});
+
+test('buildConstructorWarnings highlights missing required fields and long text risk', () => {
+  const warnings = buildConstructorWarnings([
+    { id: 'full_name', label: 'ФИО', type: 'text', required: true },
+    { id: 'role', label: 'Роль', type: 'text', required: true },
+    { id: 'headline', label: 'Заголовок', type: 'textarea', required: false },
+  ], {
+    full_name: 'Александрова-Виноградова Екатерина Константиновна-Петрова',
+    role: '',
+    headline: 'Сверхдлинный заголовок для проверки safe area и более плотного предупреждения в SVG превью конструкторного шаблона',
+  }, {
+    previewArtifact: { previewType: 'svg' },
+  });
+
+  assert.equal(warnings[0].id, 'missing_required');
+  assert.equal(warnings[1].id, 'long_text');
+  assert.equal(warnings[2].id, 'preview_review');
+  assert.match(warnings[1].message, /ФИО|Заголовок/);
 });
 
 test('live constructor theme keeps palette visible while preserving white brand fallback', () => {

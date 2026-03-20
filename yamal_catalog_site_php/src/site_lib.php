@@ -137,6 +137,27 @@ function consultant_llm_response_schema(): array
     ];
 }
 
+function sqlite_pdo_available(): bool
+{
+    static $available = null;
+    if ($available !== null) {
+        return $available;
+    }
+
+    if (!class_exists('PDO')) {
+        $available = false;
+        return $available;
+    }
+
+    try {
+        $available = in_array('sqlite', PDO::getAvailableDrivers(), true);
+    } catch (Throwable) {
+        $available = false;
+    }
+
+    return $available;
+}
+
 function site_config(): array
 {
     static $config = null;
@@ -5619,26 +5640,49 @@ class CatalogDb
     private ?PDO $pdo = null;
     private bool $available = false;
     private string $scanRootPath = '';
+    private string $availabilityReason = '';
 
     public function __construct(private readonly string $dbPath, ?string $catalogRootPath = null)
     {
-        if (!is_file($dbPath) && $catalogRootPath !== null) {
-            rebuild_catalog_database($catalogRootPath, $dbPath);
-        }
-        if (!is_file($dbPath)) {
+        if (!sqlite_pdo_available()) {
+            $this->availabilityReason = 'pdo_sqlite_missing';
             return;
         }
-        $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+
+        if (!is_file($dbPath) && $catalogRootPath !== null) {
+            try {
+                rebuild_catalog_database($catalogRootPath, $dbPath);
+            } catch (Throwable) {
+                $this->availabilityReason = 'catalog_rebuild_failed';
+                return;
+            }
+        }
+        if (!is_file($dbPath)) {
+            $this->availabilityReason = 'catalog_db_missing';
+            return;
+        }
+        try {
+            $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+        } catch (Throwable) {
+            $this->availabilityReason = 'catalog_db_open_failed';
+            return;
+        }
         $this->scanRootPath = (string) ($this->metaValue('scan_root_path') ?? '');
         $this->available = true;
+        $this->availabilityReason = '';
     }
 
     public function isAvailable(): bool
     {
         return $this->available;
+    }
+
+    public function availabilityReason(): string
+    {
+        return $this->availabilityReason;
     }
 
     public function getScanRootPath(): string
@@ -5744,19 +5788,32 @@ class RuntimeDb
 {
     private ?PDO $pdo = null;
     private bool $available = false;
+    private string $availabilityReason = '';
 
     public function __construct(private readonly string $dbPath)
     {
+        if (!sqlite_pdo_available()) {
+            $this->availabilityReason = 'pdo_sqlite_missing';
+            return;
+        }
+
         $directory = dirname($dbPath);
         if (!is_dir($directory)) {
             @mkdir($directory, 0775, true);
         }
-        $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-        $this->init();
-        $this->available = true;
+        try {
+            $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+            $this->init();
+            $this->available = true;
+            $this->availabilityReason = '';
+        } catch (Throwable) {
+            $this->pdo = null;
+            $this->available = false;
+            $this->availabilityReason = 'runtime_db_open_failed';
+        }
     }
 
     private function init(): void
@@ -5787,6 +5844,11 @@ class RuntimeDb
     public function isAvailable(): bool
     {
         return $this->available;
+    }
+
+    public function availabilityReason(): string
+    {
+        return $this->availabilityReason;
     }
 
     public function logSearch(string $queryText, int $resultCount): void
@@ -5935,6 +5997,33 @@ class SiteCatalogService
         $this->db = $db ?? new CatalogDb($this->config['catalog_db_path'], $this->config['catalog_root_path']);
         $this->state = $state ?? new RuntimeDb($this->config['runtime_db_path']);
         $this->consultantLlmTransport = is_callable($consultantLlmTransport) ? $consultantLlmTransport : null;
+    }
+
+    private function setupMessage(): string
+    {
+        if ($this->db->isAvailable()) {
+            return '';
+        }
+
+        $reasons = [$this->db->availabilityReason(), $this->state->availabilityReason()];
+        if (in_array('pdo_sqlite_missing', $reasons, true)) {
+            return 'В PHP не подключен драйвер pdo_sqlite, поэтому каталог и аналитика SQLite сейчас недоступны. Подключите расширение и перезапустите сайт.';
+        }
+
+        return 'Каталог еще не загружен на хостинг. Сайт уже готов, осталось положить файлы в папку data/files.';
+    }
+
+    private function emptyCatalogHint(): string
+    {
+        if ($this->db->isAvailable()) {
+            return 'Выберите раздел в главном меню.';
+        }
+
+        if ($this->db->availabilityReason() === 'pdo_sqlite_missing' || $this->state->availabilityReason() === 'pdo_sqlite_missing') {
+            return 'Сайт открыт, но без pdo_sqlite каталог SQLite недоступен. Подключите расширение и повторите.';
+        }
+
+        return 'Сайт готов. Как только в data/files появятся материалы, каталог соберется автоматически.';
     }
 
     public function getRootFolders(): array
@@ -6157,7 +6246,7 @@ class SiteCatalogService
         return [
             'title' => $this->config['title'],
             'rootId' => root_id(),
-            'setupMessage' => $this->db->isAvailable() ? '' : 'Каталог еще не загружен на хостинг. Сайт уже готов, осталось положить файлы в папку data/files.',
+            'setupMessage' => $this->setupMessage(),
             'stats' => [
                 'totalAssets' => (int) ($catalogStats['total'] ?? 0),
                 'files' => (int) ($catalogStats['files'] ?? 0),
@@ -7573,7 +7662,7 @@ class SiteCatalogService
                 'root' => true,
                 'folder' => ['id' => root_id(), 'label' => 'Главное меню', 'name' => 'Главное меню', 'type' => 'folder'],
                 'breadcrumbs' => [['id' => root_id(), 'name' => 'Главная', 'type' => 'folder', 'relative_path' => '.']],
-                'hint' => $this->db->isAvailable() ? 'Выберите раздел в главном меню.' : 'Сайт готов. Как только в data/files появятся материалы, каталог соберется автоматически.',
+                'hint' => $this->emptyCatalogHint(),
                 'page' => 0,
                 'total' => count($roots),
                 'pageSize' => $this->config['page_size'],
