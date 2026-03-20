@@ -1430,12 +1430,12 @@ function constructor_solution_definitions(): array
         [
             'id' => 'information_stand',
             'label' => 'Инфостенд',
-            'summary' => 'Стенд для режима и правил',
-            'description' => 'Вертикальный стенд для входной зоны, режима работы, правил посещения и базовой навигации по помещению.',
+            'summary' => 'Стенд с карманами A4',
+            'description' => 'Информационный стенд с фиксированными карманами A4: режим работы, правила, контакты и материалы для помещений.',
             'icon' => '▦',
             'category' => 'Навигация',
             'artifactKind' => 'svg',
-            'formatHint' => 'A1 / 700×1000 мм • SVG + JSON',
+            'formatHint' => '1–12 карманов A4 • SVG + JSON',
             'consultPrompt' => 'информационный стенд навигация логотип брендбук',
             'sectionKeywords' => ['логотип', 'брендбук', 'полиграф', 'навигация'],
             'queries' => ['логотип svg {{city}}', 'брендбук {{city}}', 'навигация', 'полиграфия'],
@@ -1519,14 +1519,10 @@ function constructor_solution_definitions(): array
                 'size_variant' => [
                     'id' => 'size_variant',
                     'type' => 'select',
-                    'label' => 'Размер',
+                    'label' => 'Размер и карманы',
                     'required' => true,
-                    'default' => '700x1000',
-                    'options' => [
-                        ['value' => '500x700', 'label' => '500×700 мм'],
-                        ['value' => '700x1000', 'label' => '700×1000 мм'],
-                        ['value' => 'a1', 'label' => 'A1'],
-                    ],
+                    'default' => 'a4x4',
+                    'options' => constructor_information_stand_size_options(),
                 ],
             ])),
         ],
@@ -3115,21 +3111,21 @@ function constructor_preset_definitions(array $definition): array
                 'label' => 'Входная зона',
                 'summary' => 'Спокойлый стенд у входа',
                 'description' => 'Под режим работы, контакты и базовую навигацию по помещению.',
-                'overrides' => ['stand_type' => 'info', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
+                'overrides' => ['stand_type' => 'info', 'size_variant' => 'a4x2', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'schedule',
                 'label' => 'График',
                 'summary' => 'Акцентный режим под время и правила',
                 'description' => 'Когда режим работы и регламент нужно считать быстро.',
-                'overrides' => ['stand_type' => 'schedule', 'design_variant' => 'signal', 'background_style' => 'band', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
+                'overrides' => ['stand_type' => 'schedule', 'size_variant' => 'a4x4', 'design_variant' => 'signal', 'background_style' => 'band', 'palette_tone' => 'p621', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'memo',
                 'label' => 'Памятка',
                 'summary' => 'Контрастный стенд со знаком',
                 'description' => 'Для правил, схем и коротких инструкций в зоне ожидания.',
-                'overrides' => ['stand_type' => 'memo', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
+                'overrides' => ['stand_type' => 'memo', 'size_variant' => 'a4x6', 'design_variant' => 'poster', 'background_style' => 'halo', 'palette_tone' => 'accent', 'brand_lockup' => 'mark'],
             ],
         ],
         'room_navigation_sign' => [
@@ -4296,6 +4292,54 @@ function constructor_svg_render_label(float $x, float $y, string $text, string $
     return constructor_svg_render_text($x, $y, [$normalized], $className, $options, (string) ($options['anchor'] ?? 'start'));
 }
 
+function constructor_svg_render_information_stand_pockets(
+    float $x,
+    float $y,
+    float $width,
+    float $height,
+    array $sizeDefinition
+): string {
+    $pocketCount = max(1, (int) ($sizeDefinition['pockets'] ?? 1));
+    $columns = max(1, (int) ($sizeDefinition['columns'] ?? 1));
+    $rows = max(1, (int) ($sizeDefinition['rows'] ?? (int) ceil($pocketCount / $columns)));
+    if ($width <= 0 || $height <= 0) {
+        return '';
+    }
+
+    $gapX = min(24.0, max(12.0, $width * 0.03));
+    $gapY = min(24.0, max(12.0, $height * 0.04));
+    $pocketWidth = max(64.0, ($width - (($columns - 1) * $gapX)) / $columns);
+    $pocketHeight = max(84.0, ($height - (($rows - 1) * $gapY)) / $rows);
+    $pocketRadius = min(24.0, max(12.0, min($pocketWidth, $pocketHeight) * 0.08));
+    $innerInset = min(16.0, max(10.0, min($pocketWidth, $pocketHeight) * 0.05));
+    $innerRadius = max(10.0, $pocketRadius - 4.0);
+
+    $markup = '<g data-constructor-information-stand-pockets="' . $pocketCount . '">';
+    for ($index = 0; $index < $pocketCount; $index++) {
+        $column = $index % $columns;
+        $row = intdiv($index, $columns);
+        $pocketX = $x + (($pocketWidth + $gapX) * $column);
+        $pocketY = $y + (($pocketHeight + $gapY) * $row);
+        $innerX = $pocketX + $innerInset;
+        $innerY = $pocketY + $innerInset;
+        $innerWidth = max(42.0, $pocketWidth - ($innerInset * 2));
+        $innerHeight = max(52.0, $pocketHeight - ($innerInset * 2));
+        $slotY = $pocketY + max(18.0, $innerInset + 10.0);
+
+        $markup .=
+            '<g data-constructor-information-pocket="' . ($index + 1) . '">' .
+            '<rect x="' . $pocketX . '" y="' . $pocketY . '" width="' . $pocketWidth . '" height="' . $pocketHeight . '" rx="' . $pocketRadius . '" class="card"/>' .
+            '<rect x="' . $innerX . '" y="' . $innerY . '" width="' . $innerWidth . '" height="' . $innerHeight . '" rx="' . $innerRadius . '" class="tone-soft"/>' .
+            '<line x1="' . ($pocketX + $innerInset) . '" y1="' . $slotY . '" x2="' . ($pocketX + $pocketWidth - $innerInset) . '" y2="' . $slotY . '" class="line"/>' .
+            constructor_svg_render_label($pocketX + 18.0, $pocketY + 42.0, 'Карман ' . ($index + 1), 'tiny', ['maxWidth' => max(48.0, $pocketWidth - 36.0), 'minFontSize' => 10]) .
+            constructor_svg_render_label($pocketX + ($pocketWidth / 2), $pocketY + $pocketHeight - 24.0, 'A4', 'badge', ['anchor' => 'middle', 'maxWidth' => max(42.0, $pocketWidth - 30.0), 'minFontSize' => 12]) .
+            '</g>';
+    }
+    $markup .= '</g>';
+
+    return $markup;
+}
+
 function constructor_svg_theme_style_vars(array $theme, array $lockupSurface = []): string
 {
     $variables = [
@@ -4399,6 +4443,107 @@ function constructor_information_stand_type_labels(): array
         'schedule' => 'Режим / график',
         'memo' => 'Памятка / правила',
     ];
+}
+
+function constructor_information_stand_size_catalog(): array
+{
+    return [
+        'a4x1' => [
+            'id' => 'a4x1',
+            'label' => '1 карман A4',
+            'optionLabel' => '1 карман A4 • 300–400 мм',
+            'sizeLabel' => '300–400 мм',
+            'width' => 360.0,
+            'height' => 620.0,
+            'pockets' => 1,
+            'columns' => 1,
+            'rows' => 1,
+        ],
+        'a4x2' => [
+            'id' => 'a4x2',
+            'label' => '2 кармана A4',
+            'optionLabel' => '2 кармана A4 • 540×470 мм',
+            'sizeLabel' => '540×470 мм',
+            'width' => 540.0,
+            'height' => 470.0,
+            'pockets' => 2,
+            'columns' => 2,
+            'rows' => 1,
+        ],
+        'a4x4' => [
+            'id' => 'a4x4',
+            'label' => '4 кармана A4',
+            'optionLabel' => '4 кармана A4 • 540×800 мм',
+            'sizeLabel' => '540×800 мм',
+            'width' => 540.0,
+            'height' => 800.0,
+            'pockets' => 4,
+            'columns' => 2,
+            'rows' => 2,
+        ],
+        'a4x6' => [
+            'id' => 'a4x6',
+            'label' => '6 карманов A4',
+            'optionLabel' => '6 карманов A4 • 800×900 мм',
+            'sizeLabel' => '800×900 мм',
+            'width' => 800.0,
+            'height' => 900.0,
+            'pockets' => 6,
+            'columns' => 3,
+            'rows' => 2,
+        ],
+        'a4x8' => [
+            'id' => 'a4x8',
+            'label' => '8 карманов A4',
+            'optionLabel' => '8 карманов A4 • 1060×900 мм',
+            'sizeLabel' => '1060×900 мм',
+            'width' => 1060.0,
+            'height' => 900.0,
+            'pockets' => 8,
+            'columns' => 4,
+            'rows' => 2,
+        ],
+        'a4x10' => [
+            'id' => 'a4x10',
+            'label' => '10 карманов A4',
+            'optionLabel' => '10 карманов A4 • 1300×900 мм',
+            'sizeLabel' => '1300×900 мм',
+            'width' => 1300.0,
+            'height' => 900.0,
+            'pockets' => 10,
+            'columns' => 5,
+            'rows' => 2,
+        ],
+        'a4x12' => [
+            'id' => 'a4x12',
+            'label' => '12 карманов A4',
+            'optionLabel' => '12 карманов A4 • 1060×1230 мм',
+            'sizeLabel' => '1060×1230 мм',
+            'width' => 1060.0,
+            'height' => 1230.0,
+            'pockets' => 12,
+            'columns' => 4,
+            'rows' => 3,
+        ],
+    ];
+}
+
+function constructor_information_stand_size_options(): array
+{
+    $items = [];
+    foreach (constructor_information_stand_size_catalog() as $value => $item) {
+        $items[] = [
+            'value' => $value,
+            'label' => (string) ($item['optionLabel'] ?? $item['label'] ?? $value),
+        ];
+    }
+    return $items;
+}
+
+function constructor_information_stand_size_definition(string $value): array
+{
+    $catalog = constructor_information_stand_size_catalog();
+    return $catalog[$value] ?? $catalog['a4x4'];
 }
 
 function constructor_presentation_mode_labels(): array
@@ -4524,10 +4669,13 @@ function constructor_derived_payload(array $definition, array $input): array
 
     if ($definitionId === 'information_stand') {
         $standType = (string) ($input['stand_type'] ?? 'info');
+        $sizeDefinition = constructor_information_stand_size_definition((string) ($input['size_variant'] ?? 'a4x4'));
         return array_merge($base, [
             'standTypeLabel' => constructor_information_stand_type_labels()[$standType] ?? 'Информационный',
             'contactLine' => trim((string) ($input['contact_line'] ?? '')),
-            'sizeVariant' => trim((string) ($input['size_variant'] ?? '')),
+            'sizeVariantLabel' => (string) ($sizeDefinition['optionLabel'] ?? $sizeDefinition['label'] ?? ''),
+            'pocketLabel' => (string) ($sizeDefinition['label'] ?? ''),
+            'sizeLabel' => (string) ($sizeDefinition['sizeLabel'] ?? ''),
         ]);
     }
 
@@ -4842,33 +4990,49 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             break;
 
         case 'information_stand':
-            $width = 1000;
-            $height = 1400;
             $standType = (string) ($input['stand_type'] ?? 'info');
             $standTypeLabel = constructor_information_stand_type_labels()[$standType] ?? 'Информационный';
+            $sizeDefinition = constructor_information_stand_size_definition((string) ($input['size_variant'] ?? 'a4x4'));
+            $width = (float) ($sizeDefinition['width'] ?? 540.0);
+            $height = (float) ($sizeDefinition['height'] ?? 800.0);
+            $pocketLabel = (string) ($sizeDefinition['label'] ?? '4 кармана A4');
+            $sizeLabel = (string) ($sizeDefinition['sizeLabel'] ?? '540×800 мм');
             $contactLine = trim((string) ($input['contact_line'] ?? ''));
             $sectionTwoTitle = trim((string) ($input['section_two_title'] ?? ''));
             $sectionTwoBody = trim((string) ($input['section_two_body'] ?? ''));
+            $margin = min(36.0, max(18.0, min($width, $height) * 0.045));
+            $gap = min(22.0, max(10.0, min($width, $height) * 0.015));
+            $headerHeight = min(156.0, max(60.0, $height * 0.11));
+            $titleHeight = min(196.0, max(56.0, $height * 0.14));
+            $footerHeight = min(188.0, max(72.0, $height * 0.16));
+            $headerRadius = min(30.0, max(18.0, $headerHeight * 0.28));
+            $infoCardWidth = max(120.0, (($width - ($margin * 2)) - $gap) / 2);
+            $pocketAreaY = $margin + $headerHeight + $gap + $titleHeight + $gap;
+            $pocketAreaHeight = max(96.0, $height - $pocketAreaY - $gap - $footerHeight - $margin);
+            $footerY = $pocketAreaY + $pocketAreaHeight + $gap;
+            $brandLogoWidth = min(196.0, max(116.0, $width * 0.26));
+            $brandLogoHeight = max(24.0, $brandLogoWidth * 0.16);
+            $brandMarkWidth = min(154.0, max(94.0, $width * 0.21));
+            $brandMarkHeight = max(60.0, $brandMarkWidth * 0.65);
+            $footerBodyHeight = max(30.0, $footerHeight - 62.0);
             $body =
                 constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
-                '<rect x="40" y="40" width="920" height="1320" rx="36" class="card"/>' .
-                '<rect x="40" y="40" width="920" height="218" rx="36" fill="var(--ctor-lockup-fill)"/>' .
-                constructor_svg_render_brand_lockup(84, 84, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 196, 'logoHeight' => 32, 'markWidth' => 154, 'markHeight' => 100]) .
-                constructor_svg_render_label(900, 108, $standTypeLabel, 'badge', ['anchor' => 'end', 'maxWidth' => 310, 'minFontSize' => 16, 'fill' => $lockupInk]) .
-                constructor_svg_render_label(84, 264, 'Заголовок', 'tiny', ['maxWidth' => 180, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(84, 310, (string) ($input['headline'] ?? ''), 'headline', 832, 224, 4, ['minFontSize' => 22, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
-                constructor_svg_render_fitted_text(84, 520, (string) ($input['subtitle'] ?? ''), 'subhead', 832, 92, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
-                '<rect x="84" y="610" width="380" height="462" rx="28" class="tone-soft"/>' .
-                constructor_svg_render_label(124, 662, (string) ($input['section_one_title'] ?? ''), 'badge', ['maxWidth' => 296, 'minFontSize' => 16]) .
-                constructor_svg_render_fitted_text(124, 724, (string) ($input['section_one_body'] ?? ''), 'body', 300, 284, 7, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
-                '<rect x="536" y="610" width="380" height="462" rx="28" class="card"/>' .
-                constructor_svg_render_label(576, 662, $sectionTwoTitle !== '' ? $sectionTwoTitle : 'Навигация', 'badge', ['maxWidth' => 296, 'minFontSize' => 16]) .
-                constructor_svg_render_fitted_text(576, 724, $sectionTwoBody !== '' ? $sectionTwoBody : 'Добавьте здесь правила зоны, схему помещения или контакты ответственного.', 'body', 300, 284, 7, ['minFontSize' => 14, 'widthSafety' => 0.88]) .
-                '<rect x="84" y="1108" width="832" height="196" rx="30" class="card"/>' .
-                constructor_svg_render_label(128, 1162, 'Контакты и служебная строка', 'tiny', ['maxWidth' => 280, 'minFontSize' => 12]) .
-                constructor_svg_render_fitted_text(128, 1204, $contactLine !== '' ? $contactLine : $cityLabel, 'subhead', 548, 88, 3, ['minFontSize' => 15, 'widthSafety' => 0.88]) .
-                constructor_svg_render_label(872, 1162, (string) ($input['size_variant'] ?? '700x1000'), 'badge', ['anchor' => 'end', 'maxWidth' => 190, 'minFontSize' => 16]) .
-                constructor_svg_render_fitted_text(872, 1262, $cityLabel, 'small', 240, 54, 2, ['anchor' => 'end', 'minFontSize' => 13], 'end');
+                '<rect x="' . $margin . '" y="' . $margin . '" width="' . ($width - ($margin * 2)) . '" height="' . ($height - ($margin * 2)) . '" rx="36" class="card"/>' .
+                '<rect x="' . $margin . '" y="' . $margin . '" width="' . ($width - ($margin * 2)) . '" height="' . $headerHeight . '" rx="' . $headerRadius . '" fill="var(--ctor-lockup-fill)"/>' .
+                constructor_svg_render_brand_lockup($margin + 22.0, $margin + 18.0, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => $brandLogoWidth, 'logoHeight' => $brandLogoHeight, 'markWidth' => $brandMarkWidth, 'markHeight' => $brandMarkHeight]) .
+                constructor_svg_render_label($width - $margin - 24.0, $margin + 34.0, $pocketLabel, 'badge', ['anchor' => 'end', 'maxWidth' => min(380.0, $width * 0.42), 'minFontSize' => 15, 'fill' => $lockupInk]) .
+                constructor_svg_render_label($width - $margin - 24.0, $margin + 66.0, $sizeLabel, 'small', ['anchor' => 'end', 'maxWidth' => min(240.0, $width * 0.32), 'minFontSize' => 13, 'fill' => $lockupInk]) .
+                constructor_svg_render_label($margin, $margin + $headerHeight + 18.0, $standTypeLabel, 'tiny', ['maxWidth' => min(260.0, $width * 0.42), 'minFontSize' => 12]) .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + 52.0, (string) ($input['headline'] ?? ''), 'headline', $width - ($margin * 2), max(58.0, $titleHeight * 0.62), 3, ['minFontSize' => 18, 'widthSafety' => 0.84, 'heightSafety' => 0.86]) .
+                constructor_svg_render_fitted_text($margin, $margin + $headerHeight + max(86.0, $titleHeight * 0.72), (string) ($input['subtitle'] ?? ''), 'subhead', $width - ($margin * 2), max(28.0, $titleHeight * 0.34), 2, ['minFontSize' => 13, 'widthSafety' => 0.88]) .
+                constructor_svg_render_information_stand_pockets($margin, $pocketAreaY, $width - ($margin * 2), $pocketAreaHeight, $sizeDefinition) .
+                '<rect x="' . $margin . '" y="' . $footerY . '" width="' . $infoCardWidth . '" height="' . $footerHeight . '" rx="24" class="tone-soft"/>' .
+                constructor_svg_render_label($margin + 18.0, $footerY + 30.0, (string) ($input['section_one_title'] ?? ''), 'badge', ['maxWidth' => $infoCardWidth - 36.0, 'minFontSize' => 14]) .
+                constructor_svg_render_fitted_text($margin + 18.0, $footerY + 58.0, (string) ($input['section_one_body'] ?? ''), 'body', $infoCardWidth - 36.0, $footerBodyHeight, $height >= 900 ? 4 : 3, ['minFontSize' => 12, 'widthSafety' => 0.88]) .
+                '<rect x="' . ($margin + $infoCardWidth + $gap) . '" y="' . $footerY . '" width="' . $infoCardWidth . '" height="' . $footerHeight . '" rx="24" class="card"/>' .
+                constructor_svg_render_label($margin + $infoCardWidth + $gap + 18.0, $footerY + 30.0, $sectionTwoTitle !== '' ? $sectionTwoTitle : 'Контакты', 'badge', ['maxWidth' => $infoCardWidth - 36.0, 'minFontSize' => 14]) .
+                constructor_svg_render_fitted_text($margin + $infoCardWidth + $gap + 18.0, $footerY + 58.0, $sectionTwoBody !== '' ? $sectionTwoBody : ($contactLine !== '' ? $contactLine : $cityLabel), 'body', $infoCardWidth - 36.0, $footerBodyHeight, $height >= 900 ? 4 : 3, ['minFontSize' => 12, 'widthSafety' => 0.88]) .
+                constructor_svg_render_fitted_text($width / 2, $height - max(12.0, $margin * 0.45), $contactLine !== '' ? $contactLine : $cityLabel, 'small', $width - ($margin * 2), 26.0, 1, ['anchor' => 'middle', 'minFontSize' => 12], 'middle');
             break;
 
         case 'room_navigation_sign':

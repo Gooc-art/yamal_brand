@@ -663,6 +663,17 @@ assert_true(
     ),
     'information stand constructor exposes size field'
 );
+$informationStandSizeField = null;
+foreach (($informationStandDefinition['fields'] ?? []) as $field) {
+    if (($field['id'] ?? '') === 'size_variant') {
+        $informationStandSizeField = $field;
+        break;
+    }
+}
+assert_true(is_array($informationStandSizeField), 'information stand exposes size field definition');
+assert_true(count($informationStandSizeField['options'] ?? []) === 7, 'information stand exposes fixed A4 pocket variants');
+assert_true((string) (($informationStandSizeField['options'][0]['label'] ?? '')) === '1 карман A4 • 300–400 мм', 'information stand keeps one-pocket label');
+assert_true((string) (($informationStandSizeField['options'][6]['label'] ?? '')) === '12 карманов A4 • 1060×1230 мм', 'information stand keeps twelve-pocket label');
 $informationStandSvg = constructor_svg_artifact($informationStandDefinition, constructor_normalize_input($informationStandDefinition, [
     'city' => 'салехард',
     'stand_type' => 'schedule',
@@ -673,11 +684,13 @@ $informationStandSvg = constructor_svg_artifact($informationStandDefinition, con
     'section_two_title' => 'В помещении',
     'section_two_body' => "Регистрация — 1 этаж\nПереговорные — 2 этаж",
     'contact_line' => 'brand@yamal.ru • +7 900 000-00-00',
-    'size_variant' => '700x1000',
+    'size_variant' => 'a4x4',
 ]));
 assert_true($informationStandSvg !== null, 'information stand svg artifact exists');
 assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Режим / график'), 'information stand svg exposes stand type label');
-assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Контакты и служебная строка'), 'information stand svg exposes footer support block');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), '4 кармана A4'), 'information stand svg exposes pocket count label');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), '540×800 мм'), 'information stand svg exposes real stand size label');
+assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'Карман 4'), 'information stand svg exposes fixed A4 pocket grid');
 assert_true(str_contains((string) ($informationStandSvg['content'] ?? ''), 'font-size:'), 'information stand svg uses adaptive text sizing');
 
 $roomNavigationDefinition = constructor_definition_by_id('room_navigation_sign');
@@ -891,7 +904,7 @@ $overflowCasePayloads = [
         'section_two_title' => 'В помещении',
         'section_two_body' => "Регистрация и зона ожидания — 1 этаж\nПроектные офисы и переговорные — 2 этаж\nСтойка выдачи материалов — 3 этаж",
         'contact_line' => 'brand@yamal.ru • +7 34922 00-000 • yamal.brand/office',
-        'size_variant' => '700x1000',
+        'size_variant' => 'a4x12',
     ],
     'room_navigation_sign' => [
         'city' => 'салехард',
