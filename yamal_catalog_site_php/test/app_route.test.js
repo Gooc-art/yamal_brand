@@ -29,6 +29,7 @@ const {
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
   constructorPreviewUsesStackedLayout,
+  shouldConstructorPreviewStackedDock,
   constructorArtifactSupportsPngExport,
   constructorArtifactPngFilename,
   buildConstructorPngDownloadEntry,
@@ -182,6 +183,30 @@ test('constructor preview keeps floating mode only for stacked layouts', () => {
   assert.equal(constructorPreviewUsesStackedLayout(761), true);
   assert.equal(constructorPreviewUsesStackedLayout(981), false);
   assert.equal(constructorPreviewUsesStackedLayout(1280), false);
+});
+
+test('constructor stacked preview enters follow mode as soon as panel reaches viewport top', () => {
+  assert.equal(shouldConstructorPreviewStackedDock({
+    shellTop: -40,
+    shellBottom: 1280,
+    panelTop: 16,
+    viewportHeight: 900,
+    topOffset: 18,
+  }), true);
+  assert.equal(shouldConstructorPreviewStackedDock({
+    shellTop: -40,
+    shellBottom: 1280,
+    panelTop: 120,
+    viewportHeight: 900,
+    topOffset: 18,
+  }), false);
+  assert.equal(shouldConstructorPreviewStackedDock({
+    shellTop: 940,
+    shellBottom: 1620,
+    panelTop: 16,
+    viewportHeight: 900,
+    topOffset: 18,
+  }), false);
 });
 
 test('normalizeConstructorHandoff keeps approval and contractor packages structured', () => {

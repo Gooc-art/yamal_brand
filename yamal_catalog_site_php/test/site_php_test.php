@@ -178,6 +178,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating .constructor-preview-panel-frame'), 'styles expose fixed constructor preview fallback');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-preview-panel-frame'), 'styles expose floating dock fallback for constructor preview');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-progress-strip'), 'styles compact floating dock preview chrome');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock {'), 'styles expose dedicated floating dock shell state for always-follow preview');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'max-height: calc(100vh - 20px);'), 'styles keep constructor preview scrollable on narrow screens');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group-style .constructor-choice-card'), 'styles expose compact constructor style card layout');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-style-primary,'), 'styles expose dense constructor style grids');
@@ -226,6 +227,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'sche
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-floating-dock'), 'frontend toggles floating dock mode for constructor preview');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-preview-panel-frame'), 'frontend renders preview frame wrapper for floating constructor preview');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructorPreviewUsesStackedLayout'), 'frontend keeps dedicated floating preview logic for stacked constructor layout');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldConstructorPreviewStackedDock'), 'frontend keeps follow-mode helper for stacked constructor preview');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-style-more'), 'frontend exposes compact advanced style block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');

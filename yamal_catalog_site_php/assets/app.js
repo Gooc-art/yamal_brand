@@ -1670,6 +1670,22 @@ function constructorPreviewUsesStackedLayout(viewportWidth) {
   return width <= CONSTRUCTOR_PREVIEW_STACKED_BREAKPOINT;
 }
 
+function shouldConstructorPreviewStackedDock(metrics = {}) {
+  const shellTop = Number(metrics.shellTop);
+  const shellBottom = Number(metrics.shellBottom);
+  const panelTop = Number(metrics.panelTop);
+  const viewportHeight = Number(metrics.viewportHeight);
+  const topOffset = Number.isFinite(Number(metrics.topOffset))
+    ? Number(metrics.topOffset)
+    : CONSTRUCTOR_PREVIEW_TOP_OFFSET;
+  if (!Number.isFinite(shellTop) || !Number.isFinite(shellBottom) || !Number.isFinite(panelTop) || !Number.isFinite(viewportHeight)) {
+    return false;
+  }
+  const shellVisible = shellBottom > 120 && shellTop < viewportHeight - 120;
+  const reachedFollowZone = panelTop <= topOffset + 6;
+  return shellVisible && reachedFollowZone;
+}
+
 function clearPressedInteractive() {
   if (pressedInteractiveClearTimer) {
     window.clearTimeout(pressedInteractiveClearTimer);
@@ -1729,6 +1745,7 @@ if (typeof module !== 'undefined' && module.exports) {
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
     constructorPreviewUsesStackedLayout,
+    shouldConstructorPreviewStackedDock,
     constructorArtifactSupportsPngExport,
     constructorArtifactPngFilename,
     buildConstructorPngDownloadEntry,
@@ -2307,10 +2324,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const panelVisible = panelRect.bottom > CONSTRUCTOR_PREVIEW_TOP_OFFSET
       && panelRect.top < window.innerHeight - CONSTRUCTOR_PREVIEW_TOP_OFFSET;
     if (stackedLayout) {
-      const shouldDock = shellRect.bottom > 120
-        && shellRect.top < window.innerHeight - 120
-        && panelRect.bottom <= CONSTRUCTOR_PREVIEW_TOP_OFFSET + 20
-        && !panelVisible;
+      const shouldDock = shouldConstructorPreviewStackedDock({
+        shellTop: shellRect.top,
+        shellBottom: shellRect.bottom,
+        panelTop: panelRect.top,
+        viewportHeight: window.innerHeight,
+        topOffset: CONSTRUCTOR_PREVIEW_TOP_OFFSET,
+      });
       panel.classList.remove('is-floating', 'is-bottom-anchored');
       panel.classList.toggle('is-floating-dock', shouldDock);
       if (!shouldDock) {

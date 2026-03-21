@@ -4670,6 +4670,10 @@ input[type="search"]:focus {
     scrollbar-width: thin;
   }
 
+  .constructor-preview-panel.is-floating-dock {
+    min-height: 0;
+  }
+
   .constructor-preview-panel.is-floating-dock .constructor-preview-panel-frame {
     right: 12px;
     bottom: 12px;
@@ -4682,6 +4686,10 @@ input[type="search"]:focus {
     position: sticky;
     top: 10px;
     z-index: 4;
+    min-height: 0;
+  }
+
+  .constructor-preview-panel.is-floating-dock {
     min-height: 0;
   }
 
