@@ -1762,8 +1762,8 @@ function constructor_solution_definitions(): array
             'fields' => array_values(array_merge($base, constructor_style_fields([
                 'color_variant' => 'cmyk',
                 'brand_lockup' => 'logo',
-                'design_variant' => 'editorial',
-                'background_style' => 'frame',
+                'design_variant' => 'calm',
+                'background_style' => 'clean',
                 'palette_tone' => 'ivory',
             ]), [
                 'recipient' => [
@@ -3243,9 +3243,9 @@ function constructor_preset_definitions(array $definition): array
             [
                 'id' => 'official',
                 'label' => 'Официальный',
-                'summary' => 'Печатный сертификат с рамкой',
-                'description' => 'Стандартная торжественная версия для выдачи.',
-                'overrides' => ['color_variant' => 'cmyk', 'design_variant' => 'editorial', 'background_style' => 'frame', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
+                'summary' => 'Чистый бумажный сертификат',
+                'description' => 'Спокойная типографичная версия с центральной надписью Ямал.',
+                'overrides' => ['color_variant' => 'cmyk', 'design_variant' => 'calm', 'background_style' => 'clean', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
             [
                 'id' => 'ceremony',
@@ -4075,24 +4075,24 @@ function constructor_svg_background_elements(string $backgroundStyle, float $wid
 {
 
     return match ($backgroundStyle) {
-        'band' => '<rect x="0" y="0" width="' . $width . '" height="' . round(max(88.0, $height * 0.16), 1) . '" style="fill:var(--ctor-tone);" opacity="0.16"/>' .
-            '<rect x="' . round($width * 0.82, 1) . '" y="' . round($height * 0.74, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round($height * 0.26, 1) . '" style="fill:var(--ctor-tone);" opacity="0.14"/>',
-        'frame' => '<rect x="24" y="24" width="' . max(0.0, $width - 48.0) . '" height="' . max(0.0, $height - 48.0) . '" rx="30" fill="none" style="stroke:var(--ctor-frame);" stroke-width="4" opacity="0.42"/>' .
-            '<rect x="48" y="48" width="' . max(0.0, $width - 96.0) . '" height="' . max(0.0, $height - 96.0) . '" rx="24" fill="none" style="stroke:var(--ctor-surface-alt);" stroke-width="2" opacity="0.7"/>',
-        'corner' => '<path d="M0 0H' . round($width * 0.34, 1) . 'L' . round($width * 0.22, 1) . ' ' . round($height * 0.22, 1) . 'H0Z" style="fill:var(--ctor-tone);" opacity="0.2"/>' .
-            '<path d="M' . round($width * 0.72, 1) . ' ' . $height . 'H' . $width . 'V' . round($height * 0.72, 1) . 'L' . round($width * 0.86, 1) . ' ' . round($height * 0.78, 1) . 'Z" style="fill:var(--ctor-accent-soft);" opacity="0.36"/>',
-        'halo' => '<circle cx="' . round($width * 0.78, 1) . '" cy="' . round($height * 0.24, 1) . '" r="' . round(min($width, $height) * 0.2, 1) . '" style="fill:var(--ctor-tone-soft);" opacity="0.78"/>' .
-            '<circle cx="' . round($width * 0.2, 1) . '" cy="' . round($height * 0.78, 1) . '" r="' . round(min($width, $height) * 0.12, 1) . '" style="fill:var(--ctor-accent-soft);" opacity="0.44"/>',
-        'split' => '<rect x="0" y="0" width="' . round($width * 0.38, 1) . '" height="' . $height . '" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
-            '<path d="M' . round($width * 0.22, 1) . ' 0H' . round($width * 0.52, 1) . 'L' . round($width * 0.34, 1) . ' ' . round($height * 0.28, 1) . 'H' . round($width * 0.08, 1) . 'Z" style="fill:var(--ctor-tone-soft);" opacity="0.78"/>' .
-            '<rect x="' . round($width * 0.62, 1) . '" y="' . round($height * 0.68, 1) . '" width="' . round($width * 0.28, 1) . '" height="' . round($height * 0.22, 1) . '" rx="28" style="fill:var(--ctor-accent-soft);" opacity="0.4"/>',
+        'band' => '<rect x="0" y="0" width="' . $width . '" height="' . round(max(78.0, $height * 0.12), 1) . '" style="fill:var(--ctor-tone);"/>' .
+            '<line x1="0" y1="' . round(max(78.0, $height * 0.12), 1) . '" x2="' . $width . '" y2="' . round(max(78.0, $height * 0.12), 1) . '" style="stroke:var(--ctor-frame);stroke-width:2" opacity="0.18"/>' .
+            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.88, 1) . '" x2="' . round($width * 0.28, 1) . '" y2="' . round($height * 0.88, 1) . '" style="stroke:var(--ctor-line);stroke-width:4;stroke-linecap:round" opacity="0.34"/>',
+        'frame' => '<rect x="24" y="24" width="' . max(0.0, $width - 48.0) . '" height="' . max(0.0, $height - 48.0) . '" rx="24" fill="none" style="stroke:var(--ctor-frame);" stroke-width="4" opacity="0.34"/>' .
+            '<rect x="46" y="46" width="' . max(0.0, $width - 92.0) . '" height="' . max(0.0, $height - 92.0) . '" rx="18" fill="none" style="stroke:var(--ctor-surface-alt);" stroke-width="2" opacity="0.88"/>',
+        'corner' => '<path d="M0 0H' . round($width * 0.26, 1) . 'L' . round($width * 0.16, 1) . ' ' . round($height * 0.18, 1) . 'H0Z" style="fill:var(--ctor-tone);" opacity="0.14"/>' .
+            '<line x1="' . round($width * 0.76, 1) . '" y1="' . round($height * 0.88, 1) . '" x2="' . round($width * 0.92, 1) . '" y2="' . round($height * 0.88, 1) . '" style="stroke:var(--ctor-frame);stroke-width:3;stroke-linecap:round" opacity="0.18"/>',
+        'halo' => '<circle cx="' . round($width * 0.78, 1) . '" cy="' . round($height * 0.24, 1) . '" r="' . round(min($width, $height) * 0.18, 1) . '" style="fill:none;stroke:var(--ctor-tone);" stroke-width="10" opacity="0.14"/>' .
+            '<circle cx="' . round($width * 0.2, 1) . '" cy="' . round($height * 0.78, 1) . '" r="' . round(min($width, $height) * 0.1, 1) . '" style="fill:none;stroke:var(--ctor-accent-soft);" stroke-width="4" opacity="0.3"/>',
+        'split' => '<path d="M0 0H' . round($width * 0.44, 1) . 'L' . round($width * 0.26, 1) . ' ' . $height . 'H0Z" style="fill:var(--ctor-tone);" opacity="0.16"/>' .
+            '<line x1="' . round($width * 0.26, 1) . '" y1="0" x2="' . round($width * 0.44, 1) . '" y2="' . $height . '" style="stroke:var(--ctor-frame);stroke-width:3" opacity="0.18"/>' .
+            '<line x1="' . round($width * 0.62, 1) . '" y1="' . round($height * 0.82, 1) . '" x2="' . round($width * 0.84, 1) . '" y2="' . round($height * 0.82, 1) . '" style="stroke:var(--ctor-line);stroke-width:4;stroke-linecap:round" opacity="0.32"/>',
         'rail' => '<rect x="0" y="0" width="' . round(max(36.0, $width * 0.1), 1) . '" height="' . $height . '" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
-            '<rect x="' . round($width * 0.14, 1) . '" y="0" width="' . round($width * 0.28, 1) . '" height="' . round(max(34.0, $height * 0.08), 1) . '" rx="0" style="fill:var(--ctor-accent-soft);" opacity="0.44"/>' .
-            '<rect x="' . round($width * 0.72, 1) . '" y="' . round($height * 0.86, 1) . '" width="' . round($width * 0.2, 1) . '" height="' . round(max(22.0, $height * 0.05), 1) . '" rx="14" style="fill:var(--ctor-tone-soft);" opacity="0.8"/>',
-        'capsule' => '<rect x="' . round($width * 0.06, 1) . '" y="' . round($height * 0.1, 1) . '" width="' . round($width * 0.24, 1) . '" height="' . round($height * 0.12, 1) . '" rx="' . round(max(22.0, $height * 0.05), 1) . '" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
-            '<rect x="' . round($width * 0.62, 1) . '" y="' . round($height * 0.14, 1) . '" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.1, 1) . '" rx="' . round(max(22.0, $height * 0.05), 1) . '" style="fill:var(--ctor-accent-soft);" opacity="0.46"/>' .
-            '<rect x="' . round($width * 0.18, 1) . '" y="' . round($height * 0.72, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round($height * 0.09, 1) . '" rx="' . round(max(18.0, $height * 0.04), 1) . '" style="fill:var(--ctor-surface-alt);" opacity="0.82"/>' .
-            '<rect x="' . round($width * 0.68, 1) . '" y="' . round($height * 0.76, 1) . '" width="' . round($width * 0.16, 1) . '" height="' . round($height * 0.08, 1) . '" rx="' . round(max(16.0, $height * 0.035), 1) . '" style="fill:var(--ctor-tone);" opacity="0.2"/>',
+            '<line x1="' . round(max(36.0, $width * 0.1), 1) . '" y1="0" x2="' . round(max(36.0, $width * 0.1), 1) . '" y2="' . $height . '" style="stroke:var(--ctor-frame);stroke-width:2" opacity="0.22"/>' .
+            '<line x1="' . round($width * 0.18, 1) . '" y1="' . round(max(40.0, $height * 0.1), 1) . '" x2="' . round($width * 0.44, 1) . '" y2="' . round(max(40.0, $height * 0.1), 1) . '" style="stroke:var(--ctor-accent);stroke-width:6;stroke-linecap:round" opacity="0.56"/>',
+        'capsule' => '<rect x="' . round($width * 0.06, 1) . '" y="' . round($height * 0.12, 1) . '" width="' . round($width * 0.26, 1) . '" height="' . round(max(22.0, $height * 0.05), 1) . '" rx="' . round(max(12.0, $height * 0.02), 1) . '" style="fill:var(--ctor-tone-soft);" opacity="0.92"/>' .
+            '<rect x="' . round($width * 0.64, 1) . '" y="' . round($height * 0.16, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round(max(14.0, $height * 0.03), 1) . '" rx="' . round(max(10.0, $height * 0.018), 1) . '" style="fill:var(--ctor-accent-soft);" opacity="0.68"/>' .
+            '<line x1="' . round($width * 0.22, 1) . '" y1="' . round($height * 0.78, 1) . '" x2="' . round($width * 0.36, 1) . '" y2="' . round($height * 0.78, 1) . '" style="stroke:var(--ctor-line);stroke-width:4;stroke-linecap:round" opacity="0.34"/>',
         'watermark' => constructor_svg_graphic_element_layers($graphicElement, 'watermark', $width, $height, $brandAssetBundle, $brandVariant),
         'pattern' => constructor_svg_graphic_element_layers($graphicElement, 'pattern', $width, $height, $brandAssetBundle, $brandVariant),
         default => '',
@@ -4102,28 +4102,27 @@ function constructor_svg_background_elements(string $backgroundStyle, float $wid
 function constructor_svg_design_overlay(string $designVariant, float $width, float $height, array $brandAssetBundle, string $brandVariant, string $graphicElement): string
 {
     return match ($designVariant) {
-        'editorial' => '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.1, 1) . '" x2="' . round($width * 0.38, 1) . '" y2="' . round($height * 0.1, 1) . '" style="stroke:var(--ctor-frame);" stroke-width="3" opacity="0.28"/>' .
-            '<line x1="' . round($width * 0.62, 1) . '" y1="' . round($height * 0.9, 1) . '" x2="' . round($width * 0.92, 1) . '" y2="' . round($height * 0.9, 1) . '" style="stroke:var(--ctor-frame);" stroke-width="3" opacity="0.22"/>' .
-            '<rect x="' . round($width * 0.08, 1) . '" y="' . round($height * 0.16, 1) . '" width="' . round($width * 0.08, 1) . '" height="' . round(max(18.0, $height * 0.02), 1) . '" rx="10" style="fill:var(--ctor-accent-soft);" opacity="0.7"/>',
-        'signal' => '<rect x="' . round($width * 0.78, 1) . '" y="0" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.18, 1) . '" style="fill:var(--ctor-accent);" opacity="0.12"/>' .
-            '<rect x="0" y="' . round($height * 0.82, 1) . '" width="' . round($width * 0.2, 1) . '" height="' . round($height * 0.18, 1) . '" style="fill:var(--ctor-tone);" opacity="0.16"/>',
-        'poster' => '<rect x="' . round($width * 0.05, 1) . '" y="' . round($height * 0.07, 1) . '" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.1, 1) . '" rx="28" style="fill:var(--ctor-accent-soft);" opacity="0.6"/>' .
+        'editorial' => '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.1, 1) . '" x2="' . round($width * 0.34, 1) . '" y2="' . round($height * 0.1, 1) . '" style="stroke:var(--ctor-frame);stroke-width:4;stroke-linecap:round" opacity="0.22"/>' .
+            '<line x1="' . round($width * 0.72, 1) . '" y1="' . round($height * 0.9, 1) . '" x2="' . round($width * 0.92, 1) . '" y2="' . round($height * 0.9, 1) . '" style="stroke:var(--ctor-line);stroke-width:4;stroke-linecap:round" opacity="0.24"/>' .
+            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.16, 1) . '" x2="' . round($width * 0.16, 1) . '" y2="' . round($height * 0.16, 1) . '" style="stroke:var(--ctor-accent);stroke-width:6;stroke-linecap:round" opacity="0.44"/>',
+        'signal' => '<rect x="' . round($width * 0.8, 1) . '" y="0" width="' . round($width * 0.2, 1) . '" height="' . round(max(70.0, $height * 0.16), 1) . '" style="fill:var(--ctor-accent-soft);"/>' .
+            '<rect x="0" y="' . round($height * 0.84, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round(max(60.0, $height * 0.12), 1) . '" style="fill:var(--ctor-tone);"/>',
+        'poster' => '<line x1="' . round($width * 0.06, 1) . '" y1="' . round($height * 0.12, 1) . '" x2="' . round($width * 0.24, 1) . '" y2="' . round($height * 0.12, 1) . '" style="stroke:var(--ctor-accent);stroke-width:8;stroke-linecap:round" opacity="0.5"/>' .
             constructor_svg_graphic_element_layers($graphicElement, 'poster', $width, $height, $brandAssetBundle, $brandVariant),
-        'monument' => '<rect x="' . round($width * 0.72, 1) . '" y="0" width="' . round($width * 0.28, 1) . '" height="' . $height . '" style="fill:var(--ctor-frame);" opacity="0.12"/>' .
-            '<rect x="' . round($width * 0.06, 1) . '" y="' . round($height * 0.08, 1) . '" width="' . round($width * 0.2, 1) . '" height="' . round(max(22.0, $height * 0.028), 1) . '" rx="12" style="fill:var(--ctor-accent-soft);" opacity="0.72"/>' .
-            '<rect x="' . round($width * 0.66, 1) . '" y="' . round($height * 0.6, 1) . '" width="' . round($width * 0.22, 1) . '" height="' . round($height * 0.28, 1) . '" rx="30" style="fill:var(--ctor-tone);" opacity="0.18"/>' .
+        'monument' => '<rect x="' . round($width * 0.74, 1) . '" y="0" width="' . round($width * 0.26, 1) . '" height="' . $height . '" style="fill:var(--ctor-surface-alt);" opacity="0.96"/>' .
+            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.1, 1) . '" x2="' . round($width * 0.24, 1) . '" y2="' . round($height * 0.1, 1) . '" style="stroke:var(--ctor-accent);stroke-width:6;stroke-linecap:round" opacity="0.5"/>' .
+            '<line x1="' . round($width * 0.72, 1) . '" y1="' . round($height * 0.6, 1) . '" x2="' . round($width * 0.72, 1) . '" y2="' . round($height * 0.86, 1) . '" style="stroke:var(--ctor-frame);stroke-width:4" opacity="0.24"/>' .
             constructor_svg_graphic_element_layers($graphicElement, 'poster', $width, $height, $brandAssetBundle, $brandVariant),
         'navigator' => '<path d="M' . round($width * 0.08, 1) . ' ' . round($height * 0.84, 1) . 'H' . round($width * 0.4, 1) . 'V' . round($height * 0.64, 1) . 'H' . round($width * 0.72, 1) . '" style="fill:none;stroke:var(--ctor-frame);stroke-width:4;opacity:0.28"/>' .
             '<circle cx="' . round($width * 0.08, 1) . '" cy="' . round($height * 0.84, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-accent);opacity:0.64"/>' .
             '<circle cx="' . round($width * 0.4, 1) . '" cy="' . round($height * 0.84, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-tone);opacity:0.56"/>' .
             '<circle cx="' . round($width * 0.4, 1) . '" cy="' . round($height * 0.64, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-tone-soft);opacity:0.9"/>' .
             '<circle cx="' . round($width * 0.72, 1) . '" cy="' . round($height * 0.64, 1) . '" r="' . round(max(8.0, min($width, $height) * 0.012), 1) . '" style="fill:var(--ctor-accent-soft);opacity:0.9"/>' .
-            '<rect x="' . round($width * 0.08, 1) . '" y="' . round($height * 0.12, 1) . '" width="' . round($width * 0.16, 1) . '" height="' . round(max(20.0, $height * 0.022), 1) . '" rx="10" style="fill:var(--ctor-accent-soft);" opacity="0.68"/>' .
+            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.12, 1) . '" x2="' . round($width * 0.22, 1) . '" y2="' . round($height * 0.12, 1) . '" style="stroke:var(--ctor-accent);stroke-width:6;stroke-linecap:round" opacity="0.4"/>' .
             constructor_svg_graphic_element_layers($graphicElement, 'watermark', $width, $height, $brandAssetBundle, $brandVariant),
-        'gallery' => '<rect x="' . round($width * 0.05, 1) . '" y="' . round($height * 0.08, 1) . '" width="' . round($width * 0.9, 1) . '" height="' . round($height * 0.84, 1) . '" rx="30" fill="none" style="stroke:var(--ctor-frame);" stroke-width="3" opacity="0.2"/>' .
-            '<rect x="' . round($width * 0.08, 1) . '" y="' . round($height * 0.12, 1) . '" width="' . round($width * 0.18, 1) . '" height="' . round(max(20.0, $height * 0.024), 1) . '" rx="10" style="fill:var(--ctor-tone-soft);" opacity="0.86"/>' .
-            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.18, 1) . '" x2="' . round($width * 0.24, 1) . '" y2="' . round($height * 0.18, 1) . '" style="stroke:var(--ctor-frame);stroke-width:3;opacity:0.18"/>' .
-            '<line x1="' . round($width * 0.78, 1) . '" y1="' . round($height * 0.82, 1) . '" x2="' . round($width * 0.92, 1) . '" y2="' . round($height * 0.82, 1) . '" style="stroke:var(--ctor-frame);stroke-width:3;opacity:0.2"/>' .
+        'gallery' => '<rect x="' . round($width * 0.06, 1) . '" y="' . round($height * 0.08, 1) . '" width="' . round($width * 0.88, 1) . '" height="' . round($height * 0.82, 1) . '" rx="20" fill="none" style="stroke:var(--ctor-frame);" stroke-width="3" opacity="0.18"/>' .
+            '<line x1="' . round($width * 0.08, 1) . '" y1="' . round($height * 0.16, 1) . '" x2="' . round($width * 0.22, 1) . '" y2="' . round($height * 0.16, 1) . '" style="stroke:var(--ctor-tone);stroke-width:8;stroke-linecap:round" opacity="0.88"/>' .
+            '<line x1="' . round($width * 0.8, 1) . '" y1="' . round($height * 0.82, 1) . '" x2="' . round($width * 0.92, 1) . '" y2="' . round($height * 0.82, 1) . '" style="stroke:var(--ctor-line);stroke-width:4;stroke-linecap:round" opacity="0.24"/>' .
             constructor_svg_graphic_element_layers($graphicElement, 'watermark', $width, $height, $brandAssetBundle, $brandVariant),
         default => '',
     };
@@ -5321,22 +5320,37 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $width = 1400;
             $height = 990;
             $isMarkCertificate = $compositionId === 'mark_focus' || $compositionId === 'mark_contrast';
+            $certificateHeaderLockup = $brandLockup === 'mark' ? 'mark' : 'logo';
+            $certificateLockupPanel = '';
+            if ($certificateHeaderLockup === 'mark' || $brandVariant === 'white') {
+                $certificateLockupWidth = $certificateHeaderLockup === 'mark' ? 176 : 296;
+                $certificateLockupHeight = $certificateHeaderLockup === 'mark' ? 120 : 84;
+                $certificateLockupPanel =
+                    '<rect x="' . round((1400 - $certificateLockupWidth) / 2, 1) . '" y="84" width="' . $certificateLockupWidth . '" height="' . $certificateLockupHeight . '" rx="28" fill="var(--ctor-lockup-fill)" opacity="' . ($brandVariant === 'white' ? '1' : '0.78') . '"/>';
+            }
+            $certificateHeader =
+                '<g data-certificate-header="' . constructor_svg_escape($certificateHeaderLockup === 'mark' ? 'centered-mark' : 'centered-wordmark') . '">' .
+                $certificateLockupPanel .
+                ($certificateHeaderLockup === 'mark'
+                    ? constructor_svg_render_brand_lockup(632, 96, 'mark', $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => 136, 'markHeight' => 88])
+                    : constructor_svg_render_brand_lockup(564, 102, 'logo', $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 272, 'logoHeight' => 44, 'markWidth' => 132, 'markHeight' => 86])) .
+                constructor_svg_render_label(700, 184, $cityLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 320, 'minFontSize' => 15]) .
+                '</g>';
             $body =
                 constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
-                '<rect x="44" y="44" width="1312" height="902" rx="28" fill="none" stroke="var(--ctor-frame)" stroke-width="8"/>' .
-                ($isMarkCertificate
-                    ? '<rect x="560" y="76" width="280" height="126" rx="36" fill="var(--ctor-lockup-fill)"/>' .
-                        constructor_svg_render_brand_lockup(626, 98, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 176, 'logoHeight' => 29, 'markWidth' => 146, 'markHeight' => 95]) .
-                        constructor_svg_render_label(700, 226, $cityLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 240, 'minFontSize' => 16])
-                    : constructor_svg_render_brand_lockup(86, 88, $brandLockup, $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 200, 'logoHeight' => 32, 'markWidth' => 124, 'markHeight' => 80]) .
-                        constructor_svg_render_label(700, 202, $cityLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 240, 'minFontSize' => 16])) .
-                constructor_svg_render_label(700, 310, 'Сертификат', 'title', ['anchor' => 'middle', 'maxWidth' => 420, 'minFontSize' => 28]) .
-                constructor_svg_render_fitted_text(700, 434, (string) ($input['recipient'] ?? ''), 'headline', 1020, 214, 4, ['anchor' => 'middle', 'minFontSize' => 20, 'widthSafety' => 0.84, 'heightSafety' => 0.86], 'middle') .
-                constructor_svg_render_fitted_text(700, 606, (string) ($input['reason'] ?? ''), 'body', 1020, 146, 4, ['anchor' => 'middle', 'minFontSize' => 14, 'widthSafety' => 0.88], 'middle') .
-                constructor_svg_render_fitted_text(160, 804, (string) ($input['event_name'] ?? ''), 'small', 520, 60, 2, ['minFontSize' => 15]) .
-                '<line x1="968" y1="804" x2="1248" y2="804" class="line"/>' .
-                constructor_svg_render_fitted_text(968, 832, (string) ($input['signer'] ?? ''), 'small', 260, 56, 2, ['minFontSize' => 13]) .
-                constructor_svg_render_fitted_text(160, 900, constructor_format_date((string) ($input['issue_date'] ?? '')), 'small', 180, 28, 1, ['minFontSize' => 14]);
+                '<rect x="54" y="54" width="1292" height="882" rx="30" class="card"/>' .
+                '<rect x="76" y="76" width="1248" height="838" rx="22" fill="none" stroke="var(--ctor-frame)" stroke-width="4" opacity="0.44"/>' .
+                $certificateHeader .
+                '<line x1="176" y1="242" x2="1224" y2="242" class="line"/>' .
+                constructor_svg_render_label(700, 298, 'Сертификат', 'title', ['anchor' => 'middle', 'maxWidth' => 460, 'minFontSize' => 30]) .
+                '<line x1="512" y1="334" x2="888" y2="334" class="line"/>' .
+                constructor_svg_render_fitted_text(700, 446, (string) ($input['recipient'] ?? ''), 'headline', 980, 198, 4, ['anchor' => 'middle', 'minFontSize' => 22, 'widthSafety' => 0.82, 'heightSafety' => 0.84], 'middle') .
+                constructor_svg_render_fitted_text(700, 602, (string) ($input['reason'] ?? ''), 'body', 1000, 130, 4, ['anchor' => 'middle', 'minFontSize' => 15, 'widthSafety' => 0.88], 'middle') .
+                '<line x1="176" y1="758" x2="1224" y2="758" class="line"/>' .
+                constructor_svg_render_fitted_text(700, 804, (string) ($input['event_name'] ?? ''), 'small', 620, 58, 2, ['anchor' => 'middle', 'minFontSize' => 15], 'middle') .
+                constructor_svg_render_fitted_text(176, 886, constructor_format_date((string) ($input['issue_date'] ?? '')), 'small', 220, 32, 1, ['minFontSize' => 14]) .
+                '<line x1="972" y1="852" x2="1238" y2="852" class="line"/>' .
+                constructor_svg_render_fitted_text(972, 886, (string) ($input['signer'] ?? ''), 'small', 266, 58, 2, ['minFontSize' => 13]);
             break;
 
         case 'badge':

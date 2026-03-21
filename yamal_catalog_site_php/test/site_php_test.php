@@ -158,6 +158,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage'), 'styles contain constructor preview stage classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-stage.is-panorama'), 'styles contain panorama constructor preview profile');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-visual.is-document svg'), 'styles contain document constructor preview profile');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '--constructor-paper: #fffdf9'), 'styles expose paper-like constructor surface tokens');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-progress-strip'), 'styles contain constructor progress strip classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-draft-status'), 'styles contain constructor draft status classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-list'), 'styles contain constructor warning list classes');
@@ -657,6 +658,40 @@ $lightMarkBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, $l
 assert_true($lightMarkBusinessCardSvg !== null, 'light mark business card svg artifact exists');
 assert_true(str_contains((string) ($lightMarkBusinessCardSvg['content'] ?? ''), '--ctor-bg:#F7FBF8'), 'white firm mark keeps the selected light palette visible on the canvas');
 assert_true(str_contains((string) ($lightMarkBusinessCardSvg['content'] ?? ''), '--ctor-lockup-fill:#C40E3D'), 'white firm mark keeps a contrast accent panel when light palette would be too pale for reversed lockup');
+
+$certificateDefinition = constructor_definition_by_id('certificate');
+assert_true($certificateDefinition !== null, 'certificate constructor definition exists');
+$certificateDefaults = constructor_default_input($certificateDefinition);
+assert_true(($certificateDefaults['design_variant'] ?? '') === 'calm', 'certificate constructor defaults to calm design');
+assert_true(($certificateDefaults['background_style'] ?? '') === 'clean', 'certificate constructor defaults to clean background');
+$certificatePresets = constructor_present_presets($certificateDefinition, $certificateDefaults);
+assert_true(($certificatePresets[0]['overrides']['design_variant'] ?? '') === 'calm', 'certificate official preset keeps calm design override');
+assert_true(($certificatePresets[0]['overrides']['background_style'] ?? '') === 'clean', 'certificate official preset keeps clean background override');
+$defaultCertificateSvg = constructor_svg_artifact($certificateDefinition, constructor_normalize_input($certificateDefinition, [
+    'city' => 'салехард',
+    'recipient' => 'Анна Куликова',
+    'reason' => 'за системное развитие брендированных материалов региона',
+    'event_name' => 'Форум брендовых решений',
+    'signer' => 'Директор проектного офиса коммуникаций',
+    'issue_date' => '2026-03-12',
+]));
+assert_true($defaultCertificateSvg !== null, 'default certificate svg artifact exists');
+$defaultCertificateContent = (string) ($defaultCertificateSvg['content'] ?? '');
+assert_true(str_contains($defaultCertificateContent, 'data-certificate-header="centered-wordmark"'), 'certificate svg keeps centered wordmark header');
+assert_true(!str_contains($defaultCertificateContent, 'x="86" y="88"'), 'certificate svg no longer uses the old top-left lockup placement');
+$markCertificateSvg = constructor_svg_artifact($certificateDefinition, constructor_normalize_input($certificateDefinition, [
+    'city' => 'салехард',
+    'recipient' => 'Анна Куликова',
+    'reason' => 'за развитие навигации и событийных коммуникаций',
+    'event_name' => 'Форум брендовых решений',
+    'signer' => 'Директор проектного офиса коммуникаций',
+    'issue_date' => '2026-03-12',
+    'brand_lockup' => 'mark',
+    'design_variant' => 'signal',
+    'background_style' => 'halo',
+]));
+assert_true($markCertificateSvg !== null, 'mark certificate svg artifact exists');
+assert_true(str_contains((string) ($markCertificateSvg['content'] ?? ''), 'data-certificate-header="centered-mark"'), 'certificate svg keeps centered mark header for mark mode');
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');

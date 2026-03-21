@@ -519,58 +519,59 @@ function buildConstructorDesignPreviewSvg(variant) {
   switch (variant) {
     case 'editorial':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fbf7f1"/>
-        <rect x="12" y="10" width="10" height="32" rx="5" fill="#182a31"/>
-        <rect x="28" y="12" width="34" height="6" rx="3" fill="#c40e3d"/>
-        <rect x="28" y="23" width="46" height="5" rx="2.5" fill="#42515b" opacity="0.32"/>
-        <rect x="28" y="32" width="38" height="5" rx="2.5" fill="#42515b" opacity="0.2"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="14" y="12" width="4" height="28" fill="#182a31"/>
+        <line x1="24" y1="16" x2="56" y2="16" stroke="#c40e3d" stroke-width="3" stroke-linecap="round"/>
+        <line x1="24" y1="25" x2="70" y2="25" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.28"/>
+        <line x1="24" y1="34" x2="62" y2="34" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
       `);
     case 'signal':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fff9f0"/>
-        <rect x="12" y="10" width="26" height="8" rx="4" fill="#182a31"/>
-        <rect x="12" y="23" width="54" height="7" rx="3.5" fill="#182a31" opacity="0.22"/>
-        <rect x="12" y="34" width="68" height="8" rx="4" fill="#c40e3d"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fff9f0" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="14" y="12" width="20" height="5" fill="#182a31"/>
+        <line x1="14" y1="24" x2="58" y2="24" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.24"/>
+        <rect x="14" y="31" width="56" height="7" fill="#c40e3d"/>
       `);
     case 'poster':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#1f3138"/>
-        <rect x="12" y="11" width="20" height="6" rx="3" fill="#f9f0e1"/>
-        <rect x="12" y="21" width="56" height="18" rx="9" fill="#c40e3d"/>
-        <rect x="72" y="21" width="8" height="18" rx="4" fill="#f9f0e1"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#1f3138"/>
+        <line x1="14" y1="15" x2="34" y2="15" stroke="#f9f0e1" stroke-width="3" stroke-linecap="round"/>
+        <rect x="14" y="21" width="44" height="15" fill="#c40e3d"/>
+        <rect x="63" y="21" width="7" height="15" fill="#f9f0e1"/>
+        <line x1="14" y1="40" x2="46" y2="40" stroke="#f9f0e1" stroke-width="2.5" stroke-linecap="round" opacity="0.84"/>
       `);
     case 'monument':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f8f3ec"/>
-        <rect x="12" y="10" width="18" height="32" rx="9" fill="#c40e3d"/>
-        <rect x="36" y="10" width="38" height="9" rx="4.5" fill="#182a31"/>
-        <rect x="36" y="24" width="30" height="6" rx="3" fill="#182a31" opacity="0.28"/>
-        <rect x="36" y="34" width="22" height="6" rx="3" fill="#182a31" opacity="0.18"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#f8f3ec" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="14" y="12" width="12" height="28" fill="#c40e3d"/>
+        <line x1="34" y1="16" x2="70" y2="16" stroke="#182a31" stroke-width="4" stroke-linecap="round"/>
+        <line x1="34" y1="27" x2="62" y2="27" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.28"/>
+        <line x1="34" y1="36" x2="56" y2="36" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
       `);
     case 'navigator':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f4f8f6"/>
-        <path d="M14 26h34" stroke="#182a31" stroke-width="6" stroke-linecap="round"/>
-        <path d="M43 17l11 9-11 9" fill="none" stroke="#c40e3d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="20" cy="26" r="5" fill="#182a31"/>
-        <rect x="60" y="17" width="18" height="18" rx="6" fill="#182a31" opacity="0.18"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#f4f8f6" stroke="#d2ddd8" stroke-width="1.2"/>
+        <path d="M16 29h28v-10h18" stroke="#182a31" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M54 13l10 6-10 6" fill="none" stroke="#c40e3d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="16" cy="29" r="4" fill="#182a31"/>
+        <circle cx="44" cy="29" r="4" fill="#42515b" opacity="0.42"/>
       `);
     case 'gallery':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f7fbfb"/>
-        <rect x="12" y="12" width="16" height="22" rx="6" fill="#c40e3d"/>
-        <rect x="33" y="12" width="16" height="28" rx="6" fill="#182a31" opacity="0.24"/>
-        <rect x="54" y="12" width="24" height="18" rx="6" fill="#d1e2e2"/>
-        <rect x="54" y="34" width="24" height="6" rx="3" fill="#182a31" opacity="0.24"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#f7fbfb" stroke="#d5dfdf" stroke-width="1.2"/>
+        <rect x="14" y="13" width="14" height="18" fill="#c40e3d"/>
+        <rect x="34" y="13" width="14" height="24" fill="#182a31" opacity="0.22"/>
+        <rect x="54" y="13" width="20" height="14" fill="#d1e2e2"/>
+        <line x1="54" y1="35" x2="74" y2="35" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
       `);
     case 'calm':
     default:
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
-        <rect x="12" y="12" width="36" height="6" rx="3" fill="#182a31"/>
-        <rect x="12" y="24" width="56" height="5" rx="2.5" fill="#182a31" opacity="0.2"/>
-        <rect x="12" y="33" width="42" height="5" rx="2.5" fill="#182a31" opacity="0.14"/>
-        <rect x="72" y="12" width="8" height="26" rx="4" fill="#f0eaed"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+        <line x1="14" y1="16" x2="46" y2="16" stroke="#182a31" stroke-width="3" stroke-linecap="round"/>
+        <line x1="14" y1="25" x2="62" y2="25" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.22"/>
+        <line x1="14" y1="34" x2="54" y2="34" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.16"/>
+        <rect x="72" y="13" width="4" height="24" fill="#f0eaed"/>
       `);
   }
 }
@@ -579,65 +580,70 @@ function buildConstructorBackgroundPreviewSvg(variant) {
   switch (variant) {
     case 'band':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fff9f0"/>
-        <rect x="6" y="6" width="80" height="12" rx="12" fill="#c40e3d"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fff9f0" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="8" y="8" width="76" height="8" fill="#c40e3d"/>
+        <line x1="12" y1="28" x2="62" y2="28" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
       `);
     case 'frame':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffdf9"/>
-        <rect x="12" y="12" width="68" height="28" rx="10" fill="none" stroke="#182a31" stroke-width="3"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffdf9" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="14" y="14" width="64" height="24" rx="6" fill="none" stroke="#182a31" stroke-width="2.4"/>
+        <rect x="18" y="18" width="56" height="16" rx="4" fill="none" stroke="#cfc1ae" stroke-width="1.2"/>
       `);
     case 'watermark':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
-        <circle cx="62" cy="26" r="16" fill="#c40e3d" opacity="0.16"/>
-        <rect x="18" y="18" width="26" height="16" rx="8" fill="#182a31" opacity="0.12"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+        <circle cx="60" cy="26" r="14" fill="none" stroke="#c40e3d" stroke-width="2.4" opacity="0.22"/>
+        <line x1="18" y1="26" x2="44" y2="26" stroke="#182a31" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
       `);
     case 'pattern':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#faf7f1"/>
-        <circle cx="20" cy="20" r="4" fill="#182a31" opacity="0.18"/>
-        <circle cx="36" cy="15" r="4" fill="#c40e3d" opacity="0.2"/>
-        <circle cx="52" cy="26" r="4" fill="#182a31" opacity="0.18"/>
-        <circle cx="69" cy="18" r="4" fill="#c40e3d" opacity="0.2"/>
-        <circle cx="29" cy="33" r="4" fill="#182a31" opacity="0.18"/>
-        <circle cx="61" cy="35" r="4" fill="#182a31" opacity="0.18"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#faf7f1" stroke="#d9cfbf" stroke-width="1.2"/>
+        <circle cx="20" cy="18" r="2.4" fill="#182a31" opacity="0.28"/>
+        <circle cx="34" cy="14" r="2.4" fill="#c40e3d" opacity="0.32"/>
+        <circle cx="48" cy="24" r="2.4" fill="#182a31" opacity="0.28"/>
+        <circle cx="64" cy="18" r="2.4" fill="#c40e3d" opacity="0.32"/>
+        <circle cx="26" cy="32" r="2.4" fill="#182a31" opacity="0.28"/>
+        <circle cx="58" cy="34" r="2.4" fill="#182a31" opacity="0.28"/>
       `);
     case 'corner':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
-        <path d="M6 6h28v8H14v20H6z" fill="#c40e3d"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+        <path d="M8 8h24l-10 12H8z" fill="#c40e3d"/>
+        <line x1="66" y1="34" x2="78" y2="34" stroke="#182a31" stroke-width="3" stroke-linecap="round" opacity="0.24"/>
       `);
     case 'halo':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fff9f0"/>
-        <circle cx="48" cy="26" r="18" fill="#c40e3d" opacity="0.18"/>
-        <circle cx="48" cy="26" r="10" fill="#f9f0e1"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fff9f0" stroke="#d9cfbf" stroke-width="1.2"/>
+        <circle cx="48" cy="26" r="15" fill="none" stroke="#c40e3d" stroke-width="2.4" opacity="0.24"/>
+        <circle cx="48" cy="26" r="8" fill="none" stroke="#cfc1ae" stroke-width="1.2"/>
       `);
     case 'split':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f6efe5"/>
-        <path d="M46 6h40v40H34z" fill="#182a31"/>
-        <rect x="12" y="14" width="22" height="6" rx="3" fill="#c40e3d"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#f6efe5" stroke="#d9cfbf" stroke-width="1.2"/>
+        <path d="M48 8h36v36H36z" fill="#182a31"/>
+        <line x1="14" y1="16" x2="34" y2="16" stroke="#c40e3d" stroke-width="3" stroke-linecap="round"/>
       `);
     case 'rail':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
-        <rect x="12" y="10" width="8" height="32" rx="4" fill="#182a31"/>
-        <rect x="26" y="14" width="48" height="6" rx="3" fill="#c40e3d" opacity="0.82"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="14" y="10" width="8" height="32" fill="#182a31"/>
+        <line x1="30" y1="17" x2="72" y2="17" stroke="#c40e3d" stroke-width="3" stroke-linecap="round"/>
+        <line x1="30" y1="31" x2="62" y2="31" stroke="#42515b" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
       `);
     case 'capsule':
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fbf7f1"/>
-        <rect x="14" y="16" width="28" height="12" rx="6" fill="#c40e3d"/>
-        <rect x="46" y="12" width="24" height="10" rx="5" fill="#182a31" opacity="0.2"/>
-        <rect x="40" y="28" width="30" height="10" rx="5" fill="#d1e2e2"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fbf7f1" stroke="#d9cfbf" stroke-width="1.2"/>
+        <rect x="14" y="16" width="26" height="8" rx="4" fill="#c40e3d"/>
+        <rect x="46" y="12" width="22" height="6" rx="3" fill="#182a31" opacity="0.18"/>
+        <rect x="38" y="29" width="28" height="7" rx="3.5" fill="#d1e2e2"/>
       `);
     case 'clean':
     default:
       return buildConstructorChoiceSvg(`
-        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffdf9"/>
-        <rect x="22" y="18" width="48" height="16" rx="8" fill="#182a31" opacity="0.08"/>
+        <rect x="8" y="8" width="76" height="36" rx="10" fill="#fffdf9" stroke="#d9cfbf" stroke-width="1.2"/>
+        <line x1="18" y1="21" x2="66" y2="21" stroke="#182a31" stroke-width="2.6" stroke-linecap="round" opacity="0.14"/>
+        <line x1="18" y1="31" x2="58" y2="31" stroke="#182a31" stroke-width="2.6" stroke-linecap="round" opacity="0.1"/>
       `);
   }
 }
@@ -713,15 +719,15 @@ function buildConstructorGraphicPreviewSvg(variant) {
 function buildConstructorLockupPreviewSvg(variant) {
   if (variant === 'mark') {
     return buildConstructorChoiceSvg(`
-      <rect x="10" y="10" width="72" height="32" rx="10" fill="#fffaf3"/>
-      <circle cx="46" cy="26" r="11" fill="#c40e3d"/>
+      <rect x="10" y="10" width="72" height="32" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+      <path d="M46 15l10 11-10 11-10-11z" fill="#c40e3d"/>
     `);
   }
   return buildConstructorChoiceSvg(`
-    <rect x="10" y="10" width="72" height="32" rx="10" fill="#fffaf3"/>
-    <rect x="18" y="18" width="22" height="16" rx="5" fill="#182a31"/>
-    <rect x="46" y="18" width="20" height="6" rx="3" fill="#c40e3d"/>
-    <rect x="46" y="28" width="14" height="4" rx="2" fill="#182a31" opacity="0.24"/>
+    <rect x="10" y="10" width="72" height="32" rx="10" fill="#fffaf3" stroke="#d9cfbf" stroke-width="1.2"/>
+    <path d="M18 33l6-14h7l-7 14z" fill="#c40e3d"/>
+    <line x1="40" y1="22" x2="68" y2="22" stroke="#c40e3d" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="30" x2="60" y2="30" stroke="#182a31" stroke-width="2.6" stroke-linecap="round" opacity="0.28"/>
   `);
 }
 
@@ -739,46 +745,58 @@ function buildConstructorPresetPreview(preset) {
   switch (backgroundStyle) {
     case 'split':
       backgroundLayer = `
-        <path d="M64 8h48v56H40z" fill="#182a31"/>
-        <rect x="14" y="18" width="28" height="8" rx="4" fill="#c40e3d"/>
+        <path d="M68 8h44v56H44z" fill="#182a31"/>
+        <line x1="14" y1="20" x2="40" y2="20" stroke="#c40e3d" stroke-width="4" stroke-linecap="round"/>
       `;
       break;
     case 'rail':
       backgroundLayer = `
-        <rect x="16" y="12" width="10" height="48" rx="5" fill="#182a31"/>
-        <rect x="32" y="16" width="54" height="7" rx="3.5" fill="#c40e3d" opacity="0.84"/>
+        <rect x="16" y="12" width="10" height="48" fill="#182a31"/>
+        <line x1="34" y1="19" x2="84" y2="19" stroke="#c40e3d" stroke-width="4" stroke-linecap="round"/>
       `;
       break;
     case 'capsule':
       backgroundLayer = `
-        <rect x="18" y="19" width="32" height="12" rx="6" fill="#c40e3d"/>
-        <rect x="54" y="15" width="24" height="10" rx="5" fill="#182a31" opacity="0.18"/>
-        <rect x="60" y="36" width="28" height="10" rx="5" fill="#d1e2e2"/>
+        <rect x="18" y="19" width="30" height="8" rx="4" fill="#c40e3d"/>
+        <rect x="54" y="15" width="22" height="6" rx="3" fill="#182a31" opacity="0.18"/>
+        <rect x="58" y="38" width="26" height="7" rx="3.5" fill="#d1e2e2"/>
       `;
       break;
     case 'band':
-      backgroundLayer = `<rect x="8" y="8" width="104" height="16" rx="16" fill="#c40e3d"/>`;
+      backgroundLayer = `
+        <rect x="8" y="8" width="104" height="10" fill="#c40e3d"/>
+        <line x1="18" y1="52" x2="68" y2="52" stroke="#42515b" stroke-width="4" stroke-linecap="round" opacity="0.14"/>
+      `;
       break;
     case 'frame':
-      backgroundLayer = `<rect x="16" y="16" width="88" height="40" rx="14" fill="none" stroke="#182a31" stroke-width="3"/>`;
+      backgroundLayer = `
+        <rect x="16" y="16" width="88" height="40" rx="8" fill="none" stroke="#182a31" stroke-width="2.6"/>
+        <rect x="21" y="21" width="78" height="30" rx="5" fill="none" stroke="#d5c7b5" stroke-width="1.2"/>
+      `;
       break;
     case 'watermark':
-      backgroundLayer = `<circle cx="82" cy="34" r="19" fill="#c40e3d" opacity="0.16"/>`;
+      backgroundLayer = `<circle cx="82" cy="34" r="18" fill="none" stroke="#c40e3d" stroke-width="3" opacity="0.18"/>`;
       break;
     case 'pattern':
       backgroundLayer = `
-        <circle cx="28" cy="22" r="4" fill="#182a31" opacity="0.18"/>
-        <circle cx="46" cy="17" r="4" fill="#c40e3d" opacity="0.2"/>
-        <circle cx="64" cy="34" r="4" fill="#182a31" opacity="0.18"/>
-        <circle cx="82" cy="20" r="4" fill="#c40e3d" opacity="0.2"/>
-        <circle cx="92" cy="42" r="4" fill="#182a31" opacity="0.18"/>
+        <circle cx="28" cy="22" r="2.8" fill="#182a31" opacity="0.28"/>
+        <circle cx="46" cy="17" r="2.8" fill="#c40e3d" opacity="0.32"/>
+        <circle cx="64" cy="34" r="2.8" fill="#182a31" opacity="0.28"/>
+        <circle cx="82" cy="20" r="2.8" fill="#c40e3d" opacity="0.32"/>
+        <circle cx="92" cy="42" r="2.8" fill="#182a31" opacity="0.28"/>
       `;
       break;
     case 'corner':
-      backgroundLayer = `<path d="M8 8h36v10H18v26H8z" fill="#c40e3d"/>`;
+      backgroundLayer = `
+        <path d="M8 8h28l-11 12H8z" fill="#c40e3d"/>
+        <line x1="86" y1="52" x2="100" y2="52" stroke="#42515b" stroke-width="4" stroke-linecap="round" opacity="0.16"/>
+      `;
       break;
     case 'halo':
-      backgroundLayer = `<circle cx="62" cy="36" r="19" fill="#c40e3d" opacity="0.18"/>`;
+      backgroundLayer = `
+        <circle cx="62" cy="36" r="18" fill="none" stroke="#c40e3d" stroke-width="3" opacity="0.2"/>
+        <circle cx="62" cy="36" r="10" fill="none" stroke="#d5c7b5" stroke-width="1.4"/>
+      `;
       break;
     default:
       backgroundLayer = '';
@@ -788,48 +806,49 @@ function buildConstructorPresetPreview(preset) {
   switch (designVariant) {
     case 'editorial':
       contentLayer = `
-        <rect x="22" y="18" width="38" height="7" rx="3.5" fill="#182a31"/>
-        <rect x="22" y="30" width="52" height="5" rx="2.5" fill="#182a31" opacity="0.24"/>
-        <rect x="22" y="40" width="44" height="5" rx="2.5" fill="#182a31" opacity="0.16"/>
+        <rect x="22" y="16" width="4" height="30" fill="#182a31"/>
+        <line x1="32" y1="20" x2="62" y2="20" stroke="#c40e3d" stroke-width="4" stroke-linecap="round"/>
+        <line x1="32" y1="31" x2="76" y2="31" stroke="#182a31" stroke-width="3.6" stroke-linecap="round" opacity="0.24"/>
+        <line x1="32" y1="41" x2="68" y2="41" stroke="#182a31" stroke-width="3.6" stroke-linecap="round" opacity="0.16"/>
       `;
       break;
     case 'signal':
       contentLayer = `
-        <rect x="18" y="18" width="24" height="8" rx="4" fill="#182a31"/>
-        <rect x="18" y="32" width="58" height="8" rx="4" fill="#c40e3d"/>
+        <line x1="18" y1="22" x2="40" y2="22" stroke="#182a31" stroke-width="4" stroke-linecap="round"/>
+        <rect x="18" y="32" width="58" height="8" fill="#c40e3d"/>
       `;
       break;
     case 'poster':
       contentLayer = `
-        <rect x="18" y="20" width="60" height="24" rx="12" fill="#c40e3d"/>
-        <rect x="82" y="20" width="12" height="24" rx="6" fill="#f9f0e1"/>
+        <rect x="18" y="20" width="48" height="20" fill="#c40e3d"/>
+        <rect x="72" y="20" width="8" height="20" fill="#f9f0e1"/>
       `;
       break;
     case 'monument':
       contentLayer = `
-        <rect x="18" y="14" width="18" height="40" rx="9" fill="#c40e3d"/>
-        <rect x="42" y="18" width="42" height="10" rx="5" fill="#182a31"/>
-        <rect x="42" y="34" width="32" height="6" rx="3" fill="#182a31" opacity="0.24"/>
+        <rect x="18" y="14" width="14" height="40" fill="#c40e3d"/>
+        <line x1="42" y1="22" x2="84" y2="22" stroke="#182a31" stroke-width="5" stroke-linecap="round"/>
+        <line x1="42" y1="36" x2="74" y2="36" stroke="#182a31" stroke-width="3.6" stroke-linecap="round" opacity="0.24"/>
       `;
       break;
     case 'navigator':
       contentLayer = `
-        <path d="M20 36h34" stroke="#182a31" stroke-width="7" stroke-linecap="round"/>
-        <path d="M48 25l13 11-13 11" fill="none" stroke="#c40e3d" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 36h26v-12h22" stroke="#182a31" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M60 18l12 6-12 6" fill="none" stroke="#c40e3d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
       `;
       break;
     case 'gallery':
       contentLayer = `
-        <rect x="16" y="18" width="18" height="28" rx="7" fill="#c40e3d"/>
-        <rect x="40" y="18" width="18" height="34" rx="7" fill="#182a31" opacity="0.2"/>
-        <rect x="64" y="18" width="28" height="20" rx="7" fill="#d1e2e2"/>
+        <rect x="16" y="18" width="16" height="26" fill="#c40e3d"/>
+        <rect x="40" y="18" width="16" height="32" fill="#182a31" opacity="0.2"/>
+        <rect x="64" y="18" width="24" height="18" fill="#d1e2e2"/>
       `;
       break;
     case 'calm':
     default:
       contentLayer = `
-        <rect x="18" y="20" width="36" height="7" rx="3.5" fill="#182a31"/>
-        <rect x="18" y="33" width="52" height="5" rx="2.5" fill="#182a31" opacity="0.2"/>
+        <line x1="18" y1="22" x2="50" y2="22" stroke="#182a31" stroke-width="4" stroke-linecap="round"/>
+        <line x1="18" y1="34" x2="66" y2="34" stroke="#182a31" stroke-width="3.4" stroke-linecap="round" opacity="0.2"/>
       `;
   }
 
@@ -863,7 +882,7 @@ function buildConstructorPresetPreview(preset) {
     case 'lockup_bridge':
     default:
       graphicLayer = `
-        <rect x="88" y="18" width="12" height="12" rx="5" fill="${graphicElement === 'mark_white' || graphicElement === 'logo_mark_white' ? '#ffffff' : '#c40e3d'}"/>
+        <path d="M94 18l8 10-8 10-8-10z" fill="${graphicElement === 'mark_white' || graphicElement === 'logo_mark_white' ? '#ffffff' : '#c40e3d'}"/>
       `;
   }
 
