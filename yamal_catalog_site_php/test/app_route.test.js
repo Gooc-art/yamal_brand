@@ -28,6 +28,7 @@ const {
   normalizeConstructorHandoff,
   readConstructorPreviewBoxMetrics,
   buildConstructorPreviewLayout,
+  constructorPreviewUsesStackedLayout,
   constructorArtifactSupportsPngExport,
   constructorArtifactPngFilename,
   buildConstructorPngDownloadEntry,
@@ -174,6 +175,13 @@ test('constructor choice fields and auto-build fields are detected consistently'
   assert.equal(shouldAutoBuildConstructorField('city', 'text'), false);
   assert.equal(shouldAutoBuildConstructorField('slide_count', 'number'), true);
   assert.equal(shouldAutoBuildConstructorField('full_name', 'text'), false);
+});
+
+test('constructor preview keeps floating mode only for stacked layouts', () => {
+  assert.equal(constructorPreviewUsesStackedLayout(980), true);
+  assert.equal(constructorPreviewUsesStackedLayout(761), true);
+  assert.equal(constructorPreviewUsesStackedLayout(981), false);
+  assert.equal(constructorPreviewUsesStackedLayout(1280), false);
 });
 
 test('normalizeConstructorHandoff keeps approval and contractor packages structured', () => {

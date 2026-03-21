@@ -149,10 +149,12 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-group-summary-meta'), 'styles contain constructor accordion meta pills');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card'), 'styles contain constructor choice card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card.is-pressed'), 'styles expose pressed state for constructor choice cards');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card.active::after'), 'styles expose visible selected marker for constructor choice cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-grid.is-palette'), 'styles contain constructor palette choice grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'text-wrap: balance'), 'styles balance constructor choice labels');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'overflow-wrap: anywhere'), 'styles keep constructor choice copy inside cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-card'), 'styles contain constructor preset card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-card.active::after'), 'styles expose visible selected marker for constructor preset cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preset-grid'), 'styles contain constructor preset grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-handoff-grid'), 'styles contain constructor handoff grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-handoff-card'), 'styles contain constructor handoff card classes');
@@ -175,6 +177,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '@media (
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel-frame'), 'styles expose preview frame wrapper for floating constructor preview');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating .constructor-preview-panel-frame'), 'styles expose fixed constructor preview fallback');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-preview-panel-frame'), 'styles expose floating dock fallback for constructor preview');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-progress-strip'), 'styles compact floating dock preview chrome');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'max-height: calc(100vh - 20px);'), 'styles keep constructor preview scrollable on narrow screens');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group-style .constructor-choice-card'), 'styles expose compact constructor style card layout');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-style-primary,'), 'styles expose dense constructor style grids');
@@ -222,6 +225,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-c
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'scheduleConstructorPreviewFloatSync'), 'frontend exposes constructor preview floating sync helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'is-floating-dock'), 'frontend toggles floating dock mode for constructor preview');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-preview-panel-frame'), 'frontend renders preview frame wrapper for floating constructor preview');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructorPreviewUsesStackedLayout'), 'frontend keeps dedicated floating preview logic for stacked constructor layout');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-style-more'), 'frontend exposes compact advanced style block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'normalizeConstructorHandoff'), 'frontend exposes constructor handoff normalizer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-choice-card'), 'frontend renders constructor choice cards for style fields');

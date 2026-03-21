@@ -7,7 +7,8 @@ const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_el
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
 const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
-const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 981;
+const CONSTRUCTOR_PREVIEW_STACKED_BREAKPOINT = 980;
+const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 0;
 const CONSTRUCTOR_PREVIEW_TOP_OFFSET = 18;
 const CONSTRUCTOR_PREVIEW_VIEWPORT_GAP = 28;
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
@@ -22,6 +23,7 @@ const DEFAULT_CONSULTANT_INTENTS = [
 ];
 let constructorPreviewFloatFrame = 0;
 let pressedInteractiveNode = null;
+let pressedInteractiveClearTimer = 0;
 
 function escapeHtml(value) {
   return String(value || '')
@@ -1661,12 +1663,41 @@ function buildConstructorWarningsMarkup(warnings) {
   `).join('');
 }
 
+function constructorPreviewUsesStackedLayout(viewportWidth) {
+  const width = Number.isFinite(Number(viewportWidth))
+    ? Number(viewportWidth)
+    : CONSTRUCTOR_PREVIEW_STACKED_BREAKPOINT;
+  return width <= CONSTRUCTOR_PREVIEW_STACKED_BREAKPOINT;
+}
+
 function clearPressedInteractive() {
+  if (pressedInteractiveClearTimer) {
+    window.clearTimeout(pressedInteractiveClearTimer);
+    pressedInteractiveClearTimer = 0;
+  }
   if (!pressedInteractiveNode) {
     return;
   }
   pressedInteractiveNode.classList.remove('is-pressed');
   pressedInteractiveNode = null;
+}
+
+function schedulePressedInteractiveClear(delay = 160) {
+  if (!pressedInteractiveNode) {
+    return;
+  }
+  if (pressedInteractiveClearTimer) {
+    window.clearTimeout(pressedInteractiveClearTimer);
+    pressedInteractiveClearTimer = 0;
+  }
+  const targetNode = pressedInteractiveNode;
+  pressedInteractiveClearTimer = window.setTimeout(() => {
+    targetNode.classList.remove('is-pressed');
+    if (pressedInteractiveNode === targetNode) {
+      pressedInteractiveNode = null;
+    }
+    pressedInteractiveClearTimer = 0;
+  }, Math.max(0, Number(delay) || 0));
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1697,6 +1728,7 @@ if (typeof module !== 'undefined' && module.exports) {
     normalizeConstructorHandoff,
     readConstructorPreviewBoxMetrics,
     buildConstructorPreviewLayout,
+    constructorPreviewUsesStackedLayout,
     constructorArtifactSupportsPngExport,
     constructorArtifactPngFilename,
     buildConstructorPngDownloadEntry,
@@ -1806,6 +1838,34 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     inspectorBackdrop: document.querySelector('#inspector-backdrop'),
     catalogModeButtons: Array.from(document.querySelectorAll('.catalog-mode-toggle')),
   };
+
+  function syncConstructorChoiceSelectionState(root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') {
+      return;
+    }
+    root.querySelectorAll('.constructor-choice-card').forEach((card) => {
+      const input = card.querySelector('.constructor-choice-input');
+      const active = Boolean(input?.checked);
+      card.classList.toggle('active', active);
+      card.toggleAttribute('data-selected', active);
+    });
+  }
+
+  function syncConstructorPresetSelectionState(activePresetId = '', root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') {
+      return;
+    }
+    const normalizedId = String(activePresetId || '').trim();
+    root.querySelectorAll('.constructor-preset-card').forEach((card) => {
+      const active = normalizedId && String(card.getAttribute('data-preset-id') || '').trim() === normalizedId;
+      card.classList.toggle('active', active);
+      if (active) {
+        card.setAttribute('aria-pressed', 'true');
+      } else {
+        card.removeAttribute('aria-pressed');
+      }
+    });
+  }
 
   function catalogTitle() {
     return state.bootstrap?.title || 'Бренд Ямал';
@@ -2210,6 +2270,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (typeof window === 'undefined') {
       return false;
     }
+    if (constructorPreviewUsesStackedLayout(window.innerWidth)) {
+      return false;
+    }
     const supports = window.CSS && typeof window.CSS.supports === 'function'
       ? window.CSS.supports('position', 'sticky') || window.CSS.supports('position', '-webkit-sticky')
       : false;
@@ -2232,6 +2295,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return;
     }
 
+    const stackedLayout = constructorPreviewUsesStackedLayout(window.innerWidth);
     if (constructorPreviewPrefersNativeSticky()) {
       clearConstructorPreviewFloatState(panel);
       return;
@@ -2240,6 +2304,23 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const panelRect = panel.getBoundingClientRect();
     const layoutRect = layout.getBoundingClientRect();
     const shellRect = shell.getBoundingClientRect();
+    const panelVisible = panelRect.bottom > CONSTRUCTOR_PREVIEW_TOP_OFFSET
+      && panelRect.top < window.innerHeight - CONSTRUCTOR_PREVIEW_TOP_OFFSET;
+    if (stackedLayout) {
+      const shouldDock = shellRect.bottom > 120
+        && shellRect.top < window.innerHeight - 120
+        && panelRect.bottom <= CONSTRUCTOR_PREVIEW_TOP_OFFSET + 20
+        && !panelVisible;
+      panel.classList.remove('is-floating', 'is-bottom-anchored');
+      panel.classList.toggle('is-floating-dock', shouldDock);
+      if (!shouldDock) {
+        panel.style.removeProperty('--constructor-preview-panel-height');
+        panel.style.removeProperty('--constructor-preview-frame-left');
+        panel.style.removeProperty('--constructor-preview-frame-width');
+      }
+      return;
+    }
+
     const panelStyles = window.getComputedStyle(panel);
     const panelPaddingLeft = Number.parseFloat(panelStyles.paddingLeft || '0') || 0;
     const panelPaddingRight = Number.parseFloat(panelStyles.paddingRight || '0') || 0;
@@ -2265,8 +2346,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const reachedBottom = layoutRect.bottom <= CONSTRUCTOR_PREVIEW_TOP_OFFSET + floatingHeight;
     const shouldAnchorBottom = reachedTop && reachedBottom;
     const shouldFloat = reachedTop && !reachedBottom;
-    const panelVisible = panelRect.bottom > CONSTRUCTOR_PREVIEW_TOP_OFFSET
-      && panelRect.top < window.innerHeight - CONSTRUCTOR_PREVIEW_TOP_OFFSET;
     const shouldDock = window.innerWidth >= 761
       && shellRect.bottom > 120
       && shellRect.top < window.innerHeight - 120
@@ -4218,6 +4297,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       </div>
     `;
     setDocumentTitle(definition.label || 'Лаборатория решений');
+    syncConstructorChoiceSelectionState(els.contentItems);
+    const activePreset = presets.find((preset) => preset?.active);
+    syncConstructorPresetSelectionState(activePreset?.id || '', els.contentItems);
     scheduleConstructorPreviewFloatSync();
 
     if (options?.preserveViewState) {
@@ -4242,6 +4324,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       ...formInput,
       ...(preset.overrides || {}),
     };
+    syncConstructorPresetSelectionState(String(preset.id || '').trim(), els.contentItems);
     const fields = currentConstructorFields(String(currentPayload.definition.id || '').trim());
     const draftMeta = persistConstructorDraft(String(currentPayload.definition.id || '').trim(), fields, nextInput);
     applyConstructorLivePreview(nextInput);
@@ -4919,7 +5002,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   document.addEventListener('click', (event) => {
     const target = event.target.closest('[data-action]');
-    clearPressedInteractive();
+    schedulePressedInteractiveClear();
     if (!target) return;
     const action = target.dataset.action;
     if (action === 'toggle-consultant') {
@@ -5061,6 +5144,10 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     if (event.button !== 0) {
       return;
     }
+    if (pressedInteractiveClearTimer) {
+      window.clearTimeout(pressedInteractiveClearTimer);
+      pressedInteractiveClearTimer = 0;
+    }
     const pressable = event.target.closest(PRESSABLE_INTERACTIVE_SELECTOR);
     if (!pressable) {
       clearPressedInteractive();
@@ -5073,7 +5160,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     pressedInteractiveNode.classList.add('is-pressed');
   });
 
-  document.addEventListener('pointerup', clearPressedInteractive);
+  document.addEventListener('pointerup', () => {
+    schedulePressedInteractiveClear();
+  });
   document.addEventListener('pointercancel', clearPressedInteractive);
   window.addEventListener('blur', clearPressedInteractive);
 
@@ -5101,6 +5190,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     scheduleConstructorDraftSave(form, { input: nextInput });
     const fieldName = String(event.target?.name || '').trim();
     const fieldType = String(event.target?.type || event.target?.tagName || '').trim().toLowerCase();
+    if (event.target?.matches?.('.constructor-choice-input')) {
+      syncConstructorChoiceSelectionState(form);
+    }
     if (!shouldAutoBuildConstructorField(fieldName, fieldType)) {
       return;
     }
