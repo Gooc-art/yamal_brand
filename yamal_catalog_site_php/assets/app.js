@@ -11,6 +11,7 @@ const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 981;
 const CONSTRUCTOR_PREVIEW_TOP_OFFSET = 18;
 const CONSTRUCTOR_PREVIEW_VIEWPORT_GAP = 28;
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
+const PRESSABLE_INTERACTIVE_SELECTOR = '.accent-button, .ghost-button, .link-button, .item-action, .chip, .brand-route-card, .constructor-preset-card, .constructor-choice-card, .constructor-download-card, .constructor-mini-card';
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
   { id: 'brandbook', label: 'Нужен брендбук', summary: 'Брендбуки', description: 'Брендбук региона или города.', prompt: 'брендбук Салехард' },
@@ -20,6 +21,7 @@ const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'graphics', label: 'SVG, паттерны, графика', summary: 'SVG и паттерны', description: 'SVG, паттерны и векторная графика.', prompt: 'svg паттерн' },
 ];
 let constructorPreviewFloatFrame = 0;
+let pressedInteractiveNode = null;
 
 function escapeHtml(value) {
   return String(value || '')
@@ -1657,6 +1659,14 @@ function buildConstructorWarningsMarkup(warnings) {
       <span>${escapeHtml(item.message)}</span>
     </article>
   `).join('');
+}
+
+function clearPressedInteractive() {
+  if (!pressedInteractiveNode) {
+    return;
+  }
+  pressedInteractiveNode.classList.remove('is-pressed');
+  pressedInteractiveNode = null;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -4909,6 +4919,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   document.addEventListener('click', (event) => {
     const target = event.target.closest('[data-action]');
+    clearPressedInteractive();
     if (!target) return;
     const action = target.dataset.action;
     if (action === 'toggle-consultant') {
@@ -5045,6 +5056,26 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
     void buildConstructor(constructorId, nextInput, { draftMeta });
   });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+    const pressable = event.target.closest(PRESSABLE_INTERACTIVE_SELECTOR);
+    if (!pressable) {
+      clearPressedInteractive();
+      return;
+    }
+    if (pressedInteractiveNode && pressedInteractiveNode !== pressable) {
+      clearPressedInteractive();
+    }
+    pressedInteractiveNode = pressable;
+    pressedInteractiveNode.classList.add('is-pressed');
+  });
+
+  document.addEventListener('pointerup', clearPressedInteractive);
+  document.addEventListener('pointercancel', clearPressedInteractive);
+  window.addEventListener('blur', clearPressedInteractive);
 
   let constructorAutoBuildTimer = 0;
   document.addEventListener('input', (event) => {

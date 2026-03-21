@@ -148,6 +148,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-accordion'), 'styles contain constructor field accordion classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-group-summary-meta'), 'styles contain constructor accordion meta pills');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card'), 'styles contain constructor choice card classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-card.is-pressed'), 'styles expose pressed state for constructor choice cards');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-choice-grid.is-palette'), 'styles contain constructor palette choice grid classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'text-wrap: balance'), 'styles balance constructor choice labels');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'overflow-wrap: anywhere'), 'styles keep constructor choice copy inside cards');
@@ -174,6 +175,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '@media (
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel-frame'), 'styles expose preview frame wrapper for floating constructor preview');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating .constructor-preview-panel-frame'), 'styles expose fixed constructor preview fallback');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-preview-panel-frame'), 'styles expose floating dock fallback for constructor preview');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'max-height: calc(100vh - 20px);'), 'styles keep constructor preview scrollable on narrow screens');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group-style .constructor-choice-card'), 'styles expose compact constructor style card layout');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-style-primary,'), 'styles expose dense constructor style grids');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
