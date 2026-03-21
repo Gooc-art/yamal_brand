@@ -219,8 +219,9 @@ test('buildConstructorChoicePreview keeps graphic element token safe', () => {
     mark: 'G208<script>',
   });
 
-  assert.match(markup, /constructor-choice-visual-token/);
-  assert.match(markup, /G208&lt;scrip/);
+  assert.match(markup, /constructor-choice-visual-graphic/);
+  assert.match(markup, /constructor-choice-svg/);
+  assert.doesNotMatch(markup, /G208&lt;scrip/);
 });
 
 test('buildConstructorCompletion tracks non-style fields and required state', () => {

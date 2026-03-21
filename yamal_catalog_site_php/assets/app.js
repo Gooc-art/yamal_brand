@@ -3,7 +3,7 @@ const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
 const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
-const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['design_variant', 'palette_tone']);
+const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
 const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
@@ -301,9 +301,9 @@ function shouldAutoBuildConstructorField(fieldId, fieldType = '') {
 
 function groupConstructorFields(fields) {
   const groups = [
-    { id: 'fill', label: 'Заполнение шаблона', hint: 'Основной текст, ФИО, роли, контакты и смысловые поля носителя.', items: [] },
-    { id: 'setup', label: 'Параметры носителя', hint: 'Населённый пункт и служебные параметры конкретного шаблона.', items: [] },
-    { id: 'style', label: 'Оформление', hint: 'Логотип, цветовая версия и фон по мотивам брендбука.', items: [] },
+    { id: 'fill', label: 'Заполнение шаблона', hint: 'Текст, имена, контакты и содержание самого носителя.', items: [] },
+    { id: 'setup', label: 'Параметры носителя', hint: 'Размер, сценарий, направление и другие параметры носителя.', items: [] },
+    { id: 'style', label: 'Оформление', hint: 'Логотип, фон, композиция и графические элементы.', items: [] },
   ];
   const fieldList = Array.isArray(fields) ? fields : [];
   const peopleIds = new Set(['full_name', 'role', 'department', 'phone', 'email', 'speaker', 'speaker_role', 'signer', 'recipient', 'contact_line']);
@@ -502,8 +502,386 @@ function resolveConstructorSvgDownloadMarkup(artifact, previewMarkup = '') {
   return String(artifact?.content || '');
 }
 
+function sanitizeConstructorPreviewToken(value, fallback = 'default') {
+  const normalized = String(value || '').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  return normalized || fallback;
+}
+
+function buildConstructorChoiceSvg(content, viewBox = '0 0 92 52') {
+  return `
+    <svg class="constructor-choice-svg" viewBox="${viewBox}" aria-hidden="true" focusable="false">
+      ${content}
+    </svg>
+  `;
+}
+
+function buildConstructorDesignPreviewSvg(variant) {
+  switch (variant) {
+    case 'editorial':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fbf7f1"/>
+        <rect x="12" y="10" width="10" height="32" rx="5" fill="#182a31"/>
+        <rect x="28" y="12" width="34" height="6" rx="3" fill="#c40e3d"/>
+        <rect x="28" y="23" width="46" height="5" rx="2.5" fill="#42515b" opacity="0.32"/>
+        <rect x="28" y="32" width="38" height="5" rx="2.5" fill="#42515b" opacity="0.2"/>
+      `);
+    case 'signal':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fff9f0"/>
+        <rect x="12" y="10" width="26" height="8" rx="4" fill="#182a31"/>
+        <rect x="12" y="23" width="54" height="7" rx="3.5" fill="#182a31" opacity="0.22"/>
+        <rect x="12" y="34" width="68" height="8" rx="4" fill="#c40e3d"/>
+      `);
+    case 'poster':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#1f3138"/>
+        <rect x="12" y="11" width="20" height="6" rx="3" fill="#f9f0e1"/>
+        <rect x="12" y="21" width="56" height="18" rx="9" fill="#c40e3d"/>
+        <rect x="72" y="21" width="8" height="18" rx="4" fill="#f9f0e1"/>
+      `);
+    case 'monument':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f8f3ec"/>
+        <rect x="12" y="10" width="18" height="32" rx="9" fill="#c40e3d"/>
+        <rect x="36" y="10" width="38" height="9" rx="4.5" fill="#182a31"/>
+        <rect x="36" y="24" width="30" height="6" rx="3" fill="#182a31" opacity="0.28"/>
+        <rect x="36" y="34" width="22" height="6" rx="3" fill="#182a31" opacity="0.18"/>
+      `);
+    case 'navigator':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f4f8f6"/>
+        <path d="M14 26h34" stroke="#182a31" stroke-width="6" stroke-linecap="round"/>
+        <path d="M43 17l11 9-11 9" fill="none" stroke="#c40e3d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="20" cy="26" r="5" fill="#182a31"/>
+        <rect x="60" y="17" width="18" height="18" rx="6" fill="#182a31" opacity="0.18"/>
+      `);
+    case 'gallery':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f7fbfb"/>
+        <rect x="12" y="12" width="16" height="22" rx="6" fill="#c40e3d"/>
+        <rect x="33" y="12" width="16" height="28" rx="6" fill="#182a31" opacity="0.24"/>
+        <rect x="54" y="12" width="24" height="18" rx="6" fill="#d1e2e2"/>
+        <rect x="54" y="34" width="24" height="6" rx="3" fill="#182a31" opacity="0.24"/>
+      `);
+    case 'calm':
+    default:
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
+        <rect x="12" y="12" width="36" height="6" rx="3" fill="#182a31"/>
+        <rect x="12" y="24" width="56" height="5" rx="2.5" fill="#182a31" opacity="0.2"/>
+        <rect x="12" y="33" width="42" height="5" rx="2.5" fill="#182a31" opacity="0.14"/>
+        <rect x="72" y="12" width="8" height="26" rx="4" fill="#f0eaed"/>
+      `);
+  }
+}
+
+function buildConstructorBackgroundPreviewSvg(variant) {
+  switch (variant) {
+    case 'band':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fff9f0"/>
+        <rect x="6" y="6" width="80" height="12" rx="12" fill="#c40e3d"/>
+      `);
+    case 'frame':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffdf9"/>
+        <rect x="12" y="12" width="68" height="28" rx="10" fill="none" stroke="#182a31" stroke-width="3"/>
+      `);
+    case 'watermark':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
+        <circle cx="62" cy="26" r="16" fill="#c40e3d" opacity="0.16"/>
+        <rect x="18" y="18" width="26" height="16" rx="8" fill="#182a31" opacity="0.12"/>
+      `);
+    case 'pattern':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#faf7f1"/>
+        <circle cx="20" cy="20" r="4" fill="#182a31" opacity="0.18"/>
+        <circle cx="36" cy="15" r="4" fill="#c40e3d" opacity="0.2"/>
+        <circle cx="52" cy="26" r="4" fill="#182a31" opacity="0.18"/>
+        <circle cx="69" cy="18" r="4" fill="#c40e3d" opacity="0.2"/>
+        <circle cx="29" cy="33" r="4" fill="#182a31" opacity="0.18"/>
+        <circle cx="61" cy="35" r="4" fill="#182a31" opacity="0.18"/>
+      `);
+    case 'corner':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
+        <path d="M6 6h28v8H14v20H6z" fill="#c40e3d"/>
+      `);
+    case 'halo':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fff9f0"/>
+        <circle cx="48" cy="26" r="18" fill="#c40e3d" opacity="0.18"/>
+        <circle cx="48" cy="26" r="10" fill="#f9f0e1"/>
+      `);
+    case 'split':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#f6efe5"/>
+        <path d="M46 6h40v40H34z" fill="#182a31"/>
+        <rect x="12" y="14" width="22" height="6" rx="3" fill="#c40e3d"/>
+      `);
+    case 'rail':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffaf3"/>
+        <rect x="12" y="10" width="8" height="32" rx="4" fill="#182a31"/>
+        <rect x="26" y="14" width="48" height="6" rx="3" fill="#c40e3d" opacity="0.82"/>
+      `);
+    case 'capsule':
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fbf7f1"/>
+        <rect x="14" y="16" width="28" height="12" rx="6" fill="#c40e3d"/>
+        <rect x="46" y="12" width="24" height="10" rx="5" fill="#182a31" opacity="0.2"/>
+        <rect x="40" y="28" width="30" height="10" rx="5" fill="#d1e2e2"/>
+      `);
+    case 'clean':
+    default:
+      return buildConstructorChoiceSvg(`
+        <rect x="6" y="6" width="80" height="40" rx="12" fill="#fffdf9"/>
+        <rect x="22" y="18" width="48" height="16" rx="8" fill="#182a31" opacity="0.08"/>
+      `);
+  }
+}
+
+function buildConstructorGraphicPreviewSvg(variant) {
+  switch (variant) {
+    case 'group_1410103616':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#fff9f0"/>
+        <circle cx="26" cy="20" r="8" fill="#182a31"/>
+        <circle cx="42" cy="29" r="8" fill="#c40e3d"/>
+        <circle cx="58" cy="20" r="8" fill="#182a31" opacity="0.72"/>
+      `);
+    case 'group_2087328779':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#fff9f0"/>
+        <rect x="18" y="15" width="12" height="12" rx="4" fill="#182a31"/>
+        <rect x="33" y="23" width="12" height="12" rx="4" fill="#c40e3d"/>
+        <rect x="48" y="14" width="12" height="12" rx="4" fill="#182a31" opacity="0.6"/>
+        <rect x="63" y="22" width="12" height="12" rx="4" fill="#d1e2e2"/>
+      `);
+    case 'group_1':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#fff9f0"/>
+        <path d="M20 33l12-16 12 16" fill="#182a31"/>
+        <path d="M40 33l10-12 10 12" fill="#c40e3d"/>
+        <circle cx="66" cy="22" r="7" fill="#182a31" opacity="0.28"/>
+      `);
+    case 'logo_band':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#fbf7f1"/>
+        <rect x="14" y="16" width="16" height="20" rx="5" fill="#182a31"/>
+        <rect x="34" y="16" width="16" height="20" rx="5" fill="#c40e3d"/>
+        <rect x="54" y="16" width="16" height="20" rx="5" fill="#182a31"/>
+      `);
+    case 'mark_constellation':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#f7fbfb"/>
+        <path d="M18 29l17-10 15 12 17-13" stroke="#182a31" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="18" cy="29" r="4" fill="#c40e3d"/>
+        <circle cx="35" cy="19" r="4" fill="#182a31"/>
+        <circle cx="50" cy="31" r="4" fill="#c40e3d"/>
+        <circle cx="67" cy="18" r="4" fill="#182a31"/>
+      `);
+    case 'lockup_bridge':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#fffaf3"/>
+        <rect x="14" y="16" width="26" height="20" rx="6" fill="#182a31"/>
+        <rect x="45" y="20" width="9" height="4" rx="2" fill="#c40e3d"/>
+        <rect x="58" y="14" width="14" height="14" rx="5" fill="#c40e3d"/>
+        <rect x="58" y="31" width="14" height="5" rx="2.5" fill="#182a31" opacity="0.28"/>
+      `);
+    case 'mark_white':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#182a31"/>
+        <circle cx="46" cy="26" r="11" fill="#fffdf9"/>
+      `);
+    case 'logo_mark_white':
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#182a31"/>
+        <rect x="18" y="18" width="20" height="16" rx="5" fill="#fffdf9"/>
+        <circle cx="58" cy="26" r="9" fill="#fffdf9"/>
+      `);
+    case 'mark_yamal':
+    default:
+      return buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="76" height="36" rx="11" fill="#fffaf3"/>
+        <path d="M46 14l10 12-10 12-10-12z" fill="#c40e3d"/>
+      `);
+  }
+}
+
+function buildConstructorLockupPreviewSvg(variant) {
+  if (variant === 'mark') {
+    return buildConstructorChoiceSvg(`
+      <rect x="10" y="10" width="72" height="32" rx="10" fill="#fffaf3"/>
+      <circle cx="46" cy="26" r="11" fill="#c40e3d"/>
+    `);
+  }
+  return buildConstructorChoiceSvg(`
+    <rect x="10" y="10" width="72" height="32" rx="10" fill="#fffaf3"/>
+    <rect x="18" y="18" width="22" height="16" rx="5" fill="#182a31"/>
+    <rect x="46" y="18" width="20" height="6" rx="3" fill="#c40e3d"/>
+    <rect x="46" y="28" width="14" height="4" rx="2" fill="#182a31" opacity="0.24"/>
+  `);
+}
+
+function buildConstructorPresetPreview(preset) {
+  const overrides = preset && typeof preset.overrides === 'object' ? preset.overrides : {};
+  const designVariant = sanitizeConstructorPreviewToken(overrides.design_variant, 'calm');
+  const backgroundStyle = sanitizeConstructorPreviewToken(overrides.background_style, 'clean');
+  const brandLockup = sanitizeConstructorPreviewToken(overrides.brand_lockup, 'logo');
+  const graphicElement = sanitizeConstructorPreviewToken(
+    overrides.graphic_element,
+    brandLockup === 'mark' ? 'mark_yamal' : 'lockup_bridge',
+  );
+
+  let backgroundLayer = '';
+  switch (backgroundStyle) {
+    case 'split':
+      backgroundLayer = `
+        <path d="M64 8h48v56H40z" fill="#182a31"/>
+        <rect x="14" y="18" width="28" height="8" rx="4" fill="#c40e3d"/>
+      `;
+      break;
+    case 'rail':
+      backgroundLayer = `
+        <rect x="16" y="12" width="10" height="48" rx="5" fill="#182a31"/>
+        <rect x="32" y="16" width="54" height="7" rx="3.5" fill="#c40e3d" opacity="0.84"/>
+      `;
+      break;
+    case 'capsule':
+      backgroundLayer = `
+        <rect x="18" y="19" width="32" height="12" rx="6" fill="#c40e3d"/>
+        <rect x="54" y="15" width="24" height="10" rx="5" fill="#182a31" opacity="0.18"/>
+        <rect x="60" y="36" width="28" height="10" rx="5" fill="#d1e2e2"/>
+      `;
+      break;
+    case 'band':
+      backgroundLayer = `<rect x="8" y="8" width="104" height="16" rx="16" fill="#c40e3d"/>`;
+      break;
+    case 'frame':
+      backgroundLayer = `<rect x="16" y="16" width="88" height="40" rx="14" fill="none" stroke="#182a31" stroke-width="3"/>`;
+      break;
+    case 'watermark':
+      backgroundLayer = `<circle cx="82" cy="34" r="19" fill="#c40e3d" opacity="0.16"/>`;
+      break;
+    case 'pattern':
+      backgroundLayer = `
+        <circle cx="28" cy="22" r="4" fill="#182a31" opacity="0.18"/>
+        <circle cx="46" cy="17" r="4" fill="#c40e3d" opacity="0.2"/>
+        <circle cx="64" cy="34" r="4" fill="#182a31" opacity="0.18"/>
+        <circle cx="82" cy="20" r="4" fill="#c40e3d" opacity="0.2"/>
+        <circle cx="92" cy="42" r="4" fill="#182a31" opacity="0.18"/>
+      `;
+      break;
+    case 'corner':
+      backgroundLayer = `<path d="M8 8h36v10H18v26H8z" fill="#c40e3d"/>`;
+      break;
+    case 'halo':
+      backgroundLayer = `<circle cx="62" cy="36" r="19" fill="#c40e3d" opacity="0.18"/>`;
+      break;
+    default:
+      backgroundLayer = '';
+  }
+
+  let contentLayer = '';
+  switch (designVariant) {
+    case 'editorial':
+      contentLayer = `
+        <rect x="22" y="18" width="38" height="7" rx="3.5" fill="#182a31"/>
+        <rect x="22" y="30" width="52" height="5" rx="2.5" fill="#182a31" opacity="0.24"/>
+        <rect x="22" y="40" width="44" height="5" rx="2.5" fill="#182a31" opacity="0.16"/>
+      `;
+      break;
+    case 'signal':
+      contentLayer = `
+        <rect x="18" y="18" width="24" height="8" rx="4" fill="#182a31"/>
+        <rect x="18" y="32" width="58" height="8" rx="4" fill="#c40e3d"/>
+      `;
+      break;
+    case 'poster':
+      contentLayer = `
+        <rect x="18" y="20" width="60" height="24" rx="12" fill="#c40e3d"/>
+        <rect x="82" y="20" width="12" height="24" rx="6" fill="#f9f0e1"/>
+      `;
+      break;
+    case 'monument':
+      contentLayer = `
+        <rect x="18" y="14" width="18" height="40" rx="9" fill="#c40e3d"/>
+        <rect x="42" y="18" width="42" height="10" rx="5" fill="#182a31"/>
+        <rect x="42" y="34" width="32" height="6" rx="3" fill="#182a31" opacity="0.24"/>
+      `;
+      break;
+    case 'navigator':
+      contentLayer = `
+        <path d="M20 36h34" stroke="#182a31" stroke-width="7" stroke-linecap="round"/>
+        <path d="M48 25l13 11-13 11" fill="none" stroke="#c40e3d" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      `;
+      break;
+    case 'gallery':
+      contentLayer = `
+        <rect x="16" y="18" width="18" height="28" rx="7" fill="#c40e3d"/>
+        <rect x="40" y="18" width="18" height="34" rx="7" fill="#182a31" opacity="0.2"/>
+        <rect x="64" y="18" width="28" height="20" rx="7" fill="#d1e2e2"/>
+      `;
+      break;
+    case 'calm':
+    default:
+      contentLayer = `
+        <rect x="18" y="20" width="36" height="7" rx="3.5" fill="#182a31"/>
+        <rect x="18" y="33" width="52" height="5" rx="2.5" fill="#182a31" opacity="0.2"/>
+      `;
+  }
+
+  let graphicLayer = '';
+  switch (graphicElement) {
+    case 'logo_band':
+      graphicLayer = `
+        <rect x="74" y="46" width="10" height="10" rx="4" fill="#182a31"/>
+        <rect x="88" y="46" width="10" height="10" rx="4" fill="#c40e3d"/>
+      `;
+      break;
+    case 'mark_constellation':
+      graphicLayer = `
+        <path d="M72 46l10-6 10 8" stroke="#182a31" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="72" cy="46" r="3.5" fill="#c40e3d"/>
+        <circle cx="82" cy="40" r="3.5" fill="#182a31"/>
+        <circle cx="92" cy="48" r="3.5" fill="#c40e3d"/>
+      `;
+      break;
+    case 'group_1410103616':
+    case 'group_2087328779':
+    case 'group_1':
+      graphicLayer = `
+        <circle cx="86" cy="46" r="5" fill="#182a31" opacity="0.72"/>
+        <circle cx="98" cy="40" r="5" fill="#c40e3d" opacity="0.88"/>
+      `;
+      break;
+    case 'mark_yamal':
+    case 'mark_white':
+    case 'logo_mark_white':
+    case 'lockup_bridge':
+    default:
+      graphicLayer = `
+        <rect x="88" y="18" width="12" height="12" rx="5" fill="${graphicElement === 'mark_white' || graphicElement === 'logo_mark_white' ? '#ffffff' : '#c40e3d'}"/>
+      `;
+  }
+
+  return `
+    <span class="constructor-preset-visual">
+      ${buildConstructorChoiceSvg(`
+        <rect x="8" y="8" width="104" height="56" rx="18" fill="#fffaf3"/>
+        ${backgroundLayer}
+        ${contentLayer}
+        ${graphicLayer}
+      `, '0 0 120 72')}
+    </span>
+  `;
+}
+
 function buildConstructorChoicePreview(fieldId, option) {
   const token = String(option?.mark || option?.label || option?.value || '').trim().slice(0, 10);
+  const variant = sanitizeConstructorPreviewToken(option?.value, 'default');
   if (fieldId === 'palette_tone') {
     const swatch = String(option?.swatch || '').trim() || '#f6f0e7';
     const swatchSoft = String(option?.swatchSoft || '').trim() || '#fffdfa';
@@ -518,13 +896,28 @@ function buildConstructorChoicePreview(fieldId, option) {
   if (fieldId === 'design_variant') {
     return `
       <span class="constructor-choice-visual constructor-choice-visual-layout">
-        <span class="constructor-choice-layout">
-          <span class="constructor-choice-layout-bar"></span>
-          <span class="constructor-choice-layout-row">
-            <span></span>
-            <span></span>
-          </span>
-        </span>
+        ${buildConstructorDesignPreviewSvg(variant)}
+      </span>
+    `;
+  }
+  if (fieldId === 'background_style') {
+    return `
+      <span class="constructor-choice-visual constructor-choice-visual-background">
+        ${buildConstructorBackgroundPreviewSvg(variant)}
+      </span>
+    `;
+  }
+  if (fieldId === 'graphic_element') {
+    return `
+      <span class="constructor-choice-visual constructor-choice-visual-graphic">
+        ${buildConstructorGraphicPreviewSvg(variant)}
+      </span>
+    `;
+  }
+  if (fieldId === 'brand_lockup') {
+    return `
+      <span class="constructor-choice-visual constructor-choice-visual-lockup">
+        ${buildConstructorLockupPreviewSvg(variant)}
       </span>
     `;
   }
@@ -913,7 +1306,7 @@ function buildConstructorWarnings(fields, input, options = {}) {
       title: severe ? 'Текст уже упирается в safe-area' : 'Проверьте длинные поля',
       message: severe
         ? `Поля ${summarizeConstructorFieldLabels(longFields.map((item) => item.label), 2)} могут сильнее ужать кегль или переносы в макете.`
-        : `Поля ${summarizeConstructorFieldLabels(longFields.map((item) => item.label), 2)} уже выглядят плотными. Проверьте их в превью перед handoff.`,
+        : `Поля ${summarizeConstructorFieldLabels(longFields.map((item) => item.label), 2)} уже выглядят плотными. Проверьте их в превью перед скачиванием.`,
     });
   }
 
@@ -922,7 +1315,7 @@ function buildConstructorWarnings(fields, input, options = {}) {
       id: 'preview_review',
       tone: 'info',
       title: 'Сверьте SVG перед передачей',
-      message: 'Перед согласованием и handoff откройте превью и проверьте переносы, охранные поля и читаемость длинного текста.',
+      message: 'Перед отправкой откройте превью и проверьте переносы, охранные поля и читаемость длинного текста.',
     });
   }
 
@@ -992,13 +1385,13 @@ function normalizeConstructorHandoff(handoff) {
       handoff?.approval,
       'approval',
       'На согласование',
-      'Покажите визуальный каркас и brief команде или заказчику.',
+      'Покажите визуальный вариант и описание команде или заказчику.',
     ),
     contractor: normalizePack(
       handoff?.contractor,
       'contractor',
-      'Подрядчику',
-      'Передайте подрядчику артефакты, исходники и разделы каталога.',
+      'В работу',
+      'Передайте исходники, файлы и нужные разделы каталога.',
     ),
   };
 }
@@ -1634,7 +2027,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const artifactLabel = String(previewArtifact?.label || 'Черновое превью').trim() || 'Черновое превью';
     const statusTitle = completion.ready ? 'Шаблон готов к сборке' : 'Заполнение шаблона';
     const statusNote = completion.ready
-      ? 'Все обязательные поля на месте. Можно собирать пакет и проверять handoff.'
+      ? 'Все обязательные поля на месте. Можно собирать файлы и проверять превью.'
       : completion.requiredTotal > 0
         ? `Обязательные поля: ${completion.requiredFilled} из ${completion.requiredTotal}.`
         : 'Шаблон можно заполнять постепенно, превью обновляется рядом.';
@@ -3351,6 +3744,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (group?.id === 'fill') {
       return true;
     }
+    if (group?.id === 'style') {
+      return true;
+    }
     const items = Array.isArray(group?.items) ? group.items : [];
     return items.some((field) => !isConstructorFieldDefaultValue(field, input));
   }
@@ -3384,7 +3780,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             </div>
             ${resolvedAdvanced.length ? `
               <details class="constructor-style-more"${advancedOpen ? ' open' : ''}>
-                <summary>Ещё настройки оформления</summary>
+                <summary>Цвет и версия</summary>
                 <div class="constructor-style-more-body">
                   ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id], { compactChoice: true })).join('')}
                 </div>
@@ -3433,7 +3829,7 @@ function buildConstructorStepsMarkup(generated) {
     const labels = [
       { title: 'Параметры', note: 'Заполните поля шаблона.' },
       { title: 'Сборка', note: 'Получите стартовый пакет.' },
-      { title: 'Handoff', note: 'Разделите пакет: согласование и подрядчик.' },
+      { title: 'Файлы', note: 'Скачайте и откройте нужные материалы.' },
     ];
     return `
       <div class="constructor-steps" aria-label="Этапы решения">
@@ -3458,8 +3854,8 @@ function buildConstructorPresetsMarkup(presets) {
   return `
     <section class="constructor-preset-block" aria-label="Готовые сценарии">
       <div class="constructor-panel-head">
-        <strong>Готовые сценарии</strong>
-        <span>Быстро переключают типовой режим носителя и оформление без ручной настройки каждого поля.</span>
+        <strong>Быстрые варианты</strong>
+        <span>Меняют вид носителя одной кнопкой.</span>
       </div>
       <div class="constructor-preset-grid">
         ${items.map((preset) => `
@@ -3469,7 +3865,8 @@ function buildConstructorPresetsMarkup(presets) {
             data-action="apply-constructor-preset"
             data-preset-id="${escapeHtml(preset.id)}"
           >
-            <span class="constructor-preset-kicker">${preset.active ? 'Активно' : 'Сценарий'}</span>
+            <span class="constructor-preset-kicker">${preset.active ? 'Сейчас' : 'Вариант'}</span>
+            ${buildConstructorPresetPreview(preset)}
             <strong>${escapeHtml(preset.label || 'Сценарий')}</strong>
             <span class="constructor-preset-summary">${escapeHtml(preset.summary || preset.description || '')}</span>
             ${preset.description ? `<small>${escapeHtml(preset.description)}</small>` : ''}
@@ -3486,7 +3883,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       return `
         <div class="constructor-preview-empty">
           <strong>Превью появится здесь</strong>
-          <span>Соберите решение, и справа появится визуальный каркас или бриф.</span>
+          <span>Соберите решение, и справа появится готовый макет.</span>
         </div>
       `;
     }
@@ -3510,7 +3907,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       ? 'Шаблон готов к сборке'
       : 'Заполнение шаблона';
     const statusNote = stats.ready
-      ? 'Все обязательные поля на месте. Можно собирать пакет и проверять handoff.'
+      ? 'Все обязательные поля на месте. Можно собирать файлы и проверять превью.'
       : stats.requiredTotal > 0
         ? `Обязательные поля: ${stats.requiredFilled} из ${stats.requiredTotal}.`
         : 'Шаблон можно заполнять постепенно, превью обновляется рядом.';
@@ -3555,7 +3952,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     const advice = recommendations?.advice || {};
     const note = advice?.summary
       ? String(advice.summary).trim()
-      : 'Откройте нужный раздел и только потом собирайте итоговый handoff.';
+      : 'Откройте подходящий раздел каталога, если нужен исходник или брендбук.';
     const nextStep = String(advice?.nextStep || '').trim();
 
     if (!sections.length && !items.length && !note) {
@@ -3565,17 +3962,13 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     return `
       <section class="constructor-panel constructor-support-panel">
         <div class="constructor-panel-head">
-          <strong>Основа из каталога</strong>
-          <span>Снизу только то, что помогает быстро стартовать. Полный handoff появится после сборки.</span>
+          <strong>Подходящие разделы</strong>
+          <span>Короткий список нужных разделов и файлов без лишних служебных блоков.</span>
         </div>
         <div class="constructor-support-card constructor-support-card-compact">
-          <div class="constructor-support-meta">
-            <span class="meta-pill">Разделов: ${escapeHtml(String(sections.length))}</span>
-            <span class="meta-pill">Файлов: ${escapeHtml(String(items.length))}</span>
-            <span class="meta-pill">Совет: ${advice?.summary ? 'готов' : 'после сборки'}</span>
-          </div>
-          <div class="constructor-mini-grid constructor-support-section-grid">
-            ${sections.length ? sections.map((section) => `
+          ${sections.length ? `
+            <div class="constructor-mini-grid constructor-support-section-grid">
+              ${sections.map((section) => `
               <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
                 <span class="constructor-mini-icon" aria-hidden="true">${escapeHtml(section.icon || '📁')}</span>
                 <span class="constructor-mini-copy">
@@ -3583,10 +3976,11 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
                   <small>${escapeHtml(section.kindLabel || 'Раздел')}</small>
                 </span>
               </button>
-            `).join('') : '<p class="detail-empty">Разделы появятся после загрузки каталога.</p>'}
-          </div>
+              `).join('')}
+            </div>
+          ` : '<p class="detail-empty">Подходящие разделы появятся после загрузки каталога.</p>'}
           <div class="constructor-support-note">
-            <strong>${items.length ? `Файлы для старта уже найдены: ${items.length}` : 'Файлы для старта появятся после сборки'}</strong>
+            <strong>${items.length ? `Подобрано файлов: ${items.length}` : 'Файлы появятся после полной сборки'}</strong>
             <span>${escapeHtml(note)}</span>
             ${nextStep ? `<small>${escapeHtml(nextStep)}</small>` : ''}
           </div>
@@ -3612,8 +4006,8 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     return `
       <section class="constructor-panel constructor-handoff-panel">
         <div class="constructor-panel-head">
-          <strong>Пакеты handoff</strong>
-          <span>${escapeHtml(normalized.note || 'Сначала согласование, затем передача подрядчику с реальными файлами и разделами каталога.')}</span>
+          <strong>Что скачать и открыть</strong>
+          <span>${escapeHtml(normalized.note || 'Сначала покажите вариант, затем отдайте исходники в работу.')}</span>
         </div>
         <div class="constructor-handoff-grid">
           ${packages.map((pack, index) => `
@@ -3630,7 +4024,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
               ` : ''}
               ${pack.artifacts.length ? `
                 <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Артефакты</div>
+                  <div class="constructor-handoff-label">Скачать</div>
                   <div class="constructor-downloads constructor-handoff-downloads">
                     ${pack.artifacts.map((artifact) => {
                       const pngEntry = buildConstructorPngDownloadEntry(
@@ -3657,7 +4051,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
               ` : ''}
               ${pack.files.length ? `
                 <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Файлы каталога</div>
+                  <div class="constructor-handoff-label">Исходники</div>
                   <div class="constructor-file-list constructor-handoff-file-list">
                     ${pack.files.map((item) => `
                       <article class="constructor-file-card">
@@ -3678,7 +4072,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
               ` : ''}
               ${pack.sections.length ? `
                 <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Открыть разделы</div>
+                  <div class="constructor-handoff-label">Разделы</div>
                   <div class="constructor-mini-grid constructor-handoff-section-grid">
                     ${pack.sections.map((section) => `
                       <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
@@ -3719,8 +4113,8 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     els.contentMode.textContent = 'Конструктор';
     els.contentTitle.textContent = definition.label || 'Лаборатория решений';
     els.contentHint.textContent = generated
-      ? 'Пакет собран: превью, handoff и grounded-файлы уже на месте.'
-      : 'Заполните ключевые поля и соберите компактный grounded-пакет под задачу.';
+      ? 'Материалы готовы: превью, скачивание и нужные разделы уже собраны.'
+      : 'Заполните поля и настройте вид рядом с превью.';
     renderSectionSwitcher('');
     els.breadcrumbs.innerHTML = `
       <span class="breadcrumb current">Лаборатория решений</span>
@@ -3743,7 +4137,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
           <section class="constructor-panel constructor-form-panel">
             <div class="constructor-panel-head">
               <strong>Поля решения</strong>
-              <span>Сначала заполните шаблон напротив превью, затем при желании докрутите оформление ниже. Полный handoff появится после сборки.</span>
+              <span>Сначала заполните шаблон, затем сразу выбирайте вид носителя в блоке оформления.</span>
             </div>
             ${buildConstructorPresetsMarkup(presets)}
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
@@ -3760,7 +4154,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
             <div class="constructor-preview-panel-frame">
               <div class="constructor-panel-head">
                 <strong>Превью и файлы</strong>
-                <span>${escapeHtml(previewArtifact?.label || 'SVG-каркас или brief')} • Рядом видно, насколько шаблон уже заполнен.</span>
+                <span>${escapeHtml(previewArtifact?.label || 'Текущее превью')} • Рядом видно, насколько шаблон уже заполнен.</span>
               </div>
               ${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}
               <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">

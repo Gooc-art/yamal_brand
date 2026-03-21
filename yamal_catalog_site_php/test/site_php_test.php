@@ -234,6 +234,9 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'appl
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorHandoff'), 'frontend renders constructor handoff block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'if (!normalized.generated)'), 'frontend hides handoff until constructor build');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-handoff-panel'), 'frontend exposes constructor handoff panel classes');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Пакеты handoff'), 'frontend removed handoff heading from constructor ui');
+assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Основа из каталога'), 'frontend removed verbose catalog foundation heading');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Подходящие разделы'), 'frontend exposes compact catalog guidance heading');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorErrorState'), 'frontend exposes constructor error state helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Не удалось открыть конструктор'), 'frontend exposes constructor retry copy');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderWorkspaceErrorState'), 'frontend exposes generic workspace error state helper');
@@ -1416,7 +1419,7 @@ assert_true(
 );
 assert_true(str_contains((string) ($constructorBuild['summary']['lead'] ?? ''), 'Каркас решения собран'), 'constructor build exposes generated summary');
 assert_true(($constructorBuild['handoff']['approval']['title'] ?? '') === 'На согласование', 'constructor build exposes approval handoff package');
-assert_true(($constructorBuild['handoff']['contractor']['title'] ?? '') === 'Подрядчику', 'constructor build exposes contractor handoff package');
+assert_true(($constructorBuild['handoff']['contractor']['title'] ?? '') === 'В работу', 'constructor build exposes work package');
 assert_true(
     array_reduce(
         $constructorBuild['handoff']['contractor']['artifacts'] ?? [],

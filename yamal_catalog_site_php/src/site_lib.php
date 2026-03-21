@@ -1650,12 +1650,12 @@ function constructor_solution_definitions(): array
         [
             'id' => 'presentation_deck',
             'label' => 'Презентация',
-            'summary' => 'Обложка и brief встречи',
-            'description' => 'Структурированный бриф и обложка презентации с рекомендациями по брендбуку и файловому пакету.',
+            'summary' => 'Обложка и структура встречи',
+            'description' => 'Обложка и структурированное описание презентации с рекомендациями по брендбуку и файловому пакету.',
             'icon' => '▤',
             'category' => 'Презентации',
             'artifactKind' => 'brief',
-            'formatHint' => '16:9 • SVG cover + HTML/JSON brief',
+            'formatHint' => '16:9 • SVG cover + HTML/JSON описание',
             'consultPrompt' => 'презентация брендбук логотип шрифт паттерн',
             'sectionKeywords' => ['брендбук', 'логотип', 'шрифт', 'паттер'],
             'queries' => ['брендбук {{city}} pdf', 'логотип svg {{city}}', 'шрифт otf', 'паттерн'],
@@ -3341,7 +3341,7 @@ function constructor_preset_definitions(array $definition): array
                 'id' => 'department',
                 'label' => 'Подразделение',
                 'summary' => 'Тёплый спокойный верхний блок',
-                'description' => 'Для внутренних документов и handoff-пакетов.',
+                'description' => 'Для внутренних документов и спокойной рабочей подачи.',
                 'overrides' => ['color_variant' => 'color', 'design_variant' => 'editorial', 'background_style' => 'corner', 'palette_tone' => 'lichen', 'brand_lockup' => 'logo'],
             ],
             [
@@ -3355,7 +3355,7 @@ function constructor_preset_definitions(array $definition): array
                 'id' => 'gallery',
                 'label' => 'Витринный',
                 'summary' => 'Галерейный бланк с фирменной рейкой',
-                'description' => 'Для сопроводительных материалов и более собранного handoff.',
+                'description' => 'Для сопроводительных материалов и более собранной выдачи.',
                 'overrides' => ['color_variant' => 'color', 'graphic_element' => 'lockup_bridge', 'design_variant' => 'gallery', 'background_style' => 'rail', 'palette_tone' => 'ivory', 'brand_lockup' => 'logo'],
             ],
         ],
@@ -4942,9 +4942,9 @@ function constructor_json_brief_artifact(array $definition, array $input, array 
     $payload = constructor_brief_payload($definition, $input, $recommendations);
     return [
         'id' => 'brief-json',
-        'label' => 'Бриф JSON',
+        'label' => 'Данные JSON',
         'mimeType' => 'application/json',
-        'filename' => constructor_filename_base($definition, $input) . '-brief.json',
+        'filename' => constructor_filename_base($definition, $input) . '-data.json',
         'content' => (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
         'previewType' => 'json',
     ];
@@ -5037,9 +5037,9 @@ function constructor_html_brief_artifact(array $definition, array $input, array 
 
     return [
         'id' => 'brief-html',
-        'label' => 'HTML-бриф',
+        'label' => 'Описание HTML',
         'mimeType' => 'text/html',
-        'filename' => constructor_filename_base($definition, $input) . '-brief.html',
+        'filename' => constructor_filename_base($definition, $input) . '-overview.html',
         'content' => $html,
         'previewType' => 'html',
     ];
@@ -5539,11 +5539,11 @@ function constructor_handoff_artifacts(array $artifacts, string $kind): array
 
     if ($kind === 'approval') {
         $add($findPreviewType('svg'), 'Визуальный каркас для показа и комментариев.');
-        $add($findPreviewType('html'), 'Читаемый brief с полями и выбранным оформлением.');
+        $add($findPreviewType('html'), 'Читаемое описание с полями и выбранным оформлением.');
     } else {
         $add($findPreviewType('svg'), 'Векторный стартовый макет под адаптацию.');
-        $add($findPreviewType('json'), 'Структурированный brief для передачи в дизайн или продакшн.');
-        $add($findPreviewType('html'), 'Читаемая версия brief для handoff без погружения в JSON.');
+        $add($findPreviewType('json'), 'Структурированные данные для передачи в дизайн или продакшн.');
+        $add($findPreviewType('html'), 'Читаемое описание без погружения в JSON.');
     }
 
     if ($selected === [] && $artifacts !== []) {
@@ -5776,16 +5776,16 @@ function constructor_handoff_next_step(string $kind, array $context, array $advi
     $adviceNextStep = trim((string) ($advice['nextStep'] ?? ''));
 
     if ($kind === 'approval') {
-        return 'Сначала утвердите визуальный каркас и brief, затем откройте пакет «Подрядчику» для исходников и передачи в работу.';
+        return 'Сначала утвердите визуальный вариант и описание, затем переходите к исходникам для передачи в работу.';
     }
 
     $parts = [];
     if ($sourceMode === 'editable') {
-        $parts[] = 'Держите в handoff editable-форматы и векторные исходники.';
+        $parts[] = 'Держите рядом editable-форматы и векторные исходники.';
     } elseif ($medium === 'print') {
         $parts[] = 'Для печати держите приоритет на CMYK/PDF и векторных исходниках.';
     } elseif ($medium === 'digital') {
-        $parts[] = 'Для digital достаточно SVG/PNG и краткого brief.';
+        $parts[] = 'Для digital достаточно SVG/PNG и короткого описания.';
     }
     if ($adviceNextStep !== '') {
         $parts[] = $adviceNextStep;
@@ -5793,7 +5793,7 @@ function constructor_handoff_next_step(string $kind, array $context, array $advi
 
     return $parts !== []
         ? implode(' ', array_slice($parts, 0, 2))
-        : 'Откройте рекомендованные разделы и передайте подрядчику исходники вместе с brief.';
+        : 'Откройте рекомендованные разделы и передайте в работу исходники вместе с описанием.';
 }
 
 function constructor_handoff_pack(
@@ -5842,7 +5842,7 @@ function constructor_handoff_payload(array $definition, array $input, array $rec
         'approval' => constructor_handoff_pack(
             'approval',
             'На согласование',
-            'Покажите визуальный каркас, brief и готовые материалы команде, бренд-менеджеру или заказчику.',
+            'Покажите визуальный вариант, описание и готовые материалы команде, бренд-менеджеру или заказчику.',
             $context,
             $advice,
             $approvalArtifacts,
@@ -5851,8 +5851,8 @@ function constructor_handoff_payload(array $definition, array $input, array $rec
         ),
         'contractor' => constructor_handoff_pack(
             'contractor',
-            'Подрядчику',
-            'Передайте исходники, structured brief и реальные разделы каталога в продакшн, печать или дизайн.',
+            'В работу',
+            'Передайте исходники, данные и реальные разделы каталога в продакшн, печать или дизайн.',
             $context,
             $advice,
             $contractorArtifacts,
@@ -5860,8 +5860,8 @@ function constructor_handoff_payload(array $definition, array $input, array $rec
             $contractorSections
         ),
         'note' => $generated
-            ? 'Пакет уже разложен по двум сценариям handoff.'
-            : 'После настройки полей пакет можно сразу отдать на согласование или в работу подрядчику.',
+            ? 'Материалы уже разложены по двум рабочим сценариям.'
+            : 'После настройки полей материалы можно сразу отдать на согласование или в работу.',
         'cityLabel' => constructor_city_label((string) ($input['city'] ?? '')),
         'solutionLabel' => (string) ($definition['label'] ?? 'Решение'),
     ];
