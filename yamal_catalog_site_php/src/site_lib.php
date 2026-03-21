@@ -3948,11 +3948,11 @@ function constructor_svg_graphic_element_scene(
             'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
                 $logo(round($width * 0.08, 1), round($height * 0.14, 1), round($width * 0.18, 1), 1.0, 'background-logo') .
                 $mark(round($width * 0.34, 1), round($height * 0.2, 1), round($width * 0.08, 1), 1.0, 'background-mark') .
-                $logo(round($width * 0.56, 1), round($height * 0.6, 1), round($width * 0.16, 1), 1.0, 'background-logo') .
-                $mark(round($width * 0.74, 1), round($height * 0.68, 1), round($width * 0.1, 1), 1.0, 'background-mark') .
+                $logo(round($width * 0.72, 1), round($height * 0.76, 1), round($width * 0.16, 1), 1.0, 'background-logo') .
+                $mark(round($width * 0.14, 1), round($height * 0.76, 1), round($width * 0.1, 1), 1.0, 'background-mark') .
                 '</g>',
-            'poster' => '<g style="opacity:0.14;">' .
-                $logo(round($width * 0.58, 1), round($height * 0.68, 1), round($width * 0.28, 1), 1.0, 'design-logo') .
+            'poster' => '<g style="opacity:0.11;">' .
+                $logo(round($width * 0.74, 1), round($height * 0.8, 1), round($width * 0.2, 1), 1.0, 'design-logo') .
                 '</g>',
             default => '',
         },
@@ -3982,14 +3982,13 @@ function constructor_svg_graphic_element_scene(
                 '</g>',
             'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
                 $logo(round($width * 0.04, 1), round($height * 0.12, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
-                $logo(round($width * 0.26, 1), round($height * 0.28, 1), round($width * 0.14, 1), 1.0, 'background-logo-band') .
-                $logo(round($width * 0.52, 1), round($height * 0.16, 1), round($width * 0.18, 1), 1.0, 'background-logo-band') .
-                $logo(round($width * 0.18, 1), round($height * 0.7, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
-                $logo(round($width * 0.62, 1), round($height * 0.62, 1), round($width * 0.18, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.74, 1), round($height * 0.12, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.06, 1), round($height * 0.74, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
+                $logo(round($width * 0.72, 1), round($height * 0.78, 1), round($width * 0.16, 1), 1.0, 'background-logo-band') .
                 '</g>',
-            'poster' => '<g style="opacity:0.14;">' .
-                $logo(round($width * 0.48, 1), round($height * 0.64, 1), round($width * 0.34, 1), 1.0, 'design-logo-band') .
-                $logo(round($width * 0.62, 1), round($height * 0.78, 1), round($width * 0.2, 1), 1.0, 'design-logo-band') .
+            'poster' => '<g style="opacity:0.11;">' .
+                $logo(round($width * 0.7, 1), round($height * 0.78, 1), round($width * 0.2, 1), 1.0, 'design-logo-band') .
+                $logo(round($width * 0.08, 1), round($height * 0.82, 1), round($width * 0.16, 1), 1.0, 'design-logo-band') .
                 '</g>',
             default => '',
         },
@@ -4023,12 +4022,12 @@ function constructor_svg_graphic_element_scene(
             'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
                 $logo(round($width * 0.06, 1), round($height * 0.12, 1), round($width * 0.16, 1), 1.0, 'background-bridge-logo') .
                 $mark(round($width * 0.28, 1), round($height * 0.18, 1), round($width * 0.07, 1), 1.0, 'background-bridge-mark') .
-                $logo(round($width * 0.5, 1), round($height * 0.54, 1), round($width * 0.18, 1), 1.0, 'background-bridge-logo') .
-                $mark(round($width * 0.74, 1), round($height * 0.66, 1), round($width * 0.09, 1), 1.0, 'background-bridge-mark') .
+                $logo(round($width * 0.72, 1), round($height * 0.76, 1), round($width * 0.16, 1), 1.0, 'background-bridge-logo') .
+                $mark(round($width * 0.14, 1), round($height * 0.74, 1), round($width * 0.09, 1), 1.0, 'background-bridge-mark') .
                 '</g>',
-            'poster' => '<g style="opacity:0.15;">' .
-                $logo(round($width * 0.54, 1), round($height * 0.66, 1), round($width * 0.28, 1), 1.0, 'design-bridge-logo') .
-                $mark(round($width * 0.74, 1), round($height * 0.56, 1), round($width * 0.1, 1), 1.0, 'design-bridge-mark') .
+            'poster' => '<g style="opacity:0.11;">' .
+                $logo(round($width * 0.72, 1), round($height * 0.8, 1), round($width * 0.2, 1), 1.0, 'design-bridge-logo') .
+                $mark(round($width * 0.14, 1), round($height * 0.78, 1), round($width * 0.08, 1), 1.0, 'design-bridge-mark') .
                 '</g>',
             default => '',
         },
@@ -4038,11 +4037,11 @@ function constructor_svg_graphic_element_scene(
                 '</g>',
             'pattern' => '<g style="opacity:var(--ctor-watermark-opacity);">' .
                 $logo(round($width * 0.08, 1), round($height * 0.14, 1), round($width * 0.18, 1), 1.0, 'background-logo') .
-                $logo(round($width * 0.52, 1), round($height * 0.26, 1), round($width * 0.16, 1), 1.0, 'background-logo') .
-                $logo(round($width * 0.24, 1), round($height * 0.68, 1), round($width * 0.2, 1), 1.0, 'background-logo') .
+                $logo(round($width * 0.72, 1), round($height * 0.14, 1), round($width * 0.16, 1), 1.0, 'background-logo') .
+                $logo(round($width * 0.08, 1), round($height * 0.76, 1), round($width * 0.16, 1), 1.0, 'background-logo') .
                 '</g>',
-            'poster' => '<g style="opacity:0.14;">' .
-                $logo(round($width * 0.56, 1), round($height * 0.64, 1), round($width * 0.32, 1), 1.0, 'design-logo') .
+            'poster' => '<g style="opacity:0.1;">' .
+                $logo(round($width * 0.72, 1), round($height * 0.8, 1), round($width * 0.2, 1), 1.0, 'design-logo') .
                 '</g>',
             default => '',
         },
@@ -5321,36 +5320,48 @@ function constructor_svg_artifact(array $definition, array $input): ?array
             $height = 990;
             $isMarkCertificate = $compositionId === 'mark_focus' || $compositionId === 'mark_contrast';
             $certificateHeaderLockup = $brandLockup === 'mark' ? 'mark' : 'logo';
+            $certificateHeaderTop = 84.0;
+            $certificateHeaderWordmarkY = 110.0;
+            $certificateHeaderMarkY = 104.0;
+            $certificateCityY = 200.0;
+            $certificateTopRuleY = 258.0;
+            $certificateTitleY = 324.0;
+            $certificateTitleRuleY = 366.0;
+            $certificateRecipientY = 486.0;
+            $certificateReasonY = 650.0;
+            $certificateBottomRuleY = 792.0;
+            $certificateEventY = 840.0;
+            $certificateFooterY = 918.0;
             $certificateLockupPanel = '';
             if ($certificateHeaderLockup === 'mark' || $brandVariant === 'white') {
                 $certificateLockupWidth = $certificateHeaderLockup === 'mark' ? 176 : 296;
                 $certificateLockupHeight = $certificateHeaderLockup === 'mark' ? 120 : 84;
                 $certificateLockupPanel =
-                    '<rect x="' . round((1400 - $certificateLockupWidth) / 2, 1) . '" y="84" width="' . $certificateLockupWidth . '" height="' . $certificateLockupHeight . '" rx="28" fill="var(--ctor-lockup-fill)" opacity="' . ($brandVariant === 'white' ? '1' : '0.78') . '"/>';
+                    '<rect x="' . round((1400 - $certificateLockupWidth) / 2, 1) . '" y="' . $certificateHeaderTop . '" width="' . $certificateLockupWidth . '" height="' . $certificateLockupHeight . '" rx="28" fill="var(--ctor-lockup-fill)" opacity="' . ($brandVariant === 'white' ? '1' : '0.78') . '"/>';
             }
             $certificateHeader =
                 '<g data-certificate-header="' . constructor_svg_escape($certificateHeaderLockup === 'mark' ? 'centered-mark' : 'centered-wordmark') . '">' .
                 $certificateLockupPanel .
                 ($certificateHeaderLockup === 'mark'
-                    ? constructor_svg_render_brand_lockup(632, 96, 'mark', $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => 136, 'markHeight' => 88])
-                    : constructor_svg_render_brand_lockup(564, 102, 'logo', $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 272, 'logoHeight' => 44, 'markWidth' => 132, 'markHeight' => 86])) .
-                constructor_svg_render_label(700, 184, $cityLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 320, 'minFontSize' => 15]) .
+                    ? constructor_svg_render_brand_lockup(632, $certificateHeaderMarkY, 'mark', $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 220, 'logoHeight' => 36, 'markWidth' => 136, 'markHeight' => 88])
+                    : constructor_svg_render_brand_lockup(564, $certificateHeaderWordmarkY, 'logo', $brandAssets, $brandAssetBundle, $brandVariant, ['logoWidth' => 272, 'logoHeight' => 44, 'markWidth' => 132, 'markHeight' => 86])) .
+                constructor_svg_render_label(700, $certificateCityY, $cityLabel, 'badge', ['anchor' => 'middle', 'maxWidth' => 320, 'minFontSize' => 15]) .
                 '</g>';
             $body =
                 constructor_svg_background_layers($backgroundStyle, $width, $height, $brandAssetBundle, $brandVariant, $designVariant, $graphicElement) .
                 '<rect x="54" y="54" width="1292" height="882" rx="30" class="card"/>' .
                 '<rect x="76" y="76" width="1248" height="838" rx="22" fill="none" stroke="var(--ctor-frame)" stroke-width="4" opacity="0.44"/>' .
                 $certificateHeader .
-                '<line x1="176" y1="242" x2="1224" y2="242" class="line"/>' .
-                constructor_svg_render_label(700, 298, 'Сертификат', 'title', ['anchor' => 'middle', 'maxWidth' => 460, 'minFontSize' => 30]) .
-                '<line x1="512" y1="334" x2="888" y2="334" class="line"/>' .
-                constructor_svg_render_fitted_text(700, 446, (string) ($input['recipient'] ?? ''), 'headline', 980, 198, 4, ['anchor' => 'middle', 'minFontSize' => 22, 'widthSafety' => 0.82, 'heightSafety' => 0.84], 'middle') .
-                constructor_svg_render_fitted_text(700, 602, (string) ($input['reason'] ?? ''), 'body', 1000, 130, 4, ['anchor' => 'middle', 'minFontSize' => 15, 'widthSafety' => 0.88], 'middle') .
-                '<line x1="176" y1="758" x2="1224" y2="758" class="line"/>' .
-                constructor_svg_render_fitted_text(700, 804, (string) ($input['event_name'] ?? ''), 'small', 620, 58, 2, ['anchor' => 'middle', 'minFontSize' => 15], 'middle') .
-                constructor_svg_render_fitted_text(176, 886, constructor_format_date((string) ($input['issue_date'] ?? '')), 'small', 220, 32, 1, ['minFontSize' => 14]) .
-                '<line x1="972" y1="852" x2="1238" y2="852" class="line"/>' .
-                constructor_svg_render_fitted_text(972, 886, (string) ($input['signer'] ?? ''), 'small', 266, 58, 2, ['minFontSize' => 13]);
+                '<line x1="176" y1="' . $certificateTopRuleY . '" x2="1224" y2="' . $certificateTopRuleY . '" class="line"/>' .
+                constructor_svg_render_label(700, $certificateTitleY, 'Сертификат', 'title', ['anchor' => 'middle', 'maxWidth' => 460, 'minFontSize' => 30]) .
+                '<line x1="512" y1="' . $certificateTitleRuleY . '" x2="888" y2="' . $certificateTitleRuleY . '" class="line"/>' .
+                constructor_svg_render_fitted_text(700, $certificateRecipientY, (string) ($input['recipient'] ?? ''), 'headline', 980, 198, 4, ['anchor' => 'middle', 'minFontSize' => 22, 'widthSafety' => 0.82, 'heightSafety' => 0.84], 'middle') .
+                constructor_svg_render_fitted_text(700, $certificateReasonY, (string) ($input['reason'] ?? ''), 'body', 1000, 130, 4, ['anchor' => 'middle', 'minFontSize' => 15, 'widthSafety' => 0.88], 'middle') .
+                '<line x1="176" y1="' . $certificateBottomRuleY . '" x2="1224" y2="' . $certificateBottomRuleY . '" class="line"/>' .
+                constructor_svg_render_fitted_text(700, $certificateEventY, (string) ($input['event_name'] ?? ''), 'small', 620, 58, 2, ['anchor' => 'middle', 'minFontSize' => 15], 'middle') .
+                constructor_svg_render_fitted_text(176, $certificateFooterY, constructor_format_date((string) ($input['issue_date'] ?? '')), 'small', 220, 32, 1, ['minFontSize' => 14]) .
+                '<line x1="972" y1="884" x2="1238" y2="884" class="line"/>' .
+                constructor_svg_render_fitted_text(972, $certificateFooterY, (string) ($input['signer'] ?? ''), 'small', 266, 58, 2, ['minFontSize' => 13]);
             break;
 
         case 'badge':

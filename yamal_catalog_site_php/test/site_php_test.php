@@ -687,6 +687,9 @@ assert_true($defaultCertificateSvg !== null, 'default certificate svg artifact e
 $defaultCertificateContent = (string) ($defaultCertificateSvg['content'] ?? '');
 assert_true(str_contains($defaultCertificateContent, 'data-certificate-header="centered-wordmark"'), 'certificate svg keeps centered wordmark header');
 assert_true(!str_contains($defaultCertificateContent, 'x="86" y="88"'), 'certificate svg no longer uses the old top-left lockup placement');
+assert_true(str_contains($defaultCertificateContent, 'y1="258"'), 'certificate svg keeps the first divider lower to preserve a safer lockup zone');
+assert_true(str_contains($defaultCertificateContent, 'y="200"'), 'certificate svg keeps city label lower under the centered lockup');
+assert_true(!str_contains($defaultCertificateContent, 'y1="242"'), 'certificate svg no longer keeps the old tighter divider under the lockup');
 $markCertificateSvg = constructor_svg_artifact($certificateDefinition, constructor_normalize_input($certificateDefinition, [
     'city' => 'салехард',
     'recipient' => 'Анна Куликова',
@@ -700,6 +703,23 @@ $markCertificateSvg = constructor_svg_artifact($certificateDefinition, construct
 ]));
 assert_true($markCertificateSvg !== null, 'mark certificate svg artifact exists');
 assert_true(str_contains((string) ($markCertificateSvg['content'] ?? ''), 'data-certificate-header="centered-mark"'), 'certificate svg keeps centered mark header for mark mode');
+
+$logoBandPosterBusinessCardSvg = constructor_svg_artifact($businessCardDefinition, constructor_normalize_input($businessCardDefinition, [
+    'full_name' => 'Анна Куликова',
+    'role' => 'Руководитель проекта',
+    'phone' => '+7 900 000-00-01',
+    'email' => 'design@yamal.ru',
+    'department' => 'Лаборатория решений',
+    'graphic_element' => 'logo_band',
+    'design_variant' => 'poster',
+    'background_style' => 'clean',
+    'brand_lockup' => 'logo',
+]));
+assert_true($logoBandPosterBusinessCardSvg !== null, 'logo band poster business card svg artifact exists');
+$logoBandPosterBusinessCardContent = (string) ($logoBandPosterBusinessCardSvg['content'] ?? '');
+assert_true(str_contains($logoBandPosterBusinessCardContent, 'data-constructor-variant-image="design-logo-band"'), 'logo band poster scene still renders decorative logo assets');
+assert_true(str_contains($logoBandPosterBusinessCardContent, 'x="630" y="390"'), 'logo band poster scene keeps the main decorative logo near the lower edge instead of the text center');
+assert_true(str_contains($logoBandPosterBusinessCardContent, 'x="72" y="410"'), 'logo band poster scene keeps the secondary decorative logo near the lower edge instead of the text center');
 
 $nameplateDefinition = constructor_definition_by_id('nameplate');
 assert_true($nameplateDefinition !== null, 'nameplate constructor definition exists');
