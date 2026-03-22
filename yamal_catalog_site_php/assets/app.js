@@ -1699,6 +1699,18 @@ function shouldRestoreConstructorPageScroll(viewState, currentPageScrollTop, tol
   return Math.abs(targetScrollTop - currentScrollTop) <= maxDelta;
 }
 
+function shouldKeepConstructorPageScroll(viewState, currentUserScrollIntentCounter, currentPageScrollTop) {
+  if (!viewState || typeof viewState !== 'object') {
+    return false;
+  }
+  const capturedIntentCounter = Number(viewState.userScrollIntentCounter);
+  const currentIntentCounter = Number(currentUserScrollIntentCounter);
+  if (Number.isFinite(capturedIntentCounter) && Number.isFinite(currentIntentCounter) && capturedIntentCounter === currentIntentCounter) {
+    return true;
+  }
+  return shouldRestoreConstructorPageScroll(viewState, currentPageScrollTop);
+}
+
 function clearPressedInteractive() {
   if (pressedInteractiveClearTimer) {
     window.clearTimeout(pressedInteractiveClearTimer);
@@ -1760,6 +1772,7 @@ if (typeof module !== 'undefined' && module.exports) {
     constructorPreviewUsesStackedLayout,
     shouldConstructorPreviewStackedDock,
     shouldRestoreConstructorPageScroll,
+    shouldKeepConstructorPageScroll,
     constructorArtifactSupportsPngExport,
     constructorArtifactPngFilename,
     buildConstructorPngDownloadEntry,
@@ -1821,6 +1834,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   let constructorBuildRequestId = 0;
   let constructorOpenRequestId = 0;
   let constructorDraftSaveTimer = 0;
+  let userScrollIntentCounter = 0;
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
@@ -2074,6 +2088,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return Number.isFinite(pageScrollTop) ? pageScrollTop : 0;
   }
 
+  function markUserScrollIntent() {
+    userScrollIntentCounter += 1;
+  }
+
   function findConstructorSolution(constructorId = '') {
     const normalizedId = String(constructorId || '').trim();
     if (!normalizedId) {
@@ -2099,7 +2117,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     return {
       ...viewState,
-      pageScrollTop: shouldRestoreConstructorPageScroll(viewState, currentPageScrollTop())
+      pageScrollTop: shouldKeepConstructorPageScroll(viewState, userScrollIntentCounter, currentPageScrollTop())
         ? viewState.pageScrollTop
         : null,
     };
@@ -2277,6 +2295,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return {
       constructorId,
       pageScrollTop: currentPageScrollTop(),
+      userScrollIntentCounter,
       previewPanelScrollTop: previewPanel ? previewPanel.scrollTop : 0,
       previewStageScrollTop: previewStage ? previewStage.scrollTop : 0,
       openAccordionIds: accordionIds,
@@ -4402,10 +4421,10 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
                 <strong>Превью и файлы</strong>
                 <span>${escapeHtml(previewArtifact?.label || 'Текущее превью')} • Рядом видно, насколько шаблон уже заполнен.</span>
               </div>
-              ${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}
               <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">
                 ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
               </div>
+              ${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}
               <div class="constructor-downloads">
                 ${artifacts.map((artifact) => {
                   const pngEntry = buildConstructorPngDownloadEntry(artifact);
@@ -5252,7 +5271,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         setBrandRoutesOpen(false);
       }
       ensureWorkspaceVisible();
-      focusWorkspace(target);
+      if (action !== 'open-constructor' || !state.workspaceVisible || state.workspaceCollapsed) {
+        focusWorkspace(target);
+      }
     }
     if (action === 'open-folder') openFolder(target.dataset.id, 0);
     if (action === 'open-folder-page') openFolder(target.dataset.id, Number.parseInt(target.dataset.page || '0', 10));
@@ -5377,6 +5398,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   document.addEventListener('keydown', (event) => {
     const targetTag = String(event.target?.tagName || '').toLowerCase();
     const typingContext = ['input', 'textarea', 'select'].includes(targetTag) || event.target?.isContentEditable;
+    if (!typingContext && ['PageDown', 'PageUp', 'Home', 'End', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+      markUserScrollIntent();
+    }
     if (event.key === 'Escape') {
       if (state.consultantOpen) {
         setConsultantOpen(false);
@@ -5439,6 +5463,14 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   window.addEventListener('scroll', () => {
     scheduleConstructorPreviewFloatSync();
+  }, { passive: true });
+
+  window.addEventListener('wheel', () => {
+    markUserScrollIntent();
+  }, { passive: true });
+
+  window.addEventListener('touchmove', () => {
+    markUserScrollIntent();
   }, { passive: true });
 
   window.addEventListener('resize', () => {

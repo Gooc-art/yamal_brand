@@ -31,6 +31,7 @@ const {
   constructorPreviewUsesStackedLayout,
   shouldConstructorPreviewStackedDock,
   shouldRestoreConstructorPageScroll,
+  shouldKeepConstructorPageScroll,
   constructorArtifactSupportsPngExport,
   constructorArtifactPngFilename,
   buildConstructorPngDownloadEntry,
@@ -214,6 +215,8 @@ test('constructor page scroll restores only when user has not moved during rebui
   assert.equal(shouldRestoreConstructorPageScroll({ pageScrollTop: 420 }, 432), true);
   assert.equal(shouldRestoreConstructorPageScroll({ pageScrollTop: 420 }, 466), false);
   assert.equal(shouldRestoreConstructorPageScroll({ pageScrollTop: null }, 420), false);
+  assert.equal(shouldKeepConstructorPageScroll({ pageScrollTop: 420, userScrollIntentCounter: 7 }, 7, 0), true);
+  assert.equal(shouldKeepConstructorPageScroll({ pageScrollTop: 420, userScrollIntentCounter: 7 }, 8, 466), false);
 });
 
 test('normalizeConstructorHandoff keeps approval and contractor packages structured', () => {

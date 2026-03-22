@@ -239,6 +239,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buil
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'captureConstructorViewState'), 'frontend captures constructor view state before silent rebuilds');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'restoreConstructorViewState'), 'frontend restores constructor view state after silent rebuilds');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldRestoreConstructorPageScroll'), 'frontend guards page scroll restoration when user moved during rebuild');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldKeepConstructorPageScroll'), 'frontend keeps constructor page scroll when no user scroll intent happened during rebuild');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-warning-list'), 'frontend renders constructor warnings near progress');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-draft-status'), 'frontend renders constructor draft status near progress');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
@@ -249,9 +250,15 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'if (
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-handoff-panel'), 'frontend exposes constructor handoff panel classes');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorLoadingState'), 'frontend renders constructor-specific loading state before payload arrives');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructorOpenRequestId'), 'frontend guards constructor opening with request ids');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'userScrollIntentCounter'), 'frontend tracks user scroll intent during constructor rebuilds');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Пакеты handoff'), 'frontend removed handoff heading from constructor ui');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Основа из каталога'), 'frontend removed verbose catalog foundation heading');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Подходящие разделы'), 'frontend exposes compact catalog guidance heading');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}'), 'frontend renders constructor preview markup in preview panel');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}'), 'frontend renders constructor progress markup in preview panel');
+$previewMarkupOffset = strpos($frontendTemplate, '${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}');
+$progressMarkupOffset = strpos($frontendTemplate, '${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}');
+assert_true($previewMarkupOffset !== false && $progressMarkupOffset !== false && $previewMarkupOffset < $progressMarkupOffset, 'frontend renders constructor preview before progress strip to avoid inner preview scrolling');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorErrorState'), 'frontend exposes constructor error state helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Не удалось открыть конструктор'), 'frontend exposes constructor retry copy');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderWorkspaceErrorState'), 'frontend exposes generic workspace error state helper');
