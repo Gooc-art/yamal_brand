@@ -165,6 +165,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '--constr
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-progress-strip'), 'styles contain constructor progress strip classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-draft-status'), 'styles contain constructor draft status classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-list'), 'styles contain constructor warning list classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-loading-shell'), 'styles contain constructor loading shell classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-card.tone-warn'), 'styles contain constructor warning warn state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-panel'), 'styles contain compact constructor support panel classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-note'), 'styles contain compact constructor support note classes');
@@ -235,6 +236,7 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'cons
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorGroupMeta'), 'frontend builds compact constructor accordion meta');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'captureConstructorViewState'), 'frontend captures constructor view state before silent rebuilds');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'restoreConstructorViewState'), 'frontend restores constructor view state after silent rebuilds');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'shouldRestoreConstructorPageScroll'), 'frontend guards page scroll restoration when user moved during rebuild');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-warning-list'), 'frontend renders constructor warnings near progress');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-draft-status'), 'frontend renders constructor draft status near progress');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend renders constructor presets block');
@@ -243,6 +245,8 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'appl
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorHandoff'), 'frontend renders constructor handoff block');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'if (!normalized.generated)'), 'frontend hides handoff until constructor build');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-handoff-panel'), 'frontend exposes constructor handoff panel classes');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorLoadingState'), 'frontend renders constructor-specific loading state before payload arrives');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructorOpenRequestId'), 'frontend guards constructor opening with request ids');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Пакеты handoff'), 'frontend removed handoff heading from constructor ui');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Основа из каталога'), 'frontend removed verbose catalog foundation heading');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Подходящие разделы'), 'frontend exposes compact catalog guidance heading');

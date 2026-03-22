@@ -1686,6 +1686,19 @@ function shouldConstructorPreviewStackedDock(metrics = {}) {
   return shellVisible && reachedFollowZone;
 }
 
+function shouldRestoreConstructorPageScroll(viewState, currentPageScrollTop, tolerance = 24) {
+  if (!viewState || typeof viewState !== 'object') {
+    return false;
+  }
+  const targetScrollTop = Number(viewState.pageScrollTop);
+  const currentScrollTop = Number(currentPageScrollTop);
+  const maxDelta = Math.max(0, Number(tolerance) || 0);
+  if (!Number.isFinite(targetScrollTop) || !Number.isFinite(currentScrollTop)) {
+    return false;
+  }
+  return Math.abs(targetScrollTop - currentScrollTop) <= maxDelta;
+}
+
 function clearPressedInteractive() {
   if (pressedInteractiveClearTimer) {
     window.clearTimeout(pressedInteractiveClearTimer);
@@ -1746,6 +1759,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildConstructorPreviewLayout,
     constructorPreviewUsesStackedLayout,
     shouldConstructorPreviewStackedDock,
+    shouldRestoreConstructorPageScroll,
     constructorArtifactSupportsPngExport,
     constructorArtifactPngFilename,
     buildConstructorPngDownloadEntry,
@@ -1805,6 +1819,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   const constructorBuildCache = new Map();
   let constructorBuildAbortController = null;
   let constructorBuildRequestId = 0;
+  let constructorOpenRequestId = 0;
   let constructorDraftSaveTimer = 0;
 
   const els = {
@@ -2049,6 +2064,47 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return `${String(id || '').trim()}::${JSON.stringify(input || {})}`;
   }
 
+  function currentConstructorId() {
+    return String(state.current?.payload?.definition?.id || '').trim();
+  }
+
+  function currentPageScrollTop() {
+    const scrollingElement = document.scrollingElement;
+    const pageScrollTop = scrollingElement ? scrollingElement.scrollTop : window.scrollY;
+    return Number.isFinite(pageScrollTop) ? pageScrollTop : 0;
+  }
+
+  function findConstructorSolution(constructorId = '') {
+    const normalizedId = String(constructorId || '').trim();
+    if (!normalizedId) {
+      return null;
+    }
+    return normalizeConstructorSolutions(state.bootstrap?.constructors || {})
+      .find((item) => item.id === normalizedId) || null;
+  }
+
+  function cancelPendingConstructorBuild() {
+    constructorBuildRequestId += 1;
+    if (constructorBuildAbortController) {
+      constructorBuildAbortController.abort();
+      constructorBuildAbortController = null;
+    }
+    setConstructorSyncState(false);
+  }
+
+  function resolveConstructorPreservedViewState(viewState, constructorId) {
+    const normalizedConstructorId = String(constructorId || '').trim();
+    if (!viewState || String(viewState.constructorId || '').trim() !== normalizedConstructorId) {
+      return null;
+    }
+    return {
+      ...viewState,
+      pageScrollTop: shouldRestoreConstructorPageScroll(viewState, currentPageScrollTop())
+        ? viewState.pageScrollTop
+        : null,
+    };
+  }
+
   function pruneConstructorBuildCache(maxEntries = 36) {
     if (constructorBuildCache.size <= maxEntries) {
       return;
@@ -2090,7 +2146,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function currentConstructorFields(constructorId = '') {
-    const currentId = String(state.current?.payload?.definition?.id || '').trim();
+    const currentId = currentConstructorId();
     if (constructorId && currentId && constructorId !== currentId) {
       return [];
     }
@@ -2211,8 +2267,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return null;
     }
 
-    const scrollingElement = document.scrollingElement;
-    const pageScrollTop = scrollingElement ? scrollingElement.scrollTop : window.scrollY;
+    const constructorId = currentConstructorId();
     const previewPanel = shell.querySelector('.constructor-preview-panel-frame') || shell.querySelector('.constructor-preview-panel');
     const previewStage = shell.querySelector('.constructor-preview-stage');
     const accordionIds = Array.from(shell.querySelectorAll('.constructor-field-accordion[open]'))
@@ -2220,7 +2275,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       .filter(Boolean);
 
     return {
-      pageScrollTop: Number.isFinite(pageScrollTop) ? pageScrollTop : 0,
+      constructorId,
+      pageScrollTop: currentPageScrollTop(),
       previewPanelScrollTop: previewPanel ? previewPanel.scrollTop : 0,
       previewStageScrollTop: previewStage ? previewStage.scrollTop : 0,
       openAccordionIds: accordionIds,
@@ -2261,11 +2317,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         previewStage.scrollTop = Number(viewState.previewStageScrollTop || 0);
       }
 
-      const scrollingElement = document.scrollingElement;
-      if (scrollingElement) {
-        scrollingElement.scrollTop = Number(viewState.pageScrollTop || 0);
-      } else {
-        window.scrollTo(0, Number(viewState.pageScrollTop || 0));
+      const pageScrollTop = Number(viewState.pageScrollTop);
+      if (Number.isFinite(pageScrollTop)) {
+        const scrollingElement = document.scrollingElement;
+        if (scrollingElement) {
+          scrollingElement.scrollTop = pageScrollTop;
+        } else {
+          window.scrollTo(0, pageScrollTop);
+        }
       }
 
       scheduleConstructorPreviewFloatSync();
@@ -4222,6 +4281,65 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     `;
   }
 
+  function renderConstructorLoadingState(constructorId = '') {
+    const solution = findConstructorSolution(constructorId);
+    const label = String(solution?.label || 'Лаборатория решений').trim() || 'Лаборатория решений';
+    const category = String(solution?.category || 'Решение').trim() || 'Решение';
+    const description = String(solution?.summary || solution?.description || 'Поднимаю поля, стартовое превью и grounded-подсказки для выбранного носителя.').trim()
+      || 'Поднимаю поля, стартовое превью и grounded-подсказки для выбранного носителя.';
+
+    state.current = {
+      kind: 'constructor',
+      payload: {
+        definition: {
+          id: String(constructorId || '').trim(),
+          label,
+          category,
+          description,
+          fields: [],
+        },
+        input: {},
+        artifacts: [],
+        generated: false,
+      },
+    };
+    state.detail = null;
+    setWorkspaceStageMode('constructor');
+    renderSolutionLab(state.bootstrap);
+    els.contentMode.textContent = 'Конструктор';
+    els.contentTitle.textContent = label;
+    els.contentHint.textContent = 'Загружаю поля, превью и рекомендации для выбранного решения.';
+    renderSectionSwitcher('');
+    els.breadcrumbs.innerHTML = `
+      <span class="breadcrumb current">Лаборатория решений</span>
+      <span class="breadcrumb-sep">•</span>
+      <span class="breadcrumb current">${escapeHtml(label)}</span>
+    `;
+    els.pagination.innerHTML = '';
+    els.contentItems.innerHTML = `
+      <div class="constructor-shell constructor-loading-shell">
+        <section class="constructor-hero">
+          <div class="constructor-hero-copy">
+            <span class="card-kicker">${escapeHtml(category)}</span>
+            <h3>${escapeHtml(label)}</h3>
+            <p>${escapeHtml(description)}</p>
+          </div>
+          ${buildConstructorStepsMarkup(false)}
+        </section>
+        <section class="constructor-panel constructor-loading-panel">
+          <div class="empty-state loading-state constructor-loading-state">
+            <div class="loading-mark" aria-hidden="true"></div>
+            <div class="constructor-loading-copy">
+              <h3>Поднимаю решение</h3>
+              <p class="detail-empty">Старый шаблон уже убран. Сейчас появятся поля и превью нового носителя.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    `;
+    setDocumentTitle(label);
+  }
+
   function renderConstructor(payload, options = {}) {
     const definition = payload?.definition || {};
     const fields = Array.isArray(definition?.fields) ? definition.fields : [];
@@ -4748,18 +4866,34 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       await openRoot(options);
       return;
     }
+    const shouldFocusWorkspace = !state.workspaceVisible || state.workspaceCollapsed;
     ensureWorkspaceVisible();
-    focusWorkspace();
-    setLoading('Открываю конструктор', 'Поднимаю поля, рекомендации и стартовый каркас решения.');
+    if (shouldFocusWorkspace) {
+      focusWorkspace();
+    }
+    const requestId = ++constructorOpenRequestId;
+    cancelPendingConstructorBuild();
     setInspectorOpen(false);
     setActiveRoute('');
     renderDetailPlaceholder();
+    renderConstructorLoadingState(constructorId);
     try {
       const initialPayload = await api('constructor', { id: constructorId });
+      if (requestId !== constructorOpenRequestId) {
+        return;
+      }
       const fields = Array.isArray(initialPayload?.definition?.fields) ? initialPayload.definition.fields : [];
       const savedDraft = options.ignoreDraft ? null : loadConstructorDraft(constructorId, fields, window.localStorage);
-      let nextPayload = initialPayload;
       let draftMeta = null;
+      let historySynced = false;
+
+      const syncConstructorHistory = () => {
+        if (historySynced || options.history === 'none' || requestId !== constructorOpenRequestId) {
+          return;
+        }
+        syncRouteWithState(options.history || 'push');
+        historySynced = true;
+      };
 
       if (savedDraft?.input && Object.keys(savedDraft.input).length) {
         const restoredInput = {
@@ -4767,25 +4901,26 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
           ...savedDraft.input,
         };
         draftMeta = { updatedAt: savedDraft.updatedAt, restored: true };
-        try {
-          nextPayload = await api('construct', { id: constructorId, input: restoredInput }, { method: 'POST' });
-          constructorBuildCache.set(constructorBuildCacheKey(constructorId, restoredInput), nextPayload);
-          pruneConstructorBuildCache();
-        } catch (restoreError) {
-          console.warn(restoreError);
-          nextPayload = {
+        const restoredCacheKey = constructorBuildCacheKey(constructorId, restoredInput);
+        if (constructorBuildCache.has(restoredCacheKey)) {
+          renderConstructor(decorateConstructorPayload(constructorBuildCache.get(restoredCacheKey), draftMeta));
+          syncConstructorHistory();
+        } else {
+          renderConstructor(decorateConstructorPayload({
             ...initialPayload,
             input: restoredInput,
-          };
+          }, draftMeta));
+          syncConstructorHistory();
+          void buildConstructor(constructorId, restoredInput, { silent: true, draftMeta });
         }
-      }
-
-      renderConstructor(decorateConstructorPayload(nextPayload, draftMeta));
-      focusWorkspace();
-      if (options.history !== 'none') {
-        syncRouteWithState(options.history || 'push');
+      } else {
+        renderConstructor(decorateConstructorPayload(initialPayload, draftMeta));
+        syncConstructorHistory();
       }
     } catch (error) {
+      if (requestId !== constructorOpenRequestId) {
+        return;
+      }
       console.error(error);
       renderConstructorErrorState('Не удалось открыть конструктор', String(error?.message || 'Попробуйте повторить открытие чуть позже.'), constructorId);
     }
@@ -4800,17 +4935,21 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     const cacheKey = constructorBuildCacheKey(constructorId, normalizedInput);
     const silent = Boolean(options?.silent);
     const draftMeta = options?.draftMeta ?? state.current?.payload?.draftMeta ?? null;
-    const preservedViewState = silent ? captureConstructorViewState() : null;
+    const keepCurrentView = state.current?.kind === 'constructor' && currentConstructorId() === constructorId;
+    const preservedViewState = keepCurrentView ? captureConstructorViewState() : null;
+    const buildRenderOptions = () => {
+      const resolvedViewState = resolveConstructorPreservedViewState(preservedViewState, constructorId);
+      return resolvedViewState ? { preserveViewState: resolvedViewState } : {};
+    };
     ensureWorkspaceVisible();
-    if (!silent) {
+    if (!keepCurrentView && !silent) {
       setLoading('Собираю решение', 'Генерирую стартовый пакет и подтягиваю реальные материалы каталога.');
-    } else {
-      setConstructorSyncState(true);
     }
+    setConstructorSyncState(true);
 
     if (constructorBuildCache.has(cacheKey)) {
-      renderConstructor(decorateConstructorPayload(constructorBuildCache.get(cacheKey), draftMeta), { preserveViewState: preservedViewState });
-      if (!silent) {
+      renderConstructor(decorateConstructorPayload(constructorBuildCache.get(cacheKey), draftMeta), buildRenderOptions());
+      if (!keepCurrentView && !silent) {
         focusWorkspace();
       }
       syncRouteWithState('replace');
@@ -4832,8 +4971,8 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       }
       constructorBuildCache.set(cacheKey, payload);
       pruneConstructorBuildCache();
-      renderConstructor(decorateConstructorPayload(payload, draftMeta), { preserveViewState: preservedViewState });
-      if (!silent) {
+      renderConstructor(decorateConstructorPayload(payload, draftMeta), buildRenderOptions());
+      if (!keepCurrentView && !silent) {
         focusWorkspace();
       }
       syncRouteWithState('replace');

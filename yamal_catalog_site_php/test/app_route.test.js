@@ -30,6 +30,7 @@ const {
   buildConstructorPreviewLayout,
   constructorPreviewUsesStackedLayout,
   shouldConstructorPreviewStackedDock,
+  shouldRestoreConstructorPageScroll,
   constructorArtifactSupportsPngExport,
   constructorArtifactPngFilename,
   buildConstructorPngDownloadEntry,
@@ -207,6 +208,12 @@ test('constructor stacked preview enters follow mode as soon as panel reaches vi
     viewportHeight: 900,
     topOffset: 18,
   }), false);
+});
+
+test('constructor page scroll restores only when user has not moved during rebuild', () => {
+  assert.equal(shouldRestoreConstructorPageScroll({ pageScrollTop: 420 }, 432), true);
+  assert.equal(shouldRestoreConstructorPageScroll({ pageScrollTop: 420 }, 466), false);
+  assert.equal(shouldRestoreConstructorPageScroll({ pageScrollTop: null }, 420), false);
 });
 
 test('normalizeConstructorHandoff keeps approval and contractor packages structured', () => {

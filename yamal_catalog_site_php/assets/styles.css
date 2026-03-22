@@ -1912,6 +1912,25 @@ input[type="search"]:focus {
   --constructor-shadow-tight: 0 10px 24px rgba(24, 42, 49, 0.05);
 }
 
+.constructor-loading-shell {
+  gap: 18px;
+}
+
+.constructor-loading-panel {
+  min-height: 320px;
+  align-content: center;
+}
+
+.constructor-loading-state {
+  min-height: 0;
+  padding: 12px 0;
+}
+
+.constructor-loading-copy {
+  display: grid;
+  gap: 8px;
+}
+
 .constructor-hero,
 .constructor-panel {
   position: relative;
