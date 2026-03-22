@@ -166,6 +166,8 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-draft-status'), 'styles contain constructor draft status classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-list'), 'styles contain constructor warning list classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-loading-shell'), 'styles contain constructor loading shell classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'height: clamp(340px, 48vh, 560px);'), 'styles size constructor preview stage to fit template without inner scrolling');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'max-height: 100%;'), 'styles keep constructor svg preview fully contained inside stage');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-warning-card.tone-warn'), 'styles contain constructor warning warn state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-panel'), 'styles contain compact constructor support panel classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-support-note'), 'styles contain compact constructor support note classes');
