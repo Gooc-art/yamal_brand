@@ -14,60 +14,36 @@ $config = site_config();
   <body>
     <div class="page-shell">
       <header class="hero surface">
+        <div class="hero-column hero-column-media">
+          <section class="hero-examples surface">
+            <div class="block-head compact hero-examples-head">
+              <div>
+                <p class="eyebrow">Примеры внедрения бренда</p>
+                <h2>Примеры внедрения бренда</h2>
+                <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром и переключением.</p>
+              </div>
+              <div id="hero-example-tabs" class="hero-example-tabs"></div>
+            </div>
+            <div id="hero-example-stage" class="hero-example-stage"></div>
+          </section>
+        </div>
+
         <div class="hero-column hero-column-main">
           <div class="hero-ribbon">
             <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
             <span>Официальная библиотека фирменного стиля</span>
           </div>
-          <div class="hero-heading">
-            <p class="eyebrow hero-kicker">Официальный каталог бренда</p>
-            <h1 id="site-title">Утверждённые материалы Ямала для рабочих задач</h1>
-            <p class="hero-copy">Логотипы, брендбуки, SVG, шрифты и материалы региона в одном каталоге для государственных служащих, предпринимателей и подрядчиков.</p>
-          </div>
-          <div class="hero-audience" aria-label="Основные аудитории каталога">
-            <span class="hero-audience-pill">Госслужащим</span>
-            <span class="hero-audience-pill">Предпринимателям</span>
-            <span class="hero-audience-pill">Подрядчикам</span>
-          </div>
-          <div class="hero-ledger">
-            <div id="hero-stats" class="hero-stat-grid" aria-live="polite">
-              <article class="hero-stat-card tone-accent">
-                <span>Файлов</span>
-                <strong>0</strong>
-                <small>Каталог готовится к загрузке данных.</small>
-              </article>
-              <article class="hero-stat-card tone-ink">
-                <span>Разделов</span>
-                <strong>0</strong>
-                <small>Основные ветки появятся после bootstrap.</small>
-              </article>
-              <article class="hero-stat-card tone-soft">
-                <span>Кейсов</span>
-                <strong>0</strong>
-                <small>Примеры внедрения подтянутся из каталога.</small>
-              </article>
-            </div>
-            <div class="hero-ledger-note">
-              <strong>Grounded и прикладной вход</strong>
-              <p>Поиск, примеры внедрения, помощник и лаборатория решений опираются на реальные разделы и реальные файлы каталога.</p>
-            </div>
-          </div>
+          <h1 id="site-title" class="visually-hidden"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
+          <p class="hero-copy">Логотипы, брендбуки, SVG, шрифты и материалы региона в одном каталоге.</p>
           <div class="hero-actions">
             <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Брендбуки</button>
             <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Логотипы</button>
-            <a class="ghost-button" href="#solution-lab">К лаборатории</a>
             <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Скрыть витрину</button>
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
           </div>
 
           <form id="search-form" class="search-panel hero-search-panel">
-            <div class="search-panel-head">
-              <div class="search-panel-copy">
-                <label class="search-label" for="search-input">Рабочий поиск</label>
-                <strong>Найдите материал по задаче, городу или формату</strong>
-              </div>
-              <span class="hero-search-hint">Например: логотип SVG, брендбук PDF, Салехард, наклейка</span>
-            </div>
+            <label class="search-label" for="search-input">Поиск</label>
             <div class="search-row">
               <input
                 id="search-input"
@@ -79,24 +55,10 @@ $config = site_config();
               <button type="submit" class="accent-button">Найти</button>
             </div>
             <div class="search-suggestions">
-              <p class="search-meta">Сейчас ищут</p>
+              <p class="search-meta">Быстрые</p>
               <div id="top-searches" class="chip-row"></div>
             </div>
           </form>
-        </div>
-
-        <div class="hero-column hero-column-media">
-          <section class="hero-examples surface">
-            <div class="block-head compact hero-examples-head">
-              <div>
-                <p class="eyebrow">Примеры внедрения бренда</p>
-                <h2>Примеры внедрения бренда</h2>
-                <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром, переключением и коротким разбором.</p>
-              </div>
-              <div id="hero-example-tabs" class="hero-example-tabs"></div>
-            </div>
-            <div id="hero-example-stage" class="hero-example-stage"></div>
-          </section>
         </div>
       </header>
 

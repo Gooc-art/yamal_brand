@@ -161,13 +161,10 @@ img {
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.98fr) minmax(420px, 1.02fr);
-  gap: 28px;
+  grid-template-columns: minmax(420px, 1.08fr) minmax(340px, 0.92fr);
+  gap: 22px;
   padding: 32px;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 251, 246, 0.98), rgba(243, 236, 228, 0.96)),
-    radial-gradient(circle at top right, rgba(214, 192, 163, 0.18), transparent 32%);
 }
 
 .hero::before {
@@ -181,14 +178,12 @@ img {
 .hero::after {
   content: "";
   position: absolute;
-  right: -96px;
-  top: -78px;
-  width: 360px;
-  height: 360px;
+  right: -84px;
+  top: -72px;
+  width: 320px;
+  height: 320px;
   border-radius: 999px;
-  background:
-    radial-gradient(circle, rgba(214, 192, 163, 0.26), transparent 58%),
-    radial-gradient(circle at 34% 36%, rgba(180, 36, 61, 0.08), transparent 24%);
+  background: radial-gradient(circle, rgba(214, 192, 163, 0.26), transparent 68%);
 }
 
 .hero-column {
@@ -204,9 +199,9 @@ img {
 }
 
 .hero-column-main {
-  gap: 20px;
-  max-width: none;
-  justify-self: stretch;
+  gap: 18px;
+  max-width: 560px;
+  justify-self: end;
 }
 
 .hero-column-media {
@@ -229,136 +224,6 @@ img {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.hero-heading {
-  display: grid;
-  gap: 14px;
-  max-width: 720px;
-}
-
-.hero-kicker {
-  color: var(--accent-deep);
-}
-
-.hero h1 {
-  max-width: 11ch;
-  font-size: clamp(48px, 5.8vw, 86px);
-}
-
-.hero-audience {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.hero-audience-pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(24, 42, 49, 0.08);
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.hero-ledger {
-  display: grid;
-  gap: 14px;
-}
-
-.hero-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.hero-stat-card {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-  min-height: 132px;
-  padding: 18px 18px 16px;
-  border-radius: 22px;
-  border: 1px solid rgba(24, 42, 49, 0.08);
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow: 0 14px 30px rgba(24, 42, 49, 0.08);
-}
-
-.hero-stat-card span {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.hero-stat-card strong,
-.search-panel-head strong,
-.hero-ledger-note strong {
-  font-family: var(--font-display);
-  font-weight: 700;
-}
-
-.hero-stat-card strong {
-  font-size: clamp(28px, 3vw, 44px);
-  line-height: 0.92;
-}
-
-.hero-stat-card small {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.hero-stat-card.tone-accent {
-  border-color: rgba(180, 36, 61, 0.16);
-  background:
-    linear-gradient(180deg, rgba(180, 36, 61, 0.08), rgba(255, 255, 255, 0.9)),
-    rgba(255, 255, 255, 0.82);
-}
-
-.hero-stat-card.tone-ink {
-  border-color: rgba(24, 42, 49, 0.12);
-  background:
-    linear-gradient(180deg, rgba(24, 42, 49, 0.06), rgba(255, 255, 255, 0.88)),
-    rgba(255, 255, 255, 0.78);
-}
-
-.hero-stat-card.tone-soft {
-  border-color: rgba(29, 103, 112, 0.16);
-  background:
-    linear-gradient(180deg, rgba(29, 103, 112, 0.08), rgba(255, 255, 255, 0.9)),
-    rgba(255, 255, 255, 0.82);
-}
-
-.hero-ledger-note {
-  display: grid;
-  gap: 8px;
-  padding: 18px 20px;
-  border-radius: 24px;
-  border: 1px solid rgba(24, 42, 49, 0.08);
-  background:
-    linear-gradient(140deg, rgba(255, 255, 255, 0.84), rgba(242, 237, 229, 0.9)),
-    linear-gradient(180deg, rgba(29, 103, 112, 0.04), rgba(180, 36, 61, 0.04));
-}
-
-.hero-ledger-note strong {
-  font-size: 24px;
-  line-height: 0.98;
-}
-
-.hero-ledger-note p {
-  margin: 0;
-  max-width: 54ch;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
 }
 
 .brand-mark {
@@ -429,9 +294,9 @@ h3,
 
 .hero-copy {
   margin: 0;
-  max-width: 48ch;
-  font-size: 17px;
-  line-height: 1.62;
+  max-width: 42ch;
+  font-size: 16px;
+  line-height: 1.55;
 }
 
 .hero-actions,
@@ -622,31 +487,6 @@ h3,
 
 .hero-search-panel {
   margin-top: 2px;
-}
-
-.search-panel-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
-  gap: 14px;
-  align-items: end;
-}
-
-.search-panel-copy {
-  display: grid;
-  gap: 8px;
-}
-
-.search-panel-head strong {
-  font-size: clamp(24px, 2vw, 30px);
-  line-height: 1;
-}
-
-.hero-search-hint {
-  display: block;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
 }
 
 .hero-examples::before,
@@ -4344,7 +4184,7 @@ input[type="search"]:focus {
 
   .hero-column-main {
     order: 1;
-    gap: 16px;
+    gap: 14px;
     max-width: none;
     justify-self: stretch;
   }
@@ -4365,15 +4205,6 @@ input[type="search"]:focus {
   .hero-actions > * {
     width: 100%;
     min-width: 0;
-  }
-
-  .hero-stat-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .search-panel-head {
-    grid-template-columns: 1fr;
-    align-items: start;
   }
 
   .hero-examples-head {
@@ -4607,30 +4438,10 @@ input[type="search"]:focus {
     font-size: 16px;
   }
 
-  .hero h1 {
-    max-width: 10ch;
-  }
-
   .hero-ribbon {
     width: 100%;
     justify-content: flex-start;
     padding: 8px 14px 8px 10px;
-  }
-
-  .hero-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .hero-stat-card:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .hero-ledger-note strong {
-    font-size: 22px;
-  }
-
-  .hero-audience {
-    gap: 8px;
   }
 
   .search-row {
@@ -4704,10 +4515,6 @@ input[type="search"]:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hero-actions > *:first-child {
-    grid-column: 1 / -1;
-  }
-
   .search-suggestions {
     gap: 8px;
   }
@@ -4751,10 +4558,6 @@ input[type="search"]:focus {
   .hero-example-nav {
     width: 40px;
     height: 40px;
-  }
-
-  .search-panel-head strong {
-    font-size: 24px;
   }
 
   .result-head {
