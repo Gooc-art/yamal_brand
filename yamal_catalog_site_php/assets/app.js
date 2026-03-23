@@ -240,6 +240,42 @@ function buildBrandRoutesSummary(sections, activeRouteId = '') {
   };
 }
 
+function buildHeroStatCards(bootstrap) {
+  const formatHeroNumber = (value) => new Intl.NumberFormat('ru-RU').format(Number(value || 0));
+  const payload = bootstrap && typeof bootstrap === 'object' ? bootstrap : {};
+  const stats = payload.stats && typeof payload.stats === 'object' ? payload.stats : {};
+  const sectionCount = Array.isArray(payload.sections) ? payload.sections.length : 0;
+  const goodExamples = Array.isArray(payload.examples?.good) ? payload.examples.good : [];
+  const debateExamples = Array.isArray(payload.examples?.debate) ? payload.examples.debate : [];
+  const exampleCount = goodExamples.length + debateExamples.length;
+  const fileCount = Number(stats.files || 0);
+  const searchCount = Number(stats.searches || 0);
+
+  return [
+    {
+      id: 'files',
+      value: formatHeroNumber(fileCount),
+      label: 'файлов',
+      note: fileCount > 0 ? 'логотипы, PDF, SVG, шрифты и макеты' : 'каталог ещё заполняется материалами',
+      tone: 'accent',
+    },
+    {
+      id: 'sections',
+      value: formatHeroNumber(sectionCount),
+      label: 'разделов',
+      note: sectionCount > 0 ? 'короткий вход в основные ветки каталога' : 'структура разделов появится после bootstrap',
+      tone: 'ink',
+    },
+    {
+      id: 'examples',
+      value: formatHeroNumber(exampleCount),
+      label: 'кейсов',
+      note: searchCount > 0 ? `${formatHeroNumber(searchCount)} поисков уже прошло через каталог` : 'хорошие и спорные примеры внедрения',
+      tone: 'soft',
+    },
+  ];
+}
+
 function normalizeConstructorSolutions(payload) {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   return items
@@ -1748,6 +1784,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildRouteUrl,
     buildBrandRouteCards,
     buildBrandRoutesSummary,
+    buildHeroStatCards,
     buildConstructorCategoryFilters,
     isConstructorChoiceField,
     shouldAutoBuildConstructorField,
@@ -1841,6 +1878,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     heroExamples: document.querySelector('.hero-examples'),
     heroExampleTabs: document.querySelector('#hero-example-tabs'),
     heroExampleStage: document.querySelector('#hero-example-stage'),
+    heroStats: document.querySelector('#hero-stats'),
     brandRoutesBlock: document.querySelector('.brand-routes-block'),
     brandRoutes: document.querySelector('#brand-routes'),
     brandRoutesPanel: document.querySelector('#brand-routes-panel'),
@@ -3726,6 +3764,20 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
   }
 
+  function renderHeroStats(bootstrap) {
+    if (!els.heroStats) {
+      return;
+    }
+    const cards = buildHeroStatCards(bootstrap);
+    els.heroStats.innerHTML = cards.map((item) => `
+      <article class="hero-stat-card tone-${escapeHtml(item.tone || 'soft')}">
+        <span>${escapeHtml(item.label)}</span>
+        <strong>${escapeHtml(item.value)}</strong>
+        <small>${escapeHtml(item.note || '')}</small>
+      </article>
+    `).join('');
+  }
+
   function renderTopSearches(items) {
     const normalized = (items && items.length ? items : fallbackTopSearches.map((query) => ({ query })))
       .map((item) => typeof item === 'string' ? item : item.query)
@@ -4766,6 +4818,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     renderSetupBanner(payload.setupMessage || '');
     state.exampleIndex = { good: 0, debate: 0 };
     state.exampleTab = (payload.examples && Array.isArray(payload.examples.good) && payload.examples.good.length) ? 'good' : 'debate';
+    renderHeroStats(payload);
     renderHeroExamples();
     renderBrandRoutes(payload);
     renderSolutionLab(payload);

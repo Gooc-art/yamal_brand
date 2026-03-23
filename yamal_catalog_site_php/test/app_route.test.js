@@ -7,6 +7,7 @@ const {
   buildRouteUrl,
   buildBrandRouteCards,
   buildBrandRoutesSummary,
+  buildHeroStatCards,
   buildConstructorCategoryFilters,
   isConstructorChoiceField,
   shouldAutoBuildConstructorField,
@@ -142,6 +143,26 @@ test('buildConstructorCategoryFilters keeps all filter and current category stab
   assert.equal(result.filters[0].id, 'all');
   assert.equal(result.filters[0].count, 4);
   assert.deepEqual(result.visibleItems.map((item) => item.id), ['certificate']);
+});
+
+test('buildHeroStatCards derives grounded hero metrics from bootstrap payload', () => {
+  const cards = buildHeroStatCards({
+    stats: {
+      files: 128,
+      searches: 57,
+    },
+    sections: [{ id: 'logo' }, { id: 'brandbook' }, { id: 'fonts' }],
+    examples: {
+      good: [{ id: '1' }, { id: '2' }],
+      debate: [{ id: '3' }],
+    },
+  });
+
+  assert.deepEqual(cards.map((item) => item.id), ['files', 'sections', 'examples']);
+  assert.equal(cards[0].value, '128');
+  assert.equal(cards[1].value, '3');
+  assert.equal(cards[2].value, '3');
+  assert.match(cards[2].note, /57 поисков/u);
 });
 
 test('groupConstructorFields prioritizes fill fields before setup and style blocks', () => {

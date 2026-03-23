@@ -24,4 +24,5 @@ seatable_raw.csv
 # OS/IDE
 .DS_Store
 .idea/
-.vscode/
+.vscode/*
+!.vscode/mcp.json
