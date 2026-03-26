@@ -32,6 +32,8 @@ jobs:
             --exclude ".venv/" \
             --exclude "venv/" \
             --exclude ".pytest_cache/" \
+            --exclude "__pycache__/" \
+            --exclude "*.pyc" \
             --exclude "output/" \
             --exclude ".env" \
             ./godmod-source/ "${DEPLOY_DIR}/"
