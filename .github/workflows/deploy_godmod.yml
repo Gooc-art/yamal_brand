@@ -45,35 +45,35 @@ jobs:
             cp .env.example .env
           fi
           python3 - <<'PY'
-import os
-from pathlib import Path
+          import os
+          from pathlib import Path
 
-env_path = Path(".env")
-lines = env_path.read_text(encoding="utf-8").splitlines()
-updates = {
-    "TELEGRAM_BOT_TOKEN": os.environ["TELEGRAM_BOT_TOKEN"],
-    "VK_SERVICE_TOKEN": os.environ["VK_SERVICE_TOKEN"],
-    "VK_API_TOKEN": "",
-    "GODMOD_USE_MOCK_DATA": "false",
-    "GODMOD_OUTPUT_DIR": "output",
-}
-seen = set()
-result = []
-for line in lines:
-    if "=" not in line or line.lstrip().startswith("#"):
-        result.append(line)
-        continue
-    key, _value = line.split("=", 1)
-    if key in updates:
-        result.append(f"{key}={updates[key]}")
-        seen.add(key)
-    else:
-        result.append(line)
-for key, value in updates.items():
-    if key not in seen:
-        result.append(f"{key}={value}")
-env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
-PY
+          env_path = Path(".env")
+          lines = env_path.read_text(encoding="utf-8").splitlines()
+          updates = {
+              "TELEGRAM_BOT_TOKEN": os.environ["TELEGRAM_BOT_TOKEN"],
+              "VK_SERVICE_TOKEN": os.environ["VK_SERVICE_TOKEN"],
+              "VK_API_TOKEN": "",
+              "GODMOD_USE_MOCK_DATA": "false",
+              "GODMOD_OUTPUT_DIR": "output",
+          }
+          seen = set()
+          result = []
+          for line in lines:
+              if "=" not in line or line.lstrip().startswith("#"):
+                  result.append(line)
+                  continue
+              key, _value = line.split("=", 1)
+              if key in updates:
+                  result.append(f"{key}={updates[key]}")
+                  seen.add(key)
+              else:
+                  result.append(line)
+          for key, value in updates.items():
+              if key not in seen:
+                  result.append(f"{key}={value}")
+          env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
+          PY
 
       - name: Normalize systemd unit paths
         run: |
