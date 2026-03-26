@@ -21,6 +21,7 @@ jobs:
           repository: Gooc-art/godmod
           ref: main
           path: godmod-source
+          token: ${{ secrets.GODMOD_REPO_TOKEN }}
 
       - name: Sync repository to deploy path
         run: |
