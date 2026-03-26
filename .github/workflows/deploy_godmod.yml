@@ -42,6 +42,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.GODMOD_TELEGRAM_BOT_TOKEN }}
           VK_SERVICE_TOKEN: ${{ secrets.GODMOD_VK_SERVICE_TOKEN }}
+          TWOGIS_API_KEY: ${{ secrets.GODMOD_TWOGIS_API_KEY }}
         run: |
           cd "${DEPLOY_DIR}"
           if [ ! -f .env ]; then
@@ -56,6 +57,7 @@ jobs:
           updates = {
               "TELEGRAM_BOT_TOKEN": os.environ["TELEGRAM_BOT_TOKEN"],
               "VK_SERVICE_TOKEN": os.environ["VK_SERVICE_TOKEN"],
+              "TWOGIS_API_KEY": os.environ["TWOGIS_API_KEY"],
               "VK_API_TOKEN": "",
               "GODMOD_USE_MOCK_DATA": "false",
               "GODMOD_OUTPUT_DIR": "output",
