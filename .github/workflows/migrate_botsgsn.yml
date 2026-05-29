@@ -190,6 +190,7 @@ jobs:
             ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
             rm -rf "${tmp_dir}"
           fi
+          export PATH="${DEPLOY_DIR}/.runtime/node/bin:${PATH}"
 
           cd "${DEPLOY_DIR}/max_bot_sqlite"
           if [[ -f package-lock.json ]]; then
