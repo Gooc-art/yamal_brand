@@ -14,80 +14,134 @@ on:
       deploy_dir:
         description: "Deploy directory on BOTSGSN"
         required: false
-        default: "/home/maxbot/yamal_brand"
+        default: "/home/localadmin/yamal_brand"
 
 concurrency:
   group: migrate-yamal-botsgsn
   cancel-in-progress: false
 
 jobs:
-  collect-runtime:
+  migrate:
     runs-on: [self-hosted, linux, yamal-max-prod]
     env:
-      SOURCE_DIR: /home/sergey/yamal_brand
-    steps:
-      - name: Pack runtime files from old host
-        shell: bash
-        run: |
-          set -euo pipefail
-          staging="${RUNNER_TEMP}/yamal-runtime"
-          mkdir -p "${staging}"
-          test -f "${SOURCE_DIR}/max_bot_sqlite/.env"
-          test -d "${SOURCE_DIR}/input/Макеты1"
-          cd "${SOURCE_DIR}"
-          files=(max_bot_sqlite/.env input/Макеты1)
-          [[ -d .runtime/node ]] && files+=(.runtime/node)
-          [[ -f max_catalog.db ]] && files+=(max_catalog.db)
-          [[ -f max_bot_runtime.db ]] && files+=(max_bot_runtime.db)
-          tar -czf "${staging}/runtime.tgz" "${files[@]}"
-          ls -lh "${staging}/runtime.tgz"
-
-      - name: Upload runtime artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: yamal-runtime
-          path: ${{ runner.temp }}/yamal-runtime/runtime.tgz
-          retention-days: 1
-          if-no-files-found: error
-
-  deploy-new:
-    needs: collect-runtime
-    runs-on: [self-hosted, linux, yamal-botsgsn]
-    env:
-      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/maxbot/yamal_brand' }}
-      DEPLOY_USER: maxbot
+      OLD_DEPLOY_DIR: /home/sergey/yamal_brand
+      BOTSGSN_HOST: 10.10.68.10
+      BOTSGSN_USER: localadmin
+      BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamal_brand' }}
       DEPLOY_SERVICE: max_yamal_bot.service
       START_NEW_SERVICE: ${{ github.event.inputs.start_new_service || '0' }}
+      STOP_OLD_SERVICE: ${{ github.event.inputs.stop_old_service || '0' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download runtime artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: yamal-runtime
-          path: ${{ runner.temp }}/yamal-runtime
-
-      - name: Deploy code and runtime files on BOTSGSN
+      - name: Validate migration inputs
         shell: bash
         run: |
           set -euo pipefail
-          sudo useradd --system --create-home --shell /bin/bash "${DEPLOY_USER}" 2>/dev/null || true
-          sudo install -d -m 0755 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${DEPLOY_DIR}"
-          sudo rsync -a --delete \
+          echo "::add-mask::${BOTSGSN_PASSWORD}"
+          test -n "${BOTSGSN_PASSWORD}" || { echo "Missing secret BOTSGSN_PASSWORD" >&2; exit 1; }
+          test -f "${OLD_DEPLOY_DIR}/max_bot_sqlite/.env"
+          test -d "${OLD_DEPLOY_DIR}/input/Макеты1"
+          test "${START_NEW_SERVICE}" = "0" -o "${START_NEW_SERVICE}" = "1"
+          test "${STOP_OLD_SERVICE}" = "0" -o "${STOP_OLD_SERVICE}" = "1"
+
+      - name: Prepare SSH helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          askpass="${RUNNER_TEMP}/botsgsn_askpass.sh"
+          cat >"${askpass}" <<'EOF'
+          #!/usr/bin/env sh
+          printf '%s\n' "$BOTSGSN_PASSWORD"
+          EOF
+          chmod 700 "${askpass}"
+          echo "SSH_ASKPASS=${askpass}" >> "${GITHUB_ENV}"
+          echo "SSH_ASKPASS_REQUIRE=force" >> "${GITHUB_ENV}"
+          echo "DISPLAY=none" >> "${GITHUB_ENV}"
+
+      - name: Prepare BOTSGSN deploy directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_env="BOTSGSN_PASSWORD=$(printf '%q' "${BOTSGSN_PASSWORD}") DEPLOY_DIR=$(printf '%q' "${DEPLOY_DIR}")"
+          setsid -w ssh \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=20 \
+            "${BOTSGSN_USER}@${BOTSGSN_HOST}" \
+            "${remote_env} bash -s" <<'REMOTE'
+          set -euo pipefail
+          printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S true
+          mkdir -p "${DEPLOY_DIR}"
+          chmod 755 "${DEPLOY_DIR}"
+          REMOTE
+
+      - name: Sync repository code to BOTSGSN
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RSYNC_RSH="ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o ConnectTimeout=20"
+          setsid -w rsync -az --delete \
             --exclude ".git/" \
             --exclude ".github/" \
             --exclude "max_bot_sqlite/.env" \
             --exclude "max_bot_sqlite/node_modules/" \
             --exclude "input/" \
             --exclude "*.db" \
-            ./ "${DEPLOY_DIR}/"
+            ./ "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/"
 
-          sudo tar -xzf "${RUNNER_TEMP}/yamal-runtime/runtime.tgz" -C "${DEPLOY_DIR}"
-          sudo chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${DEPLOY_DIR}"
-          sudo chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
+      - name: Sync runtime data to BOTSGSN
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_env="BOTSGSN_PASSWORD=$(printf '%q' "${BOTSGSN_PASSWORD}") DEPLOY_DIR=$(printf '%q' "${DEPLOY_DIR}")"
+          setsid -w ssh \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=20 \
+            "${BOTSGSN_USER}@${BOTSGSN_HOST}" \
+            "${remote_env} bash -s" <<'REMOTE'
+          set -euo pipefail
+          mkdir -p "${DEPLOY_DIR}/input/Макеты1" "${DEPLOY_DIR}/max_bot_sqlite" "${DEPLOY_DIR}/.runtime/node"
+          REMOTE
+          export RSYNC_RSH="ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -o ConnectTimeout=20"
+          setsid -w rsync -az --delete "${OLD_DEPLOY_DIR}/input/Макеты1/" \
+            "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/input/Макеты1/"
+          setsid -w rsync -az "${OLD_DEPLOY_DIR}/max_bot_sqlite/.env" \
+            "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/max_bot_sqlite/.env"
+          if [[ -f "${OLD_DEPLOY_DIR}/max_catalog.db" ]]; then
+            setsid -w rsync -az "${OLD_DEPLOY_DIR}/max_catalog.db" \
+              "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/max_catalog.db"
+          fi
+          if [[ -f "${OLD_DEPLOY_DIR}/max_bot_runtime.db" ]]; then
+            setsid -w rsync -az "${OLD_DEPLOY_DIR}/max_bot_runtime.db" \
+              "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/max_bot_runtime.db"
+          fi
+          if [[ -d "${OLD_DEPLOY_DIR}/.runtime/node" ]]; then
+            setsid -w rsync -az --delete "${OLD_DEPLOY_DIR}/.runtime/node/" \
+              "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/.runtime/node/"
+          fi
 
-          sudo -u "${DEPLOY_USER}" python3 - <<PY
+      - name: Configure and verify BOTSGSN service
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_env="BOTSGSN_PASSWORD=$(printf '%q' "${BOTSGSN_PASSWORD}") DEPLOY_DIR=$(printf '%q' "${DEPLOY_DIR}") DEPLOY_SERVICE=$(printf '%q' "${DEPLOY_SERVICE}") START_NEW_SERVICE=$(printf '%q' "${START_NEW_SERVICE}")"
+          setsid -w ssh \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=20 \
+            "${BOTSGSN_USER}@${BOTSGSN_HOST}" \
+            "${remote_env} bash -s" <<'REMOTE'
+          set -euo pipefail
+          printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S true
+
+          python3 - <<PY
           from pathlib import Path
 
           env_path = Path("${DEPLOY_DIR}/max_bot_sqlite/.env")
@@ -115,6 +169,8 @@ jobs:
           env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
           PY
 
+          chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
+
           if [[ ! -x "${DEPLOY_DIR}/.runtime/node/bin/node" || ! -x "${DEPLOY_DIR}/.runtime/node/bin/npm" ]]; then
             arch="$(uname -m)"
             case "${arch}" in
@@ -128,30 +184,26 @@ jobs:
             tmp_dir="$(mktemp -d)"
             curl -fsSL "https://nodejs.org/dist/v${node_version}/${archive}" -o "${tmp_dir}/${archive}"
             tar -xf "${tmp_dir}/${archive}" -C "${tmp_dir}"
-            sudo install -d -m 0755 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime"
-            sudo rm -rf "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
-            sudo mv "${tmp_dir}/${node_dist}" "${DEPLOY_DIR}/.runtime/${node_dist}"
-            sudo ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
-            sudo chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime"
+            mkdir -p "${DEPLOY_DIR}/.runtime"
+            rm -rf "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            mv "${tmp_dir}/${node_dist}" "${DEPLOY_DIR}/.runtime/${node_dist}"
+            ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
             rm -rf "${tmp_dir}"
           fi
 
           cd "${DEPLOY_DIR}/max_bot_sqlite"
           if [[ -f package-lock.json ]]; then
-            sudo -u "${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
+            "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
           else
-            sudo -u "${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
+            "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
           fi
 
-          sudo -u "${DEPLOY_USER}" python3 "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" \
+          python3 "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" \
             --source "${DEPLOY_DIR}/input/Макеты1" \
             --db "${DEPLOY_DIR}/max_catalog.db"
 
-      - name: Install BOTSGSN systemd unit
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo tee "/etc/systemd/system/${DEPLOY_SERVICE}" >/dev/null <<EOF
+          unit_tmp="$(mktemp)"
+          cat >"${unit_tmp}" <<EOF
           [Unit]
           Description=YAMAL MAX bot (SQLite catalog)
           After=network.target
@@ -165,38 +217,33 @@ jobs:
           Restart=always
           RestartSec=5
           SyslogIdentifier=max_yamal_bot
-          User=${DEPLOY_USER}
-          Group=${DEPLOY_USER}
+          User=${USER}
+          Group=${USER}
 
           [Install]
           WantedBy=multi-user.target
           EOF
-          sudo systemctl daemon-reload
-          sudo systemctl enable "${DEPLOY_SERVICE}"
+          printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S cp "${unit_tmp}" "/etc/systemd/system/${DEPLOY_SERVICE}"
+          rm -f "${unit_tmp}"
+
+          printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S systemctl daemon-reload
+          printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S systemctl enable "${DEPLOY_SERVICE}"
           if [[ "${START_NEW_SERVICE}" == "1" ]]; then
-            sudo systemctl restart "${DEPLOY_SERVICE}"
-            sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 60
+            printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S systemctl restart "${DEPLOY_SERVICE}"
+            printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 80
           else
             echo "[migrate] New service installed but not started (start_new_service=0)"
-            sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 20 || true
+            printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 30 || true
           fi
 
-      - name: Verify BOTSGSN files
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo test -f "${DEPLOY_DIR}/max_bot_sqlite/.env"
-          sudo test -d "${DEPLOY_DIR}/input/Макеты1"
-          sudo test -f "${DEPLOY_DIR}/max_catalog.db"
-          sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/node"
-          sudo ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
+          test -f "${DEPLOY_DIR}/max_catalog.db"
+          test -d "${DEPLOY_DIR}/input/Макеты1"
+          "${DEPLOY_DIR}/.runtime/node/bin/node" --version
+          ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
+          REMOTE
 
-  stop-old:
-    needs: deploy-new
-    if: ${{ github.event.inputs.stop_old_service == '1' && github.event.inputs.start_new_service == '1' }}
-    runs-on: [self-hosted, linux, yamal-max-prod]
-    steps:
       - name: Stop old service after successful BOTSGSN start
+        if: ${{ github.event.inputs.stop_old_service == '1' && github.event.inputs.start_new_service == '1' }}
         shell: bash
         run: |
           set -euo pipefail
