@@ -1,0 +1,204 @@
+name: Migrate Yamal MAX Bot To BOTSGSN
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_new_service:
+        description: "Start max_yamal_bot.service on BOTSGSN after deploy"
+        required: false
+        default: "0"
+      stop_old_service:
+        description: "Stop max_yamal_bot.service on the old runner after the new service is healthy"
+        required: false
+        default: "0"
+      deploy_dir:
+        description: "Deploy directory on BOTSGSN"
+        required: false
+        default: "/home/maxbot/yamal_brand"
+
+concurrency:
+  group: migrate-yamal-botsgsn
+  cancel-in-progress: false
+
+jobs:
+  collect-runtime:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    env:
+      SOURCE_DIR: /home/sergey/yamal_brand
+    steps:
+      - name: Pack runtime files from old host
+        shell: bash
+        run: |
+          set -euo pipefail
+          staging="${RUNNER_TEMP}/yamal-runtime"
+          mkdir -p "${staging}"
+          test -f "${SOURCE_DIR}/max_bot_sqlite/.env"
+          test -d "${SOURCE_DIR}/input/Макеты1"
+          cd "${SOURCE_DIR}"
+          files=(max_bot_sqlite/.env input/Макеты1)
+          [[ -d .runtime/node ]] && files+=(.runtime/node)
+          [[ -f max_catalog.db ]] && files+=(max_catalog.db)
+          [[ -f max_bot_runtime.db ]] && files+=(max_bot_runtime.db)
+          tar -czf "${staging}/runtime.tgz" "${files[@]}"
+          ls -lh "${staging}/runtime.tgz"
+
+      - name: Upload runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yamal-runtime
+          path: ${{ runner.temp }}/yamal-runtime/runtime.tgz
+          retention-days: 1
+          if-no-files-found: error
+
+  deploy-new:
+    needs: collect-runtime
+    runs-on: [self-hosted, linux, yamal-botsgsn]
+    env:
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/maxbot/yamal_brand' }}
+      DEPLOY_USER: maxbot
+      DEPLOY_SERVICE: max_yamal_bot.service
+      START_NEW_SERVICE: ${{ github.event.inputs.start_new_service || '0' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download runtime artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: yamal-runtime
+          path: ${{ runner.temp }}/yamal-runtime
+
+      - name: Deploy code and runtime files on BOTSGSN
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo useradd --system --create-home --shell /bin/bash "${DEPLOY_USER}" 2>/dev/null || true
+          sudo install -d -m 0755 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${DEPLOY_DIR}"
+          sudo rsync -a --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "max_bot_sqlite/.env" \
+            --exclude "max_bot_sqlite/node_modules/" \
+            --exclude "input/" \
+            --exclude "*.db" \
+            ./ "${DEPLOY_DIR}/"
+
+          sudo tar -xzf "${RUNNER_TEMP}/yamal-runtime/runtime.tgz" -C "${DEPLOY_DIR}"
+          sudo chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${DEPLOY_DIR}"
+          sudo chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
+
+          sudo -u "${DEPLOY_USER}" python3 - <<PY
+          from pathlib import Path
+
+          env_path = Path("${DEPLOY_DIR}/max_bot_sqlite/.env")
+          updates = {
+              "CATALOG_DB_PATH": "${DEPLOY_DIR}/max_catalog.db",
+              "RUNTIME_DB_PATH": "${DEPLOY_DIR}/max_bot_runtime.db",
+              "CATALOG_ROOT_PATH": "${DEPLOY_DIR}/input/Макеты1",
+          }
+          lines = env_path.read_text(encoding="utf-8").splitlines()
+          seen = set()
+          result = []
+          for line in lines:
+              if "=" not in line or line.lstrip().startswith("#"):
+                  result.append(line)
+                  continue
+              key, _value = line.split("=", 1)
+              if key in updates:
+                  result.append(f"{key}={updates[key]}")
+                  seen.add(key)
+              else:
+                  result.append(line)
+          for key, value in updates.items():
+              if key not in seen:
+                  result.append(f"{key}={value}")
+          env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
+          PY
+
+          if [[ ! -x "${DEPLOY_DIR}/.runtime/node/bin/node" || ! -x "${DEPLOY_DIR}/.runtime/node/bin/npm" ]]; then
+            arch="$(uname -m)"
+            case "${arch}" in
+              x86_64|amd64) node_arch="x64" ;;
+              aarch64|arm64) node_arch="arm64" ;;
+              *) echo "unsupported architecture: ${arch}" >&2; exit 1 ;;
+            esac
+            node_version="20.11.1"
+            node_dist="node-v${node_version}-linux-${node_arch}"
+            archive="${node_dist}.tar.xz"
+            tmp_dir="$(mktemp -d)"
+            curl -fsSL "https://nodejs.org/dist/v${node_version}/${archive}" -o "${tmp_dir}/${archive}"
+            tar -xf "${tmp_dir}/${archive}" -C "${tmp_dir}"
+            sudo install -d -m 0755 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime"
+            sudo rm -rf "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            sudo mv "${tmp_dir}/${node_dist}" "${DEPLOY_DIR}/.runtime/${node_dist}"
+            sudo ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            sudo chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime"
+            rm -rf "${tmp_dir}"
+          fi
+
+          cd "${DEPLOY_DIR}/max_bot_sqlite"
+          if [[ -f package-lock.json ]]; then
+            sudo -u "${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
+          else
+            sudo -u "${DEPLOY_USER}" "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
+          fi
+
+          sudo -u "${DEPLOY_USER}" python3 "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" \
+            --source "${DEPLOY_DIR}/input/Макеты1" \
+            --db "${DEPLOY_DIR}/max_catalog.db"
+
+      - name: Install BOTSGSN systemd unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo tee "/etc/systemd/system/${DEPLOY_SERVICE}" >/dev/null <<EOF
+          [Unit]
+          Description=YAMAL MAX bot (SQLite catalog)
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=${DEPLOY_DIR}/max_bot_sqlite
+          EnvironmentFile=${DEPLOY_DIR}/max_bot_sqlite/.env
+          Environment=NODE_ENV=production
+          ExecStart=${DEPLOY_DIR}/.runtime/node/bin/node ${DEPLOY_DIR}/max_bot_sqlite/src/bot.js
+          Restart=always
+          RestartSec=5
+          SyslogIdentifier=max_yamal_bot
+          User=${DEPLOY_USER}
+          Group=${DEPLOY_USER}
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          sudo systemctl daemon-reload
+          sudo systemctl enable "${DEPLOY_SERVICE}"
+          if [[ "${START_NEW_SERVICE}" == "1" ]]; then
+            sudo systemctl restart "${DEPLOY_SERVICE}"
+            sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 60
+          else
+            echo "[migrate] New service installed but not started (start_new_service=0)"
+            sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 20 || true
+          fi
+
+      - name: Verify BOTSGSN files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo test -f "${DEPLOY_DIR}/max_bot_sqlite/.env"
+          sudo test -d "${DEPLOY_DIR}/input/Макеты1"
+          sudo test -f "${DEPLOY_DIR}/max_catalog.db"
+          sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/node"
+          sudo ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
+
+  stop-old:
+    needs: deploy-new
+    if: ${{ github.event.inputs.stop_old_service == '1' && github.event.inputs.start_new_service == '1' }}
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    steps:
+      - name: Stop old service after successful BOTSGSN start
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo -n systemctl stop max_yamal_bot.service
+          sudo -n systemctl status max_yamal_bot.service --no-pager -l -n 30 || true
