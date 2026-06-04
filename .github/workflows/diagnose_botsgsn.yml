@@ -1,0 +1,123 @@
+name: Diagnose BOTSGSN MAX Bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_dir:
+        description: "Deploy directory on BOTSGSN"
+        required: false
+        default: "/home/localadmin/yamal_brand"
+      lookback_hours:
+        description: "Hours of service journal to inspect"
+        required: false
+        default: "12"
+      journal_lines:
+        description: "Number of recent journal lines to print"
+        required: false
+        default: "160"
+      restart_service:
+        description: "Restart max_yamal_bot.service before diagnostics: 0 or 1"
+        required: false
+        default: "0"
+
+jobs:
+  diagnose:
+    runs-on: [self-hosted, linux, yamal-botsgsn]
+    env:
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamal_brand' }}
+      LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '12' }}
+      JOURNAL_LINES: ${{ github.event.inputs.journal_lines || '160' }}
+      RESTART_SERVICE: ${{ github.event.inputs.restart_service || '0' }}
+      BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      SERVICE_NAME: max_yamal_bot.service
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Diagnose bot service
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${BOTSGSN_PASSWORD}"
+          test "${RESTART_SERVICE}" = "0" -o "${RESTART_SERVICE}" = "1"
+
+          sudo_cmd=(sudo -n)
+          if ! sudo -n true >/dev/null 2>&1; then
+            test -n "${BOTSGSN_PASSWORD}" || { echo "Missing sudo access and BOTSGSN_PASSWORD secret" >&2; exit 1; }
+            sudo_cmd=(sudo -S)
+          fi
+
+          run_sudo() {
+            if [[ "${sudo_cmd[*]}" == "sudo -S" ]]; then
+              printf '%s\n' "${BOTSGSN_PASSWORD}" | "${sudo_cmd[@]}" "$@"
+            else
+              "${sudo_cmd[@]}" "$@"
+            fi
+          }
+
+          echo "[diag] now_utc=$(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "[diag] host=$(hostname)"
+          echo "[diag] user=$(whoami)"
+          echo "[diag] deploy_dir=${DEPLOY_DIR}"
+          echo "[diag] restart_service=${RESTART_SERVICE}"
+
+          if [[ "${RESTART_SERVICE}" == "1" ]]; then
+            echo "[diag] restarting ${SERVICE_NAME}"
+            run_sudo systemctl restart "${SERVICE_NAME}"
+          fi
+
+          echo
+          echo "[diag] runner labels context"
+          echo "RUNNER_NAME=${RUNNER_NAME:-}"
+          echo "RUNNER_OS=${RUNNER_OS:-}"
+          echo "RUNNER_ARCH=${RUNNER_ARCH:-}"
+
+          echo
+          echo "[diag] filesystem"
+          ls -ld "${DEPLOY_DIR}" "${DEPLOY_DIR}/max_bot_sqlite" "${DEPLOY_DIR}/input" "${DEPLOY_DIR}/input/Макеты1" 2>/dev/null || true
+          ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
+          if [[ -f "${DEPLOY_DIR}/max_bot_sqlite/.env" ]]; then
+            sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
+          else
+            echo "[diag] missing ${DEPLOY_DIR}/max_bot_sqlite/.env"
+          fi
+
+          echo
+          echo "[diag] service status"
+          run_sudo systemctl status "${SERVICE_NAME}" --no-pager -l -n 80 || true
+
+          echo
+          echo "[diag] service show"
+          run_sudo systemctl show "${SERVICE_NAME}" \
+            -p ActiveState \
+            -p SubState \
+            -p Result \
+            -p MainPID \
+            -p ExecMainStatus \
+            -p NRestarts \
+            -p ActiveEnterTimestamp || true
+
+          journal_file="$(mktemp)"
+          trap 'rm -f "${journal_file}"' EXIT
+          run_sudo journalctl -u "${SERVICE_NAME}" --since "-${LOOKBACK_HOURS} hours" --no-pager > "${journal_file}" || true
+
+          echo
+          echo "[diag] recent journal tail"
+          tail -n "${JOURNAL_LINES}" "${journal_file}" || true
+
+          echo
+          echo "[diag] recent error lines"
+          rg -n 'Attachment not ready|fetch failed|UND_ERR_|Headers Timeout Error|\[handler\] error|upload failed|fallback reply failed|Invalid access_token|SQLITE_CANTOPEN|TypeError|ReferenceError|SyntaxError' "${journal_file}" || true
+
+          echo
+          echo "[diag] bot processes"
+          pgrep -af 'src/bot.js' || true
+
+          echo
+          echo "[diag] catalog quick stats"
+          if [[ -x "${DEPLOY_DIR}/.runtime/node/bin/node" ]]; then
+            "${DEPLOY_DIR}/.runtime/node/bin/node" --version
+          fi
+          if [[ -f "${DEPLOY_DIR}/max_catalog.db" ]]; then
+            python3 "${DEPLOY_DIR}/scripts/query_sqlite_catalog.py" --db "${DEPLOY_DIR}/max_catalog.db" stats || true
+          fi
