@@ -105,6 +105,8 @@ jobs:
             --source "${DEPLOY_DIR}/input/Макеты1" \
             --db "${DEPLOY_DIR}/max_catalog.db"
 
+          run_sudo chown -R localadmin:localadmin "${DEPLOY_DIR}"
+
           if [[ "${RESTART_SERVICE}" == "1" ]]; then
             run_sudo systemctl restart "${DEPLOY_SERVICE}"
           fi
