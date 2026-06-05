@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
 
           sudo_run() {
-            printf '%s' "${BOTSGSN_SUDO_PASSWORD_B64}" | base64 -d | sudo -S "$@"
+            { printf '%s' "${BOTSGSN_SUDO_PASSWORD_B64}" | base64 -d; printf '\n'; } | sudo -S "$@"
           }
 
           sudo_run true
