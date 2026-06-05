@@ -101,7 +101,7 @@ jobs:
           rm -f "${tmp_env_update}"
           run_sudo chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
 
-          if [[ ! -x "${DEPLOY_DIR}/.runtime/node/bin/node" || ! -x "${DEPLOY_DIR}/.runtime/node/bin/npm" ]]; then
+          if ! run_sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/node" || ! run_sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/npm"; then
             arch="$(uname -m)"
             case "${arch}" in
               x86_64|amd64) node_arch="x64" ;;
@@ -136,6 +136,6 @@ jobs:
           fi
 
           run_sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 80 || true
-          "${DEPLOY_DIR}/.runtime/node/bin/node" --version
-          ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
+          run_sudo "${DEPLOY_DIR}/.runtime/node/bin/node" --version
+          run_sudo ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
           run_sudo sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
