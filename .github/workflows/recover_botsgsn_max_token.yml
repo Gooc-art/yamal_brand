@@ -1,0 +1,119 @@
+name: Recover BOTSGSN MAX Bot Token
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_dir:
+        description: "Deploy directory on BOTSGSN"
+        required: false
+        default: "/home/localadmin/yamal_brand"
+
+jobs:
+  recover:
+    runs-on: [self-hosted, linux, yamal-botsgsn]
+    env:
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamal_brand' }}
+      SERVICE_NAME: max_yamal_bot.service
+      BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      ADMIN_USER_IDS: "23325864"
+    steps:
+      - name: Recover token from local files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${BOTSGSN_PASSWORD}" ]]; then
+            echo "::add-mask::${BOTSGSN_PASSWORD}"
+          fi
+
+          sudo_cmd=(sudo -n)
+          if ! sudo -n true >/dev/null 2>&1; then
+            test -n "${BOTSGSN_PASSWORD}" || { echo "Missing sudo access and BOTSGSN_PASSWORD secret" >&2; exit 1; }
+            sudo_cmd=(sudo -S)
+          fi
+
+          run_sudo() {
+            if [[ "${sudo_cmd[*]}" == "sudo -S" ]]; then
+              printf '%s\n' "${BOTSGSN_PASSWORD}" | "${sudo_cmd[@]}" "$@"
+            else
+              "${sudo_cmd[@]}" "$@"
+            fi
+          }
+
+          env_path="${DEPLOY_DIR}/max_bot_sqlite/.env"
+          backup_path="${DEPLOY_DIR}/max_bot_sqlite/.env.recovery.$(date -u +%Y%m%dT%H%M%SZ)"
+          run_sudo test -f "${env_path}"
+          run_sudo cp -a "${env_path}" "${backup_path}"
+          echo "[recover] backed up current env"
+
+          candidates_file="$(mktemp)"
+          trap 'rm -f "${candidates_file}"' EXIT
+
+          run_sudo bash -lc '
+            set -euo pipefail
+            find /home /opt -maxdepth 8 -type f \( -name ".env" -o -name ".env.*" -o -name "*env*" -o -name "*.service" \) 2>/dev/null |
+              while IFS= read -r file; do
+                grep -hE "^MAX_BOT_TOKEN=.+" "$file" 2>/dev/null || true
+              done
+          ' |
+            sed -E 's/^MAX_BOT_TOKEN=//' |
+            awk 'length($0) > 40 && $0 !~ /put_your_token_here/ {print}' |
+            awk '!seen[$0]++' > "${candidates_file}"
+
+          count="$(wc -l < "${candidates_file}" | tr -d " ")"
+          echo "[recover] candidate_count=${count}"
+          if [[ "${count}" == "0" ]]; then
+            echo "[recover] no local token candidates found"
+            exit 1
+          fi
+
+          index=0
+          while IFS= read -r token; do
+            index=$((index + 1))
+            echo "[recover] trying candidate ${index}/${count}"
+            tmp_env="$(mktemp)"
+            run_sudo cp -a "${env_path}" "${tmp_env}"
+            TOKEN_VALUE="${token}" ADMIN_VALUE="${ADMIN_USER_IDS}" python3 - "${tmp_env}" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          env_path = Path(sys.argv[1])
+          updates = {
+              "MAX_BOT_TOKEN": os.environ["TOKEN_VALUE"],
+              "ADMIN_USER_IDS": os.environ["ADMIN_VALUE"],
+          }
+          lines = env_path.read_text(encoding="utf-8").splitlines()
+          result = []
+          seen = set()
+          for line in lines:
+              if "=" not in line or line.lstrip().startswith("#"):
+                  result.append(line)
+                  continue
+              key, _value = line.split("=", 1)
+              if key in updates:
+                  result.append(f"{key}={updates[key]}")
+                  seen.add(key)
+              else:
+                  result.append(line)
+          for key, value in updates.items():
+              if key not in seen:
+                  result.append(f"{key}={value}")
+          env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
+          PY
+            run_sudo cp "${tmp_env}" "${env_path}"
+            rm -f "${tmp_env}"
+            run_sudo chown localadmin:localadmin "${env_path}"
+            run_sudo chmod 600 "${env_path}"
+            run_sudo systemctl restart "${SERVICE_NAME}" || true
+            sleep 10
+            if run_sudo systemctl is-active --quiet "${SERVICE_NAME}"; then
+              echo "[recover] service_active=true"
+              run_sudo systemctl status "${SERVICE_NAME}" --no-pager -l -n 40
+              exit 0
+            fi
+          done < "${candidates_file}"
+
+          echo "[recover] no candidate made service active; restoring backup"
+          run_sudo cp -a "${backup_path}" "${env_path}"
+          run_sudo systemctl restart "${SERVICE_NAME}" || true
+          exit 1

@@ -99,6 +99,11 @@ for direct production updates on the online runner. It preserves
 `max_bot_runtime.db`, updates runtime paths and `ADMIN_USER_IDS=23325864`, then
 rebuilds the catalog and restarts `max_yamal_bot.service`.
 
+If the bot fails after a bad token overwrite, run `Recover BOTSGSN MAX Bot Token`;
+it searches local BOTSGSN env/service files for previous `MAX_BOT_TOKEN`
+candidates without printing them, restores the first candidate that makes
+`max_yamal_bot.service` active, and keeps a timestamped env backup.
+
 Use `Migrate Yamal MAX Bot To BOTSGSN` for the controlled move from the old
 `yamal-max-prod` runner:
 
