@@ -32,7 +32,7 @@ jobs:
       BOTSGSN_SUDO_PASSWORD: ${{ secrets.BOTSGSN_SUDO_PASSWORD }}
       RUNNER_DIR: ${{ github.event.inputs.runner_dir || '/home/maxbot/actions-runner-yamal-brand' }}
       RUNNER_REG_TOKEN: ${{ github.event.inputs.registration_token }}
-      RUNNER_NAME: BOTSGSN
+      TARGET_RUNNER_NAME: BOTSGSN
       RUNNER_LABELS: yamal-botsgsn
     steps:
       - name: Validate inputs
@@ -66,7 +66,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo_password_b64="$(printf '%s' "${BOTSGSN_SUDO_PASSWORD}" | base64 | tr -d '\n')"
-          remote_env="BOTSGSN_SUDO_PASSWORD_B64=$(printf '%q' "${sudo_password_b64}") RUNNER_DIR=$(printf '%q' "${RUNNER_DIR}") RUNNER_NAME=$(printf '%q' "${RUNNER_NAME}") RUNNER_LABELS=$(printf '%q' "${RUNNER_LABELS}") RUNNER_REG_TOKEN=$(printf '%q' "${RUNNER_REG_TOKEN}") GITHUB_REPOSITORY=$(printf '%q' "${GITHUB_REPOSITORY}")"
+          remote_env="BOTSGSN_SUDO_PASSWORD_B64=$(printf '%q' "${sudo_password_b64}") RUNNER_DIR=$(printf '%q' "${RUNNER_DIR}") TARGET_RUNNER_NAME=$(printf '%q' "${TARGET_RUNNER_NAME}") RUNNER_LABELS=$(printf '%q' "${RUNNER_LABELS}") RUNNER_REG_TOKEN=$(printf '%q' "${RUNNER_REG_TOKEN}") GITHUB_REPOSITORY=$(printf '%q' "${GITHUB_REPOSITORY}")"
           setsid -w ssh \
             -o PreferredAuthentications=password \
             -o PubkeyAuthentication=no \
@@ -99,11 +99,11 @@ jobs:
             "${RUNNER_DIR}/.service"
           sudo_run chown -R "${runner_user}:${runner_user}" "${RUNNER_DIR}"
 
-          sudo_run -u "${runner_user}" bash -lc "cd '${RUNNER_DIR}' && ./config.sh --url 'https://github.com/${GITHUB_REPOSITORY}' --token '${RUNNER_REG_TOKEN}' --name '${RUNNER_NAME}' --labels '${RUNNER_LABELS}' --work _work --unattended --replace"
+          sudo_run -u "${runner_user}" bash -lc "cd '${RUNNER_DIR}' && ./config.sh --url 'https://github.com/${GITHUB_REPOSITORY}' --token '${RUNNER_REG_TOKEN}' --name '${TARGET_RUNNER_NAME}' --labels '${RUNNER_LABELS}' --work _work --unattended --replace"
           sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh install '${runner_user}'"
           sudo_run systemctl daemon-reload
           sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh start"
-          sudo_run systemctl status "actions.runner.${GITHUB_REPOSITORY//\//-}.${RUNNER_NAME}.service" --no-pager -l -n 80
+          sudo_run systemctl status "actions.runner.${GITHUB_REPOSITORY//\//-}.${TARGET_RUNNER_NAME}.service" --no-pager -l -n 80
           REMOTE
 
       - name: Verify runner is online
