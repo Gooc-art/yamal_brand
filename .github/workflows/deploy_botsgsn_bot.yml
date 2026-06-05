@@ -24,6 +24,7 @@ jobs:
       RESTART_SERVICE: ${{ github.event.inputs.restart_service || '1' }}
       DEPLOY_SERVICE: max_yamal_bot.service
       BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
       ADMIN_USER_IDS: "23325864"
     steps:
       - name: Checkout
@@ -70,6 +71,7 @@ jobs:
 
           tmp_env_update="$(mktemp)"
           cat >"${tmp_env_update}" <<PY
+          import os
           from pathlib import Path
 
           env_path = Path("${DEPLOY_DIR}/max_bot_sqlite/.env")
@@ -79,6 +81,9 @@ jobs:
               "CATALOG_ROOT_PATH": "${DEPLOY_DIR}/input/Макеты1",
               "ADMIN_USER_IDS": "${ADMIN_USER_IDS}",
           }
+          token = os.environ.get("MAX_BOT_TOKEN", "").strip()
+          if token:
+              updates["MAX_BOT_TOKEN"] = token
           lines = env_path.read_text(encoding="utf-8").splitlines()
           seen = set()
           result = []
