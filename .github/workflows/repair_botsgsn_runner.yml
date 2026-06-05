@@ -7,9 +7,11 @@ on:
         description: "Runner directory on BOTSGSN"
         required: false
         default: "/home/maxbot/actions-runner-yamal-brand"
+      registration_token:
+        description: "Short-lived GitHub runner registration token"
+        required: true
 
 permissions:
-  actions: write
   contents: read
 
 concurrency:
@@ -24,17 +26,19 @@ jobs:
       BOTSGSN_USER: localadmin
       BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
       RUNNER_DIR: ${{ github.event.inputs.runner_dir || '/home/maxbot/actions-runner-yamal-brand' }}
+      RUNNER_REG_TOKEN: ${{ github.event.inputs.registration_token }}
       RUNNER_NAME: BOTSGSN
       RUNNER_LABELS: yamal-botsgsn
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Validate inputs
         shell: bash
         run: |
           set -euo pipefail
           echo "::add-mask::${BOTSGSN_PASSWORD}"
+          echo "::add-mask::${RUNNER_REG_TOKEN}"
           test -n "${BOTSGSN_PASSWORD}" || { echo "Missing secret BOTSGSN_PASSWORD" >&2; exit 1; }
           test -n "${RUNNER_DIR}"
+          test -n "${RUNNER_REG_TOKEN}" || { echo "Missing registration_token input" >&2; exit 1; }
 
       - name: Prepare SSH helpers
         shell: bash
@@ -49,55 +53,6 @@ jobs:
           echo "SSH_ASKPASS=${askpass}" >> "${GITHUB_ENV}"
           echo "SSH_ASKPASS_REQUIRE=force" >> "${GITHUB_ENV}"
           echo "DISPLAY=none" >> "${GITHUB_ENV}"
-
-      - name: Remove stale BOTSGSN runner registration
-        shell: bash
-        run: |
-          set -euo pipefail
-          api_url="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runners"
-          runners_json="$(curl -fsS \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${api_url}")"
-          ids="$(RUNNER_NAME="${RUNNER_NAME}" RUNNERS_JSON="${runners_json}" python3 - <<'PY'
-          import json
-          import os
-
-          data = json.loads(os.environ["RUNNERS_JSON"])
-          wanted = os.environ["RUNNER_NAME"]
-          for runner in data.get("runners", []):
-              if runner.get("name") == wanted:
-                  print(runner["id"])
-          PY
-          )"
-          for id in ${ids}; do
-            curl -fsS -X DELETE \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "${api_url}/${id}"
-            echo "[repair] deleted stale runner id=${id}"
-          done
-
-      - name: Create runner registration token
-        shell: bash
-        run: |
-          set -euo pipefail
-          token_json="$(curl -fsS -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token")"
-          reg_token="$(TOKEN_JSON="${token_json}" python3 - <<'PY'
-          import json
-          import os
-
-          print(json.loads(os.environ["TOKEN_JSON"])["token"])
-          PY
-          )"
-          echo "::add-mask::${reg_token}"
-          echo "RUNNER_REG_TOKEN=${reg_token}" >> "${GITHUB_ENV}"
 
       - name: Reconfigure BOTSGSN runner over SSH
         shell: bash
@@ -144,23 +99,4 @@ jobs:
         run: |
           set -euo pipefail
           sleep 8
-          runners_json="$(curl -fsS \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runners")"
-          RUNNER_NAME="${RUNNER_NAME}" RUNNERS_JSON="${runners_json}" python3 - <<'PY'
-          import json
-          import os
-
-          data = json.loads(os.environ["RUNNERS_JSON"])
-          wanted = os.environ["RUNNER_NAME"]
-          matches = [runner for runner in data.get("runners", []) if runner.get("name") == wanted]
-          if not matches:
-              raise SystemExit(f"runner {wanted} is not registered")
-          runner = matches[0]
-          labels = ",".join(label["name"] for label in runner.get("labels", []))
-          print(f"[repair] name={runner['name']} status={runner['status']} busy={runner['busy']} labels={labels}")
-          if runner.get("status") != "online":
-              raise SystemExit(f"runner {wanted} is {runner.get('status')}, expected online")
-          PY
+          echo "[repair] Runner service started; verify repository runner status in GitHub Actions."
