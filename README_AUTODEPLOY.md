@@ -60,6 +60,7 @@ Put runtime data there (once):
 - `/home/sergey/yamal_brand/input/Макеты1`
 - `/home/sergey/yamal_brand/max_bot_sqlite/.env`
 - optional runtime analytics DB path in `.env`: `RUNTIME_DB_PATH=/home/sergey/yamal_brand/max_bot_runtime.db`
+- optional admin list in `.env`: `ADMIN_USER_IDS=23325864` for `/admin` and `/stats`
 - Node.js is bootstrapped automatically into `/home/sergey/yamal_brand/.runtime/node` during deploy if the server does not have `node`/`npm` installed.
 - `MAX_BOT_TOKEN` can be injected automatically from GitHub Actions Secret `MAX_BOT_TOKEN`
 
@@ -86,6 +87,39 @@ If passwordless `sudo` is not available, deploy fails:
 
 Push to `main` or run workflow manually:
 - GitHub -> `Actions` -> `Deploy Yamal MAX Bot` -> `Run workflow`.
+
+## 4.1) Migrate bot to BOTSGSN
+
+The private server `10.10.68.10` is connected to this repository as the
+self-hosted runner `BOTSGSN` with label `yamal-botsgsn`.
+
+Use `Migrate Yamal MAX Bot To BOTSGSN` for the controlled move from the old
+`yamal-max-prod` runner:
+
+- first run with `start_new_service=0` and `stop_old_service=0`; this copies
+  runtime files from `/home/sergey/yamal_brand` to BOTSGSN over SSH/rsync,
+  deploys code to `/home/localadmin/yamal_brand`, rewrites local catalog paths
+  in `max_bot_sqlite/.env`, installs dependencies, rebuilds `max_catalog.db`,
+  and installs `max_yamal_bot.service` without starting it
+- after the deploy job is green, rerun with `start_new_service=1` and
+  `stop_old_service=0`; this starts the bot on BOTSGSN while leaving the old
+  host untouched for rollback
+- after checking MAX manually and reviewing logs, rerun with
+  `start_new_service=1` and `stop_old_service=1` to stop the old
+  `max_yamal_bot.service`
+
+The migration workflow transfers:
+
+- `max_bot_sqlite/.env`
+- `input/Макеты1`
+- `.runtime/node` when present
+- `max_catalog.db` when present
+- `max_bot_runtime.db` when present
+
+The BOTSGSN service is written with `User=localadmin` and paths under
+`/home/localadmin/yamal_brand`; it does not reuse the checked-in
+`max_bot_sqlite/systemd/max_yamal_bot.service`, because that unit intentionally
+describes the old `/home/sergey/yamal_brand` host.
 
 For the public REG.RU website there is a separate archive-import workflow:
 - GitHub -> `Actions` -> `Import REG.RU Catalog Archive` -> `Run workflow`
@@ -125,7 +159,7 @@ To inspect bot health and recent runtime errors on the production runner:
 systemctl status max_yamal_bot.service --no-pager
 journalctl -u max_yamal_bot.service -n 80 --no-pager
 LOOKBACK_HOURS=12 JOURNAL_LINES=120 /home/sergey/yamal_brand/scripts/diagnose_bot_service.sh max_yamal_bot.service
-python3 /home/sergey/yamal_brand/scripts/report_bot_usage.py --catalog-db /home/sergey/yamal_brand/max_catalog.db --runtime-db /home/sergey/yamal_brand/max_bot_runtime.db
+python3 /home/sergey/yamal_brand/scripts/report_bot_usage.py --catalog-db /home/sergey/yamal_brand/max_catalog.db --runtime-db /home/sergey/yamal_brand/max_bot_runtime.db --days 7
 python3 /home/sergey/yamal_brand/scripts/backup_bot_data.py --catalog-db /home/sergey/yamal_brand/max_catalog.db --runtime-db /home/sergey/yamal_brand/max_bot_runtime.db --output-dir /home/sergey/yamal_brand/backups
 ```
 

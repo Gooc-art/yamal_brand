@@ -95,13 +95,54 @@ function getSenderId(ctx) {
   return value === undefined || value === null ? '' : String(value);
 }
 
+function getDisplayName(ctx) {
+  const firstName =
+    ctx?.sender?.first_name ??
+    ctx?.message?.sender?.first_name ??
+    ctx?.callbackQuery?.sender?.first_name ??
+    ctx?.from?.first_name ??
+    '';
+  const lastName =
+    ctx?.sender?.last_name ??
+    ctx?.message?.sender?.last_name ??
+    ctx?.callbackQuery?.sender?.last_name ??
+    ctx?.from?.last_name ??
+    '';
+  const username =
+    ctx?.sender?.username ??
+    ctx?.message?.sender?.username ??
+    ctx?.callbackQuery?.sender?.username ??
+    ctx?.from?.username ??
+    '';
+  const fullName = `${String(firstName).trim()} ${String(lastName).trim()}`.trim();
+  if (fullName) return fullName;
+  if (username) return `@${String(username).trim()}`;
+  return '';
+}
+
+function getAnalyticsUserKey(ctx) {
+  const senderId = getSenderId(ctx);
+  if (senderId) return `user:${senderId}`;
+  const chatKey = getChatKey(ctx);
+  return chatKey ? `chat:${chatKey}` : '';
+}
+
 function isAllowed(ctx) {
   if (!config.allowedUserIds.size) return true;
   return config.allowedUserIds.has(getSenderId(ctx));
 }
 
+function isAdmin(ctx) {
+  if (!config.adminUserIds.size) return false;
+  return config.adminUserIds.has(getSenderId(ctx));
+}
+
 async function denyAccess(ctx) {
   await replyReplacingLast(ctx, 'Доступ ограничен. Обратитесь к администратору бота.');
+}
+
+async function denyAdminAccess(ctx) {
+  await replyReplacingLast(ctx, 'Админский раздел доступен только администратору бота.');
 }
 
 function getCallbackData(ctx) {
@@ -271,6 +312,18 @@ function buildSearchKeyboard() {
   return inlineKeyboardAttachment(rows);
 }
 
+function buildAdminKeyboard(activeDays = 7) {
+  const weeklyLabel = activeDays === 7 ? '✅ 7 дней' : '7 дней';
+  const allTimeLabel = activeDays === 0 ? '✅ Весь период' : 'Весь период';
+  return inlineKeyboardAttachment([
+    [
+      Keyboard.button.callback(`🗓 ${weeklyLabel}`, 'admin:report:7'),
+      Keyboard.button.callback(`📊 ${allTimeLabel}`, 'admin:report:0'),
+    ],
+    [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+  ]);
+}
+
 function decorateSingleItem(item) {
   const parent = item?.parent_id ? db.getById(item.parent_id) : null;
   return decorateFolderItems(parent, [item])[0] || item;
@@ -364,6 +417,64 @@ async function renderFavorites(ctx) {
 
   await replyReplacingLast(ctx, text, {
     attachments: [inlineKeyboardAttachment(rows)],
+  });
+}
+
+function formatTopSearchLines(rows) {
+  if (!rows.length) return ['- пока пусто'];
+  return rows.map((row) => `- ${row.sample_query} — ${row.uses}`);
+}
+
+function formatTopItemLines(rows) {
+  if (!rows.length) return ['- пока пусто'];
+  return rows.map((row) => {
+    const item = db.getById(row.item_id);
+    const name =
+      item?.name || row.item_name_snapshot || row.relative_path_snapshot || row.item_id;
+    return `- ${name} — ${row.uses}`;
+  });
+}
+
+async function renderAdminReport(ctx, days = 7) {
+  const periodDays = Number(days) > 0 ? Number(days) : 0;
+  const report = state.getAdminReport({ days: periodDays, topLimit: 5 });
+  const users = report.users || {};
+  const lines = ['🛠 Админ-отчет'];
+
+  if (periodDays > 0) {
+    lines.push(`Период: последние ${periodDays} дней (с ${String(report.since_utc || '').slice(0, 10)})`);
+    lines.push('');
+    lines.push('Пользователи:');
+    lines.push(`- Новые: ${users.new_users || 0}`);
+    lines.push(`- Активные: ${users.active_users || 0}`);
+    lines.push(`- Всего за все время: ${users.total_users || 0}`);
+    lines.push(`- Взаимодействий всего: ${users.total_interactions || 0}`);
+  } else {
+    lines.push('Период: весь доступный runtime');
+    lines.push('');
+    lines.push('Пользователи:');
+    lines.push(`- Всего за все время: ${users.total_users || 0}`);
+    lines.push(`- Взаимодействий всего: ${users.total_interactions || 0}`);
+  }
+
+  lines.push('');
+  lines.push('Что чаще используют:');
+  lines.push('Поиски:');
+  lines.push(...formatTopSearchLines(report.top_searches || []));
+  lines.push('');
+  lines.push('Разделы и файлы:');
+  lines.push(...formatTopItemLines(report.top_items || []));
+
+  if ((report.top_empty_searches || []).length) {
+    lines.push('');
+    lines.push('Пустые запросы:');
+    for (const row of report.top_empty_searches) {
+      lines.push(`- ${row.sample_query} — ${row.uses}`);
+    }
+  }
+
+  await replyReplacingLast(ctx, lines.join('\n'), {
+    attachments: [buildAdminKeyboard(periodDays)],
   });
 }
 
@@ -534,6 +645,12 @@ async function safeHandle(ctx, fn) {
       await denyAccess(ctx);
       return;
     }
+    state.touchUser({
+      userKey: getAnalyticsUserKey(ctx),
+      senderId: getSenderId(ctx),
+      chatId: getChatKey(ctx),
+      displayName: getDisplayName(ctx),
+    });
     await fn();
   } catch (err) {
     console.error('[handler] error', err);
@@ -574,8 +691,42 @@ bot.command('help', async (ctx) => {
         '/start - открыть каталог',
         '/menu - главное меню',
         '/search <запрос> - поиск файла',
+        '/myid - показать ваш ID для настройки доступа',
       ].join('\n')
     );
+  });
+});
+
+bot.command('myid', async (ctx) => {
+  await safeHandle(ctx, async () => {
+    await replyReplacingLast(
+      ctx,
+      [
+        'Ваш ID в боте:',
+        `- sender_id: ${getSenderId(ctx) || 'не найден'}`,
+        `- chat_id: ${getChatKey(ctx) || 'не найден'}`,
+      ].join('\n')
+    );
+  });
+});
+
+bot.command('admin', async (ctx) => {
+  await safeHandle(ctx, async () => {
+    if (!isAdmin(ctx)) {
+      await denyAdminAccess(ctx);
+      return;
+    }
+    await renderAdminReport(ctx, 7);
+  });
+});
+
+bot.command('stats', async (ctx) => {
+  await safeHandle(ctx, async () => {
+    if (!isAdmin(ctx)) {
+      await denyAdminAccess(ctx);
+      return;
+    }
+    await renderAdminReport(ctx, 7);
   });
 });
 
@@ -645,6 +796,16 @@ bot.action(/.*/, async (ctx) => {
         buildSearchText(),
         { attachments: [buildSearchKeyboard()] }
       );
+      return;
+    }
+
+    m = data.match(/^admin:report:(\d+)$/i);
+    if (m) {
+      if (!isAdmin(ctx)) {
+        await denyAdminAccess(ctx);
+        return;
+      }
+      await renderAdminReport(ctx, Number.parseInt(m[1], 10));
       return;
     }
 

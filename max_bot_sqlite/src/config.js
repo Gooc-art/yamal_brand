@@ -44,4 +44,7 @@ export const config = {
   maxSearchResults: intEnv('MAX_SEARCH_RESULTS', 20),
   favoritesLimit: intEnv('FAVORITES_LIMIT', 8),
   allowedUserIds: parseAllowedIds(process.env.ALLOWED_USER_IDS || ''),
+  adminUserIds: parseAllowedIds(
+    process.env.ADMIN_USER_IDS || process.env.ALLOWED_USER_IDS || ''
+  ),
 };

@@ -5,6 +5,7 @@ This setup stores the file catalog in local SQLite and works well for:
 - text search by name/path/extension
 - direct file lookup by `id`
 - runtime analytics and popular-item stats in a separate writable SQLite DB
+- unique bot users with first-seen/last-seen timestamps and total interaction counts for admin reports
 - parallel Node.js web interface in `/yamal_catalog_site`
 - parallel PHP + SQLite web interface for shared hosting in `/yamal_catalog_site_php`
 - companion MAX bot can present this base as the official catalog of the Yamal regional brand for public-sector teams and businesses
@@ -54,8 +55,15 @@ Report current usage summary:
 ```bash
 python3 /home/sergey/yamal_brand/scripts/report_bot_usage.py \
   --catalog-db "/home/sergey/yamal_brand/max_catalog.db" \
-  --runtime-db "/home/sergey/yamal_brand/max_bot_runtime.db"
+  --runtime-db "/home/sergey/yamal_brand/max_bot_runtime.db" \
+  --days 7
 ```
+
+The report now includes:
+- total unique users for all time
+- new users for the last 7 days
+- active users for the last 7 days
+- top searches and top opened sections/files for the selected rolling period
 
 Create a timestamped backup snapshot with CSV/JSON exports:
 
@@ -79,5 +87,6 @@ Snapshot contents:
 - folder button -> run `children --parent-id <folder_id>`
 - text search -> run `search --query "<text>"`
 - file button -> run `get --id <file_id>` and send file URL/path
+- admin report -> restrict `/admin` or `/stats` to `ADMIN_USER_IDS` and read analytics from `max_bot_runtime.db`
 
 Root id is constant and printed by `build_sqlite_catalog.py`.

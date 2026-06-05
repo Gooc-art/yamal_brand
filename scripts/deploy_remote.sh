@@ -171,6 +171,11 @@ fi
 if [ -n "${MAX_BOT_TOKEN:-}" ]; then
   upsert_env_line "MAX_BOT_TOKEN" "${MAX_BOT_TOKEN}" "${ENV_FILE}"
 fi
+if [ -n "${ADMIN_USER_IDS:-}" ]; then
+  upsert_env_line "ADMIN_USER_IDS" "${ADMIN_USER_IDS}" "${ENV_FILE}"
+elif ! grep -q '^ADMIN_USER_IDS=' "${ENV_FILE}"; then
+  upsert_env_line "ADMIN_USER_IDS" "23325864" "${ENV_FILE}"
+fi
 
 if ! grep -q '^MAX_BOT_TOKEN=' "${ENV_FILE}"; then
   echo "[deploy] ERROR: MAX_BOT_TOKEN is missing in ${ENV_FILE}" >&2

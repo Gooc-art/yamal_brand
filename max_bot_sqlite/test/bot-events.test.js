@@ -82,9 +82,29 @@ test('main menu exposes favorites screen and tracks runtime usage', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('⭐ Избранное',\s*'favorites:main'\)/);
   assert.match(botSource, /if \(data === 'favorites:main'\)/);
   assert.match(botSource, /async function renderFavorites\(ctx\)/);
+  assert.match(botSource, /state\.touchUser\(\{/);
   assert.match(botSource, /state\.logSearch\(query,\s*items\.length\)/);
   assert.match(botSource, /state\.trackItemEvent\(parent,\s*'open_folder'\)/);
   assert.match(botSource, /state\.trackItemEvent\(item,\s*'send_file'\)/);
+});
+
+test('bot exposes admin analytics commands and callback actions', () => {
+  assert.match(botSource, /function isAdmin\(ctx\)/);
+  assert.match(botSource, /bot\.command\('admin'/);
+  assert.match(botSource, /bot\.command\('stats'/);
+  assert.match(botSource, /async function renderAdminReport\(ctx,\s*days = 7\)/);
+  assert.match(botSource, /Взаимодействий всего:/);
+  assert.match(botSource, /Keyboard\.button\.callback\(`🗓 \$\{weeklyLabel\}`,\s*'admin:report:7'\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\(`📊 \$\{allTimeLabel\}`,\s*'admin:report:0'\)/);
+  assert.match(botSource, /m = data\.match\(\/\^admin:report:\(\\d\+\)\$\/i\);/);
+});
+
+test('bot can show the current user id inside the chat', () => {
+  assert.match(botSource, /bot\.command\('myid'/);
+  assert.match(botSource, /\/myid - показать ваш ID для настройки доступа/);
+  assert.match(botSource, /Ваш ID в боте:/);
+  assert.match(botSource, /sender_id:/);
+  assert.match(botSource, /chat_id:/);
 });
 
 test('main menu keeps only quick font shortcut instead of root font folder button', () => {
