@@ -65,7 +65,7 @@ jobs:
             --exclude "*.db" \
             ./ "${DEPLOY_DIR}/"
 
-          if [[ ! -f "${DEPLOY_DIR}/max_bot_sqlite/.env" ]]; then
+          if ! run_sudo test -f "${DEPLOY_DIR}/max_bot_sqlite/.env"; then
             run_sudo cp "${DEPLOY_DIR}/max_bot_sqlite/.env.example" "${DEPLOY_DIR}/max_bot_sqlite/.env"
           fi
 
