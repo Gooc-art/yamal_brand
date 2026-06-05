@@ -93,6 +93,12 @@ Push to `main` or run workflow manually:
 The private server `10.10.68.10` is connected to this repository as the
 self-hosted runner `BOTSGSN` with label `yamal-botsgsn`.
 
+After the service is already on BOTSGSN, use `Deploy Yamal MAX Bot To BOTSGSN`
+for direct production updates on the online runner. It preserves
+`max_bot_sqlite/.env`, `input/`, `.runtime/`, `max_catalog.db`, and
+`max_bot_runtime.db`, updates runtime paths and `ADMIN_USER_IDS=23325864`, then
+rebuilds the catalog and restarts `max_yamal_bot.service`.
+
 Use `Migrate Yamal MAX Bot To BOTSGSN` for the controlled move from the old
 `yamal-max-prod` runner:
 

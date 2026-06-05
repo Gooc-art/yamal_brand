@@ -1,0 +1,137 @@
+name: Deploy Yamal MAX Bot To BOTSGSN
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_dir:
+        description: "Deploy directory on BOTSGSN"
+        required: false
+        default: "/home/localadmin/yamal_brand"
+      restart_service:
+        description: "Restart max_yamal_bot.service after deploy: 0 or 1"
+        required: false
+        default: "1"
+
+concurrency:
+  group: deploy-yamal-botsgsn
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, yamal-botsgsn]
+    env:
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamal_brand' }}
+      RESTART_SERVICE: ${{ github.event.inputs.restart_service || '1' }}
+      DEPLOY_SERVICE: max_yamal_bot.service
+      BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      ADMIN_USER_IDS: "23325864"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy bot on BOTSGSN
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${BOTSGSN_PASSWORD}"
+          test "${RESTART_SERVICE}" = "0" -o "${RESTART_SERVICE}" = "1"
+
+          sudo_cmd=(sudo -n)
+          if ! sudo -n true >/dev/null 2>&1; then
+            test -n "${BOTSGSN_PASSWORD}" || { echo "Missing sudo access and BOTSGSN_PASSWORD secret" >&2; exit 1; }
+            sudo_cmd=(sudo -S)
+          fi
+
+          run_sudo() {
+            if [[ "${sudo_cmd[*]}" == "sudo -S" ]]; then
+              printf '%s\n' "${BOTSGSN_PASSWORD}" | "${sudo_cmd[@]}" "$@"
+            else
+              "${sudo_cmd[@]}" "$@"
+            fi
+          }
+
+          mkdir -p "${DEPLOY_DIR}" "${DEPLOY_DIR}/max_bot_sqlite"
+
+          rsync -az --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "max_bot_sqlite/.env" \
+            --exclude "max_bot_sqlite/node_modules/" \
+            --exclude "input/" \
+            --exclude ".runtime/" \
+            --exclude "*.db" \
+            ./ "${DEPLOY_DIR}/"
+
+          if [[ ! -f "${DEPLOY_DIR}/max_bot_sqlite/.env" ]]; then
+            cp "${DEPLOY_DIR}/max_bot_sqlite/.env.example" "${DEPLOY_DIR}/max_bot_sqlite/.env"
+          fi
+
+          python3 - <<PY
+          from pathlib import Path
+
+          env_path = Path("${DEPLOY_DIR}/max_bot_sqlite/.env")
+          updates = {
+              "CATALOG_DB_PATH": "${DEPLOY_DIR}/max_catalog.db",
+              "RUNTIME_DB_PATH": "${DEPLOY_DIR}/max_bot_runtime.db",
+              "CATALOG_ROOT_PATH": "${DEPLOY_DIR}/input/Макеты1",
+              "ADMIN_USER_IDS": "${ADMIN_USER_IDS}",
+          }
+          lines = env_path.read_text(encoding="utf-8").splitlines()
+          seen = set()
+          result = []
+          for line in lines:
+              if "=" not in line or line.lstrip().startswith("#"):
+                  result.append(line)
+                  continue
+              key, _value = line.split("=", 1)
+              if key in updates:
+                  result.append(f"{key}={updates[key]}")
+                  seen.add(key)
+              else:
+                  result.append(line)
+          for key, value in updates.items():
+              if key not in seen:
+                  result.append(f"{key}={value}")
+          env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
+          PY
+          chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
+
+          if [[ ! -x "${DEPLOY_DIR}/.runtime/node/bin/node" || ! -x "${DEPLOY_DIR}/.runtime/node/bin/npm" ]]; then
+            arch="$(uname -m)"
+            case "${arch}" in
+              x86_64|amd64) node_arch="x64" ;;
+              aarch64|arm64) node_arch="arm64" ;;
+              *) echo "unsupported architecture: ${arch}" >&2; exit 1 ;;
+            esac
+            node_version="20.11.1"
+            node_dist="node-v${node_version}-linux-${node_arch}"
+            archive="${node_dist}.tar.xz"
+            tmp_dir="$(mktemp -d)"
+            curl -fsSL "https://nodejs.org/dist/v${node_version}/${archive}" -o "${tmp_dir}/${archive}"
+            tar -xf "${tmp_dir}/${archive}" -C "${tmp_dir}"
+            mkdir -p "${DEPLOY_DIR}/.runtime"
+            rm -rf "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            mv "${tmp_dir}/${node_dist}" "${DEPLOY_DIR}/.runtime/${node_dist}"
+            ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            rm -rf "${tmp_dir}"
+          fi
+
+          cd "${DEPLOY_DIR}/max_bot_sqlite"
+          if [[ -f package-lock.json ]]; then
+            "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
+          else
+            "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
+          fi
+
+          python3 "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" \
+            --source "${DEPLOY_DIR}/input/Макеты1" \
+            --db "${DEPLOY_DIR}/max_catalog.db"
+
+          if [[ "${RESTART_SERVICE}" == "1" ]]; then
+            run_sudo systemctl restart "${DEPLOY_SERVICE}"
+          fi
+
+          run_sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 80 || true
+          "${DEPLOY_DIR}/.runtime/node/bin/node" --version
+          ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
+          sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
