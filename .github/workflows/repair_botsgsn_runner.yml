@@ -61,7 +61,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          remote_env="BOTSGSN_SUDO_PASSWORD=$(printf '%q' "${BOTSGSN_SUDO_PASSWORD}") RUNNER_DIR=$(printf '%q' "${RUNNER_DIR}") RUNNER_NAME=$(printf '%q' "${RUNNER_NAME}") RUNNER_LABELS=$(printf '%q' "${RUNNER_LABELS}") RUNNER_REG_TOKEN=$(printf '%q' "${RUNNER_REG_TOKEN}") GITHUB_REPOSITORY=$(printf '%q' "${GITHUB_REPOSITORY}")"
+          sudo_password_b64="$(printf '%s' "${BOTSGSN_SUDO_PASSWORD}" | base64 | tr -d '\n')"
+          remote_env="BOTSGSN_SUDO_PASSWORD_B64=$(printf '%q' "${sudo_password_b64}") RUNNER_DIR=$(printf '%q' "${RUNNER_DIR}") RUNNER_NAME=$(printf '%q' "${RUNNER_NAME}") RUNNER_LABELS=$(printf '%q' "${RUNNER_LABELS}") RUNNER_REG_TOKEN=$(printf '%q' "${RUNNER_REG_TOKEN}") GITHUB_REPOSITORY=$(printf '%q' "${GITHUB_REPOSITORY}")"
           setsid -w ssh \
             -o PreferredAuthentications=password \
             -o PubkeyAuthentication=no \
@@ -72,7 +73,7 @@ jobs:
           set -euo pipefail
 
           sudo_run() {
-            printf '%s\n' "${BOTSGSN_SUDO_PASSWORD}" | sudo -S "$@"
+            printf '%s' "${BOTSGSN_SUDO_PASSWORD_B64}" | base64 -d | sudo -S "$@"
           }
 
           sudo_run true
