@@ -48,6 +48,10 @@ echo "[diag] recent error lines"
 rg -n 'Attachment not ready|fetch failed|UND_ERR_|Headers Timeout Error|\[handler\] error|upload failed|fallback reply failed|Invalid access_token|TypeError|ReferenceError|SyntaxError' "${journal_file}" || true
 
 echo
+echo "[diag] recent boot/update lines"
+rg -n '\[boot\]|\[update\]' "${journal_file}" || true
+
+echo
 echo "[diag] error counters"
 for pattern in \
   'Attachment not ready' \

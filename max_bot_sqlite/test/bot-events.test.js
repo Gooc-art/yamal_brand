@@ -13,6 +13,22 @@ test('bot uses MAX-specific update names for start and text messages', () => {
   assert.doesNotMatch(botSource, /bot\.on\('message'/);
 });
 
+test('bot logs sanitized incoming update metadata for production diagnostics', () => {
+  assert.match(botSource, /function logIncomingUpdate\(ctx\)/);
+  assert.match(botSource, /console\.log\('\[update\]'/);
+  assert.match(botSource, /hasText:\s*Boolean\(getMessageText\(ctx\)\)/);
+  assert.match(botSource, /hasPayload:\s*Boolean\(getCallbackData\(ctx\)\)/);
+  assert.doesNotMatch(botSource, /text:\s*getMessageText\(ctx\)/);
+});
+
+test('bot publishes MAX command hints on startup', () => {
+  assert.match(botSource, /await bot\.api\.getMyInfo\(\)/);
+  assert.match(botSource, /await bot\.api\.setMyCommands\(\[/);
+  assert.match(botSource, /name:\s*'start'/);
+  assert.match(botSource, /name:\s*'admin'/);
+  assert.match(botSource, /\[boot\] commands=updated/);
+});
+
 test('bot sends inline buttons as MAX attachments instead of unsupported keyboard field', () => {
   assert.match(botSource, /attachments:\s*\[buildMainMenuKeyboard\(\)\]/);
   assert.match(botSource, /attachments:\s*\[inlineKeyboardAttachment\(rows\)\]/);

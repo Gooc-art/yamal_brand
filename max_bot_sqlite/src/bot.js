@@ -74,6 +74,18 @@ bot.catch((err, ctx) => {
   throw err;
 });
 
+function logIncomingUpdate(ctx) {
+  console.log('[update]', {
+    updateType: ctx?.updateType,
+    senderId: getSenderId(ctx) || undefined,
+    chatId: getChatKey(ctx) || undefined,
+    hasText: Boolean(getMessageText(ctx)),
+    hasPayload: Boolean(getCallbackData(ctx)),
+    allowed: isAllowed(ctx),
+    admin: isAdmin(ctx),
+  });
+}
+
 function getMessageText(ctx) {
   return String(ctx?.message?.body?.text || ctx?.message?.text || ctx?.text || '').trim();
 }
@@ -662,6 +674,11 @@ async function safeHandle(ctx, fn) {
   }
 }
 
+bot.use(async (ctx, next) => {
+  logIncomingUpdate(ctx);
+  await next();
+});
+
 bot.command('start', async (ctx) => {
   await safeHandle(ctx, async () => {
     await renderMainMenu(ctx, true);
@@ -819,4 +836,26 @@ console.log('[boot] runtimeDb=', config.runtimeDbPath, 'state=', state.stats());
 console.log('[boot] rootPath=', config.rootPath);
 console.log('[boot] rootId=', ROOT_ID);
 
-bot.start();
+async function startBot() {
+  const botInfo = await bot.api.getMyInfo();
+  console.log('[boot] bot=', {
+    userId: botInfo?.user_id,
+    username: botInfo?.username,
+    name: botInfo?.name,
+  });
+  await bot.api.setMyCommands([
+    { name: 'start', description: 'Открыть официальный каталог бренда Ямала' },
+    { name: 'menu', description: 'Главное меню каталога' },
+    { name: 'search', description: 'Поиск материалов каталога' },
+    { name: 'help', description: 'Как пользоваться ботом' },
+    { name: 'myid', description: 'Показать ваш ID' },
+    { name: 'admin', description: 'Статистика для администратора' },
+  ]);
+  console.log('[boot] commands=updated');
+  await bot.start();
+}
+
+startBot().catch((err) => {
+  console.error('[boot] fatal', err);
+  process.exit(1);
+});
