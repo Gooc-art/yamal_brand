@@ -101,79 +101,14 @@ jobs:
           rm -f "${tmp_env_update}"
           run_sudo chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
 
-          NODE_BIN=""
-          NPM_BIN=""
-          if run_sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/node" && run_sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/npm"; then
-            NODE_BIN="${DEPLOY_DIR}/.runtime/node/bin/node"
-            NPM_BIN="${DEPLOY_DIR}/.runtime/node/bin/npm"
-          elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
-            NODE_BIN="$(command -v node)"
-            NPM_BIN="$(command -v npm)"
-          fi
-
-          if [[ -z "${NODE_BIN}" || -z "${NPM_BIN}" ]]; then
-            arch="$(uname -m)"
-            case "${arch}" in
-              x86_64|amd64) node_arch="x64" ;;
-              aarch64|arm64) node_arch="arm64" ;;
-              *) echo "unsupported architecture: ${arch}" >&2; exit 1 ;;
-            esac
-            node_version="20.11.1"
-            node_dist="node-v${node_version}-linux-${node_arch}"
-            archive="${node_dist}.tar.xz"
-            tmp_dir="$(mktemp -d)"
-            curl -fsSL "https://nodejs.org/dist/v${node_version}/${archive}" -o "${tmp_dir}/${archive}"
-            tar -xf "${tmp_dir}/${archive}" -C "${tmp_dir}"
-            run_sudo mkdir -p "${DEPLOY_DIR}/.runtime"
-            run_sudo rm -rf "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
-            run_sudo mv "${tmp_dir}/${node_dist}" "${DEPLOY_DIR}/.runtime/${node_dist}"
-            run_sudo ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
-            rm -rf "${tmp_dir}"
-            NODE_BIN="${DEPLOY_DIR}/.runtime/node/bin/node"
-            NPM_BIN="${DEPLOY_DIR}/.runtime/node/bin/npm"
-          fi
-
-          if [[ -f "${DEPLOY_DIR}/max_bot_sqlite/package-lock.json" ]]; then
-            run_sudo bash -lc "cd '${DEPLOY_DIR}/max_bot_sqlite' && '${NPM_BIN}' ci --no-audit --no-fund"
-          else
-            run_sudo bash -lc "cd '${DEPLOY_DIR}/max_bot_sqlite' && '${NPM_BIN}' install --no-audit --no-fund"
-          fi
-
           run_sudo python3 "${DEPLOY_DIR}/scripts/build_sqlite_catalog.py" \
             --source "${DEPLOY_DIR}/input/Макеты1" \
             --db "${DEPLOY_DIR}/max_catalog.db"
-
-          unit_tmp="$(mktemp)"
-          cat >"${unit_tmp}" <<EOF
-          [Unit]
-          Description=YAMAL MAX bot (SQLite catalog)
-          After=network.target
-
-          [Service]
-          Type=simple
-          WorkingDirectory=${DEPLOY_DIR}/max_bot_sqlite
-          EnvironmentFile=${DEPLOY_DIR}/max_bot_sqlite/.env
-          Environment=NODE_ENV=production
-          ExecStart=${NODE_BIN} ${DEPLOY_DIR}/max_bot_sqlite/src/bot.js
-          Restart=always
-          RestartSec=5
-          SyslogIdentifier=max_yamal_bot
-          User=localadmin
-          Group=localadmin
-
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-          run_sudo cp "${unit_tmp}" "/etc/systemd/system/${DEPLOY_SERVICE}"
-          rm -f "${unit_tmp}"
-          run_sudo systemctl daemon-reload
-          run_sudo systemctl enable "${DEPLOY_SERVICE}"
 
           if [[ "${RESTART_SERVICE}" == "1" ]]; then
             run_sudo systemctl restart "${DEPLOY_SERVICE}"
           fi
 
           run_sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 80 || true
-          run_sudo "${NODE_BIN}" --version
           run_sudo ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
           run_sudo sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
