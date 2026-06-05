@@ -10,6 +10,10 @@ on:
       registration_token:
         description: "Short-lived GitHub runner registration token"
         required: true
+      ssh_user:
+        description: "SSH user on BOTSGSN"
+        required: false
+        default: "localadmin"
 
 permissions:
   contents: read
@@ -23,7 +27,7 @@ jobs:
     runs-on: [self-hosted, linux, yamal-max-prod]
     env:
       BOTSGSN_HOST: 10.10.68.10
-      BOTSGSN_USER: localadmin
+      BOTSGSN_USER: ${{ github.event.inputs.ssh_user || 'localadmin' }}
       BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
       BOTSGSN_SUDO_PASSWORD: ${{ secrets.BOTSGSN_SUDO_PASSWORD }}
       RUNNER_DIR: ${{ github.event.inputs.runner_dir || '/home/maxbot/actions-runner-yamal-brand' }}
@@ -73,7 +77,11 @@ jobs:
           set -euo pipefail
 
           sudo_run() {
-            { printf '%s' "${BOTSGSN_SUDO_PASSWORD_B64}" | base64 -d; printf '\n'; } | sudo -S "$@"
+            if [ "$(id -u)" = "0" ]; then
+              "$@"
+            else
+              { printf '%s' "${BOTSGSN_SUDO_PASSWORD_B64}" | base64 -d; printf '\n'; } | sudo -S "$@"
+            fi
           }
 
           sudo_run true
