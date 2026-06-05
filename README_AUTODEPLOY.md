@@ -109,6 +109,12 @@ it searches local BOTSGSN env/service files for previous `MAX_BOT_TOKEN`
 candidates without printing them, restores the first candidate that makes
 `max_yamal_bot.service` active, and keeps a timestamped env backup.
 
+If GitHub shows `BOTSGSN` as offline with `runner registration has been deleted`
+in the local journal, run `Repair BOTSGSN GitHub Runner`. It runs from the old
+`yamal-max-prod` runner, connects to `10.10.68.10` over SSH, removes the stale
+GitHub runner registration, reconfigures `/home/maxbot/actions-runner-yamal-brand`
+as `BOTSGSN` with label `yamal-botsgsn`, and starts the runner service.
+
 Use `Migrate Yamal MAX Bot To BOTSGSN` for the controlled move from the old
 `yamal-max-prod` runner:
 

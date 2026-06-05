@@ -1,0 +1,166 @@
+name: Repair BOTSGSN GitHub Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_dir:
+        description: "Runner directory on BOTSGSN"
+        required: false
+        default: "/home/maxbot/actions-runner-yamal-brand"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: repair-botsgsn-runner
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    env:
+      BOTSGSN_HOST: 10.10.68.10
+      BOTSGSN_USER: localadmin
+      BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      RUNNER_DIR: ${{ github.event.inputs.runner_dir || '/home/maxbot/actions-runner-yamal-brand' }}
+      RUNNER_NAME: BOTSGSN
+      RUNNER_LABELS: yamal-botsgsn
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${BOTSGSN_PASSWORD}"
+          test -n "${BOTSGSN_PASSWORD}" || { echo "Missing secret BOTSGSN_PASSWORD" >&2; exit 1; }
+          test -n "${RUNNER_DIR}"
+
+      - name: Prepare SSH helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          askpass="${RUNNER_TEMP}/botsgsn_askpass.sh"
+          cat >"${askpass}" <<'EOF'
+          #!/usr/bin/env sh
+          printf '%s\n' "$BOTSGSN_PASSWORD"
+          EOF
+          chmod 700 "${askpass}"
+          echo "SSH_ASKPASS=${askpass}" >> "${GITHUB_ENV}"
+          echo "SSH_ASKPASS_REQUIRE=force" >> "${GITHUB_ENV}"
+          echo "DISPLAY=none" >> "${GITHUB_ENV}"
+
+      - name: Remove stale BOTSGSN runner registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_url="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runners"
+          runners_json="$(curl -fsS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${api_url}")"
+          ids="$(RUNNER_NAME="${RUNNER_NAME}" RUNNERS_JSON="${runners_json}" python3 - <<'PY'
+          import json
+          import os
+
+          data = json.loads(os.environ["RUNNERS_JSON"])
+          wanted = os.environ["RUNNER_NAME"]
+          for runner in data.get("runners", []):
+              if runner.get("name") == wanted:
+                  print(runner["id"])
+          PY
+          )"
+          for id in ${ids}; do
+            curl -fsS -X DELETE \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${api_url}/${id}"
+            echo "[repair] deleted stale runner id=${id}"
+          done
+
+      - name: Create runner registration token
+        shell: bash
+        run: |
+          set -euo pipefail
+          token_json="$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token")"
+          reg_token="$(TOKEN_JSON="${token_json}" python3 - <<'PY'
+          import json
+          import os
+
+          print(json.loads(os.environ["TOKEN_JSON"])["token"])
+          PY
+          )"
+          echo "::add-mask::${reg_token}"
+          echo "RUNNER_REG_TOKEN=${reg_token}" >> "${GITHUB_ENV}"
+
+      - name: Reconfigure BOTSGSN runner over SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_env="BOTSGSN_PASSWORD=$(printf '%q' "${BOTSGSN_PASSWORD}") RUNNER_DIR=$(printf '%q' "${RUNNER_DIR}") RUNNER_NAME=$(printf '%q' "${RUNNER_NAME}") RUNNER_LABELS=$(printf '%q' "${RUNNER_LABELS}") RUNNER_REG_TOKEN=$(printf '%q' "${RUNNER_REG_TOKEN}") GITHUB_REPOSITORY=$(printf '%q' "${GITHUB_REPOSITORY}")"
+          setsid -w ssh \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=20 \
+            "${BOTSGSN_USER}@${BOTSGSN_HOST}" \
+            "${remote_env} bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          sudo_run() {
+            printf '%s\n' "${BOTSGSN_PASSWORD}" | sudo -S "$@"
+          }
+
+          sudo_run true
+          test -x "${RUNNER_DIR}/config.sh"
+          test -x "${RUNNER_DIR}/svc.sh"
+          runner_user="$(stat -c '%U' "${RUNNER_DIR}")"
+
+          sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh stop || true"
+          sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh uninstall || true"
+          sudo_run systemctl daemon-reload
+          sudo_run rm -f \
+            "${RUNNER_DIR}/.runner" \
+            "${RUNNER_DIR}/.credentials" \
+            "${RUNNER_DIR}/.credentials_rsaparams" \
+            "${RUNNER_DIR}/.service"
+          sudo_run chown -R "${runner_user}:${runner_user}" "${RUNNER_DIR}"
+
+          sudo_run -u "${runner_user}" bash -lc "cd '${RUNNER_DIR}' && ./config.sh --url 'https://github.com/${GITHUB_REPOSITORY}' --token '${RUNNER_REG_TOKEN}' --name '${RUNNER_NAME}' --labels '${RUNNER_LABELS}' --work _work --unattended --replace"
+          sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh install '${runner_user}'"
+          sudo_run systemctl daemon-reload
+          sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh start"
+          sudo_run systemctl status "actions.runner.${GITHUB_REPOSITORY//\//-}.${RUNNER_NAME}.service" --no-pager -l -n 80
+          REMOTE
+
+      - name: Verify runner is online
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 8
+          runners_json="$(curl -fsS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runners")"
+          RUNNER_NAME="${RUNNER_NAME}" RUNNERS_JSON="${runners_json}" python3 - <<'PY'
+          import json
+          import os
+
+          data = json.loads(os.environ["RUNNERS_JSON"])
+          wanted = os.environ["RUNNER_NAME"]
+          matches = [runner for runner in data.get("runners", []) if runner.get("name") == wanted]
+          if not matches:
+              raise SystemExit(f"runner {wanted} is not registered")
+          runner = matches[0]
+          labels = ",".join(label["name"] for label in runner.get("labels", []))
+          print(f"[repair] name={runner['name']} status={runner['status']} busy={runner['busy']} labels={labels}")
+          if runner.get("status") != "online":
+              raise SystemExit(f"runner {wanted} is {runner.get('status')}, expected online")
+          PY
