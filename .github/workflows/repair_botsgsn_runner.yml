@@ -85,9 +85,9 @@ jobs:
           }
 
           sudo_run true
-          test -x "${RUNNER_DIR}/config.sh"
-          test -x "${RUNNER_DIR}/svc.sh"
-          runner_user="$(stat -c '%U' "${RUNNER_DIR}")"
+          sudo_run test -x "${RUNNER_DIR}/config.sh"
+          sudo_run test -x "${RUNNER_DIR}/svc.sh"
+          runner_user="$(sudo_run stat -c '%U' "${RUNNER_DIR}")"
 
           sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh stop || true"
           sudo_run bash -lc "cd '${RUNNER_DIR}' && ./svc.sh uninstall || true"
