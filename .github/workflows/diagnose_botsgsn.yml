@@ -77,7 +77,7 @@ jobs:
           ls -ld "${DEPLOY_DIR}" "${DEPLOY_DIR}/max_bot_sqlite" "${DEPLOY_DIR}/input" "${DEPLOY_DIR}/input/Макеты1" 2>/dev/null || true
           ls -lh "${DEPLOY_DIR}/max_catalog.db" "${DEPLOY_DIR}/max_bot_runtime.db" 2>/dev/null || true
           if [[ -f "${DEPLOY_DIR}/max_bot_sqlite/.env" ]]; then
-            sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
+            run_sudo sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
           else
             echo "[diag] missing ${DEPLOY_DIR}/max_bot_sqlite/.env"
           fi
@@ -107,7 +107,11 @@ jobs:
 
           echo
           echo "[diag] recent error lines"
-          rg -n 'Attachment not ready|fetch failed|UND_ERR_|Headers Timeout Error|\[handler\] error|upload failed|fallback reply failed|Invalid access_token|SQLITE_CANTOPEN|TypeError|ReferenceError|SyntaxError' "${journal_file}" || true
+          if command -v rg >/dev/null 2>&1; then
+            rg -n 'Attachment not ready|fetch failed|UND_ERR_|Headers Timeout Error|\[handler\] error|upload failed|fallback reply failed|Invalid access_token|SQLITE_CANTOPEN|TypeError|ReferenceError|SyntaxError' "${journal_file}" || true
+          else
+            grep -nE 'Attachment not ready|fetch failed|UND_ERR_|Headers Timeout Error|\[handler\] error|upload failed|fallback reply failed|Invalid access_token|SQLITE_CANTOPEN|TypeError|ReferenceError|SyntaxError' "${journal_file}" || true
+          fi
 
           echo
           echo "[diag] bot processes"

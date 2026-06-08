@@ -182,6 +182,23 @@ To inspect bot health and recent runtime errors on the production runner:
   - `lookback_hours` for how much journal history to inspect
   - `journal_lines` for how many recent lines to print
 
+To inspect the BOTSGSN deployment:
+- GitHub -> `Actions` -> `Diagnose BOTSGSN MAX Bot` -> `Run workflow`
+- the BOTSGSN service runs from `/home/localadmin/yamal_brand` as
+  `localadmin`, while the GitHub runner runs as `maxbot`, so the workflow reads
+  the restricted `.env` through sudo and prints only redacted token values.
+
+To deploy the public Yamal brand MAX bot without touching the existing
+`sgsn_yanao_bot` service:
+- keep `MAX_BOT_TOKEN`, `/home/localadmin/yamal_brand`, and
+  `max_yamal_bot.service` reserved for the existing `sgsn_yanao_bot` contour
+- store the `yamalbrend_bot` token in GitHub secret
+  `YAMALBREND_MAX_BOT_TOKEN`
+- run `Deploy Yamalbrend MAX Bot To BOTSGSN`; it installs a separate
+  `/home/localadmin/yamalbrend_bot` deployment and `yamalbrend_bot.service`,
+  while reusing the existing catalog DB and file tree from
+  `/home/localadmin/yamal_brand`
+
 ## 5) Verify on server
 
 ```bash
