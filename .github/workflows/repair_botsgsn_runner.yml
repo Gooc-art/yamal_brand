@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   repair:
-    runs-on: [self-hosted, linux, yamal-max-prod]
+    runs-on: [self-hosted, linux, yamal-control]
     env:
       BOTSGSN_HOST: 10.10.68.10
       BOTSGSN_USER: ${{ github.event.inputs.ssh_user || 'localadmin' }}
@@ -60,6 +60,16 @@ jobs:
           echo "SSH_ASKPASS=${askpass}" >> "${GITHUB_ENV}"
           echo "SSH_ASKPASS_REQUIRE=force" >> "${GITHUB_ENV}"
           echo "DISPLAY=none" >> "${GITHUB_ENV}"
+
+      - name: Check BOTSGSN SSH reachability
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 15 bash -c "cat < /dev/null > /dev/tcp/${BOTSGSN_HOST}/22" || {
+            echo "::error::BOTSGSN SSH is unreachable from runner ${RUNNER_NAME:-unknown}: ${BOTSGSN_HOST}:22"
+            echo "Connect the yamal-control runner to the BOTSGSN network before retrying."
+            exit 1
+          }
 
       - name: Reconfigure BOTSGSN runner over SSH
         shell: bash

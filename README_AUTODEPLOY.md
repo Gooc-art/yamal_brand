@@ -110,14 +110,17 @@ candidates without printing them, restores the first candidate that makes
 `max_yamal_bot.service` active, and keeps a timestamped env backup.
 
 If GitHub shows `BOTSGSN` as offline with `runner registration has been deleted`
-in the local journal, run `Repair BOTSGSN GitHub Runner`. It runs from the old
-`yamal-max-prod` runner, connects to `10.10.68.10` over SSH, reconfigures
+in the local journal, run `Repair BOTSGSN GitHub Runner`. It runs from the
+repository-scoped `yamal-control` runner, connects to `10.10.68.10` over SSH,
+reconfigures
 `/home/maxbot/actions-runner-yamal-brand` as `BOTSGSN` with label
 `yamal-botsgsn`, and starts the runner service. Remove any stale offline
 `BOTSGSN` entry from repository runners first if GitHub still lists one. The
 workflow needs a fresh GitHub runner registration token in `registration_token`;
 generate it from repository settings or the Actions runners API immediately
-before dispatching the workflow.
+before dispatching the workflow. The control runner must have a route to
+`10.10.68.10:22`; the workflow checks this first and exits with a direct network
+error instead of waiting on SSH when the private BOTSGSN network is unavailable.
 
 Use `Migrate Yamal MAX Bot To BOTSGSN` for the controlled move from the old
 `yamal-max-prod` runner:
