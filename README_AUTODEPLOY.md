@@ -182,6 +182,12 @@ To inspect bot health and recent runtime errors on the production runner:
   - `lookback_hours` for how much journal history to inspect
   - `journal_lines` for how many recent lines to print
 
+To inspect the BOTSGSN deployment:
+- GitHub -> `Actions` -> `Diagnose BOTSGSN MAX Bot` -> `Run workflow`
+- the BOTSGSN service runs from `/home/localadmin/yamal_brand` as
+  `localadmin`, while the GitHub runner runs as `maxbot`, so the workflow reads
+  the restricted `.env` through sudo and prints only redacted token values.
+
 ## 5) Verify on server
 
 ```bash
