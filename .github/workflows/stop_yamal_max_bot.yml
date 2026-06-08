@@ -8,70 +8,53 @@ permissions:
 
 jobs:
   stop:
-    runs-on: [self-hosted, linux, yamal-max-prod]
+    runs-on: [self-hosted, linux, yamal-botsgsn]
     env:
-      BOTSGSN_HOST: 10.10.68.10
-      BOTSGSN_USER: localadmin
       BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
-      BOTSGSN_SUDO_PASSWORD: ${{ secrets.BOTSGSN_SUDO_PASSWORD }}
+      BRAND_DEPLOY_DIR: /home/localadmin/yamal_brand
+      BRAND_SERVICE_NAME: max_yamal_bot.service
+      YAMALBREND_DEPLOY_DIR: /home/localadmin/yamalbrend_bot
+      YAMALBREND_SERVICE_NAME: yamalbrend_bot.service
       OLD_DEPLOY_DIR: /home/sergey/yamal_brand
-      NEW_DEPLOY_DIR: /home/localadmin/yamal_brand
-      SERVICE_NAME: max_yamal_bot.service
     steps:
-      - name: Stop local old Yamal service
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "[stop] local host=$(hostname) user=$(id -un)"
-          sudo -n systemctl disable --now "${SERVICE_NAME}" || true
-          sudo -n pkill -f "max_bot_sqlite/src/bot.js" || true
-          if [[ -f "${OLD_DEPLOY_DIR}/max_bot_sqlite/.env" ]]; then
-            sudo -n cp "${OLD_DEPLOY_DIR}/max_bot_sqlite/.env" "${OLD_DEPLOY_DIR}/max_bot_sqlite/.env.disabled.$(date -u +%Y%m%d%H%M%S)" || true
-            sudo -n sed -i -E "s/^MAX_BOT_TOKEN=.*/MAX_BOT_TOKEN=disabled-yamal-token/" "${OLD_DEPLOY_DIR}/max_bot_sqlite/.env" || true
-          fi
-          systemctl status "${SERVICE_NAME}" --no-pager -n 20 || true
-          pgrep -af "max_bot_sqlite/src/bot.js" || true
-
-      - name: Stop BOTSGSN Yamal service
+      - name: Stop BOTSGSN legacy Yamal bot services
         shell: bash
         run: |
           set -euo pipefail
           echo "::add-mask::${BOTSGSN_PASSWORD}"
-          echo "::add-mask::${BOTSGSN_SUDO_PASSWORD}"
-          if [[ -z "${BOTSGSN_PASSWORD}" || -z "${BOTSGSN_SUDO_PASSWORD}" ]]; then
-            echo "[stop] BOTSGSN credentials unavailable; local stop already attempted"
-            exit 0
+          echo "[stop] host=$(hostname) user=$(id -un)"
+
+          sudo_cmd=(sudo -n)
+          if ! sudo -n true >/dev/null 2>&1; then
+            test -n "${BOTSGSN_PASSWORD}" || { echo "Missing sudo access and BOTSGSN_PASSWORD secret" >&2; exit 1; }
+            sudo_cmd=(sudo -S)
           fi
-          askpass="${RUNNER_TEMP}/botsgsn_askpass.sh"
-          cat >"${askpass}" <<EOF
-          #!/usr/bin/env sh
-          printf %sn "$BOTSGSN_PASSWORD"
-          EOF
-          chmod 700 "${askpass}"
-          sudo_password_b64="$(printf %s "${BOTSGSN_SUDO_PASSWORD}" | base64 | tr -d n)"
-          remote_env="BOTSGSN_SUDO_PASSWORD_B64=$(printf %q "${sudo_password_b64}") NEW_DEPLOY_DIR=$(printf %q "${NEW_DEPLOY_DIR}") SERVICE_NAME=$(printf %q "${SERVICE_NAME}")"
-          SSH_ASKPASS="${askpass}" SSH_ASKPASS_REQUIRE=force DISPLAY=none setsid -w ssh \
-            -o PreferredAuthentications=password \
-            -o PubkeyAuthentication=no \
-            -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=20 \
-            "${BOTSGSN_USER}@${BOTSGSN_HOST}" \
-            "${remote_env} bash -s" <<REMOTE
-          set -euo pipefail
-          sudo_run() {
-            if [ "$(id -u)" = "0" ]; then
-              "$@"
+
+          run_sudo() {
+            if [[ "${sudo_cmd[*]}" == "sudo -S" ]]; then
+              printf '%s\n' "${BOTSGSN_PASSWORD}" | "${sudo_cmd[@]}" "$@"
             else
-              { printf %s "${BOTSGSN_SUDO_PASSWORD_B64}" | base64 -d; printf n; } | sudo -S "$@"
+              "${sudo_cmd[@]}" "$@"
             fi
           }
-          echo "[stop] remote host=$(hostname) user=$(id -un)"
-          sudo_run systemctl disable --now "${SERVICE_NAME}" || true
-          sudo_run pkill -f "max_bot_sqlite/src/bot.js" || true
-          if sudo_run test -f "${NEW_DEPLOY_DIR}/max_bot_sqlite/.env"; then
-            sudo_run cp "${NEW_DEPLOY_DIR}/max_bot_sqlite/.env" "${NEW_DEPLOY_DIR}/max_bot_sqlite/.env.disabled.$(date -u +%Y%m%d%H%M%S)" || true
-            sudo_run sed -i -E "s/^MAX_BOT_TOKEN=.*/MAX_BOT_TOKEN=disabled-yamal-token/" "${NEW_DEPLOY_DIR}/max_bot_sqlite/.env" || true
-          fi
-          sudo_run systemctl status "${SERVICE_NAME}" --no-pager -n 30 || true
+
+          for service in "${BRAND_SERVICE_NAME}" "${YAMALBREND_SERVICE_NAME}"; do
+            run_sudo systemctl disable --now "${service}" || true
+          done
+
+          for deploy_dir in "${BRAND_DEPLOY_DIR}" "${YAMALBREND_DEPLOY_DIR}" "${OLD_DEPLOY_DIR}"; do
+            env_file="${deploy_dir}/max_bot_sqlite/.env"
+            if run_sudo test -f "${env_file}"; then
+              run_sudo cp "${env_file}" "${env_file}.disabled.$(date -u +%Y%m%d%H%M%S)" || true
+              run_sudo sed -i -E "s/^MAX_BOT_TOKEN=.*/MAX_BOT_TOKEN=disabled-yamal-token/" "${env_file}" || true
+            fi
+          done
+
+          run_sudo pkill -f "${BRAND_DEPLOY_DIR}/max_bot_sqlite/src/bot.js" || true
+          run_sudo pkill -f "${YAMALBREND_DEPLOY_DIR}/max_bot_sqlite/src/bot.js" || true
+          run_sudo pkill -f "${OLD_DEPLOY_DIR}/max_bot_sqlite/src/bot.js" || true
+
+          for service in "${BRAND_SERVICE_NAME}" "${YAMALBREND_SERVICE_NAME}"; do
+            run_sudo systemctl status "${service}" --no-pager -n 30 || true
+          done
           pgrep -af "max_bot_sqlite/src/bot.js" || true
-          REMOTE

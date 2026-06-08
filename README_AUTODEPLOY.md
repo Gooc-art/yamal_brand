@@ -122,6 +122,14 @@ before dispatching the workflow. The control runner must have a route to
 `10.10.68.10:22`; the workflow checks this first and exits with a direct network
 error instead of waiting on SSH when the private BOTSGSN network is unavailable.
 
+If the SГСН MAX bot starts showing the Yamal brand catalog menu, run
+`Stop Yamal MAX Bot`. The workflow now runs directly on the online `BOTSGSN`
+runner with label `yamal-botsgsn`, disables both legacy services
+`max_yamal_bot.service` and `yamalbrend_bot.service`, invalidates their local
+`MAX_BOT_TOKEN` values, and kills the corresponding `max_bot_sqlite/src/bot.js`
+processes under `/home/localadmin/yamal_brand`,
+`/home/localadmin/yamalbrend_bot`, and the old `/home/sergey/yamal_brand` path.
+
 Use `Migrate Yamal MAX Bot To BOTSGSN` for the controlled move from the old
 `yamal-max-prod` runner:
 
