@@ -138,10 +138,11 @@ jobs:
           fi
 
           cd "${DEPLOY_DIR}/max_bot_sqlite"
+          node_path="${DEPLOY_DIR}/.runtime/node/bin:${PATH}"
           if [[ -f package-lock.json ]]; then
-            run_sudo "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
+            run_sudo env PATH="${node_path}" "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
           else
-            run_sudo "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
+            run_sudo env PATH="${node_path}" "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
           fi
 
           run_sudo chown -R localadmin:localadmin "${DEPLOY_DIR}"
