@@ -1,0 +1,183 @@
+name: Deploy Yamalbrend MAX Bot To BOTSGSN
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_dir:
+        description: "Deploy directory for yamalbrend_bot on BOTSGSN"
+        required: false
+        default: "/home/localadmin/yamalbrend_bot"
+      catalog_dir:
+        description: "Existing BOTSGSN catalog deployment to reuse"
+        required: false
+        default: "/home/localadmin/yamal_brand"
+      restart_service:
+        description: "Restart yamalbrend_bot.service after deploy: 0 or 1"
+        required: false
+        default: "1"
+
+concurrency:
+  group: deploy-yamalbrend-bot
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, yamal-botsgsn]
+    env:
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamalbrend_bot' }}
+      CATALOG_DIR: ${{ github.event.inputs.catalog_dir || '/home/localadmin/yamal_brand' }}
+      RESTART_SERVICE: ${{ github.event.inputs.restart_service || '1' }}
+      DEPLOY_SERVICE: yamalbrend_bot.service
+      BOTSGSN_PASSWORD: ${{ secrets.BOTSGSN_PASSWORD }}
+      YAMALBREND_MAX_BOT_TOKEN: ${{ secrets.YAMALBREND_MAX_BOT_TOKEN }}
+      ADMIN_USER_IDS: "23325864"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy yamalbrend bot on BOTSGSN
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${BOTSGSN_PASSWORD}" ]]; then
+            echo "::add-mask::${BOTSGSN_PASSWORD}"
+          fi
+          if [[ -n "${YAMALBREND_MAX_BOT_TOKEN}" ]]; then
+            echo "::add-mask::${YAMALBREND_MAX_BOT_TOKEN}"
+          fi
+          test "${RESTART_SERVICE}" = "0" -o "${RESTART_SERVICE}" = "1"
+          test -n "${YAMALBREND_MAX_BOT_TOKEN}" || { echo "Missing secret YAMALBREND_MAX_BOT_TOKEN" >&2; exit 1; }
+
+          sudo_cmd=(sudo -n)
+          if ! sudo -n true >/dev/null 2>&1; then
+            test -n "${BOTSGSN_PASSWORD}" || { echo "Missing sudo access and BOTSGSN_PASSWORD secret" >&2; exit 1; }
+            sudo_cmd=(sudo -S)
+          fi
+
+          run_sudo() {
+            if [[ "${sudo_cmd[*]}" == "sudo -S" ]]; then
+              printf '%s\n' "${BOTSGSN_PASSWORD}" | "${sudo_cmd[@]}" "$@"
+            else
+              "${sudo_cmd[@]}" "$@"
+            fi
+          }
+
+          run_sudo test -f "${CATALOG_DIR}/max_catalog.db"
+          run_sudo test -d "${CATALOG_DIR}/input/Макеты1"
+          run_sudo mkdir -p "${DEPLOY_DIR}" "${DEPLOY_DIR}/max_bot_sqlite" "${DEPLOY_DIR}/.runtime"
+
+          run_sudo rsync -az --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "max_bot_sqlite/.env" \
+            --exclude "max_bot_sqlite/node_modules/" \
+            --exclude "input/" \
+            --exclude ".runtime/" \
+            --exclude "*.db" \
+            ./ "${DEPLOY_DIR}/"
+
+          if ! run_sudo test -f "${DEPLOY_DIR}/max_bot_sqlite/.env"; then
+            run_sudo cp "${DEPLOY_DIR}/max_bot_sqlite/.env.example" "${DEPLOY_DIR}/max_bot_sqlite/.env"
+          fi
+
+          tmp_env_update="$(mktemp)"
+          cat >"${tmp_env_update}" <<PY
+          import os
+          from pathlib import Path
+
+          env_path = Path("${DEPLOY_DIR}/max_bot_sqlite/.env")
+          updates = {
+              "MAX_BOT_TOKEN": os.environ["YAMALBREND_MAX_BOT_TOKEN"].strip(),
+              "CATALOG_DB_PATH": "${CATALOG_DIR}/max_catalog.db",
+              "RUNTIME_DB_PATH": "${DEPLOY_DIR}/yamalbrend_runtime.db",
+              "CATALOG_ROOT_PATH": "${CATALOG_DIR}/input/Макеты1",
+              "ADMIN_USER_IDS": "${ADMIN_USER_IDS}",
+          }
+          lines = env_path.read_text(encoding="utf-8").splitlines()
+          seen = set()
+          result = []
+          for line in lines:
+              if "=" not in line or line.lstrip().startswith("#"):
+                  result.append(line)
+                  continue
+              key, _value = line.split("=", 1)
+              if key in updates:
+                  result.append(f"{key}={updates[key]}")
+                  seen.add(key)
+              else:
+                  result.append(line)
+          for key, value in updates.items():
+              if key not in seen:
+                  result.append(f"{key}={value}")
+          env_path.write_text("\n".join(result) + "\n", encoding="utf-8")
+          PY
+          run_sudo env YAMALBREND_MAX_BOT_TOKEN="${YAMALBREND_MAX_BOT_TOKEN}" python3 "${tmp_env_update}"
+          rm -f "${tmp_env_update}"
+          run_sudo chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
+
+          if run_sudo test -x "${CATALOG_DIR}/.runtime/node/bin/node" && run_sudo test -x "${CATALOG_DIR}/.runtime/node/bin/npm"; then
+            run_sudo ln -sfn "${CATALOG_DIR}/.runtime/node" "${DEPLOY_DIR}/.runtime/node"
+          fi
+          if ! run_sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/node" || ! run_sudo test -x "${DEPLOY_DIR}/.runtime/node/bin/npm"; then
+            arch="$(uname -m)"
+            case "${arch}" in
+              x86_64|amd64) node_arch="x64" ;;
+              aarch64|arm64) node_arch="arm64" ;;
+              *) echo "unsupported architecture: ${arch}" >&2; exit 1 ;;
+            esac
+            node_version="20.11.1"
+            node_dist="node-v${node_version}-linux-${node_arch}"
+            archive="${node_dist}.tar.xz"
+            tmp_dir="$(mktemp -d)"
+            curl -fsSL "https://nodejs.org/dist/v${node_version}/${archive}" -o "${tmp_dir}/${archive}"
+            tar -xf "${tmp_dir}/${archive}" -C "${tmp_dir}"
+            run_sudo rm -rf "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            run_sudo mv "${tmp_dir}/${node_dist}" "${DEPLOY_DIR}/.runtime/${node_dist}"
+            run_sudo ln -sfn "${DEPLOY_DIR}/.runtime/${node_dist}" "${DEPLOY_DIR}/.runtime/node"
+            rm -rf "${tmp_dir}"
+          fi
+
+          cd "${DEPLOY_DIR}/max_bot_sqlite"
+          if [[ -f package-lock.json ]]; then
+            run_sudo "${DEPLOY_DIR}/.runtime/node/bin/npm" ci --no-audit --no-fund
+          else
+            run_sudo "${DEPLOY_DIR}/.runtime/node/bin/npm" install --no-audit --no-fund
+          fi
+
+          run_sudo chown -R localadmin:localadmin "${DEPLOY_DIR}"
+          run_sudo chmod 755 /home/localadmin "${DEPLOY_DIR}" "${DEPLOY_DIR}/max_bot_sqlite"
+          run_sudo chmod 600 "${DEPLOY_DIR}/max_bot_sqlite/.env"
+
+          unit_tmp="$(mktemp)"
+          cat >"${unit_tmp}" <<EOF
+          [Unit]
+          Description=Yamalbrend MAX bot (SQLite catalog)
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=${DEPLOY_DIR}/max_bot_sqlite
+          EnvironmentFile=${DEPLOY_DIR}/max_bot_sqlite/.env
+          Environment=NODE_ENV=production
+          ExecStart=${DEPLOY_DIR}/.runtime/node/bin/node ${DEPLOY_DIR}/max_bot_sqlite/src/bot.js
+          Restart=always
+          RestartSec=5
+          SyslogIdentifier=yamalbrend_bot
+          User=localadmin
+          Group=localadmin
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          run_sudo cp "${unit_tmp}" "/etc/systemd/system/${DEPLOY_SERVICE}"
+          rm -f "${unit_tmp}"
+
+          run_sudo systemctl daemon-reload
+          run_sudo systemctl enable "${DEPLOY_SERVICE}"
+          if [[ "${RESTART_SERVICE}" == "1" ]]; then
+            run_sudo systemctl restart "${DEPLOY_SERVICE}"
+          fi
+
+          run_sudo systemctl status "${DEPLOY_SERVICE}" --no-pager -l -n 100 || true
+          run_sudo sed -E 's/(MAX_BOT_TOKEN=).*/\1<redacted>/; s/(TOKEN=).*/\1<redacted>/' "${DEPLOY_DIR}/max_bot_sqlite/.env"
+          "${DEPLOY_DIR}/.runtime/node/bin/node" --version
