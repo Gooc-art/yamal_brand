@@ -198,6 +198,8 @@ To deploy the public Yamal brand MAX bot without touching the existing
   `/home/localadmin/yamalbrend_bot` deployment and `yamalbrend_bot.service`,
   while reusing the existing catalog DB and file tree from
   `/home/localadmin/yamal_brand`
+- use `Diagnose Yamalbrend MAX Bot` to inspect only this separate service,
+  runtime DB, redacted `.env`, and journal without touching `max_yamal_bot.service`
 
 ## 5) Verify on server
 
