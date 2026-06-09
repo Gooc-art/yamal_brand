@@ -10,6 +10,7 @@
 - не переходить в другие проекты, репозитории, боты или сервисные контуры без явной отдельной команды пользователя
 - production-сервис официального бота: `yamalbrend_bot.service` на BOTSGSN в `/home/localadmin/yamalbrend_bot_runtime`; каталог берётся из `/home/localadmin/yamal_brand`
 - workflow `Stop Yamal MAX Bot` не использовать для проверки официального бота: он останавливает `yamalbrend_bot.service`, отключает автозапуск и меняет токен на `disabled-yamal-token`
+- штатный deploy официального бота перед включением сервиса снимает только `mask` с `yamalbrend_bot.service`, чтобы восстановление работало после `systemctl mask`
 
 Зафиксированный результат проверки от 2026-06-08:
 - причина недоступности: `Stop Yamal MAX Bot` был запущен в `10:09 UTC` и остановил официальный сервис

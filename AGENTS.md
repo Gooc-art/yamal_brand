@@ -9,6 +9,7 @@
 - Не переходи в другие проекты, репозитории, боты, сервисы или внешние рабочие контуры, если пользователь явно не попросил это отдельной командой.
 - Production-контур официального бота на BOTSGSN: `yamalbrend_bot.service` в `/home/localadmin/yamalbrend_bot_runtime`, с каталогом из `/home/localadmin/yamal_brand`.
 - Не запускай `Stop Yamal MAX Bot` для проверки живого официального бота: этот workflow останавливает `yamalbrend_bot.service`, отключает автозапуск и заменяет токен в `.env` на `disabled-yamal-token`. Для восстановления используй `Deploy Yamalbrend MAX Bot To BOTSGSN`, затем `Diagnose Yamalbrend MAX Bot`.
+- Штатный deploy официального бота перед `enable/restart` снимает `mask` только с `yamalbrend_bot.service`; не снимай mask и не стартуй другие bot-сервисы без отдельной команды пользователя.
 
 ## Правила изменений
 
