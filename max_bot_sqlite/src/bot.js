@@ -405,10 +405,9 @@ async function renderStartMenu(ctx) {
     updateType: ctx?.updateType,
     chatId: getChatKey(ctx) || undefined,
   });
-  const sent = await retryMaxApiCall(
-    'start-reply',
-    () => ctx.reply(buildMainMenuText(true), { attachments: [buildMainMenuKeyboard()] }),
-    { retries: 3, delaysMs: [500, 1500, 3000] }
+  await clearPreviousBotReply(ctx);
+  const sent = await retryMaxApiCall('start-reply', () =>
+    ctx.reply(buildMainMenuText(true), { attachments: [buildMainMenuKeyboard()] })
   );
   rememberBotReply(ctx, sent);
   console.log('[start] main menu sent', {

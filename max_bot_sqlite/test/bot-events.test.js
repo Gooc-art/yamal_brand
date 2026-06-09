@@ -32,6 +32,7 @@ test('bot publishes MAX command hints on startup', () => {
 test('bot handles MAX start button before generic event routing', () => {
   assert.match(botSource, /async function renderStartMenu\(ctx\)/);
   assert.match(botSource, /\[start\] sending main menu/);
+  assert.match(botSource, /await clearPreviousBotReply\(ctx\)/);
   assert.match(botSource, /\[start\] main menu sent/);
   assert.match(
     botSource,
