@@ -23,6 +23,14 @@
 - контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27183688461`
 - итог: сервис `enabled` и `active (running)`, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`, каталог остаётся в `/home/localadmin/yamal_brand`
 
+Зафиксированный результат Start-меню от 2026-06-09:
+- исправление реакции на системную кнопку `Начать`: событие `bot_started` обрабатывается до общего роутинга и пишет диагностические строки `[start] sending main menu` / `[start] main menu sent`
+- исправление дублей: повторное `Начать` сначала очищает предыдущий ответ бота через `clearPreviousBotReply(ctx)`, затем отправляет новое меню
+- версия кода: commit `2999cdb` (`Avoid duplicate start menu replies`)
+- deploy: `Deploy Yamalbrend MAX Bot To BOTSGSN`, run `27184278809`, commit `2999cdb`
+- контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27184300840`
+- итог: `yamalbrend_bot.service` активен, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`, в журнале видны успешные `[start]` строки без новых `Invalid access_token` или handler-ошибок
+
 Текущий контур:
 - PHP + SQLite каталог бренд-материалов
 - главное меню по реальным разделам каталога
