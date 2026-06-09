@@ -170,11 +170,11 @@ jobs:
           [Install]
           WantedBy=multi-user.target
           EOF
+          run_sudo systemctl unmask "${DEPLOY_SERVICE}"
           run_sudo cp "${unit_tmp}" "/etc/systemd/system/${DEPLOY_SERVICE}"
           rm -f "${unit_tmp}"
 
           run_sudo systemctl daemon-reload
-          run_sudo systemctl unmask "${DEPLOY_SERVICE}"
           run_sudo systemctl enable "${DEPLOY_SERVICE}"
           if [[ "${RESTART_SERVICE}" == "1" ]]; then
             run_sudo systemctl restart "${DEPLOY_SERVICE}"
