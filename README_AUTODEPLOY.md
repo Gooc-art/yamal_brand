@@ -203,7 +203,7 @@ To deploy the public Yamal brand MAX bot without touching the existing
 - store the `yamalbrend_bot` token in GitHub secret
   `YAMALBREND_MAX_BOT_TOKEN`
 - run `Deploy Yamalbrend MAX Bot To BOTSGSN`; it installs a separate
-  `/home/localadmin/yamalbrend_bot` deployment and `yamalbrend_bot.service`,
+  `/home/localadmin/yamalbrend_bot_runtime` deployment and `yamalbrend_bot.service`,
   while reusing the existing catalog DB and file tree from
   `/home/localadmin/yamal_brand`
 - use `Diagnose Yamalbrend MAX Bot` to inspect only this separate service,

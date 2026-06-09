@@ -4,6 +4,25 @@
 
 Активный продукт в этом репозитории: `yamal_catalog_site_php`.
 
+Операционные границы проекта:
+- работать только с официальным MAX-ботом проекта `https://max.ru/yamalbrend_bot`
+- использовать только репозиторий `https://github.com/Gooc-art/yamal_brand`
+- не переходить в другие проекты, репозитории, боты или сервисные контуры без явной отдельной команды пользователя
+- production-сервис официального бота: `yamalbrend_bot.service` на BOTSGSN в `/home/localadmin/yamalbrend_bot_runtime`; каталог берётся из `/home/localadmin/yamal_brand`
+- workflow `Stop Yamal MAX Bot` не использовать для проверки официального бота: он останавливает `yamalbrend_bot.service`, отключает автозапуск и меняет токен на `disabled-yamal-token`
+
+Зафиксированный результат проверки от 2026-06-08:
+- причина недоступности: `Stop Yamal MAX Bot` был запущен в `10:09 UTC` и остановил официальный сервис
+- восстановление: `Deploy Yamalbrend MAX Bot To BOTSGSN`, run `27139009659`
+- контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27139067151`
+- итог: `yamalbrend_bot.service` включён и работает, `ActiveState=active`, `SubState=running`, бот определился как `username: 'yamalbrend_bot'`, каталог загружен: `1642` записей, `1292` файлов, `350` папок
+
+Зафиксированный перенос от 2026-06-09:
+- runtime официального `yamalbrend_bot.service` перенесён из `/home/localadmin/yamalbrend_bot` в `/home/localadmin/yamalbrend_bot_runtime`
+- перенос: `Deploy Yamalbrend MAX Bot To BOTSGSN`, run `27183667817`, с `deploy_dir=/home/localadmin/yamalbrend_bot_runtime`
+- контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27183688461`
+- итог: сервис `enabled` и `active (running)`, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`, каталог остаётся в `/home/localadmin/yamal_brand`
+
 Текущий контур:
 - PHP + SQLite каталог бренд-материалов
 - главное меню по реальным разделам каталога
@@ -19,7 +38,9 @@
 - главное меню `max_bot_sqlite` должно оставаться коротким и предсказуемым: `Как пользоваться`, `Поиск`, ключевые бренд-разделы, `Шрифт`, `Сувенирная продукция`, `Брендбук Ямал 100`, `Избранное`, без отдельных верхних кнопок городских брендбуков
 - у `max_bot_sqlite` должен быть закрытый админ-отчет: новые пользователи за последние 7 дней, общее число пользователей за все время, общее число взаимодействий и самые частые поиски/открытия по runtime-данным
 - на старте `max_bot_sqlite` должен публиковать MAX-команды и писать только обезличенные `[update]` metadata в journal, чтобы можно было диагностировать системный `Start`, `/start` и callback-кнопки без раскрытия текста сообщений и токена
+- старт `max_bot_sqlite` должен заранее валидировать `CATALOG_DB_PATH`, `RUNTIME_DB_PATH` и `CATALOG_ROOT_PATH`, а диагностика должна показывать отсутствующую базу или папку без вывода токена
 - перенос `max_bot_sqlite` на `BOTSGSN` выполняется workflow `Migrate Yamal MAX Bot To BOTSGSN` внутри `Gooc-art/yamal_brand`: сначала сухой deploy без старта сервиса, затем старт на новом runner `yamal-botsgsn`, и только после ручной проверки остановка старого `yamal-max-prod`
+- аварийное восстановление GitHub runner BOTSGSN запускается на отдельном repository runner с label `yamal-control`; workflow обязан сначала быстро проверить доступность `10.10.68.10:22`, чтобы не зависать на недоступном SSH
 
 ## Лаборатория решений
 

@@ -89,4 +89,9 @@ Snapshot contents:
 - file button -> run `get --id <file_id>` and send file URL/path
 - admin report -> restrict `/admin` or `/stats` to `ADMIN_USER_IDS` and read analytics from `max_bot_runtime.db`
 
+`max_bot_sqlite` validates startup paths before opening SQLite: `CATALOG_DB_PATH`
+must point to an existing catalog DB, the parent directory of `RUNTIME_DB_PATH`
+must exist, and `CATALOG_ROOT_PATH` must point to the real file tree. Relative
+paths in `.env` are resolved from `max_bot_sqlite`, matching `.env.example`.
+
 Root id is constant and printed by `build_sqlite_catalog.py`.

@@ -6,7 +6,7 @@ on:
       deploy_dir:
         description: "Deploy directory for yamalbrend_bot on BOTSGSN"
         required: false
-        default: "/home/localadmin/yamalbrend_bot"
+        default: "/home/localadmin/yamalbrend_bot_runtime"
       lookback_hours:
         description: "Hours of service journal to inspect"
         required: false
@@ -24,7 +24,7 @@ jobs:
   diagnose:
     runs-on: [self-hosted, linux, yamal-botsgsn]
     env:
-      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamalbrend_bot' }}
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamalbrend_bot_runtime' }}
       LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '1' }}
       JOURNAL_LINES: ${{ github.event.inputs.journal_lines || '180' }}
       RESTART_SERVICE: ${{ github.event.inputs.restart_service || '0' }}

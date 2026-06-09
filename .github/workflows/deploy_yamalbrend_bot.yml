@@ -6,7 +6,7 @@ on:
       deploy_dir:
         description: "Deploy directory for yamalbrend_bot on BOTSGSN"
         required: false
-        default: "/home/localadmin/yamalbrend_bot"
+        default: "/home/localadmin/yamalbrend_bot_runtime"
       catalog_dir:
         description: "Existing BOTSGSN catalog deployment to reuse"
         required: false
@@ -24,7 +24,7 @@ jobs:
   deploy:
     runs-on: [self-hosted, linux, yamal-botsgsn]
     env:
-      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamalbrend_bot' }}
+      DEPLOY_DIR: ${{ github.event.inputs.deploy_dir || '/home/localadmin/yamalbrend_bot_runtime' }}
       CATALOG_DIR: ${{ github.event.inputs.catalog_dir || '/home/localadmin/yamal_brand' }}
       RESTART_SERVICE: ${{ github.event.inputs.restart_service || '1' }}
       DEPLOY_SERVICE: yamalbrend_bot.service

@@ -28,7 +28,54 @@ echo "[diag] systemctl show"
   -p MainPID \
   -p ExecMainStatus \
   -p NRestarts \
+  -p EnvironmentFiles \
   -p ActiveEnterTimestamp || true
+
+env_file=""
+environment_files="$("${SUDO[@]}" systemctl show "${SERVICE_NAME}" -p EnvironmentFiles --value 2>/dev/null || true)"
+if [ -n "${environment_files}" ] && [ "${environment_files}" != "n/a" ]; then
+  env_file="$(printf '%s\n' "${environment_files}" | awk '{print $1}' | sed 's/^-//')"
+fi
+if [ -z "${env_file}" ] && [ -f "./max_bot_sqlite/.env" ]; then
+  env_file="./max_bot_sqlite/.env"
+fi
+
+read_env_value() {
+  local name="$1"
+  local file="$2"
+  awk -F= -v key="${name}" '$1 == key {print substr($0, length(key) + 2); exit}' "${file}" 2>/dev/null
+}
+
+resolve_env_path() {
+  local value="$1"
+  local base_dir="$2"
+  if [ -z "${value}" ]; then
+    printf ''
+    return
+  fi
+  case "${value}" in
+    /*) printf '%s' "${value}" ;;
+    *) printf '%s/%s' "${base_dir}" "${value}" ;;
+  esac
+}
+
+echo
+echo "[diag] env path checks"
+if [ -n "${env_file}" ] && [ -f "${env_file}" ]; then
+  env_dir="$(cd "$(dirname "${env_file}")" && pwd)"
+  catalog_db="$(resolve_env_path "$(read_env_value CATALOG_DB_PATH "${env_file}")" "${env_dir}")"
+  runtime_db="$(resolve_env_path "$(read_env_value RUNTIME_DB_PATH "${env_file}")" "${env_dir}")"
+  catalog_root="$(resolve_env_path "$(read_env_value CATALOG_ROOT_PATH "${env_file}")" "${env_dir}")"
+  echo "env_file=${env_file}"
+  echo "CATALOG_DB_PATH=${catalog_db:-<default>}"
+  echo "RUNTIME_DB_PATH=${runtime_db:-<default>}"
+  echo "CATALOG_ROOT_PATH=${catalog_root:-<default>}"
+  [ -z "${catalog_db}" ] || [ -f "${catalog_db}" ] && echo "catalog_db=ok" || echo "catalog_db=missing"
+  [ -z "${runtime_db}" ] || [ -d "$(dirname "${runtime_db}")" ] && echo "runtime_dir=ok" || echo "runtime_dir=missing"
+  [ -z "${catalog_root}" ] || [ -d "${catalog_root}" ] && echo "catalog_root=ok" || echo "catalog_root=missing"
+else
+  echo "env_file=missing"
+fi
 
 journal_file="$(mktemp)"
 trap 'rm -f "${journal_file}"' EXIT

@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const botSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'bot.js'), 'utf8');
 
 test('bot uses MAX-specific update names for start and text messages', () => {
-  assert.match(botSource, /bot\.on\('bot_started'/);
+  assert.match(botSource, /ctx\?\.\s*updateType === 'bot_started'/);
   assert.match(botSource, /bot\.on\('message_created'/);
   assert.doesNotMatch(botSource, /bot\.on\('message'/);
 });
@@ -27,6 +27,16 @@ test('bot publishes MAX command hints on startup', () => {
   assert.match(botSource, /name:\s*'start'/);
   assert.match(botSource, /name:\s*'admin'/);
   assert.match(botSource, /\[boot\] commands=updated/);
+});
+
+test('bot handles MAX start button before generic event routing', () => {
+  assert.match(botSource, /async function renderStartMenu\(ctx\)/);
+  assert.match(botSource, /\[start\] sending main menu/);
+  assert.match(botSource, /\[start\] main menu sent/);
+  assert.match(
+    botSource,
+    /if \(ctx\?\.\s*updateType === 'bot_started'\) \{[\s\S]*await renderStartMenu\(ctx\);[\s\S]*return;/
+  );
 });
 
 test('bot sends inline buttons as MAX attachments instead of unsupported keyboard field', () => {

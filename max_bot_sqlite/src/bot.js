@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { Bot, Keyboard } from '@maxhub/max-bot-api';
-import { config } from './config.js';
+import { config, validateConfigPaths } from './config.js';
 import { CatalogDb } from './db.js';
 import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
 import { buttonLayoutUnits, packButtonsIntoRows } from './keyboard-layout.js';
@@ -24,6 +24,7 @@ function safeId(value) {
 }
 
 const ROOT_ID = safeId('.');
+validateConfigPaths(config);
 const db = new CatalogDb(config.dbPath);
 const state = new RuntimeStateDb(config.runtimeDbPath);
 const bot = new Bot(config.token);
@@ -399,6 +400,24 @@ async function renderMainMenu(ctx, intro = false) {
   await replyReplacingLast(ctx, text, { attachments: [buildMainMenuKeyboard()] });
 }
 
+async function renderStartMenu(ctx) {
+  console.log('[start] sending main menu', {
+    updateType: ctx?.updateType,
+    chatId: getChatKey(ctx) || undefined,
+  });
+  const sent = await retryMaxApiCall(
+    'start-reply',
+    () => ctx.reply(buildMainMenuText(true), { attachments: [buildMainMenuKeyboard()] }),
+    { retries: 3, delaysMs: [500, 1500, 3000] }
+  );
+  rememberBotReply(ctx, sent);
+  console.log('[start] main menu sent', {
+    updateType: ctx?.updateType,
+    chatId: getChatKey(ctx) || undefined,
+    messageId: getMessageId(sent) || undefined,
+  });
+}
+
 async function renderFavorites(ctx) {
   const items = getFavoriteItems();
   if (!items.length) {
@@ -676,18 +695,18 @@ async function safeHandle(ctx, fn) {
 
 bot.use(async (ctx, next) => {
   logIncomingUpdate(ctx);
+  if (ctx?.updateType === 'bot_started') {
+    await safeHandle(ctx, async () => {
+      await renderStartMenu(ctx);
+    });
+    return;
+  }
   await next();
 });
 
 bot.command('start', async (ctx) => {
   await safeHandle(ctx, async () => {
-    await renderMainMenu(ctx, true);
-  });
-});
-
-bot.on('bot_started', async (ctx) => {
-  await safeHandle(ctx, async () => {
-    await renderMainMenu(ctx, true);
+    await renderStartMenu(ctx);
   });
 });
 

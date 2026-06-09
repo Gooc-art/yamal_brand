@@ -1,4 +1,5 @@
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
@@ -33,13 +34,18 @@ function parseAllowedIds(raw) {
   );
 }
 
+function resolvePathEnv(name, fallback) {
+  const raw = process.env[name];
+  if (!raw || !raw.trim()) return path.resolve(fallback);
+  const value = raw.trim();
+  return path.isAbsolute(value) ? path.resolve(value) : path.resolve(botDir, value);
+}
+
 export const config = {
   token: required('MAX_BOT_TOKEN'),
-  dbPath: path.resolve(process.env.CATALOG_DB_PATH || path.join(projectDir, 'max_catalog.db')),
-  runtimeDbPath: path.resolve(
-    process.env.RUNTIME_DB_PATH || path.join(projectDir, 'max_bot_runtime.db')
-  ),
-  rootPath: path.resolve(process.env.CATALOG_ROOT_PATH || path.join(projectDir, 'input', 'Макеты1')),
+  dbPath: resolvePathEnv('CATALOG_DB_PATH', path.join(projectDir, 'max_catalog.db')),
+  runtimeDbPath: resolvePathEnv('RUNTIME_DB_PATH', path.join(projectDir, 'max_bot_runtime.db')),
+  rootPath: resolvePathEnv('CATALOG_ROOT_PATH', path.join(projectDir, 'input', 'Макеты1')),
   pageSize: intEnv('PAGE_SIZE', 8),
   maxSearchResults: intEnv('MAX_SEARCH_RESULTS', 20),
   favoritesLimit: intEnv('FAVORITES_LIMIT', 8),
@@ -48,3 +54,31 @@ export const config = {
     process.env.ADMIN_USER_IDS || process.env.ALLOWED_USER_IDS || ''
   ),
 };
+
+export function validateConfigPaths(value = config) {
+  if (!fs.existsSync(value.dbPath)) {
+    throw new Error(
+      [
+        `[config] CATALOG_DB_PATH does not exist: ${value.dbPath}`,
+        'Build it with: npm run build-db',
+      ].join('\n')
+    );
+  }
+
+  if (!fs.statSync(value.dbPath).isFile()) {
+    throw new Error(`[config] CATALOG_DB_PATH is not a file: ${value.dbPath}`);
+  }
+
+  const runtimeDir = path.dirname(value.runtimeDbPath);
+  if (!fs.existsSync(runtimeDir)) {
+    throw new Error(`[config] RUNTIME_DB_PATH directory does not exist: ${runtimeDir}`);
+  }
+
+  if (!fs.existsSync(value.rootPath)) {
+    throw new Error(`[config] CATALOG_ROOT_PATH does not exist: ${value.rootPath}`);
+  }
+
+  if (!fs.statSync(value.rootPath).isDirectory()) {
+    throw new Error(`[config] CATALOG_ROOT_PATH is not a directory: ${value.rootPath}`);
+  }
+}
