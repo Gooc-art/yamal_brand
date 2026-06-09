@@ -32,6 +32,14 @@
 - контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27184300840`
 - итог: `yamalbrend_bot.service` активен, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`, в журнале видны успешные `[start]` строки без новых `Invalid access_token` или handler-ошибок
 
+Зафиксированное восстановление после masked-сервиса от 2026-06-09:
+- причина недоступности: `yamalbrend_bot.service` был переведён в состояние `masked`, поэтому обычный `systemctl enable` завершался ошибкой `Unit /etc/systemd/system/yamalbrend_bot.service is masked`
+- исправление workflow: deploy официального бота снимает `mask` с `yamalbrend_bot.service` до записи unit-файла и затем выполняет `daemon-reload`, `enable`, `restart`
+- версии кода: commit `20ec7e5` (`Unmask yamalbrend service during deploy`) и commit `0754009` (`Unmask yamalbrend service before unit install`)
+- восстановление: `Deploy Yamalbrend MAX Bot To BOTSGSN`, run `27186558138`
+- контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27186581491`
+- итог: `yamalbrend_bot.service` включён и `active (running)`, `MainPID=366082`, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`; в журнале есть свежий `[start] main menu sent` без новых `Invalid access_token`, `SQLITE_CANTOPEN`, `TypeError` или `SyntaxError`
+
 Текущий контур:
 - PHP + SQLite каталог бренд-материалов
 - главное меню по реальным разделам каталога
