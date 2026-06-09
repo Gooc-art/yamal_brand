@@ -8,20 +8,9 @@
 - работать только с официальным MAX-ботом проекта `https://max.ru/yamalbrend_bot`
 - использовать только репозиторий `https://github.com/Gooc-art/yamal_brand`
 - не переходить в другие проекты, репозитории, боты или сервисные контуры без явной отдельной команды пользователя
-- production-сервис официального бота этого репозитория должен быть отделен от
-  `BOTSGSN`: основной deploy выполняется workflow `Deploy Yamal MAX Bot` на
-  runner label `yamal-max-prod` в `/home/sergey/yamal_brand`
-- `BOTSGSN` зарезервирован под отдельный официальный бот СГСН
-  `https://max.ru/sgsn_yanao_bot`; не запускать на нем `yamalbrend_bot.service`,
-  `max_yamal_bot.service` или любой `node .../max_bot_sqlite/src/bot.js` из
-  этого репозитория
-- BOTSGSN workflows для deploy/diagnostics/recover/migrate брендового MAX-бота
-  отключены переименованием в `.disabled`; не возвращать расширение
-  `.yml`/`.yaml`, пока не выделен отдельный сервер, не являющийся `BOTSGSN`
-- workflow `Stop Yamal MAX Bot` использовать только как аварийную очистку
-  старого BOTSGSN-контура, а не для проверки production-бота
-- не снимать `mask` и не стартовать другие bot-сервисы без отдельной команды
-  пользователя
+- production-сервис официального бота: `yamalbrend_bot.service` на BOTSGSN в `/home/localadmin/yamalbrend_bot_runtime`; каталог берётся из `/home/localadmin/yamal_brand`
+- workflow `Stop Yamal MAX Bot` не использовать для проверки официального бота: он останавливает `yamalbrend_bot.service`, отключает автозапуск и меняет токен на `disabled-yamal-token`
+- штатный deploy официального бота перед включением сервиса снимает только `mask` с `yamalbrend_bot.service`, чтобы восстановление работало после `systemctl mask`
 
 Зафиксированный результат проверки от 2026-06-08:
 - причина недоступности: `Stop Yamal MAX Bot` был запущен в `10:09 UTC` и остановил официальный сервис
@@ -29,13 +18,13 @@
 - контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27139067151`
 - итог: `yamalbrend_bot.service` включён и работает, `ActiveState=active`, `SubState=running`, бот определился как `username: 'yamalbrend_bot'`, каталог загружен: `1642` записей, `1292` файлов, `350` папок
 
-Исторический перенос от 2026-06-09, больше не являющийся текущей production-схемой:
+Зафиксированный перенос от 2026-06-09:
 - runtime официального `yamalbrend_bot.service` перенесён из `/home/localadmin/yamalbrend_bot` в `/home/localadmin/yamalbrend_bot_runtime`
 - перенос: `Deploy Yamalbrend MAX Bot To BOTSGSN`, run `27183667817`, с `deploy_dir=/home/localadmin/yamalbrend_bot_runtime`
 - контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27183688461`
 - итог: сервис `enabled` и `active (running)`, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`, каталог остаётся в `/home/localadmin/yamal_brand`
 
-Исторический результат Start-меню от 2026-06-09 на BOTSGSN, больше не являющийся текущей production-схемой:
+Зафиксированный результат Start-меню от 2026-06-09:
 - исправление реакции на системную кнопку `Начать`: событие `bot_started` обрабатывается до общего роутинга и пишет диагностические строки `[start] sending main menu` / `[start] main menu sent`
 - исправление дублей: повторное `Начать` сначала очищает предыдущий ответ бота через `clearPreviousBotReply(ctx)`, затем отправляет новое меню
 - версия кода: commit `2999cdb` (`Avoid duplicate start menu replies`)
@@ -59,9 +48,7 @@
 - у `max_bot_sqlite` должен быть закрытый админ-отчет: новые пользователи за последние 7 дней, общее число пользователей за все время, общее число взаимодействий и самые частые поиски/открытия по runtime-данным
 - на старте `max_bot_sqlite` должен публиковать MAX-команды и писать только обезличенные `[update]` metadata в journal, чтобы можно было диагностировать системный `Start`, `/start` и callback-кнопки без раскрытия текста сообщений и токена
 - старт `max_bot_sqlite` должен заранее валидировать `CATALOG_DB_PATH`, `RUNTIME_DB_PATH` и `CATALOG_ROOT_PATH`, а диагностика должна показывать отсутствующую базу или папку без вывода токена
-- перенос `max_bot_sqlite` на `BOTSGSN` запрещен, потому что `BOTSGSN`
-  зарезервирован под `sgsn_yanao_bot`; прежний workflow
-  `Migrate Yamal MAX Bot To BOTSGSN` отключен в `.disabled`
+- перенос `max_bot_sqlite` на `BOTSGSN` выполняется workflow `Migrate Yamal MAX Bot To BOTSGSN` внутри `Gooc-art/yamal_brand`: сначала сухой deploy без старта сервиса, затем старт на новом runner `yamal-botsgsn`, и только после ручной проверки остановка старого `yamal-max-prod`
 - аварийное восстановление GitHub runner BOTSGSN запускается на отдельном repository runner с label `yamal-control`; workflow обязан сначала быстро проверить доступность `10.10.68.10:22`, чтобы не зависать на недоступном SSH
 
 ## Лаборатория решений
