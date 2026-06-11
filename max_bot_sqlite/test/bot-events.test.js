@@ -113,6 +113,10 @@ test('main menu exposes favorites screen and tracks runtime usage', () => {
   assert.match(botSource, /state\.logSearch\(query,\s*items\.length\)/);
   assert.match(botSource, /state\.trackItemEvent\(parent,\s*'open_folder'\)/);
   assert.match(botSource, /state\.trackItemEvent\(item,\s*'send_file'\)/);
+  assert.match(botSource, /async function previewFileById\(ctx,\s*fileId\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\('⬇️ Скачать',\s*`download:\$\{item\.id\}`\)/);
+  assert.match(botSource, /m = data\.match\(\/\^download:\(\[a-f0-9\]\{16\}\)\$\/i\);/);
+  assert.match(botSource, /await previewFileById\(ctx,\s*m\[1\]\.toLowerCase\(\)\)/);
 });
 
 test('bot exposes admin analytics commands and callback actions', () => {
@@ -160,5 +164,6 @@ test('bot wraps MAX API calls with retry helper for transient failures', () => {
   assert.match(botSource, /import\s+\{\s*retryMaxApiCall\s*\}\s+from '\.\/max-api-retry\.js'/);
   assert.match(botSource, /retryMaxApiCall\('reply',\s*\(\)\s*=>\s*ctx\.reply\(text,\s*extra\)\)/);
   assert.match(botSource, /retryMaxApiCall\(\s*'uploadFile'/);
+  assert.match(botSource, /retryMaxApiCall\(\s*'uploadImage'/);
   assert.match(botSource, /retryMaxApiCall\(\s*'attachmentToJson'/);
 });

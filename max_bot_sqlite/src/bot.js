@@ -213,6 +213,14 @@ function buttonForItem(item) {
   );
 }
 
+function fileExtension(item) {
+  return path.extname(String(item?.name || item?.relative_path || '')).toLowerCase().replace(/^\./, '');
+}
+
+function isPreviewableFile(item) {
+  return ['png', 'jpg', 'jpeg', 'pdf'].includes(fileExtension(item));
+}
+
 function getRootFolders() {
   return db.listChildren(ROOT_ID, 200, 0).filter((item) => item.type === 'folder');
 }
@@ -586,6 +594,79 @@ async function renderFolder(ctx, parentId, page = 0) {
   }
 }
 
+function resolveCatalogFilePath(item) {
+  const fullPath = path.resolve(
+    config.rootPath,
+    item.relative_path === '.' ? '' : item.relative_path
+  );
+  const relativeToRoot = path.relative(config.rootPath, fullPath);
+
+  if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
+    return { error: 'Некорректный путь файла.' };
+  }
+  if (!fs.existsSync(fullPath)) {
+    return { error: 'Файл отсутствует на диске.' };
+  }
+  return { fullPath };
+}
+
+async function previewFileById(ctx, fileId) {
+  const item = db.getById(fileId);
+  if (!item || item.type !== 'file') {
+    await replyReplacingLast(ctx, 'Файл не найден.');
+    return;
+  }
+
+  if (!isPreviewableFile(item)) {
+    await sendFileById(ctx, fileId);
+    return;
+  }
+
+  const resolved = resolveCatalogFilePath(item);
+  if (resolved.error) {
+    await replyReplacingLast(ctx, resolved.error);
+    return;
+  }
+
+  const extension = fileExtension(item).toUpperCase();
+  const backParent = item.parent_id || ROOT_ID;
+  const text = [
+    `👁 Предпросмотр: ${item.name}`,
+    `Формат: ${extension}`,
+    'Нажмите «Скачать», чтобы получить исходный файл.',
+  ].join('\n');
+  const keyboard = inlineKeyboardAttachment([
+    [Keyboard.button.callback('⬇️ Скачать', `download:${item.id}`)],
+    [Keyboard.button.callback('⬅️ К разделу', `open:${backParent}:0`)],
+    [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+  ]);
+
+  if (['png', 'jpg', 'jpeg'].includes(fileExtension(item))) {
+    try {
+      const imageAttachment = await retryMaxApiCall(
+        'uploadImage',
+        () => bot.api.uploadImage({ source: fs.createReadStream(resolved.fullPath) }),
+        { retries: 3, delaysMs: [400, 1200, 2400] }
+      );
+      const attachmentJson = await retryMaxApiCall(
+        'imageAttachmentToJson',
+        async () => imageAttachment.toJson(),
+        { retries: 3, delaysMs: [300, 900, 1800] }
+      );
+      await replyReplacingLast(ctx, text, {
+        attachments: [attachmentJson, keyboard],
+      });
+      return;
+    } catch (err) {
+      console.error('[previewFileById] image preview failed', err);
+    }
+  }
+
+  await replyReplacingLast(ctx, text, {
+    attachments: [keyboard],
+  });
+}
+
 async function sendFileById(ctx, fileId) {
   const item = db.getById(fileId);
   if (!item || item.type !== 'file') {
@@ -593,24 +674,16 @@ async function sendFileById(ctx, fileId) {
     return;
   }
 
-  const fullPath = path.resolve(
-    config.rootPath,
-    item.relative_path === '.' ? '' : item.relative_path
-  );
-
-  if (!fullPath.startsWith(config.rootPath)) {
-    await replyReplacingLast(ctx, 'Некорректный путь файла.');
-    return;
-  }
-  if (!fs.existsSync(fullPath)) {
-    await replyReplacingLast(ctx, 'Файл отсутствует на диске.');
+  const resolved = resolveCatalogFilePath(item);
+  if (resolved.error) {
+    await replyReplacingLast(ctx, resolved.error);
     return;
   }
 
   try {
     const fileAttachment = await retryMaxApiCall(
       'uploadFile',
-      () => bot.api.uploadFile({ source: fs.createReadStream(fullPath) }),
+      () => bot.api.uploadFile({ source: fs.createReadStream(resolved.fullPath) }),
       { retries: 3, delaysMs: [400, 1200, 2400] }
     );
     const attachmentJson = await retryMaxApiCall(
@@ -816,6 +889,12 @@ bot.action(/.*/, async (ctx) => {
     }
 
     m = data.match(/^file:([a-f0-9]{16})$/i);
+    if (m) {
+      await previewFileById(ctx, m[1].toLowerCase());
+      return;
+    }
+
+    m = data.match(/^download:([a-f0-9]{16})$/i);
     if (m) {
       await sendFileById(ctx, m[1].toLowerCase());
       return;
