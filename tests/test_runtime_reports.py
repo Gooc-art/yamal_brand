@@ -124,6 +124,8 @@ def test_collect_usage_summary_groups_searches_and_items(tmp_path: Path):
     assert summary['stats']['total_interactions'] == 4
     assert summary['stats']['total_searches'] == 3
     assert summary['stats']['empty_searches'] == 1
+    assert summary['stats']['total_item_events'] == 3
+    assert summary['stats']['total_file_sends'] == 2
     assert summary['users']['total_users'] == 2
     assert summary['users']['total_interactions'] == 4
     assert summary['users']['new_users_in_period'] == 1
@@ -167,3 +169,4 @@ def test_create_backup_snapshot_exports_csv_and_json(tmp_path: Path):
     assert summary['backup']['copied_runtime_db'] is True
     assert summary['backup']['assets_rows'] == 2
     assert summary['users']['total_users'] == 2
+    assert summary['stats']['total_file_sends'] == 2

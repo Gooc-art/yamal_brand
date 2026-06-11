@@ -26,6 +26,7 @@ test('runtime state stores search analytics and top items', () => {
   assert.equal(stats.total_searches, 3);
   assert.equal(stats.empty_searches, 1);
   assert.equal(stats.total_item_events, 3);
+  assert.equal(stats.total_file_sends, 2);
 
   const topSearches = state.getTopSearches(5);
   assert.equal(topSearches[0].query_norm, 'логотип');
@@ -81,12 +82,15 @@ test('runtime state tracks users and filters admin report by recent period', () 
   const stats = state.stats();
   assert.equal(stats.total_users, 2);
   assert.equal(stats.total_interactions, 3);
+  assert.equal(stats.total_item_events, 2);
+  assert.equal(stats.total_file_sends, 0);
 
   const weekly = state.getAdminReport({ days: 7, topLimit: 5 });
   assert.equal(weekly.users.total_users, 2);
   assert.equal(weekly.users.total_interactions, 3);
   assert.equal(weekly.users.new_users, 1);
   assert.equal(weekly.users.active_users, 1);
+  assert.equal(weekly.stats.total_file_sends, 0);
   assert.equal(weekly.top_searches[0].query_norm, 'логотип');
   assert.equal(weekly.top_items[0].item_id, 'folder-recent');
   assert.equal(weekly.top_searches.some((row) => row.query_norm === 'брендбук'), false);

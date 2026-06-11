@@ -97,7 +97,8 @@ export class RuntimeStateDb {
          (SELECT COALESCE(SUM(interaction_count), 0) FROM bot_users) AS total_interactions,
          (SELECT COUNT(*) FROM search_events) AS total_searches,
          (SELECT COUNT(*) FROM search_events WHERE result_count = 0) AS empty_searches,
-         (SELECT COUNT(*) FROM item_events) AS total_item_events`
+         (SELECT COUNT(*) FROM item_events) AS total_item_events,
+         (SELECT COUNT(*) FROM item_events WHERE event_type = 'send_file') AS total_file_sends`
     );
   }
 
@@ -319,6 +320,7 @@ export class RuntimeStateDb {
     return {
       period_days: periodDays,
       since_utc: sinceUtc,
+      stats: this.stats(),
       users: this.getUserSummary(periodDays),
       top_searches: this.queryTopSearches(topLimit, sinceUtc),
       top_empty_searches: this.queryTopEmptySearches(topLimit, sinceUtc),

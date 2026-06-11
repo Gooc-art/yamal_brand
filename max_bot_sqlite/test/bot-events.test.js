@@ -117,6 +117,8 @@ test('main menu exposes favorites screen and tracks runtime usage', () => {
 
 test('bot exposes admin analytics commands and callback actions', () => {
   assert.match(botSource, /function isAdmin\(ctx\)/);
+  assert.match(botSource, /function canUseAdminReport\(ctx\)/);
+  assert.match(botSource, /const ADMIN_REPORT_SESSION_TTL_MS = 15 \* 60 \* 1000/);
   assert.match(botSource, /bot\.command\('admin'/);
   assert.match(botSource, /bot\.command\('stats'/);
   assert.match(botSource, /async function renderAdminReport\(ctx,\s*days = 7\)/);
@@ -124,6 +126,7 @@ test('bot exposes admin analytics commands and callback actions', () => {
   assert.match(botSource, /Keyboard\.button\.callback\(`🗓 \$\{weeklyLabel\}`,\s*'admin:report:7'\)/);
   assert.match(botSource, /Keyboard\.button\.callback\(`📊 \$\{allTimeLabel\}`,\s*'admin:report:0'\)/);
   assert.match(botSource, /m = data\.match\(\/\^admin:report:\(\\d\+\)\$\/i\);/);
+  assert.match(botSource, /if \(!canUseAdminReport\(ctx\)\)/);
 });
 
 test('bot can show the current user id inside the chat', () => {

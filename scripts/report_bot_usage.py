@@ -79,6 +79,7 @@ def empty_summary(
             "total_searches": 0,
             "empty_searches": 0,
             "total_item_events": 0,
+            "total_file_sends": 0,
         },
         "users": {
             "total_users": 0,
@@ -239,7 +240,8 @@ def collect_usage_summary(
             SELECT
               (SELECT COUNT(*) FROM search_events) AS total_searches,
               (SELECT COUNT(*) FROM search_events WHERE result_count = 0) AS empty_searches,
-              (SELECT COUNT(*) FROM item_events) AS total_item_events
+              (SELECT COUNT(*) FROM item_events) AS total_item_events,
+              (SELECT COUNT(*) FROM item_events WHERE event_type = 'send_file') AS total_file_sends
             """
         ).fetchone()
         summary["stats"] = {
@@ -248,6 +250,7 @@ def collect_usage_summary(
             "total_searches": int(stats["total_searches"] or 0),
             "empty_searches": int(stats["empty_searches"] or 0),
             "total_item_events": int(stats["total_item_events"] or 0),
+            "total_file_sends": int(stats["total_file_sends"] or 0),
         }
 
         if table_exists(conn, "bot_users"):
@@ -303,6 +306,7 @@ def render_text(summary: dict[str, Any]) -> str:
         f"- Поисков: {summary['stats']['total_searches']}",
         f"- Пустых поисков: {summary['stats']['empty_searches']}",
         f"- Событий по элементам: {summary['stats']['total_item_events']}",
+        f"- Скачиваний файлов: {summary['stats']['total_file_sends']}",
         "",
         f"Что чаще используют за последние {period_days} дней:",
         "Поиски:",

@@ -29,6 +29,8 @@ const db = new CatalogDb(config.dbPath);
 const state = new RuntimeStateDb(config.runtimeDbPath);
 const bot = new Bot(config.token);
 const lastBotMessageIds = new Map();
+const adminReportChatExpirations = new Map();
+const ADMIN_REPORT_SESSION_TTL_MS = 15 * 60 * 1000;
 const BOT_SEARCH_EXAMPLES = 'Логотип, Брендбук, Паттерн, Шрифт, Сувенир';
 const BOT_INTRO_TEXT = [
   'Привет! Добро пожаловать в официальный каталог бренда Ямала.',
@@ -148,6 +150,27 @@ function isAllowed(ctx) {
 function isAdmin(ctx) {
   if (!config.adminUserIds.size) return false;
   return config.adminUserIds.has(getSenderId(ctx));
+}
+
+function rememberAdminReportChat(ctx) {
+  const chatKey = getChatKey(ctx);
+  if (!chatKey) return;
+  adminReportChatExpirations.set(chatKey, Date.now() + ADMIN_REPORT_SESSION_TTL_MS);
+}
+
+function hasAdminReportSession(ctx) {
+  const chatKey = getChatKey(ctx);
+  if (!chatKey) return false;
+  const expiresAt = adminReportChatExpirations.get(chatKey) || 0;
+  if (expiresAt <= Date.now()) {
+    adminReportChatExpirations.delete(chatKey);
+    return false;
+  }
+  return true;
+}
+
+function canUseAdminReport(ctx) {
+  return isAdmin(ctx) || hasAdminReportSession(ctx);
 }
 
 async function denyAccess(ctx) {
@@ -466,9 +489,11 @@ function formatTopItemLines(rows) {
 }
 
 async function renderAdminReport(ctx, days = 7) {
+  rememberAdminReportChat(ctx);
   const periodDays = Number(days) > 0 ? Number(days) : 0;
   const report = state.getAdminReport({ days: periodDays, topLimit: 5 });
   const users = report.users || {};
+  const stats = report.stats || {};
   const lines = ['🛠 Админ-отчет'];
 
   if (periodDays > 0) {
@@ -479,12 +504,14 @@ async function renderAdminReport(ctx, days = 7) {
     lines.push(`- Активные: ${users.active_users || 0}`);
     lines.push(`- Всего за все время: ${users.total_users || 0}`);
     lines.push(`- Взаимодействий всего: ${users.total_interactions || 0}`);
+    lines.push(`- Скачиваний файлов всего: ${stats.total_file_sends || 0}`);
   } else {
     lines.push('Период: весь доступный runtime');
     lines.push('');
     lines.push('Пользователи:');
     lines.push(`- Всего за все время: ${users.total_users || 0}`);
     lines.push(`- Взаимодействий всего: ${users.total_interactions || 0}`);
+    lines.push(`- Скачиваний файлов всего: ${stats.total_file_sends || 0}`);
   }
 
   lines.push('');
@@ -836,7 +863,7 @@ bot.action(/.*/, async (ctx) => {
 
     m = data.match(/^admin:report:(\d+)$/i);
     if (m) {
-      if (!isAdmin(ctx)) {
+      if (!canUseAdminReport(ctx)) {
         await denyAdminAccess(ctx);
         return;
       }
