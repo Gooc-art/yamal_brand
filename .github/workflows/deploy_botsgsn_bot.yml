@@ -63,6 +63,7 @@ jobs:
             --exclude "input/" \
             --exclude ".runtime/" \
             --exclude "*.db" \
+            --exclude "*.db-*" \
             ./ "${DEPLOY_DIR}/"
 
           if ! run_sudo test -f "${DEPLOY_DIR}/max_bot_sqlite/.env"; then

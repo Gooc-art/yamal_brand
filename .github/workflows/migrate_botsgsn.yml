@@ -91,6 +91,7 @@ jobs:
             --exclude "max_bot_sqlite/node_modules/" \
             --exclude "input/" \
             --exclude "*.db" \
+            --exclude "*.db-*" \
             ./ "${BOTSGSN_USER}@${BOTSGSN_HOST}:${DEPLOY_DIR}/"
 
       - name: Sync runtime data to BOTSGSN

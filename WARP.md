@@ -20,6 +20,7 @@
 
 Зафиксированный перенос от 2026-06-09:
 - runtime официального `yamalbrend_bot.service` перенесён из `/home/localadmin/yamalbrend_bot` в `/home/localadmin/yamalbrend_bot_runtime`
+- deploy официального `yamalbrend_bot.service` должен сохранять не только `*.db`, но и SQLite sidecar-файлы `*.db-wal` / `*.db-shm`; runtime-аналитика работает в WAL-режиме, поэтому `rsync --delete` не должен удалять `*.db-*`
 - перенос: `Deploy Yamalbrend MAX Bot To BOTSGSN`, run `27183667817`, с `deploy_dir=/home/localadmin/yamalbrend_bot_runtime`
 - контрольная диагностика: `Diagnose Yamalbrend MAX Bot`, run `27183688461`
 - итог: сервис `enabled` и `active (running)`, процесс Node стартует из `/home/localadmin/yamalbrend_bot_runtime/max_bot_sqlite/src/bot.js`, каталог остаётся в `/home/localadmin/yamal_brand`
