@@ -118,7 +118,8 @@ test('main menu exposes favorites screen and tracks runtime usage', () => {
 test('bot exposes admin analytics commands and callback actions', () => {
   assert.match(botSource, /function isAdmin\(ctx\)/);
   assert.match(botSource, /function canUseAdminReport\(ctx\)/);
-  assert.match(botSource, /const ADMIN_REPORT_SESSION_TTL_MS = 15 \* 60 \* 1000/);
+  assert.match(botSource, /const adminReportChats = new Set\(\)/);
+  assert.doesNotMatch(botSource, /ADMIN_REPORT_SESSION_TTL_MS/);
   assert.match(botSource, /bot\.command\('admin'/);
   assert.match(botSource, /bot\.command\('stats'/);
   assert.match(botSource, /async function renderAdminReport\(ctx,\s*days = 7\)/);

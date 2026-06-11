@@ -29,8 +29,7 @@ const db = new CatalogDb(config.dbPath);
 const state = new RuntimeStateDb(config.runtimeDbPath);
 const bot = new Bot(config.token);
 const lastBotMessageIds = new Map();
-const adminReportChatExpirations = new Map();
-const ADMIN_REPORT_SESSION_TTL_MS = 15 * 60 * 1000;
+const adminReportChats = new Set();
 const BOT_SEARCH_EXAMPLES = 'Логотип, Брендбук, Паттерн, Шрифт, Сувенир';
 const BOT_INTRO_TEXT = [
   'Привет! Добро пожаловать в официальный каталог бренда Ямала.',
@@ -155,22 +154,17 @@ function isAdmin(ctx) {
 function rememberAdminReportChat(ctx) {
   const chatKey = getChatKey(ctx);
   if (!chatKey) return;
-  adminReportChatExpirations.set(chatKey, Date.now() + ADMIN_REPORT_SESSION_TTL_MS);
+  adminReportChats.add(chatKey);
 }
 
-function hasAdminReportSession(ctx) {
+function hasAdminReportChat(ctx) {
   const chatKey = getChatKey(ctx);
   if (!chatKey) return false;
-  const expiresAt = adminReportChatExpirations.get(chatKey) || 0;
-  if (expiresAt <= Date.now()) {
-    adminReportChatExpirations.delete(chatKey);
-    return false;
-  }
-  return true;
+  return adminReportChats.has(chatKey);
 }
 
 function canUseAdminReport(ctx) {
-  return isAdmin(ctx) || hasAdminReportSession(ctx);
+  return isAdmin(ctx) || hasAdminReportChat(ctx);
 }
 
 async function denyAccess(ctx) {
