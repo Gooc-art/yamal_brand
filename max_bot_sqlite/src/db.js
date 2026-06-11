@@ -17,6 +17,14 @@ export class CatalogDb {
                 name ASC
        LIMIT ? OFFSET ?`
     );
+    this.stmtListAllChildren = this.db.prepare(
+      `SELECT *
+       FROM assets
+       WHERE parent_id = ? AND is_active = 1
+       ORDER BY sort_order ASC,
+                CASE type WHEN 'folder' THEN 0 ELSE 1 END ASC,
+                name ASC`
+    );
   }
 
   close() {
@@ -34,6 +42,10 @@ export class CatalogDb {
 
   listChildren(parentId, limit, offset) {
     return this.stmtListChildren.all(parentId, limit, offset);
+  }
+
+  listAllChildren(parentId) {
+    return this.stmtListAllChildren.all(parentId);
   }
 
   searchByVariants(variants, includeFolders = false, limit = 120) {

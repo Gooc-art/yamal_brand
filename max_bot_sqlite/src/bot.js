@@ -221,6 +221,21 @@ function isPreviewableFile(item) {
   return ['png', 'jpg', 'jpeg', 'pdf'].includes(fileExtension(item));
 }
 
+function folderPreviewRank(item) {
+  const ext = fileExtension(item);
+  const name = String(item?.name || '').toLowerCase();
+  let rank = { png: 0, jpg: 1, jpeg: 1, pdf: 2 }[ext];
+  if (rank === undefined) return 999;
+  if (/preview|превью|просмотр|cover|облож/u.test(name)) rank -= 0.5;
+  return rank;
+}
+
+function pickFolderPreviewItem(items) {
+  return [...items]
+    .filter((item) => item.type === 'file' && isPreviewableFile(item))
+    .sort((a, b) => folderPreviewRank(a) - folderPreviewRank(b) || String(a.name).localeCompare(String(b.name), 'ru'))[0] || null;
+}
+
 function getRootFolders() {
   return db.listChildren(ROOT_ID, 200, 0).filter((item) => item.type === 'folder');
 }
@@ -573,7 +588,9 @@ async function renderFolder(ctx, parentId, page = 0) {
 
   const parent = db.getById(parentId);
   const title = parentId === ROOT_ID ? 'Бренд ЯМАЛ' : getRootMenuLabel(parent?.name) || parent?.name || 'Раздел';
-  const children = decorateFolderItems(parent, db.listChildren(parentId, config.pageSize, offset));
+  const rawChildren = db.listChildren(parentId, config.pageSize, offset);
+  const children = decorateFolderItems(parent, rawChildren);
+  const previewItem = pageClamped === 0 ? pickFolderPreviewItem(db.listAllChildren(parentId)) : null;
 
   const rows = buildFolderItemRows(children);
   rows.push(...buildNavigationRows(parentId, pageClamped, total, config.pageSize));
@@ -588,7 +605,7 @@ async function renderFolder(ctx, parentId, page = 0) {
   const text = children.length
     ? [header, hint].filter(Boolean).join('\n\n')
     : `${header}\n\nРаздел пуст.`;
-  await replyReplacingLast(ctx, text, { attachments: [inlineKeyboardAttachment(rows)] });
+  await renderFolderPreview(ctx, text, rows, previewItem);
   if (parent) {
     state.trackItemEvent(parent, 'open_folder');
   }
@@ -608,6 +625,55 @@ function resolveCatalogFilePath(item) {
     return { error: 'Файл отсутствует на диске.' };
   }
   return { fullPath };
+}
+
+async function buildImagePreviewAttachment(item) {
+  const resolved = resolveCatalogFilePath(item);
+  if (resolved.error) return { error: resolved.error };
+  if (!['png', 'jpg', 'jpeg'].includes(fileExtension(item))) return { attachment: null };
+
+  const imageAttachment = await retryMaxApiCall(
+    'uploadImage',
+    () => bot.api.uploadImage({ source: fs.createReadStream(resolved.fullPath) }),
+    { retries: 3, delaysMs: [400, 1200, 2400] }
+  );
+  const attachmentJson = await retryMaxApiCall(
+    'imageAttachmentToJson',
+    async () => imageAttachment.toJson(),
+    { retries: 3, delaysMs: [300, 900, 1800] }
+  );
+  return { attachment: attachmentJson };
+}
+
+async function renderFolderPreview(ctx, text, rows, previewItem) {
+  const keyboard = inlineKeyboardAttachment(rows);
+  if (!previewItem) {
+    await replyReplacingLast(ctx, text, { attachments: [keyboard] });
+    return;
+  }
+
+  const previewText = [
+    text,
+    '',
+    `Предпросмотр варианта: ${previewItem.name}`,
+    'Выберите нужный формат ниже.',
+  ].join('\n');
+
+  if (['png', 'jpg', 'jpeg'].includes(fileExtension(previewItem))) {
+    try {
+      const imagePreview = await buildImagePreviewAttachment(previewItem);
+      if (imagePreview.attachment) {
+        await replyReplacingLast(ctx, previewText, {
+          attachments: [imagePreview.attachment, keyboard],
+        });
+        return;
+      }
+    } catch (err) {
+      console.error('[renderFolderPreview] image preview failed', err);
+    }
+  }
+
+  await replyReplacingLast(ctx, previewText, { attachments: [keyboard] });
 }
 
 async function previewFileById(ctx, fileId) {
@@ -643,18 +709,9 @@ async function previewFileById(ctx, fileId) {
 
   if (['png', 'jpg', 'jpeg'].includes(fileExtension(item))) {
     try {
-      const imageAttachment = await retryMaxApiCall(
-        'uploadImage',
-        () => bot.api.uploadImage({ source: fs.createReadStream(resolved.fullPath) }),
-        { retries: 3, delaysMs: [400, 1200, 2400] }
-      );
-      const attachmentJson = await retryMaxApiCall(
-        'imageAttachmentToJson',
-        async () => imageAttachment.toJson(),
-        { retries: 3, delaysMs: [300, 900, 1800] }
-      );
+      const imagePreview = await buildImagePreviewAttachment(item);
       await replyReplacingLast(ctx, text, {
-        attachments: [attachmentJson, keyboard],
+        attachments: [imagePreview.attachment, keyboard],
       });
       return;
     } catch (err) {
