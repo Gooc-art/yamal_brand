@@ -1,0 +1,52 @@
+name: Deploy Branding Calculator Static Frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      branding_ref:
+        description: "Branch, tag, or SHA from Gooc-art/branding-calculator"
+        required: true
+        default: "design-layouts-refresh"
+
+concurrency:
+  group: deploy-branding-calculator-static
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branding calculator
+        uses: actions/checkout@v4
+        with:
+          repository: Gooc-art/branding-calculator
+          ref: ${{ inputs.branding_ref }}
+          token: ${{ secrets.GODMOD_REPO_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: branding-calculator-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: branding-calculator-frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: branding-calculator-frontend
+        run: npm run build
+
+      - name: Install deploy tools
+        run: sudo apt-get update && sudo apt-get install -y rsync sshpass
+
+      - name: Deploy to REG.RU
+        env:
+          REMOTE_HOST: ${{ secrets.REGRU_HOST }}
+          REMOTE_USER: ${{ secrets.REGRU_USER }}
+          REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
+          SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
+          SSH_PORT: 22
+        run: ./scripts/deploy_regru_static.sh
