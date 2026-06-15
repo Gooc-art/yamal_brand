@@ -28,6 +28,8 @@ jobs:
             configured="'"${REMOTE_DIR}"'"
 
             echo "whoami=$(whoami)"
+            echo "pwd=$(pwd)"
+            echo "home=$HOME"
             echo "canonical_exists=$([ -d "$canonical" ] && echo yes || echo no)"
             echo "canonical_index=$([ -f "$canonical/index.html" ] && echo yes || echo no)"
             echo "configured_exists=$([ -d "$configured" ] && echo yes || echo no)"
@@ -38,12 +40,18 @@ jobs:
             echo "configured_index_stat:"
             stat -c "%s %y" "$configured/index.html" 2>/dev/null || true
 
-            echo "old_marker_count:"
-            find "$HOME" /var/www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | wc -l
+            echo "public_old_marker_files:"
+            find "$HOME" /var/www /www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-DHCVE66B" {} \; 2>/dev/null || true
 
-            echo "new_marker_count:"
-            find "$HOME" /var/www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -L "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | wc -l
+            echo "new_marker_files:"
+            find "$HOME" /var/www /www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-7NJNZ5PN" {} \; 2>/dev/null || true
+
+            echo "new_js_files:"
+            find "$HOME" /var/www /www -maxdepth 9 -type f -name "main-7NJNZ5PN.js" -not -path "*/_backup/*" 2>/dev/null || true
 
             echo "aieasytable_named_dirs_count:"
-            find "$HOME" /var/www -maxdepth 8 -type d -name aieasytable.ru 2>/dev/null | wc -l
+            find "$HOME" /var/www /www -maxdepth 8 -type d -name aieasytable.ru 2>/dev/null | wc -l
+
+            echo "aieasytable_named_dirs:"
+            find "$HOME" /var/www /www -maxdepth 8 -type d -name aieasytable.ru 2>/dev/null || true
           '
