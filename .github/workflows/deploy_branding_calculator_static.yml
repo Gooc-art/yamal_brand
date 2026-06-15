@@ -49,4 +49,25 @@ jobs:
           REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
           SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
           SSH_PORT: 22
-        run: ./scripts/deploy_regru_static.sh
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+
+          DIST_DIR="branding-calculator-frontend/dist/branding-calculator-frontend/browser"
+          TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+          SSH_OPTS="-p ${SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+
+          export SSHPASS="${SSH_PASSWORD}"
+
+          sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
+            "mkdir -p '${REMOTE_DIR}/_backup/${TIMESTAMP}'"
+
+          rsync -az --delete \
+            --info=progress2 \
+            --backup \
+            --backup-dir="${REMOTE_DIR}/_backup/${TIMESTAMP}" \
+            -e "sshpass -e ssh ${SSH_OPTS}" \
+            --exclude '_backup/' \
+            "${DIST_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/"
+
+          echo "Deployed ${DIST_DIR} to ${REMOTE_HOST}:${REMOTE_DIR}"
