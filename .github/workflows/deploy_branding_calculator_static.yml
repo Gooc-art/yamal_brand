@@ -56,12 +56,25 @@ jobs:
           DIST_DIR="branding-calculator-frontend/dist/branding-calculator-frontend/browser"
           TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
           SSH_OPTS="-p ${SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+          CANONICAL_DIR="/var/www/${REMOTE_USER}/data/www/aieasytable.ru"
 
           export SSHPASS="${SSH_PASSWORD}"
 
           LIVE_DIR="$(
             sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-              'set -e; found="$(find "$HOME" /var/www -maxdepth 8 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | head -n 1 || true)"; if [ -n "$found" ]; then dirname "$found"; else printf "%s\n" "'"${REMOTE_DIR}"'"; fi'
+              'set -e
+               canonical="/var/www/'"${REMOTE_USER}"'/data/www/aieasytable.ru"
+               configured="'"${REMOTE_DIR}"'"
+               if [ -f "$canonical/index.html" ]; then
+                 printf "%s\n" "$canonical"
+                 exit 0
+               fi
+               found="$(find "$HOME" /var/www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | head -n 1 || true)"
+               if [ -n "$found" ]; then
+                 dirname "$found"
+                 exit 0
+               fi
+               printf "%s\n" "$configured"'
           )"
 
           if [ -z "${LIVE_DIR}" ]; then
@@ -80,4 +93,4 @@ jobs:
             --exclude '_backup/' \
             "${DIST_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${LIVE_DIR}/"
 
-          echo "Deployed ${DIST_DIR} to resolved REG.RU live directory"
+          echo "Deployed ${DIST_DIR} to REG.RU live directory"
