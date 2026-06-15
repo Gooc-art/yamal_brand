@@ -61,7 +61,7 @@ jobs:
 
           LIVE_DIR="$(
             sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-              'set -e; found="$(find "$HOME" /var/www -maxdepth 8 -type f -name index.html -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | head -n 1 || true)"; if [ -n "$found" ]; then dirname "$found"; else printf "%s\n" "'"${REMOTE_DIR}"'"; fi'
+              'set -e; found="$(find "$HOME" /var/www -maxdepth 8 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | head -n 1 || true)"; if [ -n "$found" ]; then dirname "$found"; else printf "%s\n" "'"${REMOTE_DIR}"'"; fi'
           )"
 
           if [ -z "${LIVE_DIR}" ]; then
