@@ -59,15 +59,25 @@ jobs:
 
           export SSHPASS="${SSH_PASSWORD}"
 
+          LIVE_DIR="$(
+            sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
+              'set -e; found="$(find "$HOME" /var/www -maxdepth 8 -type f -name index.html -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | head -n 1 || true)"; if [ -n "$found" ]; then dirname "$found"; else printf "%s\n" "'"${REMOTE_DIR}"'"; fi'
+          )"
+
+          if [ -z "${LIVE_DIR}" ]; then
+            echo "Could not resolve live directory" >&2
+            exit 1
+          fi
+
           sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-            "mkdir -p '${REMOTE_DIR}/_backup/${TIMESTAMP}'"
+            "mkdir -p '${LIVE_DIR}/_backup/${TIMESTAMP}'"
 
           rsync -az --delete \
             --info=progress2 \
             --backup \
-            --backup-dir="${REMOTE_DIR}/_backup/${TIMESTAMP}" \
+            --backup-dir="${LIVE_DIR}/_backup/${TIMESTAMP}" \
             -e "sshpass -e ssh ${SSH_OPTS}" \
             --exclude '_backup/' \
-            "${DIST_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/"
+            "${DIST_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${LIVE_DIR}/"
 
-          echo "Deployed ${DIST_DIR} to ${REMOTE_HOST}:${REMOTE_DIR}"
+          echo "Deployed ${DIST_DIR} to resolved REG.RU live directory"
