@@ -54,47 +54,49 @@ jobs:
           set -euo pipefail
 
           DIST_DIR="branding-calculator-frontend/dist/branding-calculator-frontend/browser"
-          TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-          SSH_OPTS="-p ${SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
-          CANONICAL_DIR="/var/www/${REMOTE_USER}/data/www/aieasytable.ru"
+          export DIST_DIR REMOTE_HOST REMOTE_USER SSH_PASSWORD
 
-          export SSHPASS="${SSH_PASSWORD}"
+          python3 - <<'PY'
+          import ftplib
+          import mimetypes
+          import os
+          from pathlib import Path
 
-          LIVE_DIR="$(
-            sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-              'set -e
-               canonical="/var/www/'"${REMOTE_USER}"'/data/www/aieasytable.ru"
-               configured="'"${REMOTE_DIR}"'"
-               found="$(find "$HOME" /var/www /www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-DHCVE66B\|main-7NJNZ5PN\|styles-KW4JF7R5" {} \; 2>/dev/null | head -n 1 || true)"
-               if [ -n "$found" ]; then
-                 dirname "$found"
-                 exit 0
-               fi
-               if [ -f "$configured/index.html" ]; then
-                 printf "%s\n" "$configured"
-                 exit 0
-               fi
-               if [ -f "$canonical/index.html" ]; then
-                 printf "%s\n" "$canonical"
-                 exit 0
-               fi
-               printf "%s\n" "$configured"'
-          )"
+          dist = Path(os.environ["DIST_DIR"]).resolve()
+          host = os.environ["REMOTE_HOST"]
+          user = os.environ["REMOTE_USER"]
+          password = os.environ["SSH_PASSWORD"]
+          target = "/www/aieasytable.ru"
 
-          if [ -z "${LIVE_DIR}" ]; then
-            echo "Could not resolve live directory" >&2
-            exit 1
-          fi
+          def ensure_dir(ftp, path):
+              if not path or path == ".":
+                  return
+              current = ""
+              for part in path.split("/"):
+                  if not part:
+                      continue
+                  current = f"{current}/{part}" if current else part
+                  try:
+                      ftp.mkd(current)
+                  except ftplib.error_perm:
+                      pass
 
-          sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-            "mkdir -p '${LIVE_DIR}/_backup/${TIMESTAMP}'"
+          files = [p for p in dist.rglob("*") if p.is_file()]
+          files.sort(key=lambda p: (p.name == "index.html", str(p)))
 
-          rsync -az --delete \
-            --info=progress2 \
-            --backup \
-            --backup-dir="${LIVE_DIR}/_backup/${TIMESTAMP}" \
-            -e "sshpass -e ssh ${SSH_OPTS}" \
-            --exclude '_backup/' \
-            "${DIST_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${LIVE_DIR}/"
+          with ftplib.FTP(host, timeout=45) as ftp:
+              ftp.login(user, password)
+              ftp.cwd(target)
 
-          echo "Deployed ${DIST_DIR} to REG.RU live directory"
+              uploaded = 0
+              for path in files:
+                  rel = path.relative_to(dist).as_posix()
+                  parent = str(Path(rel).parent).replace("\\", "/")
+                  if parent != ".":
+                      ensure_dir(ftp, parent)
+                  with path.open("rb") as fh:
+                      ftp.storbinary(f"STOR {rel}", fh)
+                  uploaded += 1
+
+          print(f"Uploaded {uploaded} files to FTP {target}")
+          PY
