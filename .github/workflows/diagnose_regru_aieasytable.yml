@@ -1,0 +1,38 @@
+name: Diagnose REG.RU aieasytable root
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Inspect REG.RU paths
+        env:
+          REMOTE_HOST: ${{ secrets.REGRU_HOST }}
+          REMOTE_USER: ${{ secrets.REGRU_USER }}
+          REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
+          SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
+          SSH_PORT: 22
+        run: |
+          set -euo pipefail
+          export SSHPASS="${SSH_PASSWORD}"
+          SSH_OPTS="-p ${SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+
+          sshpass -e ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" '
+            set -e
+            echo "whoami=$(whoami)"
+            echo "pwd=$(pwd)"
+            echo "configured_target_exists=$([ -d "'"${REMOTE_DIR}"'" ] && echo yes || echo no)"
+            echo "configured_target_stat:"
+            ls -ld "'"${REMOTE_DIR}"'" 2>/dev/null || true
+            echo "configured_target_index:"
+            stat -c "%n %s %y" "'"${REMOTE_DIR}"'/index.html" 2>/dev/null || true
+            echo "candidate_www_dirs:"
+            find "$HOME" /var/www -maxdepth 5 -type d \( -path "*/data/www/*" -o -name "aieasytable.ru" \) -printf "%p\n" 2>/dev/null | sort | head -200
+            echo "candidate_indexes:"
+            find "$HOME" /var/www -maxdepth 6 -type f -path "*/aieasytable.ru/index.html" -printf "%p %s %TY-%Tm-%Td %TH:%TM\n" 2>/dev/null | sort | head -100
+          '
