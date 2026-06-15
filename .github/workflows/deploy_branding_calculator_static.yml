@@ -65,13 +65,17 @@ jobs:
               'set -e
                canonical="/var/www/'"${REMOTE_USER}"'/data/www/aieasytable.ru"
                configured="'"${REMOTE_DIR}"'"
-               if [ -f "$canonical/index.html" ]; then
-                 printf "%s\n" "$canonical"
-                 exit 0
-               fi
-               found="$(find "$HOME" /var/www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-GU67SEYW\|styles-MXRW7A6K" {} \; 2>/dev/null | head -n 1 || true)"
+               found="$(find "$HOME" /var/www /www -maxdepth 9 -type f -name index.html -not -path "*/_backup/*" -exec grep -l "main-DHCVE66B\|main-7NJNZ5PN\|styles-KW4JF7R5" {} \; 2>/dev/null | head -n 1 || true)"
                if [ -n "$found" ]; then
                  dirname "$found"
+                 exit 0
+               fi
+               if [ -f "$configured/index.html" ]; then
+                 printf "%s\n" "$configured"
+                 exit 0
+               fi
+               if [ -f "$canonical/index.html" ]; then
+                 printf "%s\n" "$canonical"
                  exit 0
                fi
                printf "%s\n" "$configured"'
