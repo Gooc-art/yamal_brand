@@ -19,7 +19,8 @@ $config = site_config();
           <span>Бренд Ямал</span>
         </a>
         <nav class="portal-nav" aria-label="Главное меню">
-          <a href="/catalog" data-page-link="/catalog" data-nav="catalog">▦ Библиотека</a>
+          <a href="/" data-page-link="/" data-nav="home">⌂ Главная</a>
+          <a href="/catalog" data-page-link="/catalog" data-nav="catalog">▦ Каталог</a>
           <a href="/branding-catalog" data-page-link="/branding-catalog" data-nav="branding">▣ Брендирование</a>
         </nav>
         <button type="button" class="accent-button portal-login-button" data-action="open-login-modal">Войти</button>

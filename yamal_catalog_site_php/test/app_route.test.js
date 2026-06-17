@@ -53,8 +53,10 @@ const {
   buildLocalAccountUser,
   publicAccountUser,
   isAllowedConstructorLogoFile,
+  isAllowedJpegPngFile,
   portalPageFromUrl,
   editorTemplateId,
+  isBadgePhotoEditorId,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -118,6 +120,16 @@ test('routeFromUrl parses editor pretty url as constructor route', () => {
     },
   );
   assert.equal(editorTemplateId('badge_photo'), 'badge');
+  assert.equal(isBadgePhotoEditorId('badge_photo'), true);
+  assert.equal(isBadgePhotoEditorId('badge'), false);
+});
+
+test('badge photo accepts only png and jpeg files', () => {
+  assert.equal(isAllowedJpegPngFile({ type: 'image/png', name: 'photo.png' }), true);
+  assert.equal(isAllowedJpegPngFile({ type: 'image/jpeg', name: 'photo.jpg' }), true);
+  assert.equal(isAllowedJpegPngFile({ type: '', name: 'photo.jpeg' }), true);
+  assert.equal(isAllowedJpegPngFile({ type: 'image/webp', name: 'photo.webp' }), false);
+  assert.equal(isAllowedJpegPngFile({ type: 'image/svg+xml', name: 'photo.svg' }), false);
 });
 
 test('portalPageFromUrl parses portal route pages', () => {

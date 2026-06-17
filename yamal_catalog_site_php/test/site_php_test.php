@@ -38,6 +38,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'copy-current-link'), 'index contains copy current link control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'portal-header'), 'index contains multi-page portal header');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Главная'), 'index exposes home navigation item');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'href="/catalog"'), 'index exposes catalog route link');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'href="/branding-catalog"'), 'index exposes branding catalog route link');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'id="profile-page"'), 'index contains profile route page');
@@ -212,6 +213,9 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.hero-s
 
 $frontendTemplate = file_get_contents(dirname(__DIR__) . '/assets/app.js');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderBrandRoutes'), 'frontend contains brand route renderer');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'badge_photo'), 'frontend exposes badge photo editor route');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'profile_photo_file'), 'frontend exposes profile photo upload');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'save-current-layout'), 'frontend exposes save to cabinet action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSolutionLab'), 'frontend contains solution lab renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCategoryFilters'), 'frontend contains solution lab category filter builder');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'groupConstructorFields'), 'frontend contains constructor field grouping helper');

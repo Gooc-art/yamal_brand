@@ -2,6 +2,7 @@ const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
+const SAVED_LAYOUTS_STORAGE_KEY = 'yamal-site-saved-layouts-v1';
 const BRANDING_FILTERS = ['Все носители', 'Одежда и мерч', 'Городская среда', 'Мероприятия', 'Полиграфия и сувениры'];
 const BRANDING_CARDS = [
   { id: 'business_card', label: 'Визитка', category: 'Полиграфия и сувениры', summary: 'Контактная карточка сотрудника' },
@@ -13,7 +14,7 @@ const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'g
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
-const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name']);
+const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name', 'badge_photo_src', 'badge_photo_name']);
 const ACCOUNT_STORAGE_KEY = 'yamal-site-account-v1';
 const ACCOUNT_SESSION_STORAGE_KEY = 'yamal-site-session-v1';
 const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
@@ -233,6 +234,10 @@ function portalPageFromUrl(inputUrl) {
 function editorTemplateId(id) {
   const normalized = String(id || '').trim();
   return normalized === 'badge_photo' ? 'badge' : normalized;
+}
+
+function isBadgePhotoEditorId(id) {
+  return String(id || '').trim() === 'badge_photo';
 }
 
 function buildRouteUrl(inputUrl, route) {
@@ -1493,6 +1498,14 @@ function isAllowedConstructorLogoFile(file) {
   return allowedTypes.has(String(file.type || '').toLowerCase()) || /\.(svg|png|jpe?g|webp)$/i.test(String(file.name || ''));
 }
 
+function isAllowedJpegPngFile(file) {
+  if (!file) {
+    return false;
+  }
+  const type = String(file.type || '').toLowerCase();
+  return ['image/png', 'image/jpeg'].includes(type) || /\.(png|jpe?g)$/i.test(String(file.name || ''));
+}
+
 function normalizeConstructorHandoff(handoff) {
   const normalizeArtifacts = (items) => (Array.isArray(items) ? items : [])
     .map((item) => ({
@@ -1936,8 +1949,10 @@ if (typeof module !== 'undefined' && module.exports) {
     buildLocalAccountUser,
     publicAccountUser,
     isAllowedConstructorLogoFile,
+    isAllowedJpegPngFile,
     portalPageFromUrl,
     editorTemplateId,
+    isBadgePhotoEditorId,
   };
 }
 
@@ -1982,6 +1997,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     accountUser: null,
     portalPage: 'home',
     activeAdminTab: 'Входящие вопросы',
+    currentEditorId: '',
+    pendingSaveAfterAuth: false,
   };
   const constructorBuildCache = new Map();
   let constructorBuildAbortController = null;
@@ -2121,6 +2138,49 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     return isAdminUser(user) ? '/admin' : '/constructor/layouts';
   }
 
+  function accountProfilePhoto(user = state.accountUser) {
+    return String(user?.profilePhotoSrc || '').trim();
+  }
+
+  function readSavedLayouts() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(SAVED_LAYOUTS_STORAGE_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeSavedLayouts(items) {
+    window.localStorage.setItem(SAVED_LAYOUTS_STORAGE_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+  }
+
+  function savedLayoutsForCurrentUser() {
+    const email = normalizeAccountEmail(state.accountUser?.email);
+    return readSavedLayouts()
+      .filter((item) => normalizeAccountEmail(item.email) === email)
+      .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  }
+
+  function updateCurrentAccountUser(patch = {}) {
+    if (!state.accountUser) {
+      return null;
+    }
+    const email = normalizeAccountEmail(state.accountUser.email);
+    const nextUser = publicAccountUser({ ...state.accountUser, ...patch });
+    const store = readAccountStore();
+    const index = store.users.findIndex((user) => normalizeAccountEmail(user.email) === email);
+    if (index >= 0) {
+      store.users[index] = { ...store.users[index], ...nextUser };
+      writeAccountStore(store);
+    }
+    state.accountUser = nextUser;
+    writeAccountSession(nextUser);
+    updatePortalChrome();
+    renderAccountPanel();
+    return nextUser;
+  }
+
   function setLoginModalOpen(nextValue) {
     if (els.loginModal) {
       els.loginModal.hidden = !nextValue;
@@ -2136,7 +2196,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function updatePortalChrome() {
     const page = state.portalPage || portalPageFromUrl(window.location.href).page;
     els.portalNavLinks.forEach((link) => {
-      const active = (link.dataset.nav === 'catalog' && page === 'catalog')
+      const active = (link.dataset.nav === 'home' && page === 'home')
+        || (link.dataset.nav === 'catalog' && page === 'catalog')
         || (link.dataset.nav === 'branding' && page === 'branding');
       link.classList.toggle('active', active);
       if (active) {
@@ -2328,6 +2389,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           setLoginModalOpen(false);
           updatePortalChrome();
           renderAccountPanel();
+          if (state.pendingSaveAfterAuth) {
+            saveCurrentLayoutToProfile();
+          }
           showPortalPage(portalPageFromUrl(window.location.href), { history: 'replace' });
           return;
         }
@@ -2345,6 +2409,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     setLoginModalOpen(false);
     updatePortalChrome();
     renderAccountPanel();
+    if (state.pendingSaveAfterAuth) {
+      saveCurrentLayoutToProfile();
+    }
     showPortalPage(portalPageFromUrl(window.location.href), { history: 'replace' });
   }
 
@@ -2579,6 +2646,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       .find((item) => item.id === normalizedId) || null;
   }
 
+  function constructorDisplayLabel(definition = {}) {
+    return isBadgePhotoEditorId(state.currentEditorId) ? 'Бейдж с фото' : String(definition?.label || 'Лаборатория решений').trim();
+  }
+
   function cancelPendingConstructorBuild() {
     constructorBuildRequestId += 1;
     if (constructorBuildAbortController) {
@@ -2664,7 +2735,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function persistConstructorDraft(constructorId, fields, input, options = {}) {
-    const draftEntry = saveConstructorDraft(constructorId, fields, input, window.localStorage, new Date(), state.accountUser?.email || '');
+    const draftId = isBadgePhotoEditorId(state.currentEditorId) && String(constructorId || '').trim() === 'badge'
+      ? 'badge_photo'
+      : constructorId;
+    if (isBadgePhotoEditorId(draftId) && !state.accountUser) {
+      return null;
+    }
+    const draftEntry = saveConstructorDraft(draftId, fields, input, window.localStorage, new Date(), state.accountUser?.email || '');
     const draftMeta = draftEntry
       ? { updatedAt: draftEntry.updatedAt, restored: Boolean(options.restored) }
       : null;
@@ -2803,6 +2880,58 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     } catch (error) {
       console.error(error);
       setConstructorLogoError('Не удалось прочитать файл. Попробуйте другой логотип.');
+    }
+  }
+
+  function syncBadgePhotoUi(input = {}) {
+    const photoSrc = String(input?.badge_photo_src || '').trim();
+    const photoName = String(input?.badge_photo_name || '').trim();
+    const form = document.querySelector('#constructor-form');
+    if (form) {
+      const srcInput = form.querySelector('input[name="badge_photo_src"]');
+      const nameInput = form.querySelector('input[name="badge_photo_name"]');
+      if (srcInput) srcInput.value = photoSrc;
+      if (nameInput) nameInput.value = photoName;
+    }
+    const preview = document.querySelector('[data-badge-photo-preview]');
+    if (preview) {
+      preview.classList.toggle('is-empty', !photoSrc);
+      preview.innerHTML = photoSrc ? `<img src="${escapeHtml(photoSrc)}" alt="">` : '<span>Загрузите фото</span>';
+    }
+    const svg = document.querySelector('.constructor-preview-visual svg');
+    if (svg && isBadgePhotoEditorId(state.currentEditorId)) {
+      const nextMarkup = applyBadgePhotoToSvgMarkup(svg.outerHTML, input);
+      svg.outerHTML = nextMarkup;
+    }
+  }
+
+  async function handleBadgePhotoFile(input) {
+    const form = input?.closest?.('#constructor-form');
+    const file = input?.files?.[0] || null;
+    if (!form || !file) {
+      return;
+    }
+    if (!isAllowedJpegPngFile(file)) {
+      input.value = '';
+      setConstructorLogoError('Для фото подходят PNG, JPG или JPEG.');
+      return;
+    }
+    setConstructorLogoError('');
+    try {
+      const photoSrc = await readFileAsDataUrl(file);
+      const nextInput = {
+        ...collectConstructorFormInput(form),
+        badge_photo_src: photoSrc,
+        badge_photo_name: String(file.name || 'photo').trim(),
+      };
+      const constructorId = String(form.dataset.constructorId || '').trim();
+      const fields = currentConstructorFields(constructorId);
+      const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
+      syncBadgePhotoUi(nextInput);
+      refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
+    } catch (error) {
+      console.error(error);
+      setConstructorLogoError('Не удалось прочитать фото. Попробуйте другой файл.');
     }
   }
 
@@ -3091,6 +3220,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     });
 
     syncConstructorLogoUi(nextInput);
+    syncBadgePhotoUi(nextInput);
     const fields = Array.isArray(state.current?.payload?.definition?.fields) ? state.current.payload.definition.fields : [];
     const previewArtifact = pickConstructorPreviewArtifact(state.current?.payload?.artifacts || []);
     updateConstructorProgressStrip(fields, nextInput, previewArtifact);
@@ -4358,7 +4488,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </div>
         </div>
         <div class="item-actions">
-          <a class="item-action" href="/editor/${encodeURIComponent(item.id)}" data-page-link="/editor/${escapeHtml(item.id)}" data-action="open-editor" data-id="${escapeHtml(item.id)}">Открыть</a>
+          <a class="item-action" href="/editor/${encodeURIComponent(item.id)}" data-page-link="/editor/${escapeHtml(item.id)}" data-action="open-editor" data-id="${escapeHtml(item.id)}">Создать макет</a>
         </div>
       </article>
     `).join('');
@@ -4428,18 +4558,45 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         </section>`;
       return;
     }
+    const savedLayouts = savedLayoutsForCurrentUser();
+    const profilePhoto = accountProfilePhoto();
     els.profilePage.innerHTML = `${head}
+      <section class="surface cabinet-panel profile-summary-panel">
+        <div class="profile-summary">
+          <div>
+            <h2>Данные пользователя</h2>
+            <p>${escapeHtml(state.accountUser.email || '')}</p>
+            <p>${escapeHtml(state.accountUser.organization || 'Организация не указана')}</p>
+          </div>
+          <div class="profile-photo-card">
+            <strong>Фото профиля</strong>
+            <div class="profile-photo-preview${profilePhoto ? '' : ' is-empty'}">
+              ${profilePhoto ? `<img src="${escapeHtml(profilePhoto)}" alt="">` : '<span>Фото не загружено</span>'}
+            </div>
+            <label class="ghost-button profile-photo-upload">
+              <input type="file" name="profile_photo_file" accept=".png,.jpg,.jpeg,image/png,image/jpeg">
+              <span>Загрузить фото</span>
+            </label>
+          </div>
+        </div>
+      </section>
       <section class="surface cabinet-panel">
         <div class="block-head">
-          <div><h2>Мои макеты</h2><p>Локальная история созданных и сохранённых макетов.</p></div>
+          <div><h2>Мои созданные макеты</h2><p>Сохраняются только по кнопке из редактора.</p></div>
           <a class="accent-button" href="/branding-catalog" data-page-link="/branding-catalog">Создать макет</a>
         </div>
-        <div class="portal-list">
-          ${(drafts.length ? drafts : [{ id: 'Макетов пока нет', note: 'Создайте первый макет из каталога брендирования.' }]).map((draft) => `
+        <div class="portal-list saved-layout-list">
+          ${(savedLayouts.length ? savedLayouts : [{ id: 'Макетов пока нет', note: 'Создайте первый макет из каталога брендирования.' }]).map((layout) => `
             <article>
-              <strong>${escapeHtml(draft.id)}</strong>
-              <span>${escapeHtml(draft.note || (draft.updatedAt ? new Date(draft.updatedAt).toLocaleString('ru-RU') : ''))}</span>
-              ${draft.id && !draft.id.includes('пока') ? `<a class="link-button" href="/editor/${encodeURIComponent(draft.id)}" data-page-link="/editor/${escapeHtml(draft.id)}">Открыть</a>` : ''}
+              ${layout.preview ? `<div class="saved-layout-preview">${layout.preview}</div>` : ''}
+              <strong>${escapeHtml(layout.label || layout.id)}</strong>
+              <span>${escapeHtml(layout.note || (layout.createdAt ? new Date(layout.createdAt).toLocaleString('ru-RU') : ''))}</span>
+              ${layout.id && !layout.id.includes('пока') ? `
+                <div class="account-actions">
+                  <button type="button" class="link-button" data-action="open-saved-layout" data-id="${escapeHtml(layout.id)}">Открыть</button>
+                  <button type="button" class="ghost-button" data-action="download-saved-layout" data-id="${escapeHtml(layout.id)}">Скачать</button>
+                </div>
+              ` : ''}
             </article>
           `).join('')}
         </div>
@@ -4500,7 +4657,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function requirePortalAuth(route) {
-    const protectedPages = new Set(['catalog', 'branding', 'editor', 'layouts', 'requests', 'admin']);
+    const protectedPages = new Set(['layouts', 'requests', 'admin']);
     if (!protectedPages.has(route.page)) return true;
     if (!state.accountUser) {
       setLoginModalOpen(true);
@@ -4516,6 +4673,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const normalized = typeof route === 'string' ? portalPageFromUrl(route) : route;
     const page = normalized.page || 'home';
     state.portalPage = page;
+    state.currentEditorId = page === 'editor' ? String(normalized.id || '').trim() : '';
     setLoginModalOpen(false);
     setAdminQuestionModalOpen(false);
     setBrandRoutesOpen(false);
@@ -4713,6 +4871,41 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
+  function renderBadgePhotoUpload(input) {
+    if (!isBadgePhotoEditorId(state.currentEditorId)) {
+      return '';
+    }
+    const photoSrc = String(input?.badge_photo_src || '').trim();
+    const photoName = String(input?.badge_photo_name || '').trim();
+    return `
+      <section class="constructor-field-group constructor-photo-upload-group">
+        <details class="constructor-field-accordion" open data-constructor-group-id="badge-photo">
+          <summary class="constructor-group-summary">
+            <span class="constructor-group-summary-copy">
+              <strong>Фото для бейджа</strong>
+              <span>PNG, JPG или JPEG. Фото сразу появляется в области фото текущего бейджа.</span>
+            </span>
+            ${photoName ? `<span class="constructor-group-summary-meta">${escapeHtml(photoName)}</span>` : ''}
+          </summary>
+          <div class="constructor-field-accordion-body">
+            <label class="constructor-logo-upload">
+              <input type="file" name="badge_photo_file" accept=".png,.jpg,.jpeg,image/png,image/jpeg">
+              <span class="constructor-logo-upload-box">
+                <strong>${photoSrc ? 'Заменить фото' : 'Загрузить фото'}</strong>
+                <small>${escapeHtml(photoName || 'Если фото профиля есть, оно подставится автоматически.')}</small>
+              </span>
+            </label>
+            <input type="hidden" name="badge_photo_src" value="${escapeHtml(photoSrc)}">
+            <input type="hidden" name="badge_photo_name" value="${escapeHtml(photoName)}">
+            <div class="constructor-logo-preview constructor-photo-preview${photoSrc ? '' : ' is-empty'}" data-badge-photo-preview>
+              ${photoSrc ? `<img src="${escapeHtml(photoSrc)}" alt="">` : '<span>Загрузите фото</span>'}
+            </div>
+          </div>
+        </details>
+      </section>
+    `;
+  }
+
   function isConstructorFieldDefaultValue(field, input) {
     const fieldId = String(field?.id || '').trim();
     if (!fieldId) {
@@ -4854,7 +5047,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function buildConstructorFieldGroupsMarkup(fields, input) {
-    return `${groupConstructorFields(fields).map((group) => buildConstructorFieldGroupMarkup(group, input)).join('')}${renderConstructorCustomLogoUpload(input)}`;
+    return `${groupConstructorFields(fields).map((group) => buildConstructorFieldGroupMarkup(group, input)).join('')}${renderConstructorCustomLogoUpload(input)}${renderBadgePhotoUpload(input)}`;
   }
 
 function buildConstructorStepsMarkup(generated) {
@@ -4925,6 +5118,37 @@ function buildConstructorCustomLogoOverlay(input) {
   `;
 }
 
+function badgePhotoLayerMarkup(input = {}) {
+  const photoSrc = String(input?.badge_photo_src || '').trim();
+  const photoName = String(input?.badge_photo_name || 'Фото участника').trim() || 'Фото участника';
+  const frame = '<rect x="458" y="286" width="154" height="204" rx="22" fill="#fff" stroke="var(--ctor-line)" stroke-width="3"/>';
+  if (!photoSrc) {
+    return `
+      <g data-badge-photo-layer="1">
+        ${frame}
+        <text x="535" y="384" text-anchor="middle" class="small" fill="var(--ctor-muted)">Загрузите фото</text>
+      </g>
+    `;
+  }
+  return `
+    <g data-badge-photo-layer="1">
+      ${frame}
+      <clipPath id="badge-photo-clip"><rect x="466" y="294" width="138" height="188" rx="18"/></clipPath>
+      <image x="466" y="294" width="138" height="188" preserveAspectRatio="xMidYMid slice" clip-path="url(#badge-photo-clip)" href="${escapeHtml(photoSrc)}" aria-label="${escapeHtml(photoName)}"/>
+    </g>
+  `;
+}
+
+function applyBadgePhotoToSvgMarkup(markup, input = {}) {
+  const source = String(markup || '');
+  if (!source || !isBadgePhotoEditorId(state.currentEditorId)) {
+    return source;
+  }
+  const withoutOldLayer = source.replace(/<g data-badge-photo-layer="1">[\s\S]*?<\/g>/g, '');
+  const layer = badgePhotoLayerMarkup(input);
+  return withoutOldLayer.replace(/<\/svg>\s*$/i, `${layer}</svg>`);
+}
+
 function buildConstructorPreviewMarkup(artifact, layout, input = {}) {
     const previewLayout = layout || buildConstructorPreviewLayout({}, artifact);
     const customLogoOverlay = buildConstructorCustomLogoOverlay(input);
@@ -4937,7 +5161,7 @@ function buildConstructorPreviewMarkup(artifact, layout, input = {}) {
       `;
     }
     if (artifact.previewType === 'svg') {
-      return `<div class="${previewLayout.visualClass}">${artifact.content || ''}${customLogoOverlay}</div>`;
+      return `<div class="${previewLayout.visualClass}">${applyBadgePhotoToSvgMarkup(artifact.content || '', input)}${customLogoOverlay}</div>`;
     }
     if (artifact.previewType === 'html') {
       return `<iframe class="${previewLayout.frameClass}" title="${escapeHtml(artifact.label || 'Превью')}" srcdoc="${escapeHtml(artifact.content || '')}"></iframe>`;
@@ -5145,7 +5369,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   function renderConstructorLoadingState(constructorId = '') {
     const solution = findConstructorSolution(constructorId);
-    const label = String(solution?.label || 'Лаборатория решений').trim() || 'Лаборатория решений';
+    const label = isBadgePhotoEditorId(state.currentEditorId) ? 'Бейдж с фото' : (String(solution?.label || 'Лаборатория решений').trim() || 'Лаборатория решений');
     const category = String(solution?.category || 'Решение').trim() || 'Решение';
     const description = String(solution?.summary || solution?.description || 'Поднимаю поля, стартовое превью и grounded-подсказки для выбранного носителя.').trim()
       || 'Поднимаю поля, стартовое превью и grounded-подсказки для выбранного носителя.';
@@ -5204,6 +5428,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   function renderConstructor(payload, options = {}) {
     const definition = payload?.definition || {};
+    const displayLabel = constructorDisplayLabel(definition);
     const fields = Array.isArray(definition?.fields) ? definition.fields : [];
     const input = payload?.input || {};
     const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
@@ -5219,7 +5444,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     setWorkspaceStageMode('constructor');
     renderSolutionLab(state.bootstrap);
     els.contentMode.textContent = 'Конструктор';
-    els.contentTitle.textContent = definition.label || 'Лаборатория решений';
+    els.contentTitle.textContent = displayLabel || 'Лаборатория решений';
     els.contentHint.textContent = generated
       ? 'Материалы готовы: превью, скачивание и нужные разделы уже собраны.'
       : 'Заполните поля и настройте вид рядом с превью.';
@@ -5227,7 +5452,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     els.breadcrumbs.innerHTML = `
       <span class="breadcrumb current">Лаборатория решений</span>
       <span class="breadcrumb-sep">•</span>
-      <span class="breadcrumb current">${escapeHtml(definition.label || 'Решение')}</span>
+      <span class="breadcrumb current">${escapeHtml(displayLabel || 'Решение')}</span>
     `;
     els.pagination.innerHTML = '';
     els.contentItems.innerHTML = `
@@ -5235,7 +5460,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         <section class="constructor-hero">
           <div class="constructor-hero-copy">
             <span class="card-kicker">${escapeHtml(definition.category || 'Решение')}</span>
-            <h3>${escapeHtml(definition.label || 'Решение')}</h3>
+            <h3>${escapeHtml(displayLabel || 'Решение')}</h3>
             <p>${escapeHtml(definition.description || definition.summary || 'Готовый каркас носителя с привязкой к каталогу и брендбуку.')}</p>
           </div>
           ${buildConstructorStepsMarkup(generated)}
@@ -5252,6 +5477,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
               ${buildConstructorFieldGroupsMarkup(fields, input)}
               <div class="constructor-form-actions">
                 <button type="submit" class="accent-button">Собрать решение</button>
+                ${isBadgePhotoEditorId(state.currentEditorId) ? '<button type="button" class="ghost-button" data-action="save-current-layout">Сохранить в кабинет</button>' : ''}
                 <button type="button" class="ghost-button" data-action="reset-constructor" data-id="${escapeHtml(definition.id || '')}">Сбросить шаблон</button>
                 <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
               </div>
@@ -5296,7 +5522,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         ${renderConstructorRecommendations(payload?.recommendations, generated)}
       </div>
     `;
-    setDocumentTitle(definition.label || 'Лаборатория решений');
+    setDocumentTitle(displayLabel || 'Лаборатория решений');
     syncConstructorChoiceSelectionState(els.contentItems);
     const activePreset = presets.find((preset) => preset?.active);
     syncConstructorPresetSelectionState(activePreset?.id || '', els.contentItems);
@@ -5745,7 +5971,8 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         return;
       }
       const fields = Array.isArray(initialPayload?.definition?.fields) ? initialPayload.definition.fields : [];
-      const savedDraft = options.ignoreDraft ? null : loadConstructorDraft(constructorId, fields, window.localStorage);
+      const draftId = isBadgePhotoEditorId(state.currentEditorId) && constructorId === 'badge' ? 'badge_photo' : constructorId;
+      const savedDraft = options.ignoreDraft ? null : loadConstructorDraft(draftId, fields, window.localStorage);
       let draftMeta = null;
       let historySynced = false;
 
@@ -5761,6 +5988,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         const restoredInput = {
           ...(initialPayload?.input || {}),
           ...savedDraft.input,
+          ...(isBadgePhotoEditorId(state.currentEditorId) && !savedDraft.input.badge_photo_src && accountProfilePhoto()
+            ? { badge_photo_src: accountProfilePhoto(), badge_photo_name: 'Фото профиля' }
+            : {}),
         };
         draftMeta = { updatedAt: savedDraft.updatedAt, restored: true };
         const restoredCacheKey = constructorBuildCacheKey(constructorId, restoredInput);
@@ -5776,7 +6006,13 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
           void buildConstructor(constructorId, restoredInput, { silent: true, draftMeta });
         }
       } else {
-        renderConstructor(decorateConstructorPayload(initialPayload, draftMeta));
+        const defaultInput = {
+          ...(initialPayload?.input || {}),
+          ...(isBadgePhotoEditorId(state.currentEditorId) && accountProfilePhoto()
+            ? { badge_photo_src: accountProfilePhoto(), badge_photo_name: 'Фото профиля' }
+            : {}),
+        };
+        renderConstructor(decorateConstructorPayload({ ...initialPayload, input: defaultInput }, draftMeta));
         syncConstructorHistory();
       }
     } catch (error) {
@@ -5809,6 +6045,19 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     }
     setConstructorSyncState(true);
 
+    const withLocalInput = (payload) => ({
+      ...payload,
+      input: {
+        ...(payload?.input || {}),
+        ...(isBadgePhotoEditorId(state.currentEditorId)
+          ? {
+            badge_photo_src: normalizedInput.badge_photo_src || '',
+            badge_photo_name: normalizedInput.badge_photo_name || '',
+          }
+          : {}),
+      },
+    });
+
     if (constructorBuildCache.has(cacheKey)) {
       renderConstructor(decorateConstructorPayload(constructorBuildCache.get(cacheKey), draftMeta), buildRenderOptions());
       if (!keepCurrentView && !silent) {
@@ -5831,9 +6080,10 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       if (requestId !== constructorBuildRequestId) {
         return;
       }
-      constructorBuildCache.set(cacheKey, payload);
+      const nextPayload = withLocalInput(payload);
+      constructorBuildCache.set(cacheKey, nextPayload);
       pruneConstructorBuildCache();
-      renderConstructor(decorateConstructorPayload(payload, draftMeta), buildRenderOptions());
+      renderConstructor(decorateConstructorPayload(nextPayload, draftMeta), buildRenderOptions());
       if (!keepCurrentView && !silent) {
         focusWorkspace();
       }
@@ -5854,6 +6104,46 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   function currentConstructorArtifacts() {
     return Array.isArray(state.current?.payload?.artifacts) ? state.current.payload.artifacts : [];
+  }
+
+  function saveCurrentLayoutToProfile() {
+    if (!state.accountUser) {
+      state.pendingSaveAfterAuth = true;
+      setLoginModalOpen(true);
+      return false;
+    }
+    if (!isBadgePhotoEditorId(state.currentEditorId) || state.current?.kind !== 'constructor') {
+      return false;
+    }
+    const previewArtifact = currentConstructorPreviewArtifact();
+    const form = document.querySelector('#constructor-form');
+    const input = form ? collectConstructorFormInput(form) : (state.current?.payload?.input || {});
+    const svgContent = previewArtifact ? resolveCurrentConstructorSvgMarkup(previewArtifact) : '';
+    const id = `layout-${Date.now().toString(36)}`;
+    const items = readSavedLayouts();
+    items.unshift({
+      id,
+      email: normalizeAccountEmail(state.accountUser.email),
+      editorId: state.currentEditorId,
+      templateId: currentConstructorId(),
+      label: 'Бейдж с фото',
+      createdAt: new Date().toISOString(),
+      input,
+      svgContent,
+      preview: svgContent,
+      filename: `${id}.svg`,
+    });
+    writeSavedLayouts(items);
+    const draftStore = readConstructorDraftStore(window.localStorage);
+    draftStore.badge_photo = {
+      input,
+      updatedAt: new Date().toISOString(),
+      ownerEmail: normalizeAccountEmail(state.accountUser.email),
+    };
+    writeConstructorDraftStore(draftStore, window.localStorage);
+    state.pendingSaveAfterAuth = false;
+    renderCabinetPage('layouts');
+    return true;
   }
 
   function downloadArtifactBlob(blob, filename) {
@@ -6084,6 +6374,33 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     }
     if (action === 'open-editor') {
       showPortalPage({ page: 'editor', id: target.dataset.id || '' });
+      return;
+    }
+    if (action === 'save-current-layout') {
+      saveCurrentLayoutToProfile();
+      return;
+    }
+    if (action === 'download-saved-layout') {
+      const id = String(target.dataset.id || '').trim();
+      const layout = savedLayoutsForCurrentUser().find((item) => String(item.id || '') === id);
+      if (layout?.svgContent) {
+        downloadArtifactBlob(new Blob([layout.svgContent], { type: 'image/svg+xml;charset=utf-8' }), layout.filename || `${id}.svg`);
+      }
+      return;
+    }
+    if (action === 'open-saved-layout') {
+      const id = String(target.dataset.id || '').trim();
+      const layout = savedLayoutsForCurrentUser().find((item) => String(item.id || '') === id);
+      if (layout?.input) {
+        const store = readConstructorDraftStore(window.localStorage);
+        store[layout.editorId || 'badge_photo'] = {
+          input: layout.input,
+          updatedAt: new Date().toISOString(),
+          ownerEmail: normalizeAccountEmail(state.accountUser?.email),
+        };
+        writeConstructorDraftStore(store, window.localStorage);
+        showPortalPage({ page: 'editor', id: layout.editorId || 'badge_photo' });
+      }
       return;
     }
     if (action === 'toggle-consultant') {
@@ -6343,12 +6660,46 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   });
 
   document.addEventListener('change', (event) => {
+    if (event.target?.matches?.('input[name="profile_photo_file"]')) {
+      const file = event.target.files?.[0] || null;
+      if (!file) {
+        return;
+      }
+      if (!isAllowedJpegPngFile(file)) {
+        event.target.value = '';
+        window.alert?.('Для фото профиля подходят PNG, JPG или JPEG.');
+        return;
+      }
+      void readFileAsDataUrl(file).then((photoSrc) => {
+        updateCurrentAccountUser({
+          profilePhotoSrc: photoSrc,
+          profilePhotoName: String(file.name || 'profile-photo').trim(),
+        });
+        if (isBadgePhotoEditorId(state.currentEditorId)) {
+          const form = document.querySelector('#constructor-form');
+          if (form && !collectConstructorFormInput(form).badge_photo_src) {
+            syncBadgePhotoUi({ ...collectConstructorFormInput(form), badge_photo_src: photoSrc, badge_photo_name: 'Фото профиля' });
+          }
+        }
+        if (state.portalPage === 'layouts') {
+          renderCabinetPage('layouts');
+        }
+      }).catch((error) => {
+        console.error(error);
+        window.alert?.('Не удалось прочитать фото профиля.');
+      });
+      return;
+    }
     const form = event.target.closest('#constructor-form');
     if (!form) {
       return;
     }
     if (event.target?.matches?.('input[name="custom_logo_file"]')) {
       void handleConstructorLogoFile(event.target);
+      return;
+    }
+    if (event.target?.matches?.('input[name="badge_photo_file"]')) {
+      void handleBadgePhotoFile(event.target);
       return;
     }
     const constructorId = String(form.dataset.constructorId || '').trim();
