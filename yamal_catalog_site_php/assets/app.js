@@ -12,9 +12,16 @@ const BRANDING_CARDS = [
 ];
 const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
-const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
+const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone', 'custom_logo_scale', 'custom_logo_x', 'custom_logo_y', 'custom_logo_padding']);
+const CONSTRUCTOR_LOGO_CHOICES = [
+  { id: 'logo', field: 'brand_lockup', value: 'logo', label: 'Логотип Ямал', meta: 'Color / основной', mark: 'Я' },
+  { id: 'mark', field: 'brand_lockup', value: 'mark', label: 'Фирменный знак', meta: 'Знак без надписи', mark: '◆' },
+  { id: 'logo_band', field: 'graphic_element', value: 'logo_band', label: 'Лента логотипов', meta: 'Для протяжённых зон', mark: '—' },
+  { id: 'lockup_bridge', field: 'graphic_element', value: 'lockup_bridge', label: 'Логотип + знак', meta: 'Крупная подложка', mark: 'Я+' },
+  { id: 'mark_white', field: 'graphic_element', value: 'mark_white', label: 'Знак White', meta: 'Для плотного фона', mark: 'W' },
+];
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
-const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name', 'badge_photo_src', 'badge_photo_name']);
+const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name', 'custom_logo_scale', 'custom_logo_x', 'custom_logo_y', 'custom_logo_padding', 'badge_photo_src', 'badge_photo_name']);
 const ACCOUNT_STORAGE_KEY = 'yamal-site-account-v1';
 const ACCOUNT_SESSION_STORAGE_KEY = 'yamal-site-session-v1';
 const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
@@ -3134,10 +3141,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const logoName = String(input?.custom_logo_name || '').trim();
     const form = document.querySelector('#constructor-form');
     if (form) {
-      const srcInput = form.querySelector('input[name="custom_logo_src"]');
-      const nameInput = form.querySelector('input[name="custom_logo_name"]');
-      if (srcInput) srcInput.value = logoSrc;
-      if (nameInput) nameInput.value = logoName;
+      ['custom_logo_src', 'custom_logo_name', 'custom_logo_scale', 'custom_logo_x', 'custom_logo_y', 'custom_logo_padding'].forEach((name) => {
+        const node = form.querySelector(`input[name="${name}"]`);
+        if (node && input?.[name] !== undefined) node.value = input[name];
+      });
     }
     const logoPreview = document.querySelector('[data-custom-logo-preview]');
     if (logoPreview) {
@@ -3160,6 +3167,53 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       visual.appendChild(overlay);
     }
     overlay.innerHTML = `<img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(logoName || 'Пользовательский логотип')}">`;
+    syncConstructorLogoPlacement(input);
+  }
+
+  function syncConstructorLogoPlacement(input = {}) {
+    const overlay = document.querySelector('[data-constructor-custom-logo]');
+    if (!overlay) {
+      return;
+    }
+    const scale = Math.max(60, Math.min(160, Number(input.custom_logo_scale || 100) || 100));
+    const x = Math.max(0, Math.min(100, Number(input.custom_logo_x || 82) || 82));
+    const y = Math.max(0, Math.min(100, Number(input.custom_logo_y || 82) || 82));
+    const padding = Math.max(0, Math.min(32, Number(input.custom_logo_padding || 10) || 10));
+    overlay.style.setProperty('--custom-logo-scale', String(scale / 100));
+    overlay.style.setProperty('--custom-logo-x', `${x}%`);
+    overlay.style.setProperty('--custom-logo-y', `${y}%`);
+    overlay.style.setProperty('--custom-logo-padding', `${padding}px`);
+  }
+
+  function syncConstructorLogoPickerState(form, input = null) {
+    const currentInput = input || (form ? collectConstructorFormInput(form) : {});
+    document.querySelectorAll('.constructor-logo-option').forEach((node) => {
+      const active = String(currentInput?.[node.dataset.field] || '').trim() === String(node.dataset.value || '').trim();
+      node.classList.toggle('active', active);
+      node.setAttribute('aria-pressed', active ? 'true' : 'false');
+      const status = node.querySelector('.constructor-logo-option-status');
+      if (status) status.textContent = active ? 'Выбран' : 'Выбрать';
+    });
+    const selected = selectedConstructorLogoChoice(currentInput);
+    const propertyName = document.querySelector('[data-constructor-property-logo-name]');
+    if (propertyName) propertyName.textContent = selected.label;
+  }
+
+  function filterConstructorLogoList(query = '') {
+    const normalized = String(query || '').trim().toLowerCase();
+    document.querySelectorAll('.constructor-logo-option').forEach((node) => {
+      const haystack = String(node.dataset.search || '').toLowerCase();
+      node.hidden = Boolean(normalized) && !haystack.includes(normalized);
+    });
+  }
+
+  function syncConstructorRangeOutputs(form) {
+    if (!form) return;
+    form.querySelectorAll('.constructor-range-field input[type="range"]').forEach((input) => {
+      const output = input.closest('.constructor-range-field')?.querySelector('output');
+      if (!output) return;
+      output.textContent = input.name === 'custom_logo_padding' ? `${input.value} px` : `${input.value}%`;
+    });
   }
 
   function applyConstructorLivePreview(input) {
@@ -4882,6 +4936,145 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
+  function constructorLogoChoiceActive(choice, input) {
+    return String(input?.[choice.field] || '').trim() === choice.value;
+  }
+
+  function selectedConstructorLogoChoice(input = {}) {
+    return CONSTRUCTOR_LOGO_CHOICES.find((choice) => constructorLogoChoiceActive(choice, input)) || CONSTRUCTOR_LOGO_CHOICES[0];
+  }
+
+  function renderConstructorLogoPicker(input = {}) {
+    const selected = selectedConstructorLogoChoice(input);
+    const customLogoName = String(input?.custom_logo_name || '').trim();
+    return `
+      <section class="constructor-tool-card constructor-logo-picker" aria-label="Выбор логотипа">
+        <div class="constructor-tool-head">
+          <strong>Логотип</strong>
+          <span>${escapeHtml(customLogoName || selected.label)}</span>
+        </div>
+        <label class="constructor-logo-search">
+          <span class="visually-hidden">Поиск по логотипам</span>
+          <input type="search" data-constructor-logo-search placeholder="Поиск логотипа" autocomplete="off">
+        </label>
+        <div class="constructor-logo-tabs" aria-label="Категории логотипов">
+          <button type="button" class="constructor-logo-tab active" aria-pressed="true">Основные</button>
+          <button type="button" class="constructor-logo-tab" disabled>Городские</button>
+        </div>
+        <div class="constructor-logo-list" data-constructor-logo-list>
+          ${CONSTRUCTOR_LOGO_CHOICES.map((choice) => {
+            const active = constructorLogoChoiceActive(choice, input);
+            return `
+              <button
+                type="button"
+                class="constructor-logo-option${active ? ' active' : ''}"
+                data-action="set-constructor-logo"
+                data-field="${escapeHtml(choice.field)}"
+                data-value="${escapeHtml(choice.value)}"
+                data-search="${escapeHtml(`${choice.label} ${choice.meta}`.toLowerCase())}"
+                aria-pressed="${active ? 'true' : 'false'}"
+              >
+                <span class="constructor-logo-option-mark" aria-hidden="true">${escapeHtml(choice.mark)}</span>
+                <span class="constructor-logo-option-copy">
+                  <strong>${escapeHtml(choice.label)}</strong>
+                  <small>${escapeHtml(choice.meta)}</small>
+                </span>
+                <span class="constructor-logo-option-status">${active ? 'Выбран' : 'Выбрать'}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderConstructorPlacementControls(input = {}) {
+    const scale = Math.max(60, Math.min(160, Number(input?.custom_logo_scale || 100) || 100));
+    const x = Math.max(0, Math.min(100, Number(input?.custom_logo_x || 82) || 82));
+    const y = Math.max(0, Math.min(100, Number(input?.custom_logo_y || 82) || 82));
+    const padding = Math.max(0, Math.min(32, Number(input?.custom_logo_padding || 10) || 10));
+    return `
+      <section class="constructor-tool-card constructor-placement-card">
+        <div class="constructor-tool-head">
+          <strong>Размещение</strong>
+          <span>Зона вставки в превью</span>
+        </div>
+        <label class="constructor-range-field">
+          <span>Размер</span>
+          <input type="range" name="custom_logo_scale" min="60" max="160" value="${escapeHtml(scale)}">
+          <output>${escapeHtml(scale)}%</output>
+        </label>
+        <label class="constructor-range-field">
+          <span>По горизонтали</span>
+          <input type="range" name="custom_logo_x" min="0" max="100" value="${escapeHtml(x)}">
+          <output>${escapeHtml(x)}%</output>
+        </label>
+        <label class="constructor-range-field">
+          <span>По вертикали</span>
+          <input type="range" name="custom_logo_y" min="0" max="100" value="${escapeHtml(y)}">
+          <output>${escapeHtml(y)}%</output>
+        </label>
+        <label class="constructor-range-field">
+          <span>Отступ зоны</span>
+          <input type="range" name="custom_logo_padding" min="0" max="32" value="${escapeHtml(padding)}">
+          <output>${escapeHtml(padding)} px</output>
+        </label>
+        <label class="constructor-field constructor-placement-mode">
+          <span class="constructor-field-label">Вариант вставки</span>
+          <select name="custom_logo_fit">
+            <option value="contain" selected>Сохранять пропорции</option>
+          </select>
+        </label>
+      </section>
+    `;
+  }
+
+  function renderConstructorPropertiesPanel(payload, input = {}, completion = null, warnings = []) {
+    const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
+    const previewArtifact = pickConstructorPreviewArtifact(artifacts);
+    const selected = selectedConstructorLogoChoice(input);
+    const colorVersion = String(input?.color_variant || 'color').trim().toUpperCase();
+    const checks = [
+      { label: 'Контраст', ok: true },
+      { label: 'Читаемость', ok: !warnings.some((item) => item.id === 'long_text') },
+      { label: 'Отступы', ok: true },
+      { label: 'Зона безопасности', ok: Boolean(previewArtifact) },
+    ];
+    return `
+      <aside id="constructor-properties" class="constructor-panel constructor-properties-panel">
+        <div class="constructor-panel-head">
+          <strong>Свойства</strong>
+          <span>Выбранный логотип и проверки макета.</span>
+        </div>
+        <section class="constructor-property-block">
+          <span class="constructor-property-kicker">Логотип</span>
+          <strong data-constructor-property-logo-name>${escapeHtml(selected.label)}</strong>
+          <dl class="constructor-property-list">
+            <div><dt>Формат</dt><dd>${escapeHtml(previewArtifact?.previewType || 'SVG')}</dd></div>
+            <div><dt>Размер</dt><dd>${escapeHtml(previewArtifact?.width && previewArtifact?.height ? `${previewArtifact.width}×${previewArtifact.height}` : 'адаптивный')}</dd></div>
+            <div><dt>Цвет</dt><dd>${escapeHtml(colorVersion)}</dd></div>
+            <div><dt>Заполнено</dt><dd>${escapeHtml(completion ? `${completion.filled}/${completion.total || 0}` : '0/0')}</dd></div>
+          </dl>
+        </section>
+        <section class="constructor-property-block">
+          <span class="constructor-property-kicker">Рекомендации</span>
+          <p>Сохраняйте пропорции логотипа, не выходите за зону вставки и проверьте контраст перед скачиванием.</p>
+        </section>
+        <section class="constructor-property-block">
+          <span class="constructor-property-kicker">Проверки</span>
+          <div class="constructor-check-list">
+            ${checks.map((item) => `
+              <span class="constructor-check-item${item.ok ? ' is-ok' : ' is-warn'}">
+                <span aria-hidden="true">${item.ok ? '✓' : '!'}</span>
+                ${escapeHtml(item.label)}
+              </span>
+            `).join('')}
+          </div>
+        </section>
+      </aside>
+    `;
+  }
+
   function renderBadgePhotoUpload(input) {
     if (!isBadgePhotoEditorId(state.currentEditorId)) {
       return '';
@@ -5478,24 +5671,32 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         </section>
 
         <div class="constructor-layout">
-          <section class="constructor-panel constructor-form-panel">
+          <nav class="constructor-mobile-tabs" aria-label="Разделы конструктора">
+            <a href="#constructor-settings">Настройки</a>
+            <a href="#constructor-preview">Превью</a>
+            <a href="#constructor-properties">Свойства</a>
+          </nav>
+          <section id="constructor-settings" class="constructor-panel constructor-form-panel">
             <div class="constructor-panel-head">
-              <strong>Поля решения</strong>
-              <span>Сначала заполните шаблон, затем сразу выбирайте вид носителя в блоке оформления.</span>
+              <strong>Настройки</strong>
+              <span>Выберите логотип, настройте размещение и заполните поля макета.</span>
             </div>
             ${buildConstructorPresetsMarkup(presets)}
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
+              ${renderConstructorLogoPicker(input)}
+              ${renderConstructorPlacementControls(input)}
               ${buildConstructorFieldGroupsMarkup(fields, input)}
               <div class="constructor-form-actions">
                 <button type="submit" class="accent-button">Собрать решение</button>
                 ${isBadgePhotoEditorId(state.currentEditorId) ? '<button type="button" class="ghost-button" data-action="save-current-layout">Сохранить в кабинет</button>' : ''}
+                <button type="button" class="ghost-button" data-action="download-primary-artifact">Скачать макет</button>
                 <button type="button" class="ghost-button" data-action="reset-constructor" data-id="${escapeHtml(definition.id || '')}">Сбросить шаблон</button>
                 <button type="button" class="ghost-button" data-action="copy-current-link">Скопировать ссылку</button>
               </div>
             </form>
           </section>
 
-          <section class="constructor-panel constructor-preview-panel">
+          <section id="constructor-preview" class="constructor-panel constructor-preview-panel">
             <div class="constructor-preview-panel-frame">
               <div class="constructor-panel-head">
                 <strong>Превью и файлы</strong>
@@ -5526,6 +5727,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
               </div>
             </div>
           </section>
+          ${renderConstructorPropertiesPanel(payload, input, completion, warnings)}
         </div>
 
         ${renderConstructorHandoff(payload?.handoff, artifacts)}
@@ -6516,6 +6718,13 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       }
       return;
     }
+    if (action === 'download-primary-artifact') {
+      const artifact = currentConstructorArtifacts()[0];
+      if (artifact) {
+        downloadArtifact(artifact);
+      }
+      return;
+    }
     if (action === 'reset-constructor') {
       window.clearTimeout(constructorDraftSaveTimer);
       removeConstructorDraft(String(target.dataset.id || '').trim(), window.localStorage);
@@ -6535,6 +6744,27 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
         const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
         syncConstructorLogoUi(nextInput);
         refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
+      }
+      return;
+    }
+    if (action === 'set-constructor-logo') {
+      const form = target.closest('#constructor-form') || document.querySelector('#constructor-form');
+      const field = String(target.dataset.field || '').trim();
+      const value = String(target.dataset.value || '').trim();
+      const inputNode = Array.from(form?.querySelectorAll(`[name="${field}"]`) || [])
+        .find((node) => String(node.value || '').trim() === value);
+      if (form && inputNode) {
+        inputNode.checked = true;
+        const constructorId = String(form.dataset.constructorId || '').trim();
+        const nextInput = collectConstructorFormInput(form);
+        syncConstructorChoiceSelectionState(form);
+        syncConstructorLogoPickerState(form, nextInput);
+        applyConstructorLivePreview(nextInput);
+        refreshConstructorProgressFromForm(form, { input: nextInput });
+        scheduleConstructorDraftSave(form, { input: nextInput });
+        if (constructorId) {
+          void buildConstructor(constructorId, nextInput, { silent: true });
+        }
       }
       return;
     }
@@ -6653,14 +6883,22 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   let constructorAutoBuildTimer = 0;
   document.addEventListener('input', (event) => {
+    if (event.target?.matches?.('[data-constructor-logo-search]')) {
+      filterConstructorLogoList(event.target.value);
+      return;
+    }
     const form = event.target.closest('#constructor-form');
     if (!form) {
       return;
     }
     const constructorId = String(form.dataset.constructorId || '').trim();
     const nextInput = collectConstructorFormInput(form);
+    syncConstructorRangeOutputs(form);
     refreshConstructorProgressFromForm(form, { input: nextInput });
     scheduleConstructorDraftSave(form, { input: nextInput });
+    if (CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS.has(String(event.target?.name || '').trim())) {
+      applyConstructorLivePreview(nextInput);
+    }
     clearTimeout(constructorAutoBuildTimer);
     constructorAutoBuildTimer = window.setTimeout(() => {
       if (!document.body.contains(form) || !constructorId) {
@@ -6724,6 +6962,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     const fieldType = String(event.target?.type || event.target?.tagName || '').trim().toLowerCase();
     if (event.target?.matches?.('.constructor-choice-input')) {
       syncConstructorChoiceSelectionState(form);
+      syncConstructorLogoPickerState(form, nextInput);
     }
     if (!shouldAutoBuildConstructorField(fieldName, fieldType)) {
       return;

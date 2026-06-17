@@ -5721,8 +5721,242 @@ input[type="search"],
 }
 
 .constructor-layout {
-  grid-template-columns: minmax(320px, 400px) minmax(420px, 1fr);
+  grid-template-columns: minmax(280px, 340px) minmax(420px, 1fr) minmax(240px, 300px);
   gap: 24px;
+}
+
+.constructor-mobile-tabs {
+  display: none;
+}
+
+.constructor-tool-card,
+.constructor-property-block {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.constructor-tool-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.constructor-tool-head strong,
+.constructor-property-block > strong {
+  font-size: 15px;
+}
+
+.constructor-tool-head span,
+.constructor-property-kicker,
+.constructor-property-block p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.constructor-logo-search input {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.constructor-logo-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.constructor-logo-tab {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.constructor-logo-tab.active {
+  border-color: #d6a7b0;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.constructor-logo-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.constructor-logo-list,
+.constructor-check-list,
+.constructor-property-list {
+  display: grid;
+  gap: 8px;
+}
+
+.constructor-logo-option {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  transition: border-color 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+
+.constructor-logo-option:hover,
+.constructor-logo-option:focus-visible {
+  border-color: var(--line-strong);
+}
+
+.constructor-logo-option.active {
+  border-color: #d6a7b0;
+  background: var(--accent-soft);
+}
+
+.constructor-logo-option-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--accent-deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.constructor-logo-option-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.constructor-logo-option-copy strong,
+.constructor-logo-option-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constructor-logo-option-copy strong {
+  font-size: 13px;
+}
+
+.constructor-logo-option-copy small,
+.constructor-logo-option-status {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.constructor-logo-option.active .constructor-logo-option-status {
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+
+.constructor-range-field {
+  display: grid;
+  grid-template-columns: minmax(92px, 1fr) minmax(120px, 1.3fr) 48px;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.constructor-range-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.constructor-range-field output {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.constructor-placement-mode {
+  margin-top: 4px;
+}
+
+.constructor-properties-panel {
+  align-self: start;
+}
+
+.constructor-property-kicker {
+  font-weight: 700;
+}
+
+.constructor-property-list {
+  margin: 0;
+}
+
+.constructor-property-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.constructor-property-list dt,
+.constructor-property-list dd {
+  margin: 0;
+  font-size: 12px;
+}
+
+.constructor-property-list dt {
+  color: var(--muted);
+}
+
+.constructor-property-list dd {
+  color: var(--ink);
+  text-align: right;
+}
+
+.constructor-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  font-size: 12px;
+}
+
+.constructor-check-item span {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.constructor-check-item.is-ok span {
+  color: #1d6b4f;
+}
+
+.constructor-check-item.is-warn span {
+  color: var(--accent-deep);
 }
 
 .constructor-hero-copy h3 {
@@ -5752,6 +5986,34 @@ input[type="search"],
   background: #fff;
 }
 
+.constructor-preview-stage {
+  position: relative;
+}
+
+.constructor-preview-stage::before {
+  content: "";
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  width: min(22%, 150px);
+  height: min(14%, 88px);
+  border: 1px dashed rgba(124, 21, 40, 0.28);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.constructor-custom-logo-overlay {
+  right: auto;
+  bottom: auto;
+  left: var(--custom-logo-x, 82%);
+  top: var(--custom-logo-y, 82%);
+  width: calc(clamp(76px, 20%, 150px) * var(--custom-logo-scale, 1));
+  padding: var(--custom-logo-padding, 10px);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  transform: translate(-50%, -50%);
+}
+
 .consultant-toggle {
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -5765,6 +6027,29 @@ input[type="search"],
   .constructor-layout,
   .profile-summary {
     grid-template-columns: 1fr;
+  }
+
+  .constructor-mobile-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .constructor-mobile-tabs a {
+    display: grid;
+    place-items: center;
+    min-height: 36px;
+    border-radius: 6px;
+    background: var(--surface-soft);
+    font-size: 12px;
+    font-weight: 700;
   }
 
   .portal-header {

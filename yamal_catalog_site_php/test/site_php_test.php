@@ -149,6 +149,10 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.soluti
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-webkit-line-clamp: 2'), 'styles clamp solution card copy to two lines');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-template-columns: minmax(280px, 340px) minmax(420px, 1fr) minmax(240px, 300px);'), 'styles use three-column constructor tool layout');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-logo-option'), 'styles contain constructor logo list option classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-properties-panel'), 'styles contain constructor properties panel classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-mobile-tabs'), 'styles contain mobile constructor tabs');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-accordion'), 'styles contain constructor field accordion classes');
@@ -218,6 +222,10 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'prof
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'save-current-layout'), 'frontend exposes save to cabinet action');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderSolutionLab'), 'frontend contains solution lab renderer');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCategoryFilters'), 'frontend contains solution lab category filter builder');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LOGO_CHOICES'), 'frontend contains constructor logo list model');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'set-constructor-logo'), 'frontend supports logo list selection');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'download-primary-artifact'), 'frontend supports primary layout download action');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorPropertiesPanel'), 'frontend renders constructor properties panel');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'groupConstructorFields'), 'frontend contains constructor field grouping helper');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "label: 'Заполнение шаблона'"), 'frontend exposes constructor fill group before style controls');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, "label: 'Оформление'"), 'frontend exposes dedicated constructor style group');
