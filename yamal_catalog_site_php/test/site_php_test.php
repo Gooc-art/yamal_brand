@@ -28,6 +28,8 @@ function constructor_test_defaults(array $definition): array
 }
 
 $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'const SITE_CONTENT_VISIBLE = false;'), 'index keeps site content disabled without deleting markup');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'X-Robots-Tag: noindex, nofollow'), 'index disables indexing while content is hidden');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-ribbon'), 'index contains hero ribbon block');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Бренд-портал'), 'index contains concise portal ribbon text');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'visually-hidden'), 'index keeps hidden h1 for semantics');

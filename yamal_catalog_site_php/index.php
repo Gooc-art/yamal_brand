@@ -3,6 +3,22 @@ declare(strict_types=1);
 
 require __DIR__ . '/src/site_lib.php';
 $config = site_config();
+const SITE_CONTENT_VISIBLE = false;
+
+if (!SITE_CONTENT_VISIBLE) {
+    header('X-Robots-Tag: noindex, nofollow', true);
+    ?><!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></title>
+  </head>
+  <body></body>
+</html>
+<?php
+    exit;
+}
 ?><!doctype html>
 <html lang="ru">
   <head>
