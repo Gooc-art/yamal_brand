@@ -11,6 +11,7 @@ ARCHIVE_SUBDIR="${ARCHIVE_SUBDIR:-}"
 REMOTE_SYNC_SUBDIR="${REMOTE_SYNC_SUBDIR:-}"
 REMOTE_LAYOUT_ROOT_NAME="${REMOTE_LAYOUT_ROOT_NAME:-Макеты1}"
 EXCLUDE_TIFF="${EXCLUDE_TIFF:-0}"
+SYNC_WEB_FORMATS="${SYNC_WEB_FORMATS:-0}"
 WARMUP_TIMEOUT_SECONDS="${WARMUP_TIMEOUT_SECONDS:-60}"
 SSH_PASSWORD="${SSH_PASSWORD:?SSH_PASSWORD is required}"
 SSH_PORT="${SSH_PORT:-22}"
@@ -100,7 +101,18 @@ EOF
   RSYNC_RSH="${ssh_wrapper} -p ${SSH_PORT} ${SSH_OPTS[*]}"
 fi
 
-if [ "${EXCLUDE_TIFF}" = "1" ]; then
+if [ "${SYNC_WEB_FORMATS}" = "1" ]; then
+  RSYNC_ARGS+=(
+    --delete-excluded
+    --include '*/'
+    --include '*.png' --include '*.PNG'
+    --include '*.jpg' --include '*.JPG'
+    --include '*.jpeg' --include '*.JPEG'
+    --include '*.pdf' --include '*.PDF'
+    --include '*.svg' --include '*.SVG'
+    --exclude '*'
+  )
+elif [ "${EXCLUDE_TIFF}" = "1" ]; then
   RSYNC_ARGS+=( --exclude '*.tif' --exclude '*.tiff' --exclude '*.TIF' --exclude '*.TIFF' )
 fi
 

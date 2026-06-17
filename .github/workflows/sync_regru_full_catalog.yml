@@ -13,7 +13,7 @@ jobs:
       REMOTE_SITE_URL: ${{ secrets.REGRU_SITE_URL }}
       SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
       ARCHIVE_PATH: /home/localadmin/yamal_brand/input/Макеты1
-      EXCLUDE_TIFF: "1"
+      SYNC_WEB_FORMATS: "1"
       WARMUP_TIMEOUT_SECONDS: "60"
       IMPORT_LABEL: full-catalog-sync-${{ github.run_id }}-${{ github.run_attempt }}
 
