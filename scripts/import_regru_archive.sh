@@ -100,6 +100,7 @@ fi
 mkdir -p "${WORK_DIR}/download" "${WORK_DIR}/extract"
 
 archive_source="${ARCHIVE_URL}"
+source_root="${WORK_DIR}/extract"
 if [ -n "${ARCHIVE_PATH}" ]; then
   if [ ! -f "${ARCHIVE_PATH}" ] && [ ! -d "${ARCHIVE_PATH}" ]; then
     echo "archive path not found: ${ARCHIVE_PATH}" >&2
@@ -109,8 +110,8 @@ if [ -n "${ARCHIVE_PATH}" ]; then
 fi
 
 if [ -n "${ARCHIVE_PATH}" ] && [ -d "${ARCHIVE_PATH}" ]; then
-  echo "[import] copying local catalog directory"
-  rsync -a "${ARCHIVE_PATH%/}/" "${WORK_DIR}/extract/"
+  echo "[import] using local catalog directory"
+  source_root="${ARCHIVE_PATH%/}"
 else
   archive_name="$(basename "${archive_source%%\?*}")"
   archive_path="${WORK_DIR}/download/${archive_name:-catalog-archive}"
@@ -146,7 +147,7 @@ else
   esac
 fi
 
-if ! find "${WORK_DIR}/extract" -mindepth 1 -maxdepth 1 | grep -q .; then
+if ! find "${source_root}" -mindepth 1 -maxdepth 1 | grep -q .; then
   echo "archive extracted empty payload" >&2
   exit 1
 fi
@@ -154,7 +155,7 @@ fi
 backup_dir="${REMOTE_DIR}/_backup/${IMPORT_LABEL}"
 
 if [ -n "${ARCHIVE_SUBDIR}" ]; then
-  source_dir="$(python3 "${HELPER_PY}" locate-subdir --extract-root "${WORK_DIR}/extract" --subdir "${ARCHIVE_SUBDIR}")"
+  source_dir="$(python3 "${HELPER_PY}" locate-subdir --extract-root "${source_root}" --subdir "${ARCHIVE_SUBDIR}")"
   if [ -z "${REMOTE_SYNC_SUBDIR}" ]; then
     REMOTE_SYNC_SUBDIR="$(basename "${source_dir}")"
   fi
@@ -212,7 +213,7 @@ else
   echo "[import] syncing extracted files to remote data/files"
   rsync -azs --delete \
     -e "${RSYNC_RSH}" \
-    "${WORK_DIR}/extract/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/data/files/"
+    "${source_root}/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/data/files/"
 
   echo "[import] forcing catalog rebuild on next request"
   "${SSH_CMD[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "
