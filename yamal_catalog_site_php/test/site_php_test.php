@@ -29,11 +29,10 @@ function constructor_test_defaults(array $definition): array
 
 $indexTemplate = file_get_contents(dirname(__DIR__) . '/index.php');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-ribbon'), 'index contains hero ribbon block');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Официальная библиотека фирменного стиля'), 'index contains official library ribbon text');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Бренд-портал'), 'index contains concise portal ribbon text');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'visually-hidden'), 'index keeps hidden h1 for semantics');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-example-tabs'), 'index contains hero examples tabs scaffold');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-example-stage'), 'index contains hero examples stage scaffold');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-examples-note'), 'index contains hero examples note');
+assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'portal-stat-grid'), 'index keeps home page free from stat cards');
+assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-example-stage'), 'index keeps home page free from hero examples');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'copy-current-link'), 'index contains copy current link control');
@@ -43,7 +42,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'href="/cat
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'href="/branding-catalog"'), 'index exposes branding catalog route link');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'id="profile-page"'), 'index contains profile route page');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'id="admin-page"'), 'index contains admin route page');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-column-media'), 'index contains dedicated hero media column');
+assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-column-media'), 'index removed dedicated hero media column');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-composition'), 'index contains workspace composition scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-inspector'), 'index contains workspace inspector scaffold');

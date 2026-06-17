@@ -19,9 +19,9 @@ $config = site_config();
           <span>Бренд Ямал</span>
         </a>
         <nav class="portal-nav" aria-label="Главное меню">
-          <a href="/" data-page-link="/" data-nav="home">⌂ Главная</a>
-          <a href="/catalog" data-page-link="/catalog" data-nav="catalog">▦ Каталог</a>
-          <a href="/branding-catalog" data-page-link="/branding-catalog" data-nav="branding">▣ Брендирование</a>
+          <a href="/" data-page-link="/" data-nav="home">Главная</a>
+          <a href="/catalog" data-page-link="/catalog" data-nav="catalog">Каталог</a>
+          <a href="/branding-catalog" data-page-link="/branding-catalog" data-nav="branding">Брендирование</a>
         </nav>
         <button type="button" class="accent-button portal-login-button" data-action="open-login-modal">Войти</button>
         <button type="button" class="ghost-button portal-profile-button" data-action="open-profile" hidden></button>
@@ -32,32 +32,14 @@ $config = site_config();
         <div class="hero-column hero-column-main">
           <div class="hero-ribbon">
             <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
-            <span>Официальная библиотека фирменного стиля</span>
+            <span>Бренд-портал</span>
           </div>
-          <h1>Конструктор бренда Ямала для носителей, каталогов и рабочих макетов</h1>
-          <p class="hero-copy">Собирайте типовые макеты в фирменном стиле, находите утверждённые материалы и передавайте подрядчику понятный пакет без ручной охоты по папкам.</p>
+          <h1>Конструктор бренда Ямала</h1>
+          <p class="hero-copy">Выберите макет, заполните данные, загрузите логотип или фото и скачайте результат.</p>
           <div class="hero-actions">
             <a class="accent-button" href="/branding-catalog" data-page-link="/branding-catalog">Брендирование</a>
             <a class="ghost-button" href="/catalog" data-page-link="/catalog">Каталог</a>
           </div>
-          <div class="portal-stat-grid">
-            <article><strong id="portal-stat-assets">0</strong><span>материалов</span></article>
-            <article><strong id="portal-stat-constructors">0</strong><span>шаблонов</span></article>
-            <article><strong>24/7</strong><span>доступ к каталогу</span></article>
-          </div>
-        </div>
-
-        <div class="hero-column hero-column-media">
-          <section class="hero-examples surface">
-            <div class="block-head compact hero-examples-head">
-              <div>
-                <h2>Примеры внедрения бренда</h2>
-                <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром и переключением.</p>
-              </div>
-              <div id="hero-example-tabs" class="hero-example-tabs"></div>
-            </div>
-            <div id="hero-example-stage" class="hero-example-stage"></div>
-          </section>
         </div>
       </section>
       </main>

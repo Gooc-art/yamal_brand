@@ -716,7 +716,7 @@ h3,
 .constructor-choice-card,
 .constructor-download-card,
 .constructor-mini-card {
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
@@ -1154,7 +1154,7 @@ h3,
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.68);
   scroll-snap-align: start;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
 }
 
 .hero-example-thumb:hover {
@@ -1425,7 +1425,7 @@ input[type="search"]:focus {
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--route-soft), rgba(255, 255, 255, 0.86) 76%);
   box-shadow: var(--shadow-soft);
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
 
 .brand-route-card:hover {
@@ -1454,7 +1454,7 @@ input[type="search"]:focus {
   font-size: 18px;
   font-weight: 700;
   box-shadow: inset 0 0 0 1px rgba(24, 42, 49, 0.06);
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  transition: transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
 
 .brand-route-card strong {
@@ -1647,7 +1647,7 @@ input[type="search"]:focus {
   background: linear-gradient(180deg, var(--route-soft), rgba(255, 255, 255, 0.88) 78%);
   box-shadow: 0 8px 18px rgba(24, 42, 49, 0.04);
   scroll-snap-align: start;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
 }
 
 .section-switch-card:hover {
@@ -1758,7 +1758,7 @@ input[type="search"]:focus {
 .workspace-stage {
   min-height: 760px;
   background: linear-gradient(180deg, rgba(255, 253, 249, 0.97), rgba(248, 243, 236, 0.96));
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition: transform 180ms ease, opacity 180ms ease;
 }
 
 .workspace-inspector {
@@ -1917,7 +1917,7 @@ input[type="search"]:focus {
   column-gap: 16px;
   row-gap: 10px;
   align-items: center;
-  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  transition: border-color 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
 
 .result-card.file {
@@ -2224,7 +2224,7 @@ input[type="search"]:focus {
   border: 1px solid rgba(24, 42, 49, 0.08);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 242, 234, 0.9));
   box-shadow: 0 20px 48px rgba(24, 42, 49, 0.06);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color 180ms ease, transform 180ms ease, opacity 180ms ease;
 }
 
 .solution-card:hover {
@@ -2720,7 +2720,7 @@ input[type="search"]:focus {
   background: var(--constructor-paper);
   box-shadow: var(--constructor-shadow-tight);
   text-align: left;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+  transition: border-color 180ms ease, transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
 
 .constructor-preset-card:hover,
@@ -2973,7 +2973,7 @@ input[type="search"]:focus {
   background: var(--constructor-paper);
   box-shadow: var(--constructor-shadow-tight);
   cursor: pointer;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+  transition: border-color 180ms ease, transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
 
 .constructor-choice-field.is-compact {
@@ -3612,7 +3612,7 @@ input[type="search"]:focus {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  transition: border-color 180ms ease, transform 180ms ease, opacity 180ms ease;
 }
 
 .constructor-download-card strong {
@@ -4022,7 +4022,7 @@ input[type="search"]:focus {
   border: 1px solid rgba(24, 42, 49, 0.1);
   background: linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(247, 240, 232, 0.97));
   box-shadow: 0 18px 42px rgba(24, 42, 49, 0.18);
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform 180ms ease, border-color 180ms ease, opacity 180ms ease;
 }
 
 .consultant-toggle:hover {
@@ -4516,7 +4516,7 @@ input[type="search"]:focus {
   font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
 }
 
 .consultant-query-chip:hover {
@@ -4549,7 +4549,7 @@ input[type="search"]:focus {
   border-radius: 18px;
   border: 1px solid rgba(24, 42, 49, 0.08);
   background: rgba(255, 255, 255, 0.74);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, opacity 160ms ease;
 }
 
 .consultant-followup:hover {
@@ -5390,5 +5390,447 @@ input[type="search"]:focus {
   .solution-lab-filters {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ponytail: strict work-portal layer; remove when the older marketing skin is deleted. */
+:root {
+  --bg: #f6f4f1;
+  --bg-layer: #ebe7e1;
+  --surface: #fffdf9;
+  --surface-strong: #ffffff;
+  --surface-soft: #f8f6f2;
+  --line: #d9d3c9;
+  --line-strong: #c9c1b5;
+  --ink: #17252b;
+  --muted: #5f6970;
+  --accent: #9f1d35;
+  --accent-deep: #7c1528;
+  --accent-soft: #f7e8eb;
+  --shadow: 0 1px 2px rgba(23, 37, 43, 0.04);
+  --shadow-soft: 0 1px 2px rgba(23, 37, 43, 0.03);
+  --radius-xl: 8px;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 6px;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--bg);
+}
+
+body::before,
+.page-shell::before,
+.page-shell::after,
+.hero::before,
+.hero::after,
+.hero-examples::before,
+.search-panel::before,
+.brand-routes-block::before,
+.content-block::before {
+  display: none;
+}
+
+.page-shell,
+.page-shell.catalog-mode {
+  width: min(1180px, calc(100vw - 32px));
+  padding: 24px 0 48px;
+}
+
+.surface,
+.portal-header,
+.page-title-block,
+.cabinet-head,
+.cabinet-panel,
+.protected-state,
+.portal-modal,
+.search-panel,
+.brand-routes-block,
+.content-block,
+.detail-card,
+.result-card,
+.solution-lab-block,
+.constructor-hero,
+.constructor-panel,
+.account-card,
+.profile-photo-card,
+.portal-list article,
+.solution-card,
+.brand-route-card {
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: none;
+}
+
+.portal-header {
+  top: 0;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  border-radius: 0 0 8px 8px;
+}
+
+.portal-logo {
+  font-weight: 700;
+}
+
+.portal-nav {
+  gap: 4px;
+}
+
+.portal-nav a,
+.portal-tabs a,
+.portal-tabs button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.portal-nav a.active,
+.portal-tabs .active {
+  background: var(--accent-soft);
+  border-color: #e1bac2;
+  color: var(--accent-deep);
+}
+
+.route-page,
+.constructor-shell,
+.constructor-form,
+.portal-form,
+.portal-list {
+  gap: 16px;
+}
+
+.page-title-block,
+.cabinet-head,
+.cabinet-panel,
+.protected-state,
+.solution-lab-block,
+.constructor-hero,
+.constructor-panel,
+.portal-modal,
+.search-panel,
+.brand-routes-block {
+  padding: 24px;
+}
+
+.hero {
+  display: block;
+  max-width: 760px;
+  padding: 32px;
+  overflow: visible;
+}
+
+.hero-column-main {
+  max-width: none;
+  justify-self: auto;
+  gap: 16px;
+}
+
+.hero-ribbon {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+h1,
+.page-title-block h1,
+.cabinet-head h1,
+.protected-state h1,
+.hero h1,
+.solution-lab-head h1 {
+  max-width: 760px;
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+h2 {
+  font-size: clamp(22px, 2vw, 28px);
+  line-height: 1.15;
+}
+
+h3,
+.detail-title {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.hero-copy,
+.solution-lab-copy,
+.content-hint,
+.brand-routes-caption {
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
+.accent-button,
+.ghost-button,
+.link-button,
+.item-action,
+.chip,
+.brand-route-card,
+.constructor-preset-card,
+.constructor-choice-card,
+.constructor-download-card,
+.constructor-mini-card,
+.solution-card,
+.hero-example-thumb {
+  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+
+.accent-button,
+.ghost-button,
+.link-button,
+.item-action,
+.chip {
+  min-height: 40px;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.accent-button {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.accent-button:hover,
+.accent-button:active,
+.accent-button.is-pressed {
+  background: var(--accent-deep);
+  box-shadow: none;
+}
+
+.ghost-button,
+.item-action {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.link-button,
+.chip {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.accent-button:hover,
+.ghost-button:hover,
+.link-button:hover,
+.item-action:hover,
+.chip:hover,
+.brand-route-card:hover,
+.solution-card:hover,
+.constructor-preset-card:hover,
+.constructor-choice-card:hover,
+.constructor-download-card:hover,
+.constructor-mini-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--line-strong);
+}
+
+.accent-button:focus-visible,
+.ghost-button:focus-visible,
+.link-button:focus-visible,
+.item-action:focus-visible,
+.chip:focus-visible,
+.brand-route-card:focus-visible,
+.solution-card:focus-within,
+.constructor-preset-card:focus-visible,
+.constructor-choice-card:focus-visible,
+.constructor-download-card:focus-visible,
+.constructor-mini-card:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input[type="search"],
+.portal-form input,
+.portal-form textarea,
+.portal-list textarea,
+.account-field-grid input {
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.solution-lab-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.solution-card {
+  min-height: 220px;
+  padding: 16px;
+  background: #fff;
+}
+
+.solution-card-copy {
+  gap: 8px;
+}
+
+.solution-card-copy strong {
+  font-size: 20px;
+}
+
+.solution-card-icon,
+.constructor-mini-icon,
+.brand-route-icon {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  font-size: 18px;
+}
+
+.solution-card .item-actions {
+  align-self: end;
+}
+
+.solution-filter-chip.active {
+  border-color: #d6a7b0;
+  background: var(--accent-soft);
+}
+
+.constructor-layout {
+  grid-template-columns: minmax(320px, 400px) minmax(420px, 1fr);
+  gap: 24px;
+}
+
+.constructor-hero-copy h3 {
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.1;
+}
+
+.constructor-progress-strip,
+.constructor-support-card,
+.constructor-choice-card,
+.constructor-preset-card,
+.constructor-download-card,
+.constructor-mini-card,
+.constructor-logo-upload,
+.constructor-logo-preview,
+.constructor-preview-panel-frame,
+.constructor-preview-stage,
+.constructor-preview-frame,
+.profile-photo-preview,
+.constructor-photo-preview,
+.saved-layout-preview {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.constructor-preview-panel-frame {
+  background: #fff;
+}
+
+.consultant-toggle {
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.consultant-toggle-copy span {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .constructor-layout,
+  .profile-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-header {
+    position: static;
+    flex-wrap: wrap;
+  }
+
+  .portal-nav {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-shell,
+  .page-shell.catalog-mode {
+    width: min(100vw - 16px, 1180px);
+    padding: 8px 0 32px;
+  }
+
+  .page-title-block,
+  .cabinet-head,
+  .protected-state,
+  .solution-lab-head {
+    display: grid;
+    align-items: start;
+  }
+
+  .page-title-block,
+  .cabinet-head,
+  .cabinet-panel,
+  .protected-state,
+  .solution-lab-block,
+  .constructor-hero,
+  .constructor-panel,
+  .portal-modal,
+  .search-panel,
+  .brand-routes-block,
+  .hero {
+    padding: 16px;
+  }
+
+  .solution-lab-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .solution-card {
+    min-height: 0;
+  }
+
+  .hero-actions,
+  .search-row,
+  .consultant-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
