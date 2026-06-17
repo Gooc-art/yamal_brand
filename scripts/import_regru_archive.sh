@@ -10,6 +10,8 @@ ARCHIVE_PATH="${ARCHIVE_PATH:-}"
 ARCHIVE_SUBDIR="${ARCHIVE_SUBDIR:-}"
 REMOTE_SYNC_SUBDIR="${REMOTE_SYNC_SUBDIR:-}"
 REMOTE_LAYOUT_ROOT_NAME="${REMOTE_LAYOUT_ROOT_NAME:-Макеты1}"
+EXCLUDE_TIFF="${EXCLUDE_TIFF:-0}"
+WARMUP_TIMEOUT_SECONDS="${WARMUP_TIMEOUT_SECONDS:-60}"
 SSH_PASSWORD="${SSH_PASSWORD:?SSH_PASSWORD is required}"
 SSH_PORT="${SSH_PORT:-22}"
 WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
@@ -21,6 +23,7 @@ HELPER_PY="${SCRIPT_DIR}/import_regru_archive_paths.py"
 
 SSH_CMD=()
 RSYNC_RSH=""
+RSYNC_ARGS=( -azs --delete )
 export SSHPASS="${SSH_PASSWORD}"
 export SSH_ASKPASS_HELPER=""
 
@@ -95,6 +98,10 @@ EOF
   export SSH_ASKPASS_HELPER="${askpass_script}"
   SSH_CMD=("${ssh_wrapper}" -p "${SSH_PORT}" "${SSH_OPTS[@]}")
   RSYNC_RSH="${ssh_wrapper} -p ${SSH_PORT} ${SSH_OPTS[*]}"
+fi
+
+if [ "${EXCLUDE_TIFF}" = "1" ]; then
+  RSYNC_ARGS+=( --exclude '*.tif' --exclude '*.tiff' --exclude '*.TIF' --exclude '*.TIFF' )
 fi
 
 mkdir -p "${WORK_DIR}/download" "${WORK_DIR}/extract"
@@ -178,7 +185,7 @@ if [ -n "${ARCHIVE_SUBDIR}" ]; then
     rm -rf '${remote_incoming_dir}';
   "
 
-  rsync -azs --delete \
+  rsync "${RSYNC_ARGS[@]}" \
     -e "${RSYNC_RSH}" \
     "${source_dir}/" "${REMOTE_USER}@${REMOTE_HOST}:${remote_incoming_dir}/"
 
@@ -211,7 +218,7 @@ else
   "
 
   echo "[import] syncing extracted files to remote data/files"
-  rsync -azs --delete \
+  rsync "${RSYNC_ARGS[@]}" \
     -e "${RSYNC_RSH}" \
     "${source_root}/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/data/files/"
 
@@ -222,5 +229,5 @@ else
 fi
 
 echo "[import] warming up public site"
-bootstrap_json="$(curl -fsSL --retry 3 --retry-delay 2 "${REMOTE_SITE_URL%/}/api.php?action=bootstrap")"
+bootstrap_json="$(curl -fsSL --retry 3 --retry-delay 2 --max-time "${WARMUP_TIMEOUT_SECONDS}" "${REMOTE_SITE_URL%/}/api.php?action=bootstrap")"
 echo "${bootstrap_json}"
