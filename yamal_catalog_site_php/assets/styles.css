@@ -5721,7 +5721,7 @@ input[type="search"],
 }
 
 .constructor-layout {
-  grid-template-columns: minmax(280px, 340px) minmax(420px, 1fr) minmax(240px, 300px);
+  grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);
   gap: 24px;
 }
 
@@ -5893,10 +5893,6 @@ input[type="search"],
   margin-top: 4px;
 }
 
-.constructor-properties-panel {
-  align-self: start;
-}
-
 .constructor-property-kicker {
   font-weight: 700;
 }
@@ -6034,7 +6030,7 @@ input[type="search"],
     top: 0;
     z-index: 5;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     padding: 8px;
     border: 1px solid var(--line);

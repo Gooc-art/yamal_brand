@@ -11,14 +11,9 @@ const BRANDING_CARDS = [
   { id: 'badge_photo', templateId: 'badge', label: 'Бейдж с фото', category: 'Одежда и мерч', summary: 'Бейдж с зоной под фото' },
 ];
 const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
-const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone', 'custom_logo_scale', 'custom_logo_x', 'custom_logo_y', 'custom_logo_padding']);
 const CONSTRUCTOR_LOGO_CHOICES = [
   { id: 'logo', field: 'brand_lockup', value: 'logo', label: 'Логотип Ямал', meta: 'Color / основной', mark: 'Я' },
-  { id: 'mark', field: 'brand_lockup', value: 'mark', label: 'Фирменный знак', meta: 'Знак без надписи', mark: '◆' },
-  { id: 'logo_band', field: 'graphic_element', value: 'logo_band', label: 'Лента логотипов', meta: 'Для протяжённых зон', mark: '—' },
-  { id: 'lockup_bridge', field: 'graphic_element', value: 'lockup_bridge', label: 'Логотип + знак', meta: 'Крупная подложка', mark: 'Я+' },
-  { id: 'mark_white', field: 'graphic_element', value: 'mark_white', label: 'Знак White', meta: 'Для плотного фона', mark: 'W' },
 ];
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
 const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name', 'custom_logo_scale', 'custom_logo_x', 'custom_logo_y', 'custom_logo_padding', 'badge_photo_src', 'badge_photo_name']);
@@ -30,7 +25,7 @@ const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 0;
 const CONSTRUCTOR_PREVIEW_TOP_OFFSET = 18;
 const CONSTRUCTOR_PREVIEW_VIEWPORT_GAP = 28;
 const WORKSPACE_NAVIGATION_ACTIONS = new Set(['open-folder', 'open-folder-page', 'open-file', 'search-chip', 'open-constructor']);
-const PRESSABLE_INTERACTIVE_SELECTOR = '.accent-button, .ghost-button, .link-button, .item-action, .chip, .brand-route-card, .constructor-preset-card, .constructor-choice-card, .constructor-download-card, .constructor-mini-card';
+const PRESSABLE_INTERACTIVE_SELECTOR = '.accent-button, .ghost-button, .link-button, .item-action, .chip, .brand-route-card, .constructor-choice-card, .constructor-download-card, .constructor-mini-card';
 const DEFAULT_CONSULTANT_INTENTS = [
   { id: 'logo', label: 'Нужен логотип', summary: 'Логотип и знак', description: 'Логотип, знак и базовые форматы.', prompt: 'логотип svg' },
   { id: 'brandbook', label: 'Нужен брендбук', summary: 'Брендбуки', description: 'Брендбук региона или города.', prompt: 'брендбук Салехард' },
@@ -2440,22 +2435,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     });
   }
 
-  function syncConstructorPresetSelectionState(activePresetId = '', root = document) {
-    if (!root || typeof root.querySelectorAll !== 'function') {
-      return;
-    }
-    const normalizedId = String(activePresetId || '').trim();
-    root.querySelectorAll('.constructor-preset-card').forEach((card) => {
-      const active = normalizedId && String(card.getAttribute('data-preset-id') || '').trim() === normalizedId;
-      card.classList.toggle('active', active);
-      if (active) {
-        card.setAttribute('aria-pressed', 'true');
-      } else {
-        card.removeAttribute('aria-pressed');
-      }
-    });
-  }
-
   function catalogTitle() {
     return state.bootstrap?.title || 'Бренд Ямал';
   }
@@ -2968,7 +2947,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       previewPanelScrollTop: previewPanel ? previewPanel.scrollTop : 0,
       previewStageScrollTop: previewStage ? previewStage.scrollTop : 0,
       openAccordionIds: accordionIds,
-      styleMoreOpen: Boolean(shell.querySelector('.constructor-style-more[open]')),
     };
   }
 
@@ -2990,11 +2968,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           node.open = openIds.has(groupId);
         }
       });
-
-      const styleMore = shell.querySelector('.constructor-style-more');
-      if (styleMore instanceof HTMLDetailsElement) {
-        styleMore.open = Boolean(viewState.styleMoreOpen);
-      }
 
       const previewPanel = shell.querySelector('.constructor-preview-panel-frame') || shell.querySelector('.constructor-preview-panel');
       if (previewPanel) {
@@ -3194,9 +3167,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       const status = node.querySelector('.constructor-logo-option-status');
       if (status) status.textContent = active ? 'Выбран' : 'Выбрать';
     });
-    const selected = selectedConstructorLogoChoice(currentInput);
-    const propertyName = document.querySelector('[data-constructor-property-logo-name]');
-    if (propertyName) propertyName.textContent = selected.label;
   }
 
   function filterConstructorLogoList(query = '') {
@@ -4957,10 +4927,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           <span class="visually-hidden">Поиск по логотипам</span>
           <input type="search" data-constructor-logo-search placeholder="Поиск логотипа" autocomplete="off">
         </label>
-        <div class="constructor-logo-tabs" aria-label="Категории логотипов">
-          <button type="button" class="constructor-logo-tab active" aria-pressed="true">Основные</button>
-          <button type="button" class="constructor-logo-tab" disabled>Городские</button>
-        </div>
         <div class="constructor-logo-list" data-constructor-logo-list>
           ${CONSTRUCTOR_LOGO_CHOICES.map((choice) => {
             const active = constructorLogoChoiceActive(choice, input);
@@ -5026,52 +4992,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </select>
         </label>
       </section>
-    `;
-  }
-
-  function renderConstructorPropertiesPanel(payload, input = {}, completion = null, warnings = []) {
-    const artifacts = Array.isArray(payload?.artifacts) ? payload.artifacts : [];
-    const previewArtifact = pickConstructorPreviewArtifact(artifacts);
-    const selected = selectedConstructorLogoChoice(input);
-    const colorVersion = String(input?.color_variant || 'color').trim().toUpperCase();
-    const checks = [
-      { label: 'Контраст', ok: true },
-      { label: 'Читаемость', ok: !warnings.some((item) => item.id === 'long_text') },
-      { label: 'Отступы', ok: true },
-      { label: 'Зона безопасности', ok: Boolean(previewArtifact) },
-    ];
-    return `
-      <aside id="constructor-properties" class="constructor-panel constructor-properties-panel">
-        <div class="constructor-panel-head">
-          <strong>Свойства</strong>
-          <span>Выбранный логотип и проверки макета.</span>
-        </div>
-        <section class="constructor-property-block">
-          <span class="constructor-property-kicker">Логотип</span>
-          <strong data-constructor-property-logo-name>${escapeHtml(selected.label)}</strong>
-          <dl class="constructor-property-list">
-            <div><dt>Формат</dt><dd>${escapeHtml(previewArtifact?.previewType || 'SVG')}</dd></div>
-            <div><dt>Размер</dt><dd>${escapeHtml(previewArtifact?.width && previewArtifact?.height ? `${previewArtifact.width}×${previewArtifact.height}` : 'адаптивный')}</dd></div>
-            <div><dt>Цвет</dt><dd>${escapeHtml(colorVersion)}</dd></div>
-            <div><dt>Заполнено</dt><dd>${escapeHtml(completion ? `${completion.filled}/${completion.total || 0}` : '0/0')}</dd></div>
-          </dl>
-        </section>
-        <section class="constructor-property-block">
-          <span class="constructor-property-kicker">Рекомендации</span>
-          <p>Сохраняйте пропорции логотипа, не выходите за зону вставки и проверьте контраст перед скачиванием.</p>
-        </section>
-        <section class="constructor-property-block">
-          <span class="constructor-property-kicker">Проверки</span>
-          <div class="constructor-check-list">
-            ${checks.map((item) => `
-              <span class="constructor-check-item${item.ok ? ' is-ok' : ' is-warn'}">
-                <span aria-hidden="true">${item.ok ? '✓' : '!'}</span>
-                ${escapeHtml(item.label)}
-              </span>
-            `).join('')}
-          </div>
-        </section>
-      </aside>
     `;
   }
 
@@ -5176,60 +5096,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (group?.id === 'fill') {
       return true;
     }
-    if (group?.id === 'style') {
-      return true;
-    }
     const items = Array.isArray(group?.items) ? group.items : [];
     return items.some((field) => !isConstructorFieldDefaultValue(field, input));
-  }
-
-  function buildConstructorStyleGroupMarkup(group, input) {
-    const items = Array.isArray(group?.items) ? group.items : [];
-    if (!items.length) {
-      return '';
-    }
-    const primaryFields = items.filter((field) => CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS.has(String(field?.id || '').trim()));
-    const advancedFields = items.filter((field) => !CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS.has(String(field?.id || '').trim()));
-    const resolvedPrimary = primaryFields.length ? primaryFields : items;
-    const resolvedAdvanced = primaryFields.length ? advancedFields : [];
-    const advancedOpen = resolvedAdvanced.some((field) => !isConstructorFieldDefaultValue(field, input));
-    const sectionOpen = shouldOpenConstructorFieldGroup(group, input);
-    const meta = buildConstructorGroupMeta(group, input);
-
-    return `
-      <section class="constructor-field-group constructor-field-group-style">
-        <details class="constructor-field-accordion"${sectionOpen ? ' open' : ''} data-constructor-group-id="${escapeHtml(group.id || 'style')}">
-          <summary class="constructor-group-summary">
-            <span class="constructor-group-summary-copy">
-              <strong>${escapeHtml(group.label)}</strong>
-              <span>${escapeHtml(group.hint)}</span>
-            </span>
-            ${meta ? `<span class="constructor-group-summary-meta">${escapeHtml(meta)}</span>` : ''}
-          </summary>
-          <div class="constructor-field-accordion-body">
-            <div class="constructor-style-primary">
-              ${resolvedPrimary.map((field) => renderConstructorField(field, input[field.id], { compactChoice: true })).join('')}
-            </div>
-            ${resolvedAdvanced.length ? `
-              <details class="constructor-style-more"${advancedOpen ? ' open' : ''}>
-                <summary>Цвет и версия</summary>
-                <div class="constructor-style-more-body">
-                  ${resolvedAdvanced.map((field) => renderConstructorField(field, input[field.id], { compactChoice: true })).join('')}
-                </div>
-              </details>
-            ` : ''}
-          </div>
-        </details>
-      </section>
-    `;
   }
 
   function buildConstructorFieldGroupMarkup(group, input) {
     const sectionOpen = shouldOpenConstructorFieldGroup(group, input);
     const meta = buildConstructorGroupMeta(group, input);
-    if (group?.id === 'style') {
-      return buildConstructorStyleGroupMarkup(group, input);
-    }
     return `
       <section class="constructor-field-group">
         <details class="constructor-field-accordion"${sectionOpen ? ' open' : ''} data-constructor-group-id="${escapeHtml(group.id || '')}">
@@ -5251,7 +5124,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function buildConstructorFieldGroupsMarkup(fields, input) {
-    return `${groupConstructorFields(fields).map((group) => buildConstructorFieldGroupMarkup(group, input)).join('')}${renderConstructorCustomLogoUpload(input)}${renderBadgePhotoUpload(input)}`;
+    return `${groupConstructorFields(fields).filter((group) => group.id !== 'style').map((group) => buildConstructorFieldGroupMarkup(group, input)).join('')}${renderConstructorCustomLogoUpload(input)}${renderBadgePhotoUpload(input)}`;
   }
 
 function buildConstructorStepsMarkup(generated) {
@@ -5275,37 +5148,6 @@ function buildConstructorStepsMarkup(generated) {
           </div>
         `).join('')}
       </div>
-  `;
-}
-
-function buildConstructorPresetsMarkup(presets) {
-  const items = Array.isArray(presets) ? presets.filter((item) => item && item.id) : [];
-  if (!items.length) {
-    return '';
-  }
-  return `
-    <section class="constructor-preset-block" aria-label="Готовые сценарии">
-      <div class="constructor-panel-head">
-        <strong>Быстрые варианты</strong>
-        <span>Меняют вид носителя одной кнопкой.</span>
-      </div>
-      <div class="constructor-preset-grid">
-        ${items.map((preset) => `
-          <button
-            type="button"
-            class="constructor-preset-card${preset.active ? ' active' : ''}"
-            data-action="apply-constructor-preset"
-            data-preset-id="${escapeHtml(preset.id)}"
-          >
-            <span class="constructor-preset-kicker">${preset.active ? 'Сейчас' : 'Вариант'}</span>
-            ${buildConstructorPresetPreview(preset)}
-            <strong>${escapeHtml(preset.label || 'Сценарий')}</strong>
-            <span class="constructor-preset-summary">${escapeHtml(preset.summary || preset.description || '')}</span>
-            ${preset.description ? `<small>${escapeHtml(preset.description)}</small>` : ''}
-          </button>
-        `).join('')}
-      </div>
-    </section>
   `;
 }
 
@@ -5419,158 +5261,6 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     `;
   }
 
-  function renderConstructorRecommendations(recommendations, generated = false) {
-    if (generated) {
-      return '';
-    }
-
-    const sections = Array.isArray(recommendations?.sections) ? recommendations.sections : [];
-    const items = Array.isArray(recommendations?.items) ? recommendations.items : [];
-    const advice = recommendations?.advice || {};
-    const note = advice?.summary
-      ? String(advice.summary).trim()
-      : 'Откройте подходящий раздел каталога, если нужен исходник или брендбук.';
-    const nextStep = String(advice?.nextStep || '').trim();
-
-    if (!sections.length && !items.length && !note) {
-      return '';
-    }
-
-    return `
-      <section class="constructor-panel constructor-support-panel">
-        <div class="constructor-panel-head">
-          <strong>Подходящие разделы</strong>
-          <span>Короткий список нужных разделов и файлов без лишних служебных блоков.</span>
-        </div>
-        <div class="constructor-support-card constructor-support-card-compact">
-          ${sections.length ? `
-            <div class="constructor-mini-grid constructor-support-section-grid">
-              ${sections.map((section) => `
-              <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
-                <span class="constructor-mini-icon" aria-hidden="true">${escapeHtml(section.icon || '📁')}</span>
-                <span class="constructor-mini-copy">
-                  <strong>${escapeHtml(section.label || section.name || 'Раздел')}</strong>
-                  <small>${escapeHtml(section.kindLabel || 'Раздел')}</small>
-                </span>
-              </button>
-              `).join('')}
-            </div>
-          ` : '<p class="detail-empty">Подходящие разделы появятся после загрузки каталога.</p>'}
-          <div class="constructor-support-note">
-            <strong>${items.length ? `Подобрано файлов: ${items.length}` : 'Файлы появятся после полной сборки'}</strong>
-            <span>${escapeHtml(note)}</span>
-            ${nextStep ? `<small>${escapeHtml(nextStep)}</small>` : ''}
-          </div>
-        </div>
-      </section>
-    `;
-  }
-
-  function renderConstructorHandoff(handoff, sourceArtifacts = []) {
-    const normalized = normalizeConstructorHandoff(handoff);
-    if (!normalized.generated) {
-      return '';
-    }
-    const packages = [normalized.approval, normalized.contractor].filter((item) => item.id);
-    if (!packages.length) {
-      return '';
-    }
-    const sourceArtifactMap = new Map(
-      (Array.isArray(sourceArtifacts) ? sourceArtifacts : [])
-        .map((artifact) => [String(artifact?.id || '').trim(), artifact]),
-    );
-
-    return `
-      <section class="constructor-panel constructor-handoff-panel">
-        <div class="constructor-panel-head">
-          <strong>Что скачать и открыть</strong>
-          <span>${escapeHtml(normalized.note || 'Сначала покажите вариант, затем отдайте исходники в работу.')}</span>
-        </div>
-        <div class="constructor-handoff-grid">
-          ${packages.map((pack, index) => `
-            <article class="constructor-handoff-card" data-handoff-kind="${escapeHtml(pack.id)}">
-              <div class="constructor-handoff-head">
-                <span class="card-kicker">${index === 0 ? 'Сначала' : 'Дальше'}</span>
-                <strong>${escapeHtml(pack.title)}</strong>
-                <span>${escapeHtml(pack.summary)}</span>
-              </div>
-              ${pack.bullets.length ? `
-                <ul class="constructor-summary-list">
-                  ${pack.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
-                </ul>
-              ` : ''}
-              ${pack.artifacts.length ? `
-                <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Скачать</div>
-                  <div class="constructor-downloads constructor-handoff-downloads">
-                    ${pack.artifacts.map((artifact) => {
-                      const pngEntry = buildConstructorPngDownloadEntry(
-                        artifact,
-                        sourceArtifactMap.get(String(artifact?.id || '').trim()),
-                      );
-                      return `
-                        <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="download-artifact" data-artifact-id="${escapeHtml(artifact.id)}">
-                          <strong>${escapeHtml(artifact.label)}</strong>
-                          <span>${escapeHtml(artifact.filename)}</span>
-                          <small>${escapeHtml(artifact.note || formatDataSize(artifact.sizeBytes))}</small>
-                        </button>
-                        ${pngEntry ? `
-                          <button type="button" class="constructor-download-card constructor-handoff-download-card" data-action="${escapeHtml(pngEntry.action)}" data-artifact-id="${escapeHtml(pngEntry.artifactId)}">
-                            <strong>${escapeHtml(pngEntry.label)}</strong>
-                            <span>${escapeHtml(pngEntry.filename)}</span>
-                            <small>${escapeHtml(pngEntry.note)}</small>
-                          </button>
-                        ` : ''}
-                      `;
-                    }).join('')}
-                  </div>
-                </div>
-              ` : ''}
-              ${pack.files.length ? `
-                <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Исходники</div>
-                  <div class="constructor-file-list constructor-handoff-file-list">
-                    ${pack.files.map((item) => `
-                      <article class="constructor-file-card">
-                        <div class="constructor-file-copy">
-                          <strong>${escapeHtml(item.label)}</strong>
-                          <small>${escapeHtml(item.relativePath || item.kindLabel || '')}</small>
-                        </div>
-                        <div class="constructor-file-actions">
-                          <button type="button" class="ghost-button" data-action="open-file" data-id="${escapeHtml(item.id)}">Карточка</button>
-                          ${item.downloadUrl
-                            ? `<a class="link-button" href="${escapeHtml(item.downloadUrl)}">Скачать</a>`
-                            : '<span class="ghost-button" aria-disabled="true">Нет файла</span>'}
-                        </div>
-                      </article>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-              ${pack.sections.length ? `
-                <div class="constructor-handoff-block">
-                  <div class="constructor-handoff-label">Разделы</div>
-                  <div class="constructor-mini-grid constructor-handoff-section-grid">
-                    ${pack.sections.map((section) => `
-                      <button type="button" class="constructor-mini-card" data-action="open-folder" data-id="${escapeHtml(section.id)}">
-                        <span class="constructor-mini-icon" aria-hidden="true">${escapeHtml(section.icon || '📁')}</span>
-                        <span class="constructor-mini-copy">
-                          <strong>${escapeHtml(section.label || section.name || 'Раздел')}</strong>
-                          <small>${escapeHtml(section.kindLabel || 'Раздел')}</small>
-                        </span>
-                      </button>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-              ${pack.nextStep ? `<p class="constructor-next-step">${escapeHtml(pack.nextStep)}</p>` : ''}
-            </article>
-          `).join('')}
-        </div>
-      </section>
-    `;
-  }
-
   function renderConstructorLoadingState(constructorId = '') {
     const solution = findConstructorSolution(constructorId);
     const label = isBadgePhotoEditorId(state.currentEditorId) ? 'Бейдж с фото' : (String(solution?.label || 'Лаборатория решений').trim() || 'Лаборатория решений');
@@ -5639,7 +5329,6 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     const previewArtifact = pickConstructorPreviewArtifact(artifacts);
     const previewLayout = buildConstructorPreviewLayout(definition, previewArtifact);
     const generated = Boolean(payload?.generated);
-    const presets = Array.isArray(payload?.presets) ? payload.presets : [];
     const completion = buildConstructorCompletion(fields, input);
     const warnings = buildConstructorWarnings(fields, input, { previewArtifact });
 
@@ -5674,14 +5363,12 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
           <nav class="constructor-mobile-tabs" aria-label="Разделы конструктора">
             <a href="#constructor-settings">Настройки</a>
             <a href="#constructor-preview">Превью</a>
-            <a href="#constructor-properties">Свойства</a>
           </nav>
           <section id="constructor-settings" class="constructor-panel constructor-form-panel">
             <div class="constructor-panel-head">
               <strong>Настройки</strong>
-              <span>Выберите логотип, настройте размещение и заполните поля макета.</span>
+              <span>Выберите логотип, загрузите свой файл и заполните поля макета.</span>
             </div>
-            ${buildConstructorPresetsMarkup(presets)}
             <form id="constructor-form" class="constructor-form" data-constructor-id="${escapeHtml(definition.id || '')}">
               ${renderConstructorLogoPicker(input)}
               ${renderConstructorPlacementControls(input)}
@@ -5727,47 +5414,16 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
               </div>
             </div>
           </section>
-          ${renderConstructorPropertiesPanel(payload, input, completion, warnings)}
         </div>
-
-        ${renderConstructorHandoff(payload?.handoff, artifacts)}
-
-        ${renderConstructorRecommendations(payload?.recommendations, generated)}
       </div>
     `;
     setDocumentTitle(displayLabel || 'Лаборатория решений');
     syncConstructorChoiceSelectionState(els.contentItems);
-    const activePreset = presets.find((preset) => preset?.active);
-    syncConstructorPresetSelectionState(activePreset?.id || '', els.contentItems);
     scheduleConstructorPreviewFloatSync();
 
     if (options?.preserveViewState) {
       restoreConstructorViewState(options.preserveViewState);
     }
-  }
-
-  function applyConstructorPreset(presetId) {
-    const currentPayload = state.current?.kind === 'constructor' ? state.current.payload : null;
-    if (!currentPayload?.definition?.id) {
-      return;
-    }
-    const presets = Array.isArray(currentPayload?.presets) ? currentPayload.presets : [];
-    const preset = presets.find((item) => String(item?.id || '').trim() === String(presetId || '').trim());
-    if (!preset) {
-      return;
-    }
-    const form = document.querySelector('#constructor-form');
-    const formInput = form ? collectConstructorFormInput(form) : {};
-    const nextInput = {
-      ...(currentPayload?.input || {}),
-      ...formInput,
-      ...(preset.overrides || {}),
-    };
-    syncConstructorPresetSelectionState(String(preset.id || '').trim(), els.contentItems);
-    const fields = currentConstructorFields(String(currentPayload.definition.id || '').trim());
-    const draftMeta = persistConstructorDraft(String(currentPayload.definition.id || '').trim(), fields, nextInput);
-    applyConstructorLivePreview(nextInput);
-    void buildConstructor(String(currentPayload.definition.id || '').trim(), nextInput, { silent: true, draftMeta });
   }
 
   function renderSectionSwitcher(mode = '') {
@@ -6781,7 +6437,6 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     if (action === 'open-folder-page') openFolder(target.dataset.id, Number.parseInt(target.dataset.page || '0', 10));
     if (action === 'open-file') openFile(target.dataset.id);
     if (action === 'open-constructor') openConstructor(target.dataset.id);
-    if (action === 'apply-constructor-preset') applyConstructorPreset(target.dataset.presetId);
     if (action === 'search-chip') {
       els.searchInput.value = target.dataset.query || '';
       search(target.dataset.query || '');
