@@ -149,7 +149,7 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.soluti
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-webkit-line-clamp: 2'), 'styles clamp solution card copy to two lines');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);'), 'styles use compact two-column constructor tool layout');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);'), 'styles use 60/40 constructor tool layout with wider settings');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-logo-option'), 'styles contain constructor logo list option classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-mobile-tabs'), 'styles contain mobile constructor tabs');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
