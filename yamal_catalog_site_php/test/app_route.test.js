@@ -55,6 +55,7 @@ const {
   isAllowedConstructorLogoFile,
   isAllowedJpegPngFile,
   portalPageFromUrl,
+  shouldShowCatalogRootWorkspace,
   editorTemplateId,
   isBadgePhotoEditorId,
 } = require('../assets/app.js');
@@ -140,6 +141,12 @@ test('portalPageFromUrl parses portal route pages', () => {
   assert.deepEqual(portalPageFromUrl('https://brand.yamal/constructor/requests'), { page: 'requests' });
   assert.deepEqual(portalPageFromUrl('https://brand.yamal/admin'), { page: 'admin' });
   assert.deepEqual(portalPageFromUrl('https://brand.yamal/editor/business_card'), { page: 'editor', id: 'business_card' });
+});
+
+test('catalog root route keeps catalog workspace visible', () => {
+  assert.equal(shouldShowCatalogRootWorkspace(routeFromUrl('https://brand.yamal/catalog')), true);
+  assert.equal(shouldShowCatalogRootWorkspace(routeFromUrl('https://brand.yamal/catalog?view=folder&folder=logo')), false);
+  assert.equal(shouldShowCatalogRootWorkspace(routeFromUrl('https://brand.yamal/catalog?file=file5')), false);
 });
 
 test('buildRouteUrl serializes folder route and preserves unrelated params', () => {

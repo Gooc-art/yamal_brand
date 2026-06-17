@@ -231,6 +231,11 @@ function portalPageFromUrl(inputUrl) {
   return { page: 'home' };
 }
 
+function shouldShowCatalogRootWorkspace(route) {
+  const normalized = normalizeRoute(route);
+  return normalized.view === 'root' && !normalized.fileId;
+}
+
 function editorTemplateId(id) {
   const normalized = String(id || '').trim();
   return normalized === 'badge_photo' ? 'badge' : normalized;
@@ -1951,6 +1956,7 @@ if (typeof module !== 'undefined' && module.exports) {
     isAllowedConstructorLogoFile,
     isAllowedJpegPngFile,
     portalPageFromUrl,
+    shouldShowCatalogRootWorkspace,
     editorTemplateId,
     isBadgePhotoEditorId,
   };
@@ -4702,7 +4708,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       setWorkspaceVisible(true);
       setWorkspaceCollapsed(false);
       if (options.history !== 'none') pushPortalUrl('/catalog', options.history);
-      void restoreRouteFromLocation();
+      const catalogRoute = routeFromUrl(window.location.href);
+      if (shouldShowCatalogRootWorkspace(catalogRoute)) {
+        void openRoot({ history: 'none', keepWorkspace: true, revealMenu: true });
+      } else {
+        void restoreRouteFromLocation();
+      }
     } else if (page === 'branding') {
       setRoutePageVisible('branding-page');
       setWorkspaceVisible(false);
