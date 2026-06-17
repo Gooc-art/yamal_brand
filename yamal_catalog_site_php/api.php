@@ -22,6 +22,21 @@ try {
     }
 
     switch ($action) {
+        case 'admin-login':
+            $email = trim((string) ($jsonBody['email'] ?? ''));
+            $password = (string) ($jsonBody['password'] ?? '');
+            $user = site_admin_login($email, $password);
+            if ($user === null) {
+                http_response_code(401);
+                echo json_encode(['error' => 'admin_login_failed'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+            echo json_encode([
+                'user' => $user,
+                'token' => bin2hex(random_bytes(32)),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
         case 'bootstrap':
             echo json_encode($service->getBootstrap(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;

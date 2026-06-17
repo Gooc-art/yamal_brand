@@ -16,10 +16,10 @@
   --sand: #d6c0a3;
   --shadow: 0 24px 60px rgba(24, 42, 49, 0.08);
   --shadow-soft: 0 12px 30px rgba(24, 42, 49, 0.06);
-  --radius-xl: 34px;
-  --radius-lg: 24px;
-  --radius-md: 18px;
-  --radius-sm: 14px;
+  --radius-xl: 18px;
+  --radius-lg: 16px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
   --font-display: "Baskerville", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-body: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
 }
@@ -125,6 +125,11 @@ img {
   filter: blur(8px);
 }
 
+.page-shell::before,
+.page-shell::after {
+  display: none;
+}
+
 .page-shell::before {
   top: 22px;
   right: -64px;
@@ -147,6 +152,224 @@ img {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
   backdrop-filter: blur(10px);
+}
+
+.portal-header {
+  position: sticky;
+  top: 12px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  margin-bottom: 22px;
+  border-radius: 18px;
+  background: rgba(255, 252, 247, 0.98);
+  backdrop-filter: none;
+}
+
+.portal-logo,
+.portal-nav,
+.portal-nav a,
+.portal-profile-button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.portal-logo {
+  gap: 10px;
+  min-width: max-content;
+  font-weight: 800;
+}
+
+.portal-logo-mark {
+  width: 34px;
+  height: 34px;
+}
+
+.portal-nav {
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.portal-nav a,
+.portal-tabs a,
+.portal-tabs button {
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.portal-nav a.active,
+.portal-tabs .active {
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border-color: rgba(180, 36, 61, 0.2);
+}
+
+.route-page {
+  display: grid;
+  gap: 22px;
+}
+
+.page-title-block,
+.cabinet-head,
+.cabinet-panel,
+.protected-state {
+  padding: 28px;
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: none;
+}
+
+.page-title-block,
+.cabinet-head,
+.protected-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.page-title-block h1,
+.cabinet-head h1,
+.protected-state h1,
+.hero h1,
+.solution-lab-head h1 {
+  margin: 0 0 10px;
+  max-width: 760px;
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1.02;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.page-title-block p,
+.cabinet-head p,
+.protected-state p {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--muted);
+}
+
+.portal-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.portal-stat-grid article {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-strong);
+}
+
+.portal-stat-grid strong {
+  display: block;
+  color: var(--accent-deep);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.portal-stat-grid span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.portal-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(24, 42, 49, 0.42);
+}
+
+.portal-modal {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow: auto;
+  padding: 24px;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(24, 42, 49, 0.16);
+  backdrop-filter: none;
+}
+
+.portal-modal-head,
+.portal-tabs,
+.solution-lab-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.portal-tabs {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.portal-tabs.as-buttons button {
+  cursor: pointer;
+}
+
+.portal-form,
+.portal-list {
+  display: grid;
+  gap: 14px;
+}
+
+.portal-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.portal-form input,
+.portal-form textarea,
+.portal-list textarea {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.portal-list article {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-strong);
+}
+
+.portal-list span {
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.portal-breadcrumbs {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .hero,
@@ -4499,6 +4722,43 @@ input[type="search"]:focus {
   .page-shell.catalog-mode {
     width: calc(100vw - 16px);
     padding-top: 10px;
+  }
+
+  .portal-header,
+  .page-title-block,
+  .cabinet-head,
+  .protected-state,
+  .solution-lab-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .portal-nav {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .portal-nav a,
+  .portal-login-button,
+  .portal-profile-button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .page-title-block h1,
+  .cabinet-head h1,
+  .protected-state h1,
+  .hero h1,
+  .solution-lab-head h1 {
+    font-size: 32px;
+  }
+
+  .portal-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-modal {
+    padding: 18px;
   }
 
   .hero,

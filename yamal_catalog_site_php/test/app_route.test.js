@@ -53,6 +53,8 @@ const {
   buildLocalAccountUser,
   publicAccountUser,
   isAllowedConstructorLogoFile,
+  portalPageFromUrl,
+  editorTemplateId,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -101,6 +103,31 @@ test('routeFromUrl parses constructor state from query string', () => {
       solutionId: 'business_card',
     },
   );
+});
+
+test('routeFromUrl parses editor pretty url as constructor route', () => {
+  assert.deepEqual(
+    routeFromUrl('https://brand.yamal/editor/badge_photo'),
+    {
+      view: 'constructor',
+      folderId: '',
+      query: '',
+      page: 0,
+      fileId: '',
+      solutionId: 'badge_photo',
+    },
+  );
+  assert.equal(editorTemplateId('badge_photo'), 'badge');
+});
+
+test('portalPageFromUrl parses portal route pages', () => {
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/'), { page: 'home' });
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/catalog'), { page: 'catalog' });
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/branding-catalog'), { page: 'branding' });
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/constructor/layouts'), { page: 'layouts' });
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/constructor/requests'), { page: 'requests' });
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/admin'), { page: 'admin' });
+  assert.deepEqual(portalPageFromUrl('https://brand.yamal/editor/business_card'), { page: 'editor', id: 'business_card' });
 });
 
 test('buildRouteUrl serializes folder route and preserves unrelated params', () => {

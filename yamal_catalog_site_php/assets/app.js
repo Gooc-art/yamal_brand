@@ -2,6 +2,13 @@ const YAMAL_ROUTE_QUERY_KEYS = ['view', 'folder', 'page', 'q', 'file', 'solution
 const DEFAULT_WORKSPACE_COLLAPSED = true;
 const DEFAULT_CATALOG_MODE = false;
 const DEFAULT_SOLUTION_FILTER = 'all';
+const BRANDING_FILTERS = ['Все носители', 'Одежда и мерч', 'Городская среда', 'Мероприятия', 'Полиграфия и сувениры'];
+const BRANDING_CARDS = [
+  { id: 'business_card', label: 'Визитка', category: 'Полиграфия и сувениры', summary: 'Контактная карточка сотрудника' },
+  { id: 'certificate', label: 'Грамота', category: 'Мероприятия', summary: 'Диплом, грамота или сертификат' },
+  { id: 'badge', label: 'Бейдж', category: 'Мероприятия', summary: 'Бейдж участника или команды' },
+  { id: 'badge_photo', templateId: 'badge', label: 'Бейдж с фото', category: 'Одежда и мерч', summary: 'Бейдж с зоной под фото' },
+];
 const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
@@ -172,6 +179,14 @@ function normalizeRoute(route) {
 
 function routeFromUrl(inputUrl) {
   const url = new URL(String(inputUrl || 'http://localhost/'), 'http://localhost');
+  const editorMatch = url.pathname.match(/^\/editor\/([^/]+)\/?$/);
+  if (editorMatch) {
+    return normalizeRoute({
+      view: 'constructor',
+      solutionId: decodeURIComponent(editorMatch[1] || ''),
+      fileId: url.searchParams.get('file') || '',
+    });
+  }
   const params = url.searchParams;
   const view = params.get('view');
   if (view === 'constructor' || params.get('solution')) {
@@ -200,6 +215,24 @@ function routeFromUrl(inputUrl) {
     view: 'root',
     fileId: params.get('file') || '',
   });
+}
+
+function portalPageFromUrl(inputUrl) {
+  const url = new URL(String(inputUrl || 'http://localhost/'), 'http://localhost');
+  const path = url.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/catalog') return { page: 'catalog' };
+  if (path === '/branding-catalog') return { page: 'branding' };
+  if (path === '/constructor/layouts') return { page: 'layouts' };
+  if (path === '/constructor/requests') return { page: 'requests' };
+  if (path === '/admin') return { page: 'admin' };
+  const editorMatch = path.match(/^\/editor\/([^/]+)$/);
+  if (editorMatch) return { page: 'editor', id: decodeURIComponent(editorMatch[1] || '') };
+  return { page: 'home' };
+}
+
+function editorTemplateId(id) {
+  const normalized = String(id || '').trim();
+  return normalized === 'badge_photo' ? 'badge' : normalized;
 }
 
 function buildRouteUrl(inputUrl, route) {
@@ -1903,6 +1936,8 @@ if (typeof module !== 'undefined' && module.exports) {
     buildLocalAccountUser,
     publicAccountUser,
     isAllowedConstructorLogoFile,
+    portalPageFromUrl,
+    editorTemplateId,
   };
 }
 
@@ -1945,6 +1980,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     accountMode: 'login',
     accountError: '',
     accountUser: null,
+    portalPage: 'home',
+    activeAdminTab: 'Входящие вопросы',
   };
   const constructorBuildCache = new Map();
   let constructorBuildAbortController = null;
@@ -1955,6 +1992,21 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
   const els = {
     pageShell: document.querySelector('.page-shell'),
+    routePages: Array.from(document.querySelectorAll('.route-page')),
+    homePage: document.querySelector('#home-page'),
+    catalogPage: document.querySelector('#catalog-page'),
+    brandingPage: document.querySelector('#branding-page'),
+    profilePage: document.querySelector('#profile-page'),
+    adminPage: document.querySelector('#admin-page'),
+    portalHeader: document.querySelector('.portal-header'),
+    portalNavLinks: Array.from(document.querySelectorAll('[data-nav]')),
+    portalLoginButton: document.querySelector('.portal-login-button'),
+    portalProfileButton: document.querySelector('.portal-profile-button'),
+    loginModal: document.querySelector('#login-modal'),
+    adminQuestionModal: document.querySelector('#admin-question-modal'),
+    adminQuestionForm: document.querySelector('#admin-question-form'),
+    portalStatAssets: document.querySelector('#portal-stat-assets'),
+    portalStatConstructors: document.querySelector('#portal-stat-constructors'),
     heroExamples: document.querySelector('.hero-examples'),
     heroExampleTabs: document.querySelector('#hero-example-tabs'),
     heroExampleStage: document.querySelector('#hero-example-stage'),
@@ -2034,6 +2086,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     window.localStorage.setItem(ACCOUNT_SESSION_STORAGE_KEY, JSON.stringify({
       token,
       email: normalizeAccountEmail(user?.email),
+      user: publicAccountUser(user),
     }));
     return token;
   }
@@ -2050,8 +2103,68 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return null;
     }
     const user = readAccountStore().users.find((item) => normalizeAccountEmail(item.email) === email) || null;
-    state.accountUser = publicAccountUser(user);
+    state.accountUser = publicAccountUser(user) || publicAccountUser(session.user);
     return state.accountUser;
+  }
+
+  function isAdminUser(user = state.accountUser) {
+    return String(user?.role || '').toLowerCase() === 'admin';
+  }
+
+  function accountDisplayName(user = state.accountUser) {
+    return [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim()
+      || String(user?.email || '').trim()
+      || 'Профиль';
+  }
+
+  function profilePathForUser(user = state.accountUser) {
+    return isAdminUser(user) ? '/admin' : '/constructor/layouts';
+  }
+
+  function setLoginModalOpen(nextValue) {
+    if (els.loginModal) {
+      els.loginModal.hidden = !nextValue;
+    }
+  }
+
+  function setAdminQuestionModalOpen(nextValue) {
+    if (els.adminQuestionModal) {
+      els.adminQuestionModal.hidden = !nextValue;
+    }
+  }
+
+  function updatePortalChrome() {
+    const page = state.portalPage || portalPageFromUrl(window.location.href).page;
+    els.portalNavLinks.forEach((link) => {
+      const active = (link.dataset.nav === 'catalog' && page === 'catalog')
+        || (link.dataset.nav === 'branding' && page === 'branding');
+      link.classList.toggle('active', active);
+      if (active) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+    if (els.portalLoginButton) {
+      els.portalLoginButton.hidden = Boolean(state.accountUser);
+    }
+    if (els.portalProfileButton) {
+      els.portalProfileButton.hidden = !state.accountUser;
+      els.portalProfileButton.textContent = state.accountUser ? `◉ ${accountDisplayName()}` : '';
+    }
+  }
+
+  function requestAuthPage(title = 'Требуется вход') {
+    return `
+      <section class="surface protected-state">
+        <div>
+          <p class="eyebrow">Защищённая страница</p>
+          <h1>${escapeHtml(title)}</h1>
+          <p>Войдите, чтобы открыть этот раздел портала.</p>
+        </div>
+        <button type="button" class="accent-button" data-action="open-login-modal">Войти</button>
+      </section>
+    `;
   }
 
   function accountDraftsForCurrentUser() {
@@ -2082,6 +2195,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             <span>${escapeHtml(user.organization || 'Организация не указана')} • ${drafts.length} ${drafts.length === 1 ? 'черновик' : 'черновиков'}</span>
           </div>
           <div class="account-actions">
+            <button type="button" class="accent-button" data-action="open-profile">Открыть профиль</button>
             <button type="button" class="ghost-button" data-action="account-edit">Редактировать</button>
             <button type="button" class="ghost-button" data-action="account-logout">Выйти</button>
           </div>
@@ -2153,7 +2267,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
-  function handleAccountSubmit(form) {
+  async function handleAccountSubmit(form) {
     const mode = String(form.dataset.accountForm || 'login');
     const data = Object.fromEntries(new FormData(form).entries());
     const store = readAccountStore();
@@ -2184,6 +2298,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       store.users[index] = nextUser;
       writeAccountStore(store);
       state.accountUser = publicAccountUser(nextUser);
+      updatePortalChrome();
       renderAccountPanel();
       return;
     }
@@ -2201,6 +2316,24 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       store.users.push(user);
       writeAccountStore(store);
     } else if (!user || user.passwordHash !== hashAccountPassword(validation.data.password)) {
+      try {
+        const payload = await api('admin-login', {
+          email: validation.data.email,
+          password: validation.data.password,
+        }, { method: 'POST' });
+        if (payload?.user) {
+          writeAccountSession(payload.user);
+          state.accountUser = publicAccountUser(payload.user);
+          state.accountMode = 'login';
+          setLoginModalOpen(false);
+          updatePortalChrome();
+          renderAccountPanel();
+          showPortalPage(portalPageFromUrl(window.location.href), { history: 'replace' });
+          return;
+        }
+      } catch (error) {
+        // Fall through to the same public error as regular login.
+      }
       state.accountError = 'Email или пароль не подходят.';
       renderAccountPanel();
       return;
@@ -2209,7 +2342,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     writeAccountSession(user);
     state.accountUser = publicAccountUser(user);
     state.accountMode = 'login';
+    setLoginModalOpen(false);
+    updatePortalChrome();
     renderAccountPanel();
+    showPortalPage(portalPageFromUrl(window.location.href), { history: 'replace' });
   }
 
   function syncConstructorChoiceSelectionState(root = document) {
@@ -2305,8 +2441,19 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (!window.history?.pushState) {
       return;
     }
+    const route = currentRoute();
+    if (route.view === 'constructor' && route.solutionId) {
+      const nextPath = `/editor/${encodeURIComponent(route.solutionId)}`;
+      if (window.location.pathname !== nextPath) {
+        window.history[mode === 'replace' ? 'replaceState' : 'pushState'](null, '', nextPath);
+      }
+      return;
+    }
     const currentUrl = buildRouteUrl(window.location.href, routeFromUrl(window.location.href));
-    const nextUrl = buildRouteUrl(window.location.href, currentRoute());
+    const nextUrl = buildRouteUrl(
+      window.location.pathname === '/catalog' ? window.location.href : `${window.location.origin}/catalog${window.location.search}`,
+      route,
+    );
     if (currentUrl === nextUrl) {
       return;
     }
@@ -2315,7 +2462,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function currentShareUrl() {
-    return buildRouteUrl(window.location.href, currentRoute());
+    const route = currentRoute();
+    if (route.view === 'constructor' && route.solutionId) {
+      return `${window.location.origin}/editor/${encodeURIComponent(route.solutionId)}`;
+    }
+    return buildRouteUrl(`${window.location.origin}/catalog${window.location.search}`, route);
   }
 
   function revealItemInHorizontalContainer(container, item, behavior = 'smooth') {
@@ -4152,19 +4303,27 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (!els.solutionLabGrid || !els.solutionLab) {
       return;
     }
-    const config = bootstrap?.constructors || {};
-    const items = normalizeConstructorSolutions(config);
-    const { filters, visibleItems, activeCategory } = buildConstructorCategoryFilters(items, state.activeSolutionFilter);
-    state.activeSolutionFilter = activeCategory;
+    if (![DEFAULT_SOLUTION_FILTER, ...BRANDING_FILTERS.slice(1)].includes(state.activeSolutionFilter)) {
+      state.activeSolutionFilter = DEFAULT_SOLUTION_FILTER;
+    }
+    const visibleCatalog = BRANDING_CARDS.filter((item) => state.activeSolutionFilter === DEFAULT_SOLUTION_FILTER || item.category === state.activeSolutionFilter);
+    const filters = BRANDING_FILTERS.map((label) => ({
+      id: label === 'Все носители' ? DEFAULT_SOLUTION_FILTER : label,
+      label,
+      active: (label === 'Все носители' ? DEFAULT_SOLUTION_FILTER : label) === state.activeSolutionFilter,
+    }));
+    if (!filters.some((filter) => filter.active)) {
+      state.activeSolutionFilter = DEFAULT_SOLUTION_FILTER;
+      filters[0].active = true;
+    }
     const activeSolutionId = state.current?.kind === 'constructor'
       ? String(state.current?.payload?.definition?.id || '').trim()
       : '';
     if (els.solutionLabTitle) {
-      els.solutionLabTitle.textContent = String(config.title || 'Лаборатория решений').trim() || 'Лаборатория решений';
+      els.solutionLabTitle.textContent = 'Каталог брендирования';
     }
     if (els.solutionLabCopy) {
-      els.solutionLabCopy.textContent = String(config.description || 'Готовые каркасы для типовых бренд-носителей.').trim()
-        || 'Готовые каркасы для типовых бренд-носителей.';
+      els.solutionLabCopy.textContent = 'Выберите носитель — создайте макет в фирменном стиле';
     }
     if (els.solutionLabFilters) {
       els.solutionLabFilters.innerHTML = filters.map((filter) => `
@@ -4183,15 +4342,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       els.solutionLabMeta.textContent = '';
       els.solutionLabMeta.hidden = true;
     }
-    els.solutionLab.hidden = !items.length;
-    if (!items.length) {
+    els.solutionLab.hidden = !BRANDING_CARDS.length;
+    if (!BRANDING_CARDS.length) {
       els.solutionLabGrid.innerHTML = '';
       return;
     }
-    els.solutionLabGrid.innerHTML = visibleItems.map((item) => `
+    els.solutionLabGrid.innerHTML = visibleCatalog.map((item) => `
       <article class="solution-card${activeSolutionId === item.id ? ' active' : ''}">
         <div class="solution-card-head">
-          <span class="solution-card-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+          <span class="solution-card-icon" aria-hidden="true">▣</span>
           <div class="solution-card-copy">
             <span class="card-kicker">${escapeHtml(item.category || 'Решение')}</span>
             <strong>${escapeHtml(item.label)}</strong>
@@ -4199,10 +4358,236 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
           </div>
         </div>
         <div class="item-actions">
-          <button type="button" class="item-action" data-action="open-constructor" data-id="${escapeHtml(item.id)}">Открыть</button>
+          <a class="item-action" href="/editor/${encodeURIComponent(item.id)}" data-page-link="/editor/${escapeHtml(item.id)}" data-action="open-editor" data-id="${escapeHtml(item.id)}">Открыть</a>
         </div>
       </article>
     `).join('');
+  }
+
+  function readPortalRequests() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem('yamal-site-requests-v1') || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writePortalRequests(items) {
+    window.localStorage.setItem('yamal-site-requests-v1', JSON.stringify(Array.isArray(items) ? items : []));
+  }
+
+  function userRequests() {
+    const email = normalizeAccountEmail(state.accountUser?.email);
+    return readPortalRequests().filter((item) => normalizeAccountEmail(item.email) === email);
+  }
+
+  function renderCabinetPage(activeTab = 'layouts') {
+    if (!els.profilePage) return;
+    if (!state.accountUser) {
+      els.profilePage.innerHTML = requestAuthPage('Личный кабинет');
+      return;
+    }
+    const drafts = accountDraftsForCurrentUser();
+    const tabs = `
+      <div class="portal-tabs">
+        <a class="${activeTab === 'layouts' ? 'active' : ''}" href="/constructor/layouts" data-page-link="/constructor/layouts">▧ Мои макеты</a>
+        <a class="${activeTab === 'requests' ? 'active' : ''}" href="/constructor/requests" data-page-link="/constructor/requests">✉ Запросы к администратору</a>
+      </div>
+    `;
+    const head = `
+      <section class="surface cabinet-head">
+        <div>
+          <p class="eyebrow">Личный кабинет</p>
+          <h1>Здравствуйте, ${escapeHtml(accountDisplayName())}</h1>
+        </div>
+        <div class="account-actions">
+          <a class="ghost-button" href="/" data-page-link="/">На главную</a>
+          <button type="button" class="ghost-button" data-action="account-logout">Выйти</button>
+        </div>
+      </section>
+      ${tabs}
+    `;
+    if (activeTab === 'requests') {
+      const requests = userRequests();
+      els.profilePage.innerHTML = `${head}
+        <section class="surface cabinet-panel">
+          <div class="block-head">
+            <div><h2>Запросы к администратору</h2><p>История ваших вопросов по макетам и каталогу.</p></div>
+            <button type="button" class="accent-button" data-action="open-admin-question-modal">Новый запрос</button>
+          </div>
+          <div class="portal-list">
+            ${(requests.length ? requests : [{ title: 'Вопросов пока нет', body: 'Создайте первый запрос, если нужна помощь администратора.', status: 'Ожидание ответа' }]).map((item) => `
+              <article>
+                <strong>${escapeHtml(item.title)}</strong>
+                <span>${escapeHtml(item.status || 'Ожидание ответа')}</span>
+                <p>${escapeHtml(item.answer || item.body || '')}</p>
+              </article>
+            `).join('')}
+          </div>
+        </section>`;
+      return;
+    }
+    els.profilePage.innerHTML = `${head}
+      <section class="surface cabinet-panel">
+        <div class="block-head">
+          <div><h2>Мои макеты</h2><p>Локальная история созданных и сохранённых макетов.</p></div>
+          <a class="accent-button" href="/branding-catalog" data-page-link="/branding-catalog">Создать макет</a>
+        </div>
+        <div class="portal-list">
+          ${(drafts.length ? drafts : [{ id: 'Макетов пока нет', note: 'Создайте первый макет из каталога брендирования.' }]).map((draft) => `
+            <article>
+              <strong>${escapeHtml(draft.id)}</strong>
+              <span>${escapeHtml(draft.note || (draft.updatedAt ? new Date(draft.updatedAt).toLocaleString('ru-RU') : ''))}</span>
+              ${draft.id && !draft.id.includes('пока') ? `<a class="link-button" href="/editor/${encodeURIComponent(draft.id)}" data-page-link="/editor/${escapeHtml(draft.id)}">Открыть</a>` : ''}
+            </article>
+          `).join('')}
+        </div>
+      </section>`;
+  }
+
+  function renderAdminPage() {
+    if (!els.adminPage) return;
+    if (!isAdminUser()) {
+      els.adminPage.innerHTML = requestAuthPage('Панель администратора');
+      return;
+    }
+    const requests = readPortalRequests();
+    const tab = state.activeAdminTab;
+    const tabs = ['Мои макеты', 'Входящие вопросы', 'Добавить в каталог', 'Добавить логотип'];
+    const tabButtons = tabs.map((label) => `
+      <button type="button" class="${tab === label ? 'active' : ''}" data-action="admin-tab" data-tab="${escapeHtml(label)}">${escapeHtml(label)}</button>
+    `).join('');
+    const body = tab === 'Входящие вопросы'
+      ? `<div class="portal-list">${(requests.length ? requests : [{ title: 'Входящих вопросов нет', body: '', status: 'Ожидает ответа' }]).map((item) => `
+          <article>
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.answer ? 'Отвечено' : 'Ожидает ответа')}</span>
+            <p>${escapeHtml(item.body || '')}</p>
+            <textarea rows="3" placeholder="Ответ администратора" data-request-answer="${escapeHtml(item.id || '')}">${escapeHtml(item.answer || '')}</textarea>
+            ${item.id ? `<button type="button" class="ghost-button" data-action="admin-save-answer" data-id="${escapeHtml(item.id)}">Сохранить ответ</button>` : ''}
+          </article>
+        `).join('')}</div>`
+      : tab === 'Добавить в каталог'
+        ? `<form class="portal-form"><label><span>Название элемента</span><input></label><label><span>Раздел</span><input></label><label><span>Описание</span><textarea rows="4"></textarea></label><button type="button" class="accent-button">Добавить</button></form>`
+        : tab === 'Добавить логотип'
+          ? `<form class="portal-form"><label><span>Название логотипа</span><input></label><label><span>Файл</span><input type="file" accept=".svg,.png,.jpg,.jpeg,.webp"></label><button type="button" class="accent-button">Добавить логотип</button></form>`
+          : `<div class="portal-list"><article><strong>Черновики администратора</strong><span>Локальные макеты текущего браузера</span></article></div>`;
+    els.adminPage.innerHTML = `
+      <section class="surface cabinet-head">
+        <div><p class="eyebrow">Панель администратора</p><h1>Управление платформой</h1></div>
+        <div class="account-actions">
+          <a class="ghost-button" href="/" data-page-link="/">На главную</a>
+          <button type="button" class="ghost-button" data-action="account-logout">Выйти</button>
+        </div>
+      </section>
+      <section class="surface cabinet-panel">
+        <div class="portal-tabs as-buttons">${tabButtons}</div>
+        ${body}
+      </section>`;
+  }
+
+  function setRoutePageVisible(pageId) {
+    els.routePages.forEach((page) => {
+      page.hidden = page.id !== pageId;
+    });
+  }
+
+  function pushPortalUrl(path, mode = 'push') {
+    if (!window.history?.pushState) return;
+    if (window.location.pathname === path && !window.location.search) return;
+    window.history[mode === 'replace' ? 'replaceState' : 'pushState'](null, '', path);
+  }
+
+  function requirePortalAuth(route) {
+    const protectedPages = new Set(['catalog', 'branding', 'editor', 'layouts', 'requests', 'admin']);
+    if (!protectedPages.has(route.page)) return true;
+    if (!state.accountUser) {
+      setLoginModalOpen(true);
+      return false;
+    }
+    if (route.page === 'admin' && !isAdminUser()) {
+      return false;
+    }
+    return true;
+  }
+
+  function showPortalPage(route = portalPageFromUrl(window.location.href), options = {}) {
+    const normalized = typeof route === 'string' ? portalPageFromUrl(route) : route;
+    const page = normalized.page || 'home';
+    state.portalPage = page;
+    setLoginModalOpen(false);
+    setAdminQuestionModalOpen(false);
+    setBrandRoutesOpen(false);
+    setInspectorOpen(false);
+    updatePortalChrome();
+
+    const authed = requirePortalAuth(normalized);
+    if (!authed) {
+      if (page === 'admin') {
+        setRoutePageVisible('admin-page');
+        renderAdminPage();
+      } else if (page === 'layouts' || page === 'requests') {
+        setRoutePageVisible('profile-page');
+        renderCabinetPage(page === 'requests' ? 'requests' : 'layouts');
+      } else {
+        setRoutePageVisible(page === 'branding' || page === 'editor' ? 'branding-page' : 'catalog-page');
+      }
+      setWorkspaceVisible(false);
+      updatePortalChrome();
+      if (options.history !== 'none') pushPortalUrl(pathForPortalRoute(normalized), options.history);
+      return;
+    }
+
+    if (page === 'catalog') {
+      setRoutePageVisible('catalog-page');
+      setWorkspaceVisible(true);
+      setWorkspaceCollapsed(false);
+      if (options.history !== 'none') pushPortalUrl('/catalog', options.history);
+      void restoreRouteFromLocation();
+    } else if (page === 'branding') {
+      setRoutePageVisible('branding-page');
+      setWorkspaceVisible(false);
+      renderSolutionLab(state.bootstrap);
+      if (options.history !== 'none') pushPortalUrl('/branding-catalog', options.history);
+    } else if (page === 'editor') {
+      setRoutePageVisible('branding-page');
+      setWorkspaceVisible(true);
+      setWorkspaceCollapsed(false);
+      if (options.history !== 'none') pushPortalUrl(`/editor/${encodeURIComponent(normalized.id || '')}`, options.history);
+      void openConstructor(editorTemplateId(normalized.id), { history: 'none' });
+    } else if (page === 'layouts') {
+      setRoutePageVisible('profile-page');
+      setWorkspaceVisible(false);
+      renderCabinetPage('layouts');
+      if (options.history !== 'none') pushPortalUrl('/constructor/layouts', options.history);
+    } else if (page === 'requests') {
+      setRoutePageVisible('profile-page');
+      setWorkspaceVisible(false);
+      renderCabinetPage('requests');
+      if (options.history !== 'none') pushPortalUrl('/constructor/requests', options.history);
+    } else if (page === 'admin') {
+      setRoutePageVisible('admin-page');
+      setWorkspaceVisible(false);
+      renderAdminPage();
+      if (options.history !== 'none') pushPortalUrl('/admin', options.history);
+    } else {
+      setRoutePageVisible('home-page');
+      setWorkspaceVisible(false);
+      setCatalogMode(false);
+      if (options.history !== 'none') pushPortalUrl('/', options.history);
+    }
+    updatePortalChrome();
+  }
+
+  function pathForPortalRoute(route) {
+    if (route.page === 'catalog') return '/catalog';
+    if (route.page === 'branding') return '/branding-catalog';
+    if (route.page === 'editor') return `/editor/${encodeURIComponent(route.id || '')}`;
+    if (route.page === 'layouts') return '/constructor/layouts';
+    if (route.page === 'requests') return '/constructor/requests';
+    if (route.page === 'admin') return '/admin';
+    return '/';
   }
 
   function renderConstructorField(field, value, options = {}) {
@@ -5637,10 +6022,70 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   }
 
   document.addEventListener('click', (event) => {
+    const pageLink = event.target.closest('[data-page-link]');
+    if (pageLink) {
+      const href = pageLink.getAttribute('href') || pageLink.dataset.pageLink || '/';
+      if (href.startsWith('/')) {
+        event.preventDefault();
+        showPortalPage(portalPageFromUrl(new URL(href, window.location.origin).href));
+        return;
+      }
+    }
     const target = event.target.closest('[data-action]');
     schedulePressedInteractiveClear();
     if (!target) return;
     const action = target.dataset.action;
+    if (action === 'open-login-modal') {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (action === 'close-login-modal') {
+      setLoginModalOpen(false);
+      return;
+    }
+    if (action === 'open-profile') {
+      showPortalPage(portalPageFromUrl(`${window.location.origin}${profilePathForUser()}`));
+      return;
+    }
+    if (action === 'open-admin-question-modal') {
+      if (!state.accountUser) {
+        setLoginModalOpen(true);
+        return;
+      }
+      setAdminQuestionModalOpen(true);
+      return;
+    }
+    if (action === 'close-admin-question-modal') {
+      setAdminQuestionModalOpen(false);
+      return;
+    }
+    if (action === 'admin-tab') {
+      state.activeAdminTab = String(target.dataset.tab || 'Входящие вопросы');
+      renderAdminPage();
+      return;
+    }
+    if (action === 'admin-save-answer') {
+      const id = String(target.dataset.id || '').trim();
+      const textarea = Array.from(document.querySelectorAll('[data-request-answer]'))
+        .find((item) => String(item.dataset.requestAnswer || '') === id);
+      const items = readPortalRequests();
+      const index = items.findIndex((item) => String(item.id || '') === id);
+      if (index >= 0) {
+        items[index] = {
+          ...items[index],
+          answer: String(textarea?.value || '').trim(),
+          status: 'Ответ получен',
+          answeredAt: new Date().toISOString(),
+        };
+        writePortalRequests(items);
+        renderAdminPage();
+      }
+      return;
+    }
+    if (action === 'open-editor') {
+      showPortalPage({ page: 'editor', id: target.dataset.id || '' });
+      return;
+    }
     if (action === 'toggle-consultant') {
       setConsultantOpen(!state.consultantOpen);
       return;
@@ -5673,7 +6118,9 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       clearAccountSession();
       state.accountUser = null;
       state.accountError = '';
+      updatePortalChrome();
       renderAccountPanel();
+      showPortalPage({ page: 'home' });
       return;
     }
     if (action === 'toggle-workspace') {
@@ -5801,10 +6248,37 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   }
 
   document.addEventListener('submit', (event) => {
+    if (event.target?.matches?.('#admin-question-form')) {
+      event.preventDefault();
+      if (!state.accountUser) {
+        setLoginModalOpen(true);
+        return;
+      }
+      const data = Object.fromEntries(new FormData(event.target).entries());
+      const items = readPortalRequests();
+      items.unshift({
+        id: `request-${Date.now().toString(36)}`,
+        email: normalizeAccountEmail(state.accountUser.email),
+        title: String(data.title || '').trim() || 'Вопрос администратору',
+        body: String(data.body || '').trim(),
+        status: 'Ожидание ответа',
+        createdAt: new Date().toISOString(),
+      });
+      writePortalRequests(items);
+      event.target.reset();
+      setAdminQuestionModalOpen(false);
+      if (state.portalPage === 'requests') {
+        renderCabinetPage('requests');
+      }
+      if (state.portalPage === 'admin') {
+        renderAdminPage();
+      }
+      return;
+    }
     const accountForm = event.target.closest('[data-account-form]');
     if (accountForm) {
       event.preventDefault();
-      handleAccountSubmit(accountForm);
+      void handleAccountSubmit(accountForm);
       return;
     }
     const form = event.target.closest('#constructor-form');
@@ -5972,9 +6446,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   });
 
   window.addEventListener('popstate', () => {
-    restoreRouteFromLocation().catch((error) => {
-      console.error(error);
-    });
+    showPortalPage(portalPageFromUrl(window.location.href), { history: 'none' });
   });
 
   window.addEventListener('scroll', () => {
@@ -6005,10 +6477,13 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
 
   setInspectorOpen(false);
   loadAccountUser();
+  updatePortalChrome();
   renderAccountPanel();
 
   loadBootstrap()
-    .then(restoreRouteFromLocation)
+    .then(() => {
+      showPortalPage(portalPageFromUrl(window.location.href), { history: 'none' });
+    })
     .catch((error) => {
       console.error(error);
       els.contentTitle.textContent = 'Ошибка запуска';

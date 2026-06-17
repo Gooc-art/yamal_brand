@@ -25,6 +25,9 @@ jobs:
       OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
       OPENAI_ORG_ID: ${{ secrets.OPENAI_ORG_ID }}
       OPENAI_PROJECT_ID: ${{ secrets.OPENAI_PROJECT_ID }}
+      ADMIN_EMAIL: ${{ secrets.YAMAL_SITE_ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.YAMAL_SITE_ADMIN_PASSWORD }}
+      ADMIN_PASSWORD_HASH: ${{ secrets.YAMAL_SITE_ADMIN_PASSWORD_HASH }}
 
     steps:
       - name: Checkout

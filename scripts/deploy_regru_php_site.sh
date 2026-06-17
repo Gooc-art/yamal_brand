@@ -20,6 +20,9 @@ OPENAI_TIMEOUT_SECONDS="${OPENAI_TIMEOUT_SECONDS:-}"
 OPENAI_BASE_URL="${OPENAI_BASE_URL:-}"
 OPENAI_ORG_ID="${OPENAI_ORG_ID:-}"
 OPENAI_PROJECT_ID="${OPENAI_PROJECT_ID:-}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+ADMIN_PASSWORD_HASH="${ADMIN_PASSWORD_HASH:-}"
 
 if ! command -v rsync >/dev/null 2>&1; then
   echo "rsync is required" >&2
@@ -79,6 +82,7 @@ PAGE_SIZE=18
 FAVORITES_LIMIT=8
 PUBLIC_BASE=
 CONSULTANT_LLM_ENABLED=0
+ADMIN_EMAIL=admin@yamalbrand.local
 EOF
 fi"
 
@@ -92,5 +96,8 @@ upsert_remote_env "OPENAI_TIMEOUT_SECONDS" "${OPENAI_TIMEOUT_SECONDS}"
 upsert_remote_env "OPENAI_BASE_URL" "${OPENAI_BASE_URL}"
 upsert_remote_env "OPENAI_ORG_ID" "${OPENAI_ORG_ID}"
 upsert_remote_env "OPENAI_PROJECT_ID" "${OPENAI_PROJECT_ID}"
+upsert_remote_env "ADMIN_EMAIL" "${ADMIN_EMAIL}"
+upsert_remote_env "ADMIN_PASSWORD" "${ADMIN_PASSWORD}"
+upsert_remote_env "ADMIN_PASSWORD_HASH" "${ADMIN_PASSWORD_HASH}"
 
 echo "Deployed to ${REMOTE_HOST}:${REMOTE_DIR}"

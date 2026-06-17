@@ -37,6 +37,11 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-examp
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-toggle'), 'index contains workspace toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'catalog-mode-toggle'), 'index contains catalog mode toggle control');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'copy-current-link'), 'index contains copy current link control');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'portal-header'), 'index contains multi-page portal header');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'href="/catalog"'), 'index exposes catalog route link');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'href="/branding-catalog"'), 'index exposes branding catalog route link');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'id="profile-page"'), 'index contains profile route page');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'id="admin-page"'), 'index contains admin route page');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'hero-column-media'), 'index contains dedicated hero media column');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-grid'), 'index contains workspace grid scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'workspace-composition'), 'index contains workspace composition scaffold');
@@ -65,7 +70,7 @@ assert_true($indexTemplate !== false && str_contains($indexTemplate, 'brand-rout
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'search-panel'), 'index contains compact search panel');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Главное меню'), 'index contains unified main menu heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab'), 'index contains solution lab scaffold');
-assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Лаборатория решений'), 'index contains solution lab heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Каталог брендирования'), 'index contains branding catalog heading');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab-filters'), 'index contains solution lab filters scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'solution-lab-meta'), 'index contains solution lab meta scaffold');
 assert_true($indexTemplate !== false && str_contains($indexTemplate, 'Каталог и решения'), 'index updates workspace heading for catalog and constructor');
@@ -75,7 +80,7 @@ assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-brie
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'brand-note'), 'index removed brand note block');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'brand-principles'), 'index removed brand principles scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'hero-summary'), 'index removed old hero summary scaffold');
-assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Каталог брендирования'), 'index removed old branding catalog heading');
+assert_true($indexTemplate !== false && str_contains($indexTemplate, 'apiBase: \'/api.php?action=\''), 'index uses absolute api route for pretty urls');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Только каталог'), 'index removed confusing catalog-only label');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'featured-shelves'), 'index removed featured shelves scaffold');
 assert_true($indexTemplate !== false && !str_contains($indexTemplate, 'Под рукой'), 'index removed secondary showcase heading');
@@ -343,10 +348,17 @@ assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'ren
 $downloadTemplate = file_get_contents(dirname(__DIR__) . '/download.php');
 assert_true($downloadTemplate !== false && str_contains($downloadTemplate, 'inline'), 'download supports inline mode');
 
+$htaccessTemplate = file_get_contents(dirname(__DIR__) . '/.htaccess');
+assert_true($htaccessTemplate !== false && str_contains($htaccessTemplate, 'RewriteRule ^ index.php [L]'), 'htaccess routes pretty urls to index');
+$routerTemplate = file_get_contents(dirname(__DIR__) . '/router.php');
+assert_true($routerTemplate !== false && str_contains($routerTemplate, "require __DIR__ . '/index.php'"), 'local php router falls back to index');
+
 $apiTemplate = file_get_contents(dirname(__DIR__) . '/api.php');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'consult'"), 'api exposes consult action');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'constructor'"), 'api exposes constructor action');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'construct'"), 'api exposes construct action');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, "case 'admin-login'"), 'api exposes admin login action');
+assert_true($apiTemplate !== false && str_contains($apiTemplate, 'random_bytes(32)'), 'api returns random admin session token');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'invalid_json'), 'api validates constructor json body');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_intent'), 'api accepts consultant memory parameters');
 assert_true($apiTemplate !== false && str_contains($apiTemplate, 'memory_focus'), 'api accepts consultant memory focus parameter');
@@ -355,21 +367,40 @@ $envExampleTemplate = file_get_contents(dirname(__DIR__) . '/.env.example');
 assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'CONSULTANT_LLM_ENABLED=0'), 'env example exposes consultant llm flag');
 assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'OPENAI_API_KEY='), 'env example exposes openai api key');
 assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'OPENAI_MODEL=gpt-5'), 'env example exposes openai model');
+assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'ADMIN_EMAIL='), 'env example exposes admin email');
+assert_true($envExampleTemplate !== false && str_contains($envExampleTemplate, 'ADMIN_PASSWORD_HASH='), 'env example exposes admin password hash');
 
 $deployScriptTemplate = file_get_contents(dirname(__DIR__, 2) . '/scripts/deploy_regru_php_site.sh');
 assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'OPENAI_API_KEY'), 'deploy script forwards openai key');
 assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'CONSULTANT_LLM_ENABLED'), 'deploy script forwards consultant llm toggle');
+assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'ADMIN_PASSWORD_HASH'), 'deploy script forwards admin password hash');
 assert_true($deployScriptTemplate !== false && str_contains($deployScriptTemplate, 'upsert_remote_env'), 'deploy script upserts remote env values');
 
 $deployWorkflowTemplate = file_get_contents(dirname(__DIR__, 2) . '/.github/workflows/deploy_regru_php_site.yml');
 assert_true($deployWorkflowTemplate !== false && str_contains($deployWorkflowTemplate, 'OPENAI_API_KEY'), 'deploy workflow exposes openai key secret');
 assert_true($deployWorkflowTemplate !== false && str_contains($deployWorkflowTemplate, 'CONSULTANT_LLM_ENABLED'), 'deploy workflow exposes consultant llm secret');
+assert_true($deployWorkflowTemplate !== false && str_contains($deployWorkflowTemplate, 'YAMAL_SITE_ADMIN_PASSWORD_HASH'), 'deploy workflow exposes admin password hash secret');
 
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-logo-main.svg'), 'brand logo asset exists');
 assert_true(is_file(dirname(__DIR__) . '/assets/brand-mark.svg'), 'brand mark asset exists');
 assert_true(str_contains(asset_url('assets/styles.css'), '?v='), 'asset_url appends version query');
 assert_true(str_contains(asset_url('assets/app.js'), '?v='), 'asset_url versions app script');
 assert_true(str_contains(asset_url('assets/brand-logo-main.svg'), '?v='), 'asset_url versions logo asset');
+
+putenv('ADMIN_EMAIL=admin@example.test');
+putenv('ADMIN_PASSWORD=plain-secret');
+putenv('ADMIN_PASSWORD_HASH=');
+$plainAdmin = site_admin_login(' ADMIN@example.test ', 'plain-secret');
+assert_true(($plainAdmin['id'] ?? '') === 'admin', 'admin login accepts configured email and password');
+assert_true(($plainAdmin['email'] ?? '') === 'admin@example.test', 'admin login normalizes configured email');
+assert_true(site_admin_login('admin@example.test', 'bad-secret') === null, 'admin login rejects wrong password');
+putenv('ADMIN_PASSWORD=');
+putenv('ADMIN_PASSWORD_HASH=' . password_hash('hashed-secret', PASSWORD_DEFAULT));
+assert_true(site_admin_login('admin@example.test', 'hashed-secret') !== null, 'admin login accepts password hash');
+assert_true(site_admin_login('other@example.test', 'hashed-secret') === null, 'admin login rejects wrong email');
+putenv('ADMIN_EMAIL=');
+putenv('ADMIN_PASSWORD=');
+putenv('ADMIN_PASSWORD_HASH=');
 
 assert_true(detect_consultant_intent('нужен логотип в svg') !== null && (detect_consultant_intent('нужен логотип в svg')['id'] ?? '') === 'logo', 'consultant detects logo intent from svg query');
 assert_true(detect_consultant_city('материалы Салехарда') === 'салехард', 'consultant detects city from query');

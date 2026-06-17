@@ -85,6 +85,40 @@ function consultant_llm_enabled(?array $config = null): bool
     return (bool) ($settings['enabled'] ?? false) && trim((string) ($settings['api_key'] ?? '')) !== '';
 }
 
+function site_admin_login(string $email, string $password): ?array
+{
+    $adminEmail = strtolower(trim((string) (getenv('ADMIN_EMAIL') ?: '')));
+    $adminPassword = (string) (getenv('ADMIN_PASSWORD') ?: '');
+    $adminPasswordHash = trim((string) (getenv('ADMIN_PASSWORD_HASH') ?: ''));
+    $inputEmail = strtolower(trim($email));
+
+    if ($adminEmail === '' || $inputEmail === '' || $inputEmail !== $adminEmail || $password === '') {
+        return null;
+    }
+
+    $validPassword = false;
+    if ($adminPasswordHash !== '') {
+        $validPassword = password_verify($password, $adminPasswordHash);
+    } elseif ($adminPassword !== '') {
+        $validPassword = hash_equals($adminPassword, $password);
+    }
+    if (!$validPassword) {
+        return null;
+    }
+
+    return [
+        'id' => 'admin',
+        'email' => $adminEmail,
+        'firstName' => 'Администратор',
+        'lastName' => 'Сайта',
+        'middleName' => '',
+        'phoneNumber' => '',
+        'organization' => 'Бренд Ямал',
+        'role' => 'Admin',
+        'isActive' => true,
+    ];
+}
+
 function openai_response_output_text(array $payload): string
 {
     $explicit = trim((string) ($payload['output_text'] ?? ''));
@@ -185,10 +219,10 @@ function asset_url(string $relativePath): string
     $normalized = ltrim(str_replace('\\', '/', $relativePath), '/');
     $fullPath = dirname(__DIR__) . '/' . $normalized;
     if (!is_file($fullPath)) {
-        return $normalized;
+        return '/' . $normalized;
     }
     $version = (string) (filemtime($fullPath) ?: 0);
-    return $normalized . '?v=' . rawurlencode($version);
+    return '/' . $normalized . '?v=' . rawurlencode($version);
 }
 
 function safe_id(string $value): string

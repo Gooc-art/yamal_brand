@@ -13,12 +13,43 @@ $config = site_config();
   </head>
   <body>
     <div class="page-shell">
-      <header class="hero surface">
+      <header class="portal-header surface">
+        <a class="portal-logo" href="/" data-page-link="/">
+          <img class="portal-logo-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
+          <span>Бренд Ямал</span>
+        </a>
+        <nav class="portal-nav" aria-label="Главное меню">
+          <a href="/catalog" data-page-link="/catalog" data-nav="catalog">▦ Библиотека</a>
+          <a href="/branding-catalog" data-page-link="/branding-catalog" data-nav="branding">▣ Брендирование</a>
+        </nav>
+        <button type="button" class="accent-button portal-login-button" data-action="open-login-modal">Войти</button>
+        <button type="button" class="ghost-button portal-profile-button" data-action="open-profile" hidden></button>
+      </header>
+
+      <main id="home-page" class="route-page route-page-home">
+      <section class="hero surface">
+        <div class="hero-column hero-column-main">
+          <div class="hero-ribbon">
+            <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
+            <span>Официальная библиотека фирменного стиля</span>
+          </div>
+          <h1>Конструктор бренда Ямала для носителей, каталогов и рабочих макетов</h1>
+          <p class="hero-copy">Собирайте типовые макеты в фирменном стиле, находите утверждённые материалы и передавайте подрядчику понятный пакет без ручной охоты по папкам.</p>
+          <div class="hero-actions">
+            <a class="accent-button" href="/branding-catalog" data-page-link="/branding-catalog">Брендирование</a>
+            <a class="ghost-button" href="/catalog" data-page-link="/catalog">Каталог</a>
+          </div>
+          <div class="portal-stat-grid">
+            <article><strong id="portal-stat-assets">0</strong><span>материалов</span></article>
+            <article><strong id="portal-stat-constructors">0</strong><span>шаблонов</span></article>
+            <article><strong>24/7</strong><span>доступ к каталогу</span></article>
+          </div>
+        </div>
+
         <div class="hero-column hero-column-media">
           <section class="hero-examples surface">
             <div class="block-head compact hero-examples-head">
               <div>
-                <p class="eyebrow">Примеры внедрения бренда</p>
                 <h2>Примеры внедрения бренда</h2>
                 <p class="hero-examples-note">Живые кейсы из каталога с быстрым просмотром и переключением.</p>
               </div>
@@ -27,23 +58,29 @@ $config = site_config();
             <div id="hero-example-stage" class="hero-example-stage"></div>
           </section>
         </div>
+      </section>
+      </main>
 
-        <div class="hero-column hero-column-main">
-          <div class="hero-ribbon">
-            <img class="brand-mark" src="<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" aria-hidden="true" />
-            <span>Официальная библиотека фирменного стиля</span>
+      <section id="login-modal" class="portal-modal-backdrop" hidden>
+        <div class="portal-modal surface" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+          <div class="portal-modal-head">
+            <div>
+              <p class="eyebrow">Вход</p>
+              <h2 id="login-modal-title">Авторизация</h2>
+            </div>
+            <button type="button" class="ghost-button" data-action="close-login-modal">Закрыть</button>
           </div>
-          <h1 id="site-title" class="visually-hidden"><?= htmlspecialchars($config['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></h1>
-          <p class="hero-copy">Логотипы, брендбуки, SVG, шрифты и материалы региона в одном каталоге.</p>
-          <div class="hero-actions">
-            <button type="button" class="accent-button" data-action="search-chip" data-query="брендбук">Брендбуки</button>
-            <button type="button" class="ghost-button" data-action="search-chip" data-query="логотип">Логотипы</button>
-            <button type="button" class="ghost-button catalog-mode-toggle" data-action="toggle-catalog-mode">Скрыть витрину</button>
-            <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
-          </div>
-
           <section id="account-panel" class="account-panel" aria-live="polite"></section>
+        </div>
+      </section>
 
+      <section id="catalog-page" class="route-page" hidden>
+        <div class="surface page-title-block">
+          <div>
+            <p class="eyebrow">Библиотека</p>
+            <h1>Библиотека брендовых материалов</h1>
+            <p>Утверждённые логотипы, брендбуки, шрифты, графика и файлы для работы.</p>
+          </div>
           <form id="search-form" class="search-panel hero-search-panel">
             <label class="search-label" for="search-input">Поиск</label>
             <div class="search-row">
@@ -62,53 +99,53 @@ $config = site_config();
             </div>
           </form>
         </div>
-      </header>
+        <section class="surface brand-routes-block">
+          <div class="block-head brand-routes-head">
+            <div>
+              <h2>Главное меню</h2>
+              <p id="brand-routes-caption" class="brand-routes-caption">Откройте список разделов и быстро перейдите в нужную ветку каталога.</p>
+            </div>
+            <div class="brand-routes-actions">
+              <button
+                type="button"
+                id="brand-routes-toggle"
+                class="accent-button brand-routes-toggle"
+                data-action="toggle-brand-routes"
+                aria-expanded="false"
+                aria-controls="brand-routes-panel"
+              >
+                <span class="brand-routes-toggle-copy">
+                  <strong id="brand-routes-toggle-label">Открыть разделы</strong>
+                  <span id="brand-routes-toggle-meta">Все разделы каталога</span>
+                </span>
+                <span class="brand-routes-toggle-icon" aria-hidden="true">↓</span>
+              </button>
+            </div>
+          </div>
+          <div id="brand-routes-panel" class="brand-routes-panel" hidden>
+            <div class="brand-routes-panel-head">
+              <div class="brand-routes-panel-copy">
+                <strong>Разделы каталога</strong>
+                <span>Плотная сетка для быстрого входа.</span>
+              </div>
+              <span id="brand-routes-current" class="brand-routes-current">Все разделы</span>
+            </div>
+            <div id="brand-routes" class="brand-route-grid"></div>
+          </div>
+        </section>
+      </section>
 
       <section id="setup-banner" class="surface setup-banner"></section>
 
-      <section class="surface brand-routes-block">
-        <div class="block-head brand-routes-head">
-          <div>
-            <p class="eyebrow">Навигация</p>
-            <h2>Главное меню</h2>
-            <p id="brand-routes-caption" class="brand-routes-caption">Откройте список разделов и быстро перейдите в нужную ветку каталога без отдельного нижнего меню.</p>
-          </div>
-          <div class="brand-routes-actions">
-            <button
-              type="button"
-              id="brand-routes-toggle"
-              class="accent-button brand-routes-toggle"
-              data-action="toggle-brand-routes"
-              aria-expanded="false"
-              aria-controls="brand-routes-panel"
-            >
-              <span class="brand-routes-toggle-copy">
-                <strong id="brand-routes-toggle-label">Открыть разделы</strong>
-                <span id="brand-routes-toggle-meta">Все разделы каталога</span>
-              </span>
-              <span class="brand-routes-toggle-icon" aria-hidden="true">↓</span>
-            </button>
-          </div>
-        </div>
-        <div id="brand-routes-panel" class="brand-routes-panel" hidden>
-          <div class="brand-routes-panel-head">
-            <div class="brand-routes-panel-copy">
-              <strong>Разделы каталога</strong>
-              <span>Плотная сетка для быстрого входа без отдельного root-каталога внизу.</span>
-            </div>
-            <span id="brand-routes-current" class="brand-routes-current">Все разделы</span>
-          </div>
-          <div id="brand-routes" class="brand-route-grid"></div>
-        </div>
-      </section>
-
-      <section id="solution-lab" class="surface solution-lab-block">
+      <section id="branding-page" class="route-page" hidden>
+      <section class="surface solution-lab-block" id="solution-lab">
+        <div class="breadcrumbs portal-breadcrumbs">Главная / Каталог брендирования</div>
         <div class="block-head solution-lab-head">
           <div>
-            <p class="eyebrow">Конструктор</p>
-            <h2 id="solution-lab-title">Лаборатория решений</h2>
-            <p id="solution-lab-copy" class="solution-lab-copy">Готовые каркасы для типовых носителей: визиток, табличек, бейджей, сертификатов, digital-карточек, бланков, роллапов и презентаций.</p>
+            <h1 id="solution-lab-title">Каталог брендирования</h1>
+            <p id="solution-lab-copy" class="solution-lab-copy">Выберите носитель — создайте макет в фирменном стиле</p>
           </div>
+          <button type="button" class="ghost-button" data-action="open-admin-question-modal">Задать вопрос администратору</button>
         </div>
         <div class="solution-lab-toolbar">
           <div id="solution-lab-filters" class="solution-lab-filters"></div>
@@ -116,6 +153,11 @@ $config = site_config();
         </div>
         <div id="solution-lab-grid" class="solution-lab-grid"></div>
       </section>
+      </section>
+
+      <section id="profile-page" class="route-page" hidden></section>
+
+      <section id="admin-page" class="route-page" hidden></section>
 
       <section id="workspace-shell" class="workspace-shell collapsed" hidden>
         <div class="surface workspace-header">
@@ -162,6 +204,23 @@ $config = site_config();
           <p class="detail-empty">Выберите материал.</p>
         </div>
       </aside>
+      </section>
+
+      <section id="admin-question-modal" class="portal-modal-backdrop" hidden>
+        <div class="portal-modal surface" role="dialog" aria-modal="true" aria-labelledby="admin-question-title">
+          <div class="portal-modal-head">
+            <div>
+              <p class="eyebrow">Вопрос</p>
+              <h2 id="admin-question-title">Задать вопрос администратору</h2>
+            </div>
+            <button type="button" class="ghost-button" data-action="close-admin-question-modal">Закрыть</button>
+          </div>
+          <form id="admin-question-form" class="portal-form">
+            <label><span>Тема</span><input name="title" required></label>
+            <label><span>Сообщение</span><textarea name="body" rows="5" required></textarea></label>
+            <button type="submit" class="accent-button">Отправить</button>
+          </form>
+        </div>
       </section>
 
       <button
@@ -229,8 +288,8 @@ $config = site_config();
 
     <script>
       window.YAMAL_SITE = {
-        apiBase: 'api.php?action=',
-        downloadBase: 'download.php?id=',
+        apiBase: '/api.php?action=',
+        downloadBase: '/download.php?id=',
         brandLogoAsset: '<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>',
         brandMarkAsset: '<?= htmlspecialchars(asset_url('assets/brand-mark.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>'
       };
