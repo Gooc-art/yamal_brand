@@ -370,7 +370,7 @@ SSH_PORT=22 \
 
 Для полного восстановления каталога на REG.RU с self-hosted runner есть отдельный workflow:
 - открой `Sync REG.RU Full Catalog`
-- workflow берет локальную директорию `/home/sergey/yamal_brand/input/Макеты1`
+- workflow берет директорию официального каталога на BOTSGSN: `/home/localadmin/yamal_brand/input/Макеты1`
 - заменяет `data/files/` на хостинге, удаляет `data/max_catalog.db` и проверяет, что публичный `bootstrap` снова возвращает разделы
 
 Для архива `/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz` есть отдельный workflow:

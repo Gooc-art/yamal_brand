@@ -5,14 +5,14 @@ on:
 
 jobs:
   sync:
-    runs-on: [self-hosted, linux, yamal-max-prod]
+    runs-on: [self-hosted, linux, yamal-botsgsn]
     env:
       REMOTE_HOST: ${{ secrets.REGRU_HOST }}
       REMOTE_USER: ${{ secrets.REGRU_USER }}
       REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
       REMOTE_SITE_URL: ${{ secrets.REGRU_SITE_URL }}
       SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
-      ARCHIVE_PATH: /home/sergey/yamal_brand/input/Макеты1
+      ARCHIVE_PATH: /home/localadmin/yamal_brand/input/Макеты1
       IMPORT_LABEL: full-catalog-sync-${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
