@@ -149,8 +149,10 @@ assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.soluti
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.solution-card'), 'styles contain solution card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '-webkit-line-clamp: 2'), 'styles clamp solution card copy to two lines');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-layout'), 'styles contain constructor layout classes');
-assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);'), 'styles use compact two-column constructor tool layout');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-template-columns: minmax(280px, 340px) minmax(420px, 1fr) minmax(260px, 320px);'), 'styles use professional three-column constructor tool layout');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-logo-option'), 'styles contain constructor logo list option classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-office-row'), 'styles contain office table rows');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-properties-panel'), 'styles contain constructor properties panel');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-mobile-tabs'), 'styles contain mobile constructor tabs');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-steps'), 'styles contain constructor steps classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-group'), 'styles contain grouped constructor field classes');
@@ -187,7 +189,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constru
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock .constructor-progress-strip'), 'styles compact floating dock preview chrome');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-preview-panel.is-floating-dock {'), 'styles expose dedicated floating dock shell state for always-follow preview');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'max-height: calc(100vh - 20px);'), 'styles keep constructor preview scrollable on narrow screens');
-assert_true($stylesTemplate !== false && !str_contains($stylesTemplate, '.constructor-properties-panel'), 'styles do not expose removed constructor properties panel');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.constructor-field-token-list'), 'styles contain constructor field token list');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'scroll-snap-type: x proximity'), 'styles contain horizontal rail snapping');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'grid-auto-flow: column'), 'styles contain horizontal rail flow');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.page-shell.catalog-mode'), 'styles contain catalog mode classes');
@@ -217,9 +219,13 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'rend
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'buildConstructorCategoryFilters'), 'frontend contains solution lab category filter builder');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LOGO_CHOICES'), 'frontend contains constructor logo list model');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'set-constructor-logo'), 'frontend supports logo list selection');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_LAYOUT_SPECS'), 'frontend exposes print size specs for constructor layouts');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'CONSTRUCTOR_OFFICE_ROWS'), 'frontend exposes office and address rows');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorOfficeTable'), 'frontend renders offices and addresses table');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'select-office-row'), 'frontend supports selecting office table rows');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorPropertiesPanel'), 'frontend renders constructor properties panel');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'download-primary-artifact'), 'frontend supports primary layout download action');
-assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'renderConstructorPropertiesPanel'), 'frontend does not render constructor properties panel');
-assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'constructor-properties'), 'frontend does not mount mobile properties tab');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'constructor-properties'), 'frontend mounts properties panel');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'buildConstructorPresetsMarkup'), 'frontend does not render quick preset block in constructor editor');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'apply-constructor-preset'), 'frontend does not wire quick preset actions in constructor editor');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Быстрые варианты'), 'frontend removed quick preset heading from constructor ui');
