@@ -6,6 +6,9 @@ const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'g
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
+const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name']);
+const ACCOUNT_STORAGE_KEY = 'yamal-site-account-v1';
+const ACCOUNT_SESSION_STORAGE_KEY = 'yamal-site-session-v1';
 const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
 const CONSTRUCTOR_PREVIEW_STACKED_BREAKPOINT = 980;
 const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 0;
@@ -61,6 +64,79 @@ function mixHexColors(baseHex, overlayHex, overlayWeight = 0.5) {
   const toHex = (value) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0').toUpperCase();
 
   return `#${toHex((base.r * inverse) + (overlay.r * weight))}${toHex((base.g * inverse) + (overlay.g * weight))}${toHex((base.b * inverse) + (overlay.b * weight))}`;
+}
+
+function normalizeAccountEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hashAccountPassword(value) {
+  const source = String(value || '');
+  let hash = 5381;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = ((hash << 5) + hash) ^ source.charCodeAt(index);
+  }
+  return String(hash >>> 0);
+}
+
+function normalizeAccountInput(input = {}) {
+  return {
+    lastName: String(input.lastName || '').trim(),
+    firstName: String(input.firstName || '').trim(),
+    middleName: String(input.middleName || '').trim(),
+    phoneNumber: String(input.phoneNumber || '').trim(),
+    organization: String(input.organization || '').trim(),
+    email: normalizeAccountEmail(input.email),
+    password: String(input.password || ''),
+  };
+}
+
+function validateAccountInput(mode, input = {}, users = []) {
+  const data = normalizeAccountInput(input);
+  const errors = {};
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.email = 'Укажите корректный email.';
+  }
+  if (!data.password || data.password.length < 6) {
+    errors.password = 'Пароль должен быть не короче 6 символов.';
+  }
+  if (mode === 'register') {
+    if (!data.lastName) errors.lastName = 'Укажите фамилию.';
+    if (!data.firstName) errors.firstName = 'Укажите имя.';
+    if (!data.organization) errors.organization = 'Укажите организацию.';
+    if (users.some((user) => normalizeAccountEmail(user.email) === data.email)) {
+      errors.email = 'Пользователь с таким email уже зарегистрирован.';
+    }
+  }
+  return { ok: Object.keys(errors).length === 0, errors, data };
+}
+
+function buildLocalAccountUser(input = {}, nowValue = new Date()) {
+  const data = normalizeAccountInput(input);
+  const createdAt = nowValue instanceof Date
+    ? nowValue.toISOString()
+    : String(nowValue || '').trim() || new Date().toISOString();
+  return {
+    id: data.email || `user-${createdAt}`,
+    email: data.email,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    middleName: data.middleName,
+    phoneNumber: data.phoneNumber,
+    organization: data.organization,
+    role: 'User',
+    isActive: true,
+    passwordHash: hashAccountPassword(data.password),
+    createdAt,
+  };
+}
+
+function publicAccountUser(user) {
+  if (!user || typeof user !== 'object') {
+    return null;
+  }
+  const { passwordHash, ...publicUser } = user;
+  return publicUser;
 }
 
 function clampRoutePage(value) {
@@ -1100,10 +1176,20 @@ function normalizeConstructorDraftInput(fields, input) {
     normalized[fieldId] = value;
   });
 
+  CONSTRUCTOR_LOCAL_FIELD_IDS.forEach((fieldId) => {
+    if (!Object.prototype.hasOwnProperty.call(source, fieldId)) {
+      return;
+    }
+    const value = String(source[fieldId] ?? '').trim();
+    if (value) {
+      normalized[fieldId] = value;
+    }
+  });
+
   return normalized;
 }
 
-function buildConstructorDraftEntry(fields, input, nowValue = new Date()) {
+function buildConstructorDraftEntry(fields, input, nowValue = new Date(), ownerEmail = '') {
   const normalizedInput = normalizeConstructorDraftInput(fields, input);
   if (!Object.keys(normalizedInput).length) {
     return null;
@@ -1113,10 +1199,15 @@ function buildConstructorDraftEntry(fields, input, nowValue = new Date()) {
     ? nowValue.toISOString()
     : String(nowValue || '').trim() || new Date().toISOString();
 
-  return {
+  const entry = {
     input: normalizedInput,
     updatedAt,
   };
+  const normalizedOwnerEmail = normalizeAccountEmail(ownerEmail);
+  if (normalizedOwnerEmail) {
+    entry.ownerEmail = normalizedOwnerEmail;
+  }
+  return entry;
 }
 
 function normalizeStoredConstructorDraft(entry, fields) {
@@ -1129,10 +1220,15 @@ function normalizeStoredConstructorDraft(entry, fields) {
     return null;
   }
 
-  return {
+  const normalizedEntry = {
     input: normalizedInput,
     updatedAt: String(entry.updatedAt || '').trim(),
   };
+  const ownerEmail = normalizeAccountEmail(entry.ownerEmail);
+  if (ownerEmail) {
+    normalizedEntry.ownerEmail = ownerEmail;
+  }
+  return normalizedEntry;
 }
 
 function readConstructorDraftStore(storage = null) {
@@ -1178,13 +1274,13 @@ function loadConstructorDraft(constructorId, fields, storage = null) {
   return normalizeStoredConstructorDraft(store[normalizedId], fields);
 }
 
-function saveConstructorDraft(constructorId, fields, input, storage = null, nowValue = new Date()) {
+function saveConstructorDraft(constructorId, fields, input, storage = null, nowValue = new Date(), ownerEmail = '') {
   const normalizedId = String(constructorId || '').trim();
   if (!normalizedId) {
     return null;
   }
 
-  const nextEntry = buildConstructorDraftEntry(fields, input, nowValue);
+  const nextEntry = buildConstructorDraftEntry(fields, input, nowValue, ownerEmail);
   const store = readConstructorDraftStore(storage);
 
   if (!nextEntry) {
@@ -1348,9 +1444,20 @@ function buildConstructorWarnings(fields, input, options = {}) {
 function collectConstructorFormInput(form) {
   const input = {};
   new FormData(form).forEach((value, key) => {
+    if (value instanceof File) {
+      return;
+    }
     input[key] = String(value);
   });
   return input;
+}
+
+function isAllowedConstructorLogoFile(file) {
+  if (!file) {
+    return false;
+  }
+  const allowedTypes = new Set(['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp']);
+  return allowedTypes.has(String(file.type || '').toLowerCase()) || /\.(svg|png|jpe?g|webp)$/i.test(String(file.name || ''));
 }
 
 function normalizeConstructorHandoff(handoff) {
@@ -1789,6 +1896,13 @@ if (typeof module !== 'undefined' && module.exports) {
     buildConsultantMemoryPayload,
     normalizeConsultantAdvice,
     normalizeConsultantDeepAnswer,
+    normalizeAccountEmail,
+    hashAccountPassword,
+    normalizeAccountInput,
+    validateAccountInput,
+    buildLocalAccountUser,
+    publicAccountUser,
+    isAllowedConstructorLogoFile,
   };
 }
 
@@ -1828,6 +1942,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     consultantIntentId: '',
     consultantHistory: [],
     consultantContext: null,
+    accountMode: 'login',
+    accountError: '',
+    accountUser: null,
   };
   const constructorBuildCache = new Map();
   let constructorBuildAbortController = null;
@@ -1855,6 +1972,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     solutionLabFilters: document.querySelector('#solution-lab-filters'),
     solutionLabMeta: document.querySelector('#solution-lab-meta'),
     solutionLabGrid: document.querySelector('#solution-lab-grid'),
+    accountPanel: document.querySelector('#account-panel'),
     setupBanner: document.querySelector('#setup-banner'),
     topSearches: document.querySelector('#top-searches'),
     contentMode: document.querySelector('#content-mode'),
@@ -1884,6 +2002,215 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     inspectorBackdrop: document.querySelector('#inspector-backdrop'),
     catalogModeButtons: Array.from(document.querySelectorAll('.catalog-mode-toggle')),
   };
+
+  function readAccountStore() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(ACCOUNT_STORAGE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' && Array.isArray(parsed.users)
+        ? parsed
+        : { users: [] };
+    } catch (error) {
+      return { users: [] };
+    }
+  }
+
+  function writeAccountStore(store) {
+    window.localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify({
+      users: Array.isArray(store?.users) ? store.users : [],
+    }));
+  }
+
+  function readAccountSession() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(ACCOUNT_SESSION_STORAGE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function writeAccountSession(user) {
+    const token = `${normalizeAccountEmail(user?.email)}:${Date.now().toString(36)}`;
+    window.localStorage.setItem(ACCOUNT_SESSION_STORAGE_KEY, JSON.stringify({
+      token,
+      email: normalizeAccountEmail(user?.email),
+    }));
+    return token;
+  }
+
+  function clearAccountSession() {
+    window.localStorage.removeItem(ACCOUNT_SESSION_STORAGE_KEY);
+  }
+
+  function loadAccountUser() {
+    const session = readAccountSession();
+    const email = normalizeAccountEmail(session.email);
+    if (!email) {
+      state.accountUser = null;
+      return null;
+    }
+    const user = readAccountStore().users.find((item) => normalizeAccountEmail(item.email) === email) || null;
+    state.accountUser = publicAccountUser(user);
+    return state.accountUser;
+  }
+
+  function accountDraftsForCurrentUser() {
+    const email = normalizeAccountEmail(state.accountUser?.email);
+    const store = readConstructorDraftStore(window.localStorage);
+    return Object.entries(store)
+      .map(([id, entry]) => ({
+        id,
+        updatedAt: String(entry?.updatedAt || '').trim(),
+        ownerEmail: normalizeAccountEmail(entry?.ownerEmail),
+      }))
+      .filter((entry) => entry.id && (!entry.ownerEmail || entry.ownerEmail === email))
+      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  }
+
+  function renderAccountPanel() {
+    if (!els.accountPanel) {
+      return;
+    }
+    const user = state.accountUser;
+    if (user) {
+      const drafts = accountDraftsForCurrentUser();
+      els.accountPanel.innerHTML = `
+        <div class="account-card account-card-profile">
+          <div class="account-card-copy">
+            <span class="account-kicker">Личный кабинет</span>
+            <strong>${escapeHtml([user.lastName, user.firstName].filter(Boolean).join(' ') || user.email)}</strong>
+            <span>${escapeHtml(user.organization || 'Организация не указана')} • ${drafts.length} ${drafts.length === 1 ? 'черновик' : 'черновиков'}</span>
+          </div>
+          <div class="account-actions">
+            <button type="button" class="ghost-button" data-action="account-edit">Редактировать</button>
+            <button type="button" class="ghost-button" data-action="account-logout">Выйти</button>
+          </div>
+          ${drafts.length ? `
+            <div class="account-drafts">
+              ${drafts.slice(0, 3).map((draft) => `
+                <button type="button" class="account-draft-link" data-action="open-constructor" data-id="${escapeHtml(draft.id)}">
+                  <strong>${escapeHtml(draft.id)}</strong>
+                  <span>${escapeHtml(draft.updatedAt ? new Date(draft.updatedAt).toLocaleDateString('ru-RU') : 'локальный черновик')}</span>
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+      return;
+    }
+
+    const isRegister = state.accountMode === 'register';
+    els.accountPanel.innerHTML = `
+      <form class="account-card account-form" data-account-form="${isRegister ? 'register' : 'login'}">
+        <div class="account-card-copy">
+          <span class="account-kicker">${isRegister ? 'Регистрация' : 'Вход'}</span>
+          <strong>${isRegister ? 'Создать локальный кабинет' : 'Войти в кабинет'}</strong>
+          <span>Кабинет хранится в этом браузере и связывает вас с локальными черновиками конструктора.</span>
+        </div>
+        <div class="account-field-grid">
+          ${isRegister ? `
+            <label><span>Фамилия</span><input name="lastName" autocomplete="family-name" required></label>
+            <label><span>Имя</span><input name="firstName" autocomplete="given-name" required></label>
+            <label><span>Организация</span><input name="organization" autocomplete="organization" required></label>
+            <label><span>Телефон</span><input name="phoneNumber" autocomplete="tel"></label>
+          ` : ''}
+          <label><span>Email</span><input name="email" type="email" autocomplete="email" required></label>
+          <label><span>Пароль</span><input name="password" type="password" autocomplete="${isRegister ? 'new-password' : 'current-password'}" required minlength="6"></label>
+        </div>
+        ${state.accountError ? `<p class="account-error">${escapeHtml(state.accountError)}</p>` : ''}
+        <div class="account-actions">
+          <button type="submit" class="accent-button">${isRegister ? 'Зарегистрироваться' : 'Войти'}</button>
+          <button type="button" class="ghost-button" data-action="account-mode" data-mode="${isRegister ? 'login' : 'register'}">${isRegister ? 'Уже есть вход' : 'Регистрация'}</button>
+        </div>
+      </form>
+    `;
+  }
+
+  function renderAccountEditForm() {
+    if (!els.accountPanel || !state.accountUser) {
+      return;
+    }
+    const user = state.accountUser;
+    els.accountPanel.innerHTML = `
+      <form class="account-card account-form" data-account-form="edit">
+        <div class="account-card-copy">
+          <span class="account-kicker">Личный кабинет</span>
+          <strong>Данные пользователя</strong>
+        </div>
+        <div class="account-field-grid">
+          <label><span>Фамилия</span><input name="lastName" value="${escapeHtml(user.lastName || '')}" required></label>
+          <label><span>Имя</span><input name="firstName" value="${escapeHtml(user.firstName || '')}" required></label>
+          <label><span>Организация</span><input name="organization" value="${escapeHtml(user.organization || '')}" required></label>
+          <label><span>Телефон</span><input name="phoneNumber" value="${escapeHtml(user.phoneNumber || '')}"></label>
+        </div>
+        ${state.accountError ? `<p class="account-error">${escapeHtml(state.accountError)}</p>` : ''}
+        <div class="account-actions">
+          <button type="submit" class="accent-button">Сохранить</button>
+          <button type="button" class="ghost-button" data-action="account-cancel">Отмена</button>
+        </div>
+      </form>
+    `;
+  }
+
+  function handleAccountSubmit(form) {
+    const mode = String(form.dataset.accountForm || 'login');
+    const data = Object.fromEntries(new FormData(form).entries());
+    const store = readAccountStore();
+    state.accountError = '';
+
+    if (mode === 'edit') {
+      const email = normalizeAccountEmail(state.accountUser?.email);
+      const index = store.users.findIndex((user) => normalizeAccountEmail(user.email) === email);
+      if (index < 0) {
+        state.accountError = 'Сессия устарела. Войдите ещё раз.';
+        clearAccountSession();
+        state.accountUser = null;
+        renderAccountPanel();
+        return;
+      }
+      const nextUser = {
+        ...store.users[index],
+        lastName: String(data.lastName || '').trim(),
+        firstName: String(data.firstName || '').trim(),
+        organization: String(data.organization || '').trim(),
+        phoneNumber: String(data.phoneNumber || '').trim(),
+      };
+      if (!nextUser.lastName || !nextUser.firstName || !nextUser.organization) {
+        state.accountError = 'Фамилия, имя и организация обязательны.';
+        renderAccountEditForm();
+        return;
+      }
+      store.users[index] = nextUser;
+      writeAccountStore(store);
+      state.accountUser = publicAccountUser(nextUser);
+      renderAccountPanel();
+      return;
+    }
+
+    const validation = validateAccountInput(mode, data, store.users);
+    if (!validation.ok) {
+      state.accountError = Object.values(validation.errors)[0] || 'Проверьте поля.';
+      renderAccountPanel();
+      return;
+    }
+
+    let user = store.users.find((item) => normalizeAccountEmail(item.email) === validation.data.email) || null;
+    if (mode === 'register') {
+      user = buildLocalAccountUser(validation.data);
+      store.users.push(user);
+      writeAccountStore(store);
+    } else if (!user || user.passwordHash !== hashAccountPassword(validation.data.password)) {
+      state.accountError = 'Email или пароль не подходят.';
+      renderAccountPanel();
+      return;
+    }
+
+    writeAccountSession(user);
+    state.accountUser = publicAccountUser(user);
+    state.accountMode = 'login';
+    renderAccountPanel();
+  }
 
   function syncConstructorChoiceSelectionState(root = document) {
     if (!root || typeof root.querySelectorAll !== 'function') {
@@ -2186,11 +2513,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function persistConstructorDraft(constructorId, fields, input, options = {}) {
-    const draftEntry = saveConstructorDraft(constructorId, fields, input, window.localStorage);
+    const draftEntry = saveConstructorDraft(constructorId, fields, input, window.localStorage, new Date(), state.accountUser?.email || '');
     const draftMeta = draftEntry
       ? { updatedAt: draftEntry.updatedAt, restored: Boolean(options.restored) }
       : null;
     setCurrentConstructorDraftMeta(draftMeta);
+    renderAccountPanel();
     return draftMeta;
   }
 
@@ -2277,6 +2605,54 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
       refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
     }, CONSTRUCTOR_DRAFT_SAVE_DELAY);
+  }
+
+  function setConstructorLogoError(message = '') {
+    const node = document.querySelector('[data-constructor-logo-error]');
+    if (!node) {
+      return;
+    }
+    node.textContent = String(message || '');
+    node.hidden = !message;
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('file_read_failed'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleConstructorLogoFile(input) {
+    const form = input?.closest?.('#constructor-form');
+    const file = input?.files?.[0] || null;
+    if (!form || !file) {
+      return;
+    }
+    if (!isAllowedConstructorLogoFile(file)) {
+      input.value = '';
+      setConstructorLogoError('Поддерживаются SVG, PNG, JPG и WebP.');
+      return;
+    }
+    setConstructorLogoError('');
+    try {
+      const logoSrc = await readFileAsDataUrl(file);
+      const nextInput = {
+        ...collectConstructorFormInput(form),
+        custom_logo_src: logoSrc,
+        custom_logo_name: String(file.name || 'logo').trim(),
+      };
+      const constructorId = String(form.dataset.constructorId || '').trim();
+      const fields = currentConstructorFields(constructorId);
+      const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
+      applyConstructorLivePreview(nextInput);
+      refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
+    } catch (error) {
+      console.error(error);
+      setConstructorLogoError('Не удалось прочитать файл. Попробуйте другой логотип.');
+    }
   }
 
   function captureConstructorViewState() {
@@ -2467,6 +2843,39 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     });
   }
 
+  function syncConstructorLogoUi(input) {
+    const logoSrc = String(input?.custom_logo_src || '').trim();
+    const logoName = String(input?.custom_logo_name || '').trim();
+    const form = document.querySelector('#constructor-form');
+    if (form) {
+      const srcInput = form.querySelector('input[name="custom_logo_src"]');
+      const nameInput = form.querySelector('input[name="custom_logo_name"]');
+      if (srcInput) srcInput.value = logoSrc;
+      if (nameInput) nameInput.value = logoName;
+    }
+    const logoPreview = document.querySelector('[data-custom-logo-preview]');
+    if (logoPreview) {
+      logoPreview.classList.toggle('is-empty', !logoSrc);
+      logoPreview.innerHTML = logoSrc ? `<img src="${escapeHtml(logoSrc)}" alt="">` : '<span>Логотип не загружен</span>';
+    }
+    const visual = document.querySelector('.constructor-preview-visual');
+    if (!visual) {
+      return;
+    }
+    let overlay = visual.querySelector('[data-constructor-custom-logo]');
+    if (!logoSrc) {
+      overlay?.remove();
+      return;
+    }
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'constructor-custom-logo-overlay';
+      overlay.setAttribute('data-constructor-custom-logo', '1');
+      visual.appendChild(overlay);
+    }
+    overlay.innerHTML = `<img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(logoName || 'Пользовательский логотип')}">`;
+  }
+
   function applyConstructorLivePreview(input) {
     if (state.current?.kind !== 'constructor') {
       return false;
@@ -2530,6 +2939,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       }
     });
 
+    syncConstructorLogoUi(nextInput);
     const fields = Array.isArray(state.current?.payload?.definition?.fields) ? state.current.payload.definition.fields : [];
     const previewArtifact = pickConstructorPreviewArtifact(state.current?.payload?.artifacts || []);
     updateConstructorProgressStrip(fields, nextInput, previewArtifact);
@@ -3884,6 +4294,40 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     `;
   }
 
+  function renderConstructorCustomLogoUpload(input) {
+    const logoSrc = String(input?.custom_logo_src || '').trim();
+    const logoName = String(input?.custom_logo_name || '').trim();
+    return `
+      <section class="constructor-field-group constructor-logo-upload-group">
+        <details class="constructor-field-accordion"${logoSrc ? ' open' : ''} data-constructor-group-id="custom-logo">
+          <summary class="constructor-group-summary">
+            <span class="constructor-group-summary-copy">
+              <strong>Пользовательский логотип</strong>
+              <span>Загрузите SVG, PNG, JPG или WebP. Логотип сразу появится в превью и сохранится в локальном черновике.</span>
+            </span>
+            ${logoName ? `<span class="constructor-group-summary-meta">${escapeHtml(logoName)}</span>` : ''}
+          </summary>
+          <div class="constructor-field-accordion-body">
+            <label class="constructor-logo-upload">
+              <input type="file" name="custom_logo_file" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp">
+              <span class="constructor-logo-upload-box">
+                <strong>${logoSrc ? 'Заменить логотип' : 'Загрузить логотип'}</strong>
+                <small>${escapeHtml(logoName || 'Файл будет показан в текущем SVG-превью.')}</small>
+              </span>
+            </label>
+            <input type="hidden" name="custom_logo_src" value="${escapeHtml(logoSrc)}">
+            <input type="hidden" name="custom_logo_name" value="${escapeHtml(logoName)}">
+            <div class="constructor-logo-preview${logoSrc ? '' : ' is-empty'}" data-custom-logo-preview>
+              ${logoSrc ? `<img src="${escapeHtml(logoSrc)}" alt="">` : '<span>Логотип не загружен</span>'}
+            </div>
+            ${logoSrc ? '<button type="button" class="ghost-button constructor-logo-remove" data-action="remove-constructor-logo">Убрать логотип</button>' : ''}
+            <p class="constructor-logo-error" data-constructor-logo-error hidden></p>
+          </div>
+        </details>
+      </section>
+    `;
+  }
+
   function isConstructorFieldDefaultValue(field, input) {
     const fieldId = String(field?.id || '').trim();
     if (!fieldId) {
@@ -4025,7 +4469,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 
   function buildConstructorFieldGroupsMarkup(fields, input) {
-    return groupConstructorFields(fields).map((group) => buildConstructorFieldGroupMarkup(group, input)).join('');
+    return `${groupConstructorFields(fields).map((group) => buildConstructorFieldGroupMarkup(group, input)).join('')}${renderConstructorCustomLogoUpload(input)}`;
   }
 
 function buildConstructorStepsMarkup(generated) {
@@ -4083,8 +4527,22 @@ function buildConstructorPresetsMarkup(presets) {
   `;
 }
 
-function buildConstructorPreviewMarkup(artifact, layout) {
+function buildConstructorCustomLogoOverlay(input) {
+  const logoSrc = String(input?.custom_logo_src || '').trim();
+  if (!logoSrc) {
+    return '';
+  }
+  const logoName = String(input?.custom_logo_name || 'Пользовательский логотип').trim();
+  return `
+    <div class="constructor-custom-logo-overlay" data-constructor-custom-logo>
+      <img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(logoName)}">
+    </div>
+  `;
+}
+
+function buildConstructorPreviewMarkup(artifact, layout, input = {}) {
     const previewLayout = layout || buildConstructorPreviewLayout({}, artifact);
+    const customLogoOverlay = buildConstructorCustomLogoOverlay(input);
     if (!artifact) {
       return `
         <div class="constructor-preview-empty">
@@ -4094,7 +4552,7 @@ function buildConstructorPreviewMarkup(artifact, layout) {
       `;
     }
     if (artifact.previewType === 'svg') {
-      return `<div class="${previewLayout.visualClass}">${artifact.content || ''}</div>`;
+      return `<div class="${previewLayout.visualClass}">${artifact.content || ''}${customLogoOverlay}</div>`;
     }
     if (artifact.previewType === 'html') {
       return `<iframe class="${previewLayout.frameClass}" title="${escapeHtml(artifact.label || 'Превью')}" srcdoc="${escapeHtml(artifact.content || '')}"></iframe>`;
@@ -4422,7 +4880,7 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
                 <span>${escapeHtml(previewArtifact?.label || 'Текущее превью')} • Рядом видно, насколько шаблон уже заполнен.</span>
               </div>
               <div class="${previewLayout.stageClass}" data-preview-profile="${escapeHtml(previewLayout.profile)}">
-                ${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}
+                ${buildConstructorPreviewMarkup(previewArtifact, previewLayout, input)}
               </div>
               ${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}
               <div class="constructor-downloads">
@@ -5195,6 +5653,29 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       clearConsultantConversation('');
       return;
     }
+    if (action === 'account-mode') {
+      state.accountMode = String(target.dataset.mode || 'login') === 'register' ? 'register' : 'login';
+      state.accountError = '';
+      renderAccountPanel();
+      return;
+    }
+    if (action === 'account-edit') {
+      state.accountError = '';
+      renderAccountEditForm();
+      return;
+    }
+    if (action === 'account-cancel') {
+      state.accountError = '';
+      renderAccountPanel();
+      return;
+    }
+    if (action === 'account-logout') {
+      clearAccountSession();
+      state.accountUser = null;
+      state.accountError = '';
+      renderAccountPanel();
+      return;
+    }
     if (action === 'toggle-workspace') {
       setWorkspaceCollapsed(!state.workspaceCollapsed);
       return;
@@ -5266,6 +5747,22 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
       void openConstructor(target.dataset.id, { history: 'replace', ignoreDraft: true });
       return;
     }
+    if (action === 'remove-constructor-logo') {
+      const form = document.querySelector('#constructor-form');
+      if (form) {
+        const nextInput = {
+          ...collectConstructorFormInput(form),
+          custom_logo_src: '',
+          custom_logo_name: '',
+        };
+        const constructorId = String(form.dataset.constructorId || '').trim();
+        const fields = currentConstructorFields(constructorId);
+        const draftMeta = persistConstructorDraft(constructorId, fields, nextInput);
+        syncConstructorLogoUi(nextInput);
+        refreshConstructorProgressFromForm(form, { input: nextInput, draftMeta });
+      }
+      return;
+    }
     if (isWorkspaceNavigationAction(action)) {
       if (state.brandRoutesOpen) {
         setBrandRoutesOpen(false);
@@ -5304,6 +5801,12 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   }
 
   document.addEventListener('submit', (event) => {
+    const accountForm = event.target.closest('[data-account-form]');
+    if (accountForm) {
+      event.preventDefault();
+      handleAccountSubmit(accountForm);
+      return;
+    }
     const form = event.target.closest('#constructor-form');
     if (!form) {
       return;
@@ -5352,13 +5855,26 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
     if (!form) {
       return;
     }
-    refreshConstructorProgressFromForm(form);
-    scheduleConstructorDraftSave(form);
+    const constructorId = String(form.dataset.constructorId || '').trim();
+    const nextInput = collectConstructorFormInput(form);
+    refreshConstructorProgressFromForm(form, { input: nextInput });
+    scheduleConstructorDraftSave(form, { input: nextInput });
+    clearTimeout(constructorAutoBuildTimer);
+    constructorAutoBuildTimer = window.setTimeout(() => {
+      if (!document.body.contains(form) || !constructorId) {
+        return;
+      }
+      void buildConstructor(constructorId, collectConstructorFormInput(form), { silent: true });
+    }, 260);
   });
 
   document.addEventListener('change', (event) => {
     const form = event.target.closest('#constructor-form');
     if (!form) {
+      return;
+    }
+    if (event.target?.matches?.('input[name="custom_logo_file"]')) {
+      void handleConstructorLogoFile(event.target);
       return;
     }
     const constructorId = String(form.dataset.constructorId || '').trim();
@@ -5488,6 +6004,8 @@ function buildConstructorProgressMarkup(completion, previewArtifact, options = {
   setCatalogMode(DEFAULT_CATALOG_MODE);
 
   setInspectorOpen(false);
+  loadAccountUser();
+  renderAccountPanel();
 
   loadBootstrap()
     .then(restoreRouteFromLocation)

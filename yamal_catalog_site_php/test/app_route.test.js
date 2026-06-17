@@ -48,6 +48,11 @@ const {
   buildConsultantMemoryPayload,
   normalizeConsultantAdvice,
   normalizeConsultantDeepAnswer,
+  normalizeAccountEmail,
+  validateAccountInput,
+  buildLocalAccountUser,
+  publicAccountUser,
+  isAllowedConstructorLogoFile,
 } = require('../assets/app.js');
 
 test('normalizeRoute keeps only valid folder routes', () => {
@@ -335,12 +340,16 @@ test('constructor draft helpers roundtrip through storage and preserve blank ove
     city: '',
     headline: 'Большой заголовок',
     design_variant: 'calm',
+    custom_logo_src: 'data:image/png;base64,abc',
+    custom_logo_name: 'logo.png',
   }, '2026-03-20T10:15:00Z');
 
   assert.deepEqual(entry, {
     input: {
       city: '',
       headline: 'Большой заголовок',
+      custom_logo_src: 'data:image/png;base64,abc',
+      custom_logo_name: 'logo.png',
     },
     updatedAt: '2026-03-20T10:15:00Z',
   });
@@ -350,6 +359,8 @@ test('constructor draft helpers roundtrip through storage and preserve blank ove
       city: '',
       headline: 'Большой заголовок',
       design_variant: 'calm',
+      custom_logo_src: 'data:image/png;base64,abc',
+      custom_logo_name: 'logo.png',
     }, storage, '2026-03-20T10:15:00Z'),
     entry,
   );
@@ -360,6 +371,32 @@ test('constructor draft helpers roundtrip through storage and preserve blank ove
 
   assert.equal(removeConstructorDraft('business_card', storage), true);
   assert.equal(loadConstructorDraft('business_card', fields, storage), null);
+});
+
+test('account helpers validate local registration and hide password hash', () => {
+  const existingUser = buildLocalAccountUser({
+    firstName: 'Анна',
+    lastName: 'Ямальская',
+    organization: 'Администрация',
+    email: 'USER@Example.COM',
+    password: 'secret1',
+  }, '2026-03-20T10:15:00Z');
+
+  assert.equal(normalizeAccountEmail(' USER@Example.COM '), 'user@example.com');
+  assert.equal(validateAccountInput('register', {
+    firstName: 'Иван',
+    lastName: 'Петров',
+    organization: 'ИП',
+    email: 'user@example.com',
+    password: 'secret2',
+  }, [existingUser]).ok, false);
+  assert.equal(validateAccountInput('login', {
+    email: 'user@example.com',
+    password: 'secret1',
+  }, [existingUser]).ok, true);
+  assert.equal(publicAccountUser(existingUser).passwordHash, undefined);
+  assert.equal(isAllowedConstructorLogoFile({ type: 'image/svg+xml', name: 'logo.svg' }), true);
+  assert.equal(isAllowedConstructorLogoFile({ type: 'text/plain', name: 'logo.txt' }), false);
 });
 
 test('buildConstructorWarnings highlights missing required fields and long text risk', () => {

@@ -254,9 +254,9 @@ assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'user
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Пакеты handoff'), 'frontend removed handoff heading from constructor ui');
 assert_true($frontendTemplate !== false && !str_contains($frontendTemplate, 'Основа из каталога'), 'frontend removed verbose catalog foundation heading');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'Подходящие разделы'), 'frontend exposes compact catalog guidance heading');
-assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}'), 'frontend renders constructor preview markup in preview panel');
+assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '${buildConstructorPreviewMarkup(previewArtifact, previewLayout, input)}'), 'frontend renders constructor preview markup in preview panel');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, '${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}'), 'frontend renders constructor progress markup in preview panel');
-$previewMarkupOffset = strpos($frontendTemplate, '${buildConstructorPreviewMarkup(previewArtifact, previewLayout)}');
+$previewMarkupOffset = strpos($frontendTemplate, '${buildConstructorPreviewMarkup(previewArtifact, previewLayout, input)}');
 $progressMarkupOffset = strpos($frontendTemplate, '${buildConstructorProgressMarkup(completion, previewArtifact, { warnings, draftMeta: payload?.draftMeta })}');
 assert_true($previewMarkupOffset !== false && $progressMarkupOffset !== false && $previewMarkupOffset < $progressMarkupOffset, 'frontend renders constructor preview before progress strip to avoid inner preview scrolling');
 assert_true($frontendTemplate !== false && str_contains($frontendTemplate, 'renderConstructorErrorState'), 'frontend exposes constructor error state helper');
