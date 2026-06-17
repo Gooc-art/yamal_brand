@@ -92,6 +92,7 @@ assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-r
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-icon'), 'styles contain simplified route icon class');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.brand-route-card.active'), 'styles contain active route state');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-ribbon'), 'styles contain hero ribbon classes');
+assert_true($stylesTemplate !== false && str_contains($stylesTemplate, 'max-width: none'), 'styles keep home hero aligned to portal header width');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-tabs'), 'styles contain hero examples tabs classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-card'), 'styles contain hero example card classes');
 assert_true($stylesTemplate !== false && str_contains($stylesTemplate, '.hero-example-overlay'), 'styles contain hero example overlay classes');
