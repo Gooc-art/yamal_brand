@@ -101,45 +101,50 @@ mkdir -p "${WORK_DIR}/download" "${WORK_DIR}/extract"
 
 archive_source="${ARCHIVE_URL}"
 if [ -n "${ARCHIVE_PATH}" ]; then
-  if [ ! -f "${ARCHIVE_PATH}" ]; then
+  if [ ! -f "${ARCHIVE_PATH}" ] && [ ! -d "${ARCHIVE_PATH}" ]; then
     echo "archive path not found: ${ARCHIVE_PATH}" >&2
     exit 1
   fi
   archive_source="${ARCHIVE_PATH}"
 fi
 
-archive_name="$(basename "${archive_source%%\?*}")"
-archive_path="${WORK_DIR}/download/${archive_name:-catalog-archive}"
-
-if [ -n "${ARCHIVE_URL}" ]; then
-  echo "[import] downloading archive"
-  curl -fL --retry 3 --retry-delay 2 --output "${archive_path}" "${ARCHIVE_URL}"
+if [ -n "${ARCHIVE_PATH}" ] && [ -d "${ARCHIVE_PATH}" ]; then
+  echo "[import] copying local catalog directory"
+  rsync -a "${ARCHIVE_PATH%/}/" "${WORK_DIR}/extract/"
 else
-  echo "[import] copying local archive"
-  cp -a "${ARCHIVE_PATH}" "${archive_path}"
-fi
+  archive_name="$(basename "${archive_source%%\?*}")"
+  archive_path="${WORK_DIR}/download/${archive_name:-catalog-archive}"
 
-echo "[import] extracting archive"
-case "${archive_path,,}" in
-  *.zip)
-    unzip -q "${archive_path}" -d "${WORK_DIR}/extract"
-    ;;
-  *.tar.gz|*.tgz)
-    tar -xzf "${archive_path}" -C "${WORK_DIR}/extract"
-    ;;
-  *.tar.xz|*.txz)
-    tar -xJf "${archive_path}" -C "${WORK_DIR}/extract"
-    ;;
-  *.tar)
-    tar -xf "${archive_path}" -C "${WORK_DIR}/extract"
-    ;;
-  *)
-    if ! tar -xf "${archive_path}" -C "${WORK_DIR}/extract" 2>/dev/null; then
-      echo "unsupported archive format: ${archive_name}" >&2
-      exit 1
-    fi
-    ;;
-esac
+  if [ -n "${ARCHIVE_URL}" ]; then
+    echo "[import] downloading archive"
+    curl -fL --retry 3 --retry-delay 2 --output "${archive_path}" "${ARCHIVE_URL}"
+  else
+    echo "[import] copying local archive"
+    cp -a "${ARCHIVE_PATH}" "${archive_path}"
+  fi
+
+  echo "[import] extracting archive"
+  case "${archive_path,,}" in
+    *.zip)
+      unzip -q "${archive_path}" -d "${WORK_DIR}/extract"
+      ;;
+    *.tar.gz|*.tgz)
+      tar -xzf "${archive_path}" -C "${WORK_DIR}/extract"
+      ;;
+    *.tar.xz|*.txz)
+      tar -xJf "${archive_path}" -C "${WORK_DIR}/extract"
+      ;;
+    *.tar)
+      tar -xf "${archive_path}" -C "${WORK_DIR}/extract"
+      ;;
+    *)
+      if ! tar -xf "${archive_path}" -C "${WORK_DIR}/extract" 2>/dev/null; then
+        echo "unsupported archive format: ${archive_name}" >&2
+        exit 1
+      fi
+      ;;
+  esac
+fi
 
 if ! find "${WORK_DIR}/extract" -mindepth 1 -maxdepth 1 | grep -q .; then
   echo "archive extracted empty payload" >&2

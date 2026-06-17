@@ -1,0 +1,63 @@
+name: Sync REG.RU Full Catalog
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: [self-hosted, linux, yamal-max-prod]
+    env:
+      REMOTE_HOST: ${{ secrets.REGRU_HOST }}
+      REMOTE_USER: ${{ secrets.REGRU_USER }}
+      REMOTE_DIR: ${{ secrets.REGRU_TARGET_DIR }}
+      REMOTE_SITE_URL: ${{ secrets.REGRU_SITE_URL }}
+      SSH_PASSWORD: ${{ secrets.REGRU_PASSWORD }}
+      ARCHIVE_PATH: /home/sergey/yamal_brand/input/Макеты1
+      IMPORT_LABEL: full-catalog-sync-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure import dependencies
+        run: |
+          set -euxo pipefail
+          missing=()
+          for cmd in python3 ssh rsync curl tar setsid; do
+            if ! command -v "${cmd}" >/dev/null 2>&1; then
+              missing+=("${cmd}")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing commands: ${missing[*]}" >&2
+            exit 1
+          fi
+          test -d "${ARCHIVE_PATH}"
+
+      - name: Sync local catalog directory to REG.RU
+        run: |
+          chmod +x scripts/import_regru_archive.sh
+          ./scripts/import_regru_archive.sh
+
+      - name: Verify public catalog payload
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import ssl
+          import urllib.request
+
+          url = os.environ["REMOTE_SITE_URL"].rstrip("/") + "/api.php?action=bootstrap"
+          context = ssl._create_unverified_context()
+          with urllib.request.urlopen(url, context=context) as response:
+            payload = json.load(response)
+
+          stats = payload.get("stats", {})
+          sections = payload.get("sections", [])
+          assert stats.get("totalAssets", 0) > 0, stats
+          assert sections, payload.get("setupMessage", "sections are empty")
+
+          print("total assets:", stats.get("totalAssets"))
+          print("sections:", len(sections))
+          print("first section:", sections[0].get("label") or sections[0].get("name"))
+          PY

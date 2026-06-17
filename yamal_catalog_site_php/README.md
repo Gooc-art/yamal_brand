@@ -365,7 +365,13 @@ SSH_PORT=22 \
 
 Скрипт [import_regru_archive.sh](/root/projects/yamal_brand/scripts/import_regru_archive.sh) теперь поддерживает два режима:
 - полный импорт по `ARCHIVE_URL`, когда архив содержит весь каталог `Макеты1`
+- полный импорт по `ARCHIVE_PATH`, когда на runner уже есть директория каталога, например `/home/sergey/yamal_brand/input/Макеты1`
 - частичный sync по `ARCHIVE_PATH` + `ARCHIVE_SUBDIR`, когда нужно обновить только одну ветку внутри каталога и не трогать остальной `data/files`
+
+Для полного восстановления каталога на REG.RU с self-hosted runner есть отдельный workflow:
+- открой `Sync REG.RU Full Catalog`
+- workflow берет локальную директорию `/home/sergey/yamal_brand/input/Макеты1`
+- заменяет `data/files/` на хостинге, удаляет `data/max_catalog.db` и проверяет, что публичный `bootstrap` снова возвращает разделы
 
 Для архива `/home/sergey/yamal_brand/input/Примеры внедрения бренда территории.tar.xz` есть отдельный workflow:
 - открой `Sync REG.RU Examples Archive`
