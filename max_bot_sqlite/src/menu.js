@@ -77,6 +77,12 @@ const GENERIC_FOLDER_LABELS = {
   '4. White': { label: 'White', icon: '⚪' },
   'PNG': { label: 'PNG', icon: '🖼️' },
   'Вектор': { label: 'Вектор', icon: '🧩' },
+  'ai': { label: 'AI', icon: '🎨' },
+  'eps': { label: 'EPS', icon: '🎨' },
+  'jpg': { label: 'JPG', icon: '🖼️' },
+  'pdf': { label: 'PDF', icon: '📕' },
+  'png': { label: 'PNG', icon: '🖼️' },
+  'svg': { label: 'SVG', icon: '🧩' },
 };
 
 const FILE_ICONS = {
@@ -155,7 +161,7 @@ function normalizeButtonLabel(name, { stripNumericPrefix = true } = {}) {
 }
 
 function cleanupFolderLabel(name) {
-  return normalizeButtonLabel(name);
+  return normalizeButtonLabel(name).replace(/\s*\(каркас\)$/iu, '');
 }
 
 function stripFileExtension(name) {
@@ -177,59 +183,6 @@ function stripLowValueFilePhrases(value) {
   return text.replace(/\s+/gu, ' ').trim();
 }
 
-function dedupeWords(value) {
-  const out = [];
-  const seen = new Set();
-  for (const word of String(value || '').split(/\s+/u).filter(Boolean)) {
-    const key = word.toLowerCase().replace(/ё/gu, 'е');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(word);
-  }
-  return out.join(' ');
-}
-
-function shortenLongLabel(value, maxWords = 4) {
-  const words = String(value || '').split(/\s+/u).filter(Boolean);
-  if (words.length <= maxWords) return words.join(' ');
-  return words.slice(0, maxWords).join(' ');
-}
-
-function splitWords(value) {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/ё/gu, 'е')
-    .replace(/[^0-9a-zа-я]+/giu, ' ')
-    .trim()
-    .split(/\s+/u)
-    .filter(Boolean);
-}
-
-function escapeRegex(value) {
-  return String(value || '').replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-}
-
-function collectContextPhrases(item, parentName) {
-  const rawParts = [
-    parentName,
-    ...String(item?.relative_path || '')
-      .split('/')
-      .slice(-4, -1),
-  ];
-
-  return [...new Set(rawParts.map((part) => cleanupFolderLabel(part)).filter(Boolean))]
-    .sort((a, b) => b.length - a.length);
-}
-
-function removeContextPhrases(label, phrases) {
-  let text = String(label || '');
-  for (const phrase of phrases) {
-    if (!phrase || phrase.length < 4) continue;
-    text = text.replace(new RegExp(`(^|\\s)${escapeRegex(phrase)}(?=\\s|$)`, 'iu'), ' ');
-  }
-  return text.replace(/\s+/gu, ' ').trim();
-}
-
 function inferFileKind(text) {
   const source = String(text || '').toLowerCase();
   if (/брендбук/u.test(source)) return 'Брендбук';
@@ -244,18 +197,7 @@ function inferFileKind(text) {
 
 function cleanupFileLabel(item, parentName, ext) {
   const stem = cleanupFileStem(item?.name || '');
-  const contextPhrases = collectContextPhrases(item, parentName);
-  const contextWords = new Set(contextPhrases.flatMap((value) => splitWords(value)));
-  let main = removeContextPhrases(stem, contextPhrases);
-  main = stripLowValueFilePhrases(main);
-  main = dedupeWords(main);
-  main = shortenLongLabel(main);
-  const mainWords = splitWords(main);
-
-  if (!main || (mainWords.length && mainWords.every((word) => contextWords.has(word)))) {
-    main = inferFileKind(`${stem} ${parentName}`) || 'Файл';
-  }
-  main = upperFirst(main);
+  const main = upperFirst(stripLowValueFilePhrases(stem)) || inferFileKind(parentName) || 'Файл';
 
   const extLabel = FORMAT_LABELS[ext] || String(ext || '').toUpperCase();
   return [main, extLabel].filter(Boolean).join(' • ');
@@ -293,7 +235,7 @@ function inferFolderIcon(parentName, label) {
   if (/стикер|наклей/u.test(haystack)) return '🏷️';
   if (/значок|пин/u.test(haystack)) return '📌';
   if (/флеш/u.test(haystack)) return '💾';
-  if (/зонт/u.test(haystack)) return '☂️';
+  if (/(^|\s)зонт(?:\s|$)/u.test(haystack)) return '☂️';
   if (/плед/u.test(haystack)) return '🧶';
   if (/буклет|листов|плакат|баннер|навигац|таблич|полиграф/u.test(haystack)) return '🪧';
   if (/диджитал|сайт|экран|презент|соцсет/u.test(haystack)) return '💻';

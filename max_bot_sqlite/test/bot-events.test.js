@@ -154,9 +154,10 @@ test('search empty state shows custom text and menu button', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
 });
 
-test('bot uses adaptive row packing for menu and folder keyboards', () => {
-  assert.match(botSource, /import\s+\{\s*buttonLayoutUnits,\s*packButtonsIntoRows\s*\}\s+from '\.\/keyboard-layout\.js'/);
-  assert.match(botSource, /packButtonsIntoRows\(items,\s*\{/);
+test('bot renders every inline button as a full-width row', () => {
+  assert.doesNotMatch(botSource, /packButtonsIntoRows/);
+  assert.match(botSource, /return items\.map\(\(item\) => \[buttonForItem\(item\)\]\)/);
+  assert.match(botSource, /rows\.push\(\.\.\.pagingRow\.map\(\(button\) => \[button\]\)\)/);
   assert.match(botSource, /function buildNavigationRows\(/);
 });
 

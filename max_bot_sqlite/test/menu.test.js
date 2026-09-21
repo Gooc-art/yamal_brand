@@ -91,7 +91,7 @@ test('decorateFolderItems shortens and enriches known section children', () => {
   assert.equal(byName.get('3-Полиграфия и уличная навигация')?.icon, '🪧');
   assert.equal(byName.get('1-1 детские футболки')?.label, 'Детские футболки');
   assert.equal(byName.get('1-1 детские футболки')?.icon, '👕');
-  assert.equal(byName.get('Детские футболки белые.pdf')?.label, 'Белые • PDF');
+  assert.equal(byName.get('Детские футболки белые.pdf')?.label, 'Детские футболки белые • PDF');
   assert.equal(byName.get('Детские футболки белые.pdf')?.icon, '📕');
 });
 
@@ -121,7 +121,7 @@ test('decorateFolderItems removes low-value file words and keeps meaningful shor
   ];
 
   const decorated = decorateFolderItems(parent, items);
-  assert.equal(decorated[0]?.label, 'Основной • PDF');
+  assert.equal(decorated[0]?.label, 'Логотип основной • PDF');
 });
 
 test('decorateFolderItems prioritizes direct brandbook files and exposes section hints', () => {
@@ -133,7 +133,7 @@ test('decorateFolderItems prioritizes direct brandbook files and exposes section
 
   const decorated = decorateFolderItems(parent, items);
   assert.equal(decorated[0].type, 'file');
-  assert.equal(decorated[0].label, 'Брендбук • PDF');
+  assert.equal(decorated[0].label, 'Ямал 100 брендбук • PDF');
   assert.equal(decorated[0].icon, '📕');
   assert.equal(decorated[1].label, 'Файлы и исходники');
   assert.match(getSectionHint(parent), /сразу открыть PDF/u);
@@ -153,4 +153,31 @@ test('decorateFolderItems unifies style folders and short file format buttons', 
     ['AI', 'PDF', 'PNG']
   );
   assert.equal(getSectionHint(parent), 'Выберите формат файла.');
+});
+
+test('button labels preserve the file variant and format folders use matching icons', () => {
+  const parent = { name: 'Знак с надписью «Я+Ямал»' };
+  const decorated = decorateFolderItems(parent, [
+    { type: 'file', name: 'Знак с надписью «Я + Ямал» White.svg' },
+    { type: 'folder', name: 'svg' },
+  ]);
+  const file = decorated.find((item) => item.type === 'file');
+  const folder = decorated.find((item) => item.type === 'folder');
+
+  assert.equal(file.label, 'Знак с надписью «Я + Ямал» White • SVG');
+  assert.deepEqual({ label: folder.label, icon: folder.icon }, { label: 'SVG', icon: '🧩' });
+});
+
+test('technical scaffold suffix is hidden from folder buttons', () => {
+  const [item] = decorateFolderItems({ name: 'Ямал-100' }, [
+    { type: 'folder', name: '02 Логотипы (каркас)' },
+  ]);
+  assert.equal(item.label, 'Логотипы');
+});
+
+test('horizontal logo folders do not get the umbrella icon', () => {
+  const [item] = decorateFolderItems({ name: 'Логотипы' }, [
+    { type: 'folder', name: '01 Горизонтальный' },
+  ]);
+  assert.equal(item.icon, '📁');
 });

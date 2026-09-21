@@ -5,7 +5,6 @@ import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import { config, validateConfigPaths } from './config.js';
 import { CatalogDb } from './db.js';
 import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
-import { buttonLayoutUnits, packButtonsIntoRows } from './keyboard-layout.js';
 import { retryMaxApiCall } from './max-api-retry.js';
 import { RuntimeStateDb } from './state-db.js';
 import {
@@ -196,18 +195,18 @@ function buttonForItem(item) {
   const displayName = item.label || item.name;
   if (item.type === 'quick') {
     return Keyboard.button.callback(
-      `${item.icon || '🔎'} ${truncate(displayName, 40)}`,
+      `${item.icon || '🔎'} ${truncate(displayName, 100)}`,
       `quick:${item.key}`
     );
   }
   if (item.type === 'folder') {
     return Keyboard.button.callback(
-      `${item.icon || '📁'} ${truncate(displayName, 40)}`,
+      `${item.icon || '📁'} ${truncate(displayName, 100)}`,
       `open:${item.id}:0`
     );
   }
   return Keyboard.button.callback(
-    `${item.icon || '📄'} ${truncate(displayName, 40)}`,
+    `${item.icon || '📄'} ${truncate(displayName, 100)}`,
     `file:${item.id}`
   );
 }
@@ -288,10 +287,7 @@ async function replyReplacingLast(ctx, text, extra) {
 }
 
 function buildFolderItemRows(items) {
-  return packButtonsIntoRows(items, {
-    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
-    maxButtonsPerRow: 3,
-  }).map((row) => row.map((item) => buttonForItem(item)));
+  return items.map((item) => [buttonForItem(item)]);
 }
 
 function buildMainMenuKeyboard() {
@@ -321,24 +317,17 @@ function buildMainMenuKeyboard() {
 
 function buildHelpKeyboard() {
   return inlineKeyboardAttachment([
-    [
-      Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
-      Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
-    ],
+    [Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)],
+    [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
   ]);
 }
 
 function buildSearchKeyboard() {
-  const rows = packButtonsIntoRows(QUICK_SEARCHES, {
-    measure: (item) => buttonLayoutUnits(item.label || item.name || ''),
-    maxButtonsPerRow: 3,
-  }).map((row) =>
-    row.map((item) => Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`))
-  );
-  rows.push([
-    Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
-    Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
+  const rows = QUICK_SEARCHES.map((item) => [
+    Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`),
   ]);
+  rows.push([Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)]);
+  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
   return inlineKeyboardAttachment(rows);
 }
 
@@ -346,10 +335,8 @@ function buildAdminKeyboard(activeDays = 7) {
   const weeklyLabel = activeDays === 7 ? '✅ 7 дней' : '7 дней';
   const allTimeLabel = activeDays === 0 ? '✅ Весь период' : 'Весь период';
   return inlineKeyboardAttachment([
-    [
-      Keyboard.button.callback(`🗓 ${weeklyLabel}`, 'admin:report:7'),
-      Keyboard.button.callback(`📊 ${allTimeLabel}`, 'admin:report:0'),
-    ],
+    [Keyboard.button.callback(`🗓 ${weeklyLabel}`, 'admin:report:7')],
+    [Keyboard.button.callback(`📊 ${allTimeLabel}`, 'admin:report:0')],
     [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
   ]);
 }
@@ -434,10 +421,8 @@ async function renderFavorites(ctx) {
   }
 
   const rows = buildFolderItemRows(items);
-  rows.push([
-    Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`),
-    Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
-  ]);
+  rows.push([Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)]);
+  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
 
   const hasStats = Number(state.stats()?.total_item_events || 0) > 0;
   const text = hasStats
@@ -528,14 +513,12 @@ function buildNavigationRows(parentId, page, total, pageSize) {
   if ((page + 1) * pageSize < total) {
     pagingRow.push(Keyboard.button.callback('▶️', `open:${parentId}:${page + 1}`));
   }
-  if (pagingRow.length) rows.push(pagingRow);
+  rows.push(...pagingRow.map((button) => [button]));
 
   const parent = db.getById(parentId);
   const backId = parent?.parent_id || ROOT_ID;
-  rows.push([
-    Keyboard.button.callback('⬅️ Назад', `open:${backId}:0`),
-    Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`),
-  ]);
+  rows.push([Keyboard.button.callback('⬅️ Назад', `open:${backId}:0`)]);
+  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
   return rows;
 }
 
@@ -773,7 +756,7 @@ async function runSearch(ctx, query) {
     ctx,
     [
       `🔎 Найдено: ${items.length} (запрос: ${query})`,
-      'Папки открываются, файлы отправляются сразу.',
+      'Папки открываются, для PNG, JPG и PDF сначала показывается предпросмотр.',
     ].join('\n'),
     {
       attachments: [inlineKeyboardAttachment(rows)],
