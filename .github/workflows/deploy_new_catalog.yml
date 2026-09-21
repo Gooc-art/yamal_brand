@@ -24,10 +24,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download "${{ github.event.inputs.release_tag }}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --pattern new-yamal-catalog.tar.gz \
-            --dir "${RUNNER_TEMP}"
+          release_json="${RUNNER_TEMP}/catalog-release.json"
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${{ github.event.inputs.release_tag }}" \
+            -o "${release_json}"
+          asset_id="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print(next(a["id"] for a in data["assets"] if a["name"] == "new-yamal-catalog.tar.gz"))' "${release_json}")"
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/octet-stream" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" \
+            -o "${RUNNER_TEMP}/new-yamal-catalog.tar.gz"
 
       - name: Validate and deploy catalog
         run: |
