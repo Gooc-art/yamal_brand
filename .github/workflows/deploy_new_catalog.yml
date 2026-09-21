@@ -1,0 +1,60 @@
+name: Deploy New Yamal Catalog To BOTSGSN
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag containing new-yamal-catalog.tar.gz
+        required: true
+        default: new-catalog-20260921
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, yamal-botsgsn]
+    permissions:
+      contents: read
+    env:
+      CATALOG_DIR: /home/localadmin/yamal_brand
+      SERVICE_NAME: yamalbrend_bot.service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download catalog release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download "${{ github.event.inputs.release_tag }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern new-yamal-catalog.tar.gz \
+            --dir "${RUNNER_TEMP}"
+
+      - name: Validate and deploy catalog
+        run: |
+          set -euo pipefail
+          stage="$(mktemp -d)"
+          tar -xzf "${RUNNER_TEMP}/new-yamal-catalog.tar.gz" -C "${stage}"
+          test -d "${stage}/Макеты1/01 Мастер-бренд Ямала"
+          test -d "${stage}/Макеты1/02 Ямал-100"
+          test -d "${stage}/Макеты1/03 Фирменные стили МО"
+
+          python3 scripts/build_sqlite_catalog.py \
+            --source "${stage}/Макеты1" \
+            --db "${stage}/max_catalog.db"
+
+          backup="${CATALOG_DIR}/backups/catalog-$(date -u +%Y%m%dT%H%M%SZ)"
+          sudo mkdir -p "${CATALOG_DIR}/input" "${CATALOG_DIR}/backups"
+          sudo systemctl stop "${SERVICE_NAME}"
+          if sudo test -d "${CATALOG_DIR}/input/Макеты1"; then
+            sudo mv "${CATALOG_DIR}/input/Макеты1" "${backup}"
+          fi
+          sudo mv "${stage}/Макеты1" "${CATALOG_DIR}/input/Макеты1"
+          sudo mv "${stage}/max_catalog.db" "${CATALOG_DIR}/max_catalog.db"
+          sudo chown -R localadmin:localadmin \
+            "${CATALOG_DIR}/input/Макеты1" \
+            "${CATALOG_DIR}/max_catalog.db"
+          sudo systemctl restart "${SERVICE_NAME}"
+          sudo systemctl is-active "${SERVICE_NAME}"
+
+          python3 scripts/query_sqlite_catalog.py \
+            --db "${CATALOG_DIR}/max_catalog.db" stats

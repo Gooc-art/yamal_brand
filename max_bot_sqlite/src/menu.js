@@ -1,21 +1,10 @@
 export const ROOT_MENU_FOLDERS = [
-  { folderName: 'Логотип', label: 'Логотип', icon: '🏷️' },
-  { folderName: 'Детский логотип', label: 'Детский логотип', icon: '🧒' },
-  { folderName: 'Фирменный знак', label: 'Фирменный знак', icon: '🔰' },
-  { folderName: 'Паттерны', label: 'Паттерны', icon: '🧩' },
-  { folderName: 'Брендбук ЯМАЛ Мастер бренд', label: 'Мастер-бренд', icon: '📕' },
-  { folderName: 'Иллюстрации мастер-бренда SVG-элементы', label: 'Иллюстрации', icon: '🖼️' },
-  { folderName: 'Каталог сувенирной продукции', label: 'Сувенирная продукция', icon: '🎁' },
-  { folderName: 'Брендбук ЯМАЛ 100', label: 'Брендбук Ямал 100', icon: '📘' },
+  { folderName: '01 Мастер-бренд Ямала', label: 'Мастер-бренд Ямала', icon: '📕' },
+  { folderName: '02 Ямал-100', label: 'Ямал-100', icon: '💯' },
+  { folderName: '03 Фирменные стили МО', label: 'Фирменные стили МО', icon: '🏙️' },
 ];
 
-const HIDDEN_ROOT_FOLDERS = new Set([
-  'Шрифт',
-  'Логотипы городов',
-  'Брендбук Салехард',
-  'Брендбук Новый Уренгой',
-  'Брендбук Ноябрьск',
-]);
+const HIDDEN_ROOT_FOLDERS = new Set();
 
 const ROOT_MENU_LABELS = new Map(ROOT_MENU_FOLDERS.map((item) => [item.folderName, item.label]));
 
@@ -24,14 +13,17 @@ export const QUICK_SEARCHES = [
   { key: 'brandbook', label: 'Брендбук', query: 'брендбук' },
   { key: 'pattern', label: 'Паттерн', query: 'паттерн' },
   { key: 'font', label: 'Шрифт', query: 'шрифт' },
-  { key: 'souvenir', label: 'Сувенир', query: 'сувенир' },
+  { key: 'illustration', label: 'Иллюстрация', query: 'иллюстрация' },
 ];
 
 export function getMainMenuQuickSearches() {
-  return QUICK_SEARCHES.filter((item) => item.key === 'font');
+  return [];
 }
 
 const SECTION_HINTS = {
+  '01 Мастер-бренд Ямала': 'Выберите фирменный стиль, логотипы, шрифты или графические элементы.',
+  '02 Ямал-100': 'Выберите брендбук, логотипы, шрифты или паттерны юбилейного стиля.',
+  '03 Фирменные стили МО': 'Выберите муниципалитет.',
   'Логотип': 'Выберите тип логотипа или готовый формат.',
   'Фирменный знак': 'Здесь собраны знак отдельно и знак с надписью ЯМАЛ.',
   'Паттерны': 'Выберите город и скачайте готовые паттерны.',

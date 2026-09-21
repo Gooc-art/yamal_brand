@@ -12,58 +12,39 @@ import {
 
 test('resolveRootMenuFolders builds full top-level button structure in configured order', () => {
   const rootItems = [
-    { id: 'a', name: 'Шрифт', type: 'folder' },
-    { id: 'b', name: 'Логотип', type: 'folder' },
-    { id: 'c', name: 'Каталог сувенирной продукции', type: 'folder' },
-    { id: 'd', name: 'Брендбук ЯМАЛ Мастер бренд', type: 'folder' },
-    { id: 'e', name: 'Фирменный знак', type: 'folder' },
-    { id: 'f', name: 'Иллюстрации мастер-бренда SVG-элементы', type: 'folder' },
-    { id: 'g', name: 'Детский логотип', type: 'folder' },
-    { id: 'i', name: 'Брендбук ЯМАЛ 100', type: 'folder' },
-    { id: 'j', name: 'Паттерны', type: 'folder' },
-    { id: 'k', name: 'Брендбук Салехард', type: 'folder' },
-    { id: 'l', name: 'Брендбук Новый Уренгой', type: 'folder' },
-    { id: 'm', name: 'Брендбук Ноябрьск', type: 'folder' },
+    { id: 'a', name: '03 Фирменные стили МО', type: 'folder' },
+    { id: 'b', name: '01 Мастер-бренд Ямала', type: 'folder' },
+    { id: 'c', name: '02 Ямал-100', type: 'folder' },
   ];
 
   const menuFolders = resolveRootMenuFolders(rootItems);
   assert.deepEqual(
     menuFolders.map((item) => item.name),
     [
-      'Логотип',
-      'Детский логотип',
-      'Фирменный знак',
-      'Паттерны',
-      'Брендбук ЯМАЛ Мастер бренд',
-      'Иллюстрации мастер-бренда SVG-элементы',
-      'Каталог сувенирной продукции',
-      'Брендбук ЯМАЛ 100',
+      '01 Мастер-бренд Ямала',
+      '02 Ямал-100',
+      '03 Фирменные стили МО',
     ]
   );
   assert.deepEqual(
     menuFolders.map((item) => item.label),
     [
-      'Логотип',
-      'Детский логотип',
-      'Фирменный знак',
-      'Паттерны',
-      'Мастер-бренд',
-      'Иллюстрации',
-      'Сувенирная продукция',
-      'Брендбук Ямал 100',
+      'Мастер-бренд Ямала',
+      'Ямал-100',
+      'Фирменные стили МО',
     ]
   );
 });
 
 test('resolveRootMenuFolders appends unknown root folders after known sections', () => {
   const rootItems = [
-    { id: 'a', name: 'Шрифт', type: 'folder' },
+    { id: 'a', name: '01 Мастер-бренд Ямала', type: 'folder' },
     { id: 'b', name: ', новый раздел', type: 'folder' },
-    { id: 'c', name: 'Логотип', type: 'folder' },
+    { id: 'c', name: '02 Ямал-100', type: 'folder' },
   ];
 
   const menuFolders = resolveRootMenuFolders(rootItems);
-  assert.equal(menuFolders.some((item) => item.name === 'Шрифт'), false);
+  assert.equal(menuFolders[0]?.name, '01 Мастер-бренд Ямала');
   assert.equal(menuFolders.at(-1)?.name, ', новый раздел');
   assert.equal(menuFolders.at(-1)?.label, 'Новый раздел');
   assert.equal(menuFolders.at(-1)?.icon, '📁');
@@ -73,13 +54,13 @@ test('menu helpers return configured quick search and paginate items', () => {
   assert.equal(getQuickSearchByKey('font')?.query, 'шрифт');
   assert.equal(getQuickSearchByKey('pattern')?.query, 'паттерн');
   assert.equal(QUICK_SEARCHES.length, 5);
-  assert.deepEqual(getMainMenuQuickSearches().map((item) => item.label), ['Шрифт']);
+  assert.deepEqual(getMainMenuQuickSearches(), []);
   assert.deepEqual(QUICK_SEARCHES.map((item) => item.label), [
     'Логотип',
     'Брендбук',
     'Паттерн',
     'Шрифт',
-    'Сувенир',
+    'Иллюстрация',
   ]);
 
   const result = paginateItems([1, 2, 3, 4, 5], 9, 2);

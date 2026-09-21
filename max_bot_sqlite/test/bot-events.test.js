@@ -80,7 +80,7 @@ test('main menu uses the agreed top-level button order', () => {
   assert.match(botSource, /const orderedFolderNames = \[/);
   assert.match(
     botSource,
-    /'Логотип',[\s\S]*'Детский логотип',[\s\S]*'Фирменный знак',[\s\S]*'Брендбук ЯМАЛ Мастер бренд',[\s\S]*'Паттерны',[\s\S]*'Иллюстрации мастер-бренда SVG-элементы'/
+    /'01 Мастер-бренд Ямала',[\s\S]*'02 Ямал-100',[\s\S]*'03 Фирменные стили МО'/
   );
   assert.match(botSource, /Keyboard\.button\.callback\('ℹ️ Как пользоваться',\s*'help:main'\)/);
   assert.match(botSource, /Keyboard\.button\.callback\('⭐ Избранное',\s*'favorites:main'\)/);
@@ -95,13 +95,13 @@ test('bot onboarding clearly explains official regional brand catalog context', 
   assert.match(botSource, /• Ознакомиться с верхними разделами каталога\./);
   assert.match(botSource, /• Добавить интересующие материалы в Избранное\./);
   assert.match(botSource, /• Использовать функцию Поиск для быстрого нахождения нужной информации\./);
-  assert.match(botSource, /Просто отправьте текст: Логотип, Брендбук, Паттерн, Шрифт, Сувенир — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала\./);
+  assert.match(botSource, /Просто отправьте текст: Логотип, Брендбук, Паттерн, Шрифт, Иллюстрация — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала\./);
   assert.match(botSource, /function buildHelpText\(\)/);
   assert.match(botSource, /Как пользоваться этим ботом/);
-  assert.match(botSource, /На главном экране выберите нужный раздел: «Логотип», «Фирменный знак», «Детский логотип», «Мастер-бренд», «Паттерны», «Иллюстрации», «Шрифт», «Сувенирная продукция»\./);
+  assert.match(botSource, /На главном экране выберите нужный раздел: «Мастер-бренд Ямала», «Ямал-100» или «Фирменные стили МО»\./);
   assert.match(botSource, /Если вы ищете конкретный элемент, воспользуйтесь кнопкой «Поиск» и введите ключевое слово \(например: «логотип», «паттерн»\)\./);
   assert.match(botSource, /Чтобы быстро возвращаться к важным материалам, добавляйте их в «Избранное» и открывайте их через кнопку «Избранное»\./);
-  assert.match(botSource, /Вы также можете просто отправить текстовый запрос \(например: «логотип Ямал», «брендбук Ямал 100», «шрифт», «сувенирная продукция»\) — бот подберёт соответствующие материалы и отправит их в чат\./);
+  assert.match(botSource, /Вы также можете просто отправить текстовый запрос \(например: «логотип Ямал», «брендбук Ямал-100», «шрифт», «паттерн Салехарда»\) — бот подберёт соответствующие материалы и отправит их в чат\./);
   assert.match(botSource, /Все выбранные файлы и ссылки бот отправляет вам прямо в этот чат\./);
 });
 
@@ -145,11 +145,8 @@ test('bot can show the current user id inside the chat', () => {
   assert.match(botSource, /chat_id:/);
 });
 
-test('main menu keeps only quick font shortcut instead of root font folder button', () => {
-  assert.match(botSource, /item\.type === 'quick'/);
-  assert.match(botSource, /`quick:\$\{item\.key\}`/);
-  assert.match(botSource, /const fontShortcut = getMainMenuQuickSearches\(\)\[0\]/);
-  assert.match(botSource, /buttonForItem\(\{\s*type:\s*'quick'/);
+test('main menu uses only the three new catalog roots', () => {
+  assert.doesNotMatch(botSource, /const fontShortcut = getMainMenuQuickSearches/);
 });
 
 test('search empty state shows custom text and menu button', () => {

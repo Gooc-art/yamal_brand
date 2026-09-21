@@ -11,7 +11,6 @@ import { RuntimeStateDb } from './state-db.js';
 import {
   QUICK_SEARCHES,
   decorateFolderItems,
-  getMainMenuQuickSearches,
   getQuickSearchByKey,
   getRootMenuLabel,
   getSectionHint,
@@ -30,7 +29,7 @@ const state = new RuntimeStateDb(config.runtimeDbPath);
 const bot = new Bot(config.token);
 const lastBotMessageIds = new Map();
 const adminReportChats = new Set();
-const BOT_SEARCH_EXAMPLES = 'Логотип, Брендбук, Паттерн, Шрифт, Сувенир';
+const BOT_SEARCH_EXAMPLES = 'Логотип, Брендбук, Паттерн, Шрифт, Иллюстрация';
 const BOT_INTRO_TEXT = [
   'Привет! Добро пожаловать в официальный каталог бренда Ямала.',
   'Этот чат-бот создан для удобства государственных служащих и предпринимателей, которые хотят использовать элементы регионального бренда Ямала в своей деятельности.',
@@ -39,7 +38,7 @@ const BOT_INTRO_TEXT = [
   '• Ознакомиться с верхними разделами каталога.',
   '• Добавить интересующие материалы в Избранное.',
   '• Использовать функцию Поиск для быстрого нахождения нужной информации.',
-  'Просто отправьте текст: Логотип, Брендбук, Паттерн, Шрифт, Сувенир — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала.',
+  'Просто отправьте текст: Логотип, Брендбук, Паттерн, Шрифт, Иллюстрация — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала.',
 ].join('\n\n');
 
 function buildMainMenuText(intro = false) {
@@ -49,11 +48,11 @@ function buildMainMenuText(intro = false) {
 function buildHelpText() {
   return [
     'Как пользоваться этим ботом',
-    'На главном экране выберите нужный раздел: «Логотип», «Фирменный знак», «Детский логотип», «Мастер-бренд», «Паттерны», «Иллюстрации», «Шрифт», «Сувенирная продукция».',
+    'На главном экране выберите нужный раздел: «Мастер-бренд Ямала», «Ямал-100» или «Фирменные стили МО».',
     'Переходите по кнопкам внутри разделов, чтобы открывать папки и файлы с материалами.',
     'Если вы ищете конкретный элемент, воспользуйтесь кнопкой «Поиск» и введите ключевое слово (например: «логотип», «паттерн»).',
     'Чтобы быстро возвращаться к важным материалам, добавляйте их в «Избранное» и открывайте их через кнопку «Избранное».',
-    'Вы также можете просто отправить текстовый запрос (например: «логотип Ямал», «брендбук Ямал 100», «шрифт», «сувенирная продукция») — бот подберёт соответствующие материалы и отправит их в чат.',
+    'Вы также можете просто отправить текстовый запрос (например: «логотип Ямал», «брендбук Ямал-100», «шрифт», «паттерн Салехарда») — бот подберёт соответствующие материалы и отправит их в чат.',
     'Все выбранные файлы и ссылки бот отправляет вам прямо в этот чат.',
   ].join('\n\n');
 }
@@ -62,7 +61,7 @@ function buildSearchText() {
   return [
     'Поиск по официальному каталогу бренда Ямала:',
     'Отправьте слово или фразу, даже если не уверены в точном названии материала.',
-    'Можно искать брендбуки, логотипы, шрифты, паттерны и сувенирную продукцию.',
+    'Можно искать брендбуки, логотипы, шрифты, паттерны и иллюстрации.',
     `Например: ${BOT_SEARCH_EXAMPLES}.`,
   ].join('\n');
 }
@@ -297,40 +296,18 @@ function buildFolderItemRows(items) {
 
 function buildMainMenuKeyboard() {
   const rootFolders = new Map(resolveRootMenuFolders(getRootFolders()).map((item) => [item.name, item]));
-  const fontShortcut = getMainMenuQuickSearches()[0];
   const orderedRows = [
     [Keyboard.button.callback('ℹ️ Как пользоваться', 'help:main')],
     [Keyboard.button.callback('🔎 Поиск', 'search:main')],
   ];
 
   const orderedFolderNames = [
-    'Логотип',
-    'Детский логотип',
-    'Фирменный знак',
-    'Брендбук ЯМАЛ Мастер бренд',
-    'Паттерны',
-    'Иллюстрации мастер-бренда SVG-элементы',
+    '01 Мастер-бренд Ямала',
+    '02 Ямал-100',
+    '03 Фирменные стили МО',
   ];
 
   for (const folderName of orderedFolderNames) {
-    const item = rootFolders.get(folderName);
-    if (!item) continue;
-    orderedRows.push([buttonForItem(item)]);
-  }
-
-  if (fontShortcut) {
-    orderedRows.push([
-      buttonForItem({
-        type: 'quick',
-        key: fontShortcut.key,
-        label: fontShortcut.label,
-        icon: '⌨️',
-        name: fontShortcut.label,
-      }),
-    ]);
-  }
-
-  for (const folderName of ['Каталог сувенирной продукции', 'Брендбук ЯМАЛ 100']) {
     const item = rootFolders.get(folderName);
     if (!item) continue;
     orderedRows.push([buttonForItem(item)]);
@@ -384,10 +361,9 @@ function decorateSingleItem(item) {
 
 function buildFavoriteFallbackItems() {
   const preferredNames = [
-    'Логотип',
-    'Брендбук ЯМАЛ 100',
-    'Брендбук ЯМАЛ Мастер бренд',
-    'Каталог сувенирной продукции',
+    '01 Мастер-бренд Ямала',
+    '02 Ямал-100',
+    '03 Фирменные стили МО',
   ];
   const rootByName = new Map(resolveRootMenuFolders(getRootFolders()).map((item) => [item.name, item]));
   const fallback = [];
@@ -397,17 +373,6 @@ function buildFavoriteFallbackItems() {
     if (!item) continue;
     fallback.push(item);
     if (fallback.length >= config.favoritesLimit - 1) break;
-  }
-
-  const fontShortcut = getMainMenuQuickSearches()[0];
-  if (fontShortcut && fallback.length < config.favoritesLimit) {
-    fallback.push({
-      type: 'quick',
-      key: fontShortcut.key,
-      label: fontShortcut.label,
-      icon: '⌨️',
-      name: fontShortcut.label,
-    });
   }
 
   return fallback.slice(0, config.favoritesLimit);
