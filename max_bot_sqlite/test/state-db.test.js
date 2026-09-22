@@ -97,3 +97,21 @@ test('runtime state tracks users and filters admin report by recent period', () 
 
   state.close();
 });
+
+test('runtime state keeps favorites separate for each user', () => {
+  const state = new RuntimeStateDb(makeTempDbPath());
+
+  assert.equal(state.toggleFavorite('user:100', 'folder-1'), true);
+  assert.equal(state.toggleFavorite('user:100', 'file-1'), true);
+  assert.equal(state.toggleFavorite('user:200', 'folder-1'), true);
+  assert.equal(state.isFavorite('user:100', 'folder-1'), true);
+  assert.deepEqual(state.listFavorites('user:100'), ['file-1', 'folder-1']);
+  assert.deepEqual(state.listFavorites('user:200'), ['folder-1']);
+
+  assert.equal(state.toggleFavorite('user:100', 'folder-1'), false);
+  assert.equal(state.isFavorite('user:100', 'folder-1'), false);
+  assert.deepEqual(state.listFavorites('user:100'), ['file-1']);
+  assert.deepEqual(state.listFavorites(''), []);
+
+  state.close();
+});

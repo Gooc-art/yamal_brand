@@ -61,7 +61,7 @@ test('bot replaces previous bot reply before sending a new one', () => {
 test('help screen includes back and menu buttons', () => {
   assert.match(botSource, /function buildHelpKeyboard\(\)/);
   assert.match(botSource, /Keyboard\.button\.callback\('⬅️ Назад'/);
-  assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню'/);
+  assert.match(botSource, /Keyboard\.button\.callback\('🏠 В меню'/);
   assert.match(botSource, /open:\$\{ROOT_ID\}:0/);
   assert.match(botSource, /attachments:\s*\[buildHelpKeyboard\(\)\]/);
 });
@@ -86,29 +86,27 @@ test('main menu uses the agreed top-level button order', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('⭐ Избранное',\s*'favorites:main'\)/);
 });
 
-test('bot onboarding clearly explains official regional brand catalog context', () => {
+test('bot uses the approved PDF onboarding and help topics', () => {
   assert.match(botSource, /function buildMainMenuText\(intro = false\)/);
   assert.match(botSource, /const BOT_INTRO_TEXT = \[/);
-  assert.match(botSource, /Привет! Добро пожаловать в официальный каталог бренда Ямала\./);
-  assert.match(botSource, /элементы регионального бренда Ямала в своей деятельности/);
-  assert.match(botSource, /которые помогут вам в реализации проектов в регионе и продвижении вашего бизнеса/);
-  assert.match(botSource, /• Ознакомиться с верхними разделами каталога\./);
-  assert.match(botSource, /• Добавить интересующие материалы в Избранное\./);
-  assert.match(botSource, /• Использовать функцию Поиск для быстрого нахождения нужной информации\./);
-  assert.match(botSource, /Просто отправьте текст: Логотип, Брендбук, Паттерн, Шрифт, Иллюстрация — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала\./);
+  assert.match(botSource, /Добро пожаловать в чат-бот дизайн-материалов Ямала!/);
+  assert.match(botSource, /\[ссылка\]/);
   assert.match(botSource, /function buildHelpText\(\)/);
-  assert.match(botSource, /Как пользоваться этим ботом/);
-  assert.match(botSource, /На главном экране выберите нужный раздел: «Мастер-бренд Ямала», «Ямал-100» или «Фирменные стили МО»\./);
-  assert.match(botSource, /Если вы ищете конкретный элемент, воспользуйтесь кнопкой «Поиск» и введите ключевое слово \(например: «логотип», «паттерн»\)\./);
-  assert.match(botSource, /Чтобы быстро возвращаться к важным материалам, добавляйте их в «Избранное» и открывайте их через кнопку «Избранное»\./);
-  assert.match(botSource, /Вы также можете просто отправить текстовый запрос \(например: «логотип Ямал», «брендбук Ямал-100», «шрифт», «паттерн Салехарда»\) — бот подберёт соответствующие материалы и отправит их в чат\./);
-  assert.match(botSource, /Все выбранные файлы и ссылки бот отправляет вам прямо в этот чат\./);
+  assert.match(botSource, /const HELP_TOPICS = \{/);
+  assert.match(botSource, /help:topic:navigation/);
+  assert.match(botSource, /help:topic:download/);
+  assert.match(botSource, /help:topic:favorites/);
+  assert.match(botSource, /help:topic:search/);
 });
 
 test('main menu exposes favorites screen and tracks runtime usage', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('⭐ Избранное',\s*'favorites:main'\)/);
   assert.match(botSource, /if \(data === 'favorites:main'\)/);
-  assert.match(botSource, /async function renderFavorites\(ctx\)/);
+  assert.match(botSource, /async function renderFavorites\(ctx,\s*page = 0\)/);
+  assert.match(botSource, /state\s*\.listFavorites\(/);
+  assert.match(botSource, /state\.toggleFavorite\(/);
+  assert.match(botSource, /function getFavoritesUserKey\(ctx\)/);
+  assert.match(botSource, /return chatKey \? `chat:\$\{chatKey\}` : getAnalyticsUserKey\(ctx\)/);
   assert.match(botSource, /state\.touchUser\(\{/);
   assert.match(botSource, /state\.logSearch\(query,\s*items\.length\)/);
   assert.match(botSource, /state\.trackItemEvent\(parent,\s*'open_folder'\)/);
@@ -139,7 +137,6 @@ test('bot exposes admin analytics commands and callback actions', () => {
 
 test('bot can show the current user id inside the chat', () => {
   assert.match(botSource, /bot\.command\('myid'/);
-  assert.match(botSource, /\/myid - показать ваш ID для настройки доступа/);
   assert.match(botSource, /Ваш ID в боте:/);
   assert.match(botSource, /sender_id:/);
   assert.match(botSource, /chat_id:/);
@@ -151,7 +148,7 @@ test('main menu uses only the three new catalog roots', () => {
 
 test('search empty state shows custom text and menu button', () => {
   assert.match(botSource, /'Пупупу\.\.\.\.пусто'/);
-  assert.match(botSource, /Keyboard\.button\.callback\('🏠 Меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
+  assert.match(botSource, /Keyboard\.button\.callback\('🏠 В меню',\s*`open:\$\{ROOT_ID\}:0`\)/);
 });
 
 test('bot renders every inline button as a full-width row', () => {
@@ -159,6 +156,14 @@ test('bot renders every inline button as a full-width row', () => {
   assert.match(botSource, /return items\.map\(\(item\) => \[buttonForItem\(item\)\]\)/);
   assert.match(botSource, /rows\.push\(\.\.\.pagingRow\.map\(\(button\) => \[button\]\)\)/);
   assert.match(botSource, /function buildNavigationRows\(/);
+});
+
+test('bot hides counters and supports personal favorites plus multi-format archives', () => {
+  assert.doesNotMatch(botSource, /Элементов:/);
+  assert.doesNotMatch(botSource, /Страница:/);
+  assert.match(botSource, /⬇️ Скачать всё/);
+  assert.match(botSource, /favorites:page:/);
+  assert.match(botSource, /100 \* 1024 \* 1024/);
 });
 
 test('bot wraps MAX API calls with retry helper for transient failures', () => {

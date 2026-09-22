@@ -53,6 +53,26 @@ export class RuntimeStateDb {
       `INSERT INTO item_events (item_id, event_type, item_name_snapshot, relative_path_snapshot, created_utc)
        VALUES (?, ?, ?, ?, ?)`
     );
+    this.stmtHasFavorite = this.db.prepare(
+      'SELECT 1 FROM favorites WHERE user_key = ? AND item_id = ?'
+    );
+    this.stmtAddFavorite = this.db.prepare(
+      'INSERT INTO favorites (user_key, item_id, created_utc) VALUES (?, ?, ?)'
+    );
+    this.stmtRemoveFavorite = this.db.prepare(
+      'DELETE FROM favorites WHERE user_key = ? AND item_id = ?'
+    );
+    this.stmtListFavorites = this.db.prepare(
+      'SELECT item_id FROM favorites WHERE user_key = ? ORDER BY created_utc DESC, item_id ASC'
+    );
+    this.toggleFavoriteTransaction = this.db.transaction((userKey, itemId) => {
+      if (this.stmtHasFavorite.get(userKey, itemId)) {
+        this.stmtRemoveFavorite.run(userKey, itemId);
+        return false;
+      }
+      this.stmtAddFavorite.run(userKey, itemId, nowIso());
+      return true;
+    });
     this.stmtTopSearches = this.db.prepare(
       `SELECT query_norm,
               MIN(query_text) AS sample_query,
@@ -145,6 +165,16 @@ export class RuntimeStateDb {
         ON item_events (item_id);
       CREATE INDEX IF NOT EXISTS idx_item_events_created
         ON item_events (created_utc);
+
+      CREATE TABLE IF NOT EXISTS favorites (
+        user_key TEXT NOT NULL,
+        item_id TEXT NOT NULL,
+        created_utc TEXT NOT NULL,
+        PRIMARY KEY (user_key, item_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_favorites_user_created
+        ON favorites (user_key, created_utc DESC);
     `);
   }
 
@@ -184,6 +214,25 @@ export class RuntimeStateDb {
       String(item?.relative_path || '').trim(),
       nowIso()
     );
+  }
+
+  isFavorite(userKey, itemId) {
+    const user = String(userKey || '').trim();
+    const item = String(itemId || '').trim();
+    return Boolean(user && item && this.stmtHasFavorite.get(user, item));
+  }
+
+  toggleFavorite(userKey, itemId) {
+    const user = String(userKey || '').trim();
+    const item = String(itemId || '').trim();
+    if (!user || !item) return false;
+    return this.toggleFavoriteTransaction(user, item);
+  }
+
+  listFavorites(userKey) {
+    const user = String(userKey || '').trim();
+    if (!user) return [];
+    return this.stmtListFavorites.all(user).map((row) => row.item_id);
   }
 
   getTopSearches(limit = 10) {

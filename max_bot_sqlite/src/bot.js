@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import os from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import { config, validateConfigPaths } from './config.js';
 import { CatalogDb } from './db.js';
@@ -28,16 +31,14 @@ const state = new RuntimeStateDb(config.runtimeDbPath);
 const bot = new Bot(config.token);
 const lastBotMessageIds = new Map();
 const adminReportChats = new Set();
-const BOT_SEARCH_EXAMPLES = 'Логотип, Брендбук, Паттерн, Шрифт, Иллюстрация';
+const activeArchives = new Set();
+const execFileAsync = promisify(execFile);
+const BOT_SEARCH_EXAMPLES = 'Брендбук, Логотип, Шрифт, Паттерн';
 const BOT_INTRO_TEXT = [
-  'Привет! Добро пожаловать в официальный каталог бренда Ямала.',
-  'Этот чат-бот создан для удобства государственных служащих и предпринимателей, которые хотят использовать элементы регионального бренда Ямала в своей деятельности.',
-  'В каталоге вы найдете утвержденные материалы, включая брендбуки, логотипы, шрифты и паттерны, которые помогут вам в реализации проектов в регионе и продвижении вашего бизнеса.',
-  'Вы можете:',
-  '• Ознакомиться с верхними разделами каталога.',
-  '• Добавить интересующие материалы в Избранное.',
-  '• Использовать функцию Поиск для быстрого нахождения нужной информации.',
-  'Просто отправьте текст: Логотип, Брендбук, Паттерн, Шрифт, Иллюстрация — и получите доступ к необходимым ресурсам для успешного использования официального бренда Ямала.',
+  'Добро пожаловать в чат-бот дизайн-материалов Ямала!',
+  'Чтобы создать проект в едином стиле региона, скачайте нужные логотипы, шрифты или паттерны. Перед началом работы обязательно ознакомьтесь с правилами применения и порядком получения согласия на использование элементов мастер-бренда по ссылке: [ссылка].',
+  'Выберите нужный раздел в меню ниже или отправьте команду: «Брендбук»/«Логотип»/«Шрифт»/«Паттерн».',
+  'Добавляйте файлы в «Избранное», чтобы они всегда были под рукой.',
 ].join('\n\n');
 
 function buildMainMenuText(intro = false) {
@@ -46,15 +47,17 @@ function buildMainMenuText(intro = false) {
 
 function buildHelpText() {
   return [
-    'Как пользоваться этим ботом',
-    'На главном экране выберите нужный раздел: «Мастер-бренд Ямала», «Ямал-100» или «Фирменные стили МО».',
-    'Переходите по кнопкам внутри разделов, чтобы открывать папки и файлы с материалами.',
-    'Если вы ищете конкретный элемент, воспользуйтесь кнопкой «Поиск» и введите ключевое слово (например: «логотип», «паттерн»).',
-    'Чтобы быстро возвращаться к важным материалам, добавляйте их в «Избранное» и открывайте их через кнопку «Избранное».',
-    'Вы также можете просто отправить текстовый запрос (например: «логотип Ямал», «брендбук Ямал-100», «шрифт», «паттерн Салехарда») — бот подберёт соответствующие материалы и отправит их в чат.',
-    'Все выбранные файлы и ссылки бот отправляет вам прямо в этот чат.',
+    'Коротко о том, как быстрее найти и скачать нужный материал в этом боте.',
+    'Выберите интересующий пункт.',
   ].join('\n\n');
 }
+
+const HELP_TOPICS = {
+  navigation: 'Материалы разделены на три проекта: «Мастер-бренд Ямала», «Ямал-100» и «Фирменные стили МО». Набор зависит от проекта и может включать брендбук, логотипы, шрифты и паттерны. Вернуться в стартовое меню можно с любого экрана кнопкой «В меню», а на шаг назад – кнопкой «Назад».',
+  download: 'У каждого элемента – свои форматы для скачивания в зависимости от материала. Если форматов больше одного, появляется кнопка «Скачать всё» – она даёт возможность получить все форматы одним архивом.',
+  favorites: 'Кнопка «Добавить в избранное» есть у каждой категории целиком и у каждого отдельного файла. Всё, что Вы отметили, собирается в разделе «Избранное» в стартовом меню.',
+  search: 'Если знаете название нужного файла или элемента, отправьте его текстом в чат – бот покажет совпадения по всем разделам.',
+};
 
 function buildSearchText() {
   return [
@@ -139,6 +142,11 @@ function getAnalyticsUserKey(ctx) {
   return chatKey ? `chat:${chatKey}` : '';
 }
 
+function getFavoritesUserKey(ctx) {
+  const chatKey = getChatKey(ctx);
+  return chatKey ? `chat:${chatKey}` : getAnalyticsUserKey(ctx);
+}
+
 function isAllowed(ctx) {
   if (!config.allowedUserIds.size) return true;
   return config.allowedUserIds.has(getSenderId(ctx));
@@ -216,7 +224,7 @@ function fileExtension(item) {
 }
 
 function isPreviewableFile(item) {
-  return ['png', 'jpg', 'jpeg', 'pdf'].includes(fileExtension(item));
+  return ['png', 'jpg', 'jpeg'].includes(fileExtension(item));
 }
 
 function folderPreviewRank(item) {
@@ -317,8 +325,19 @@ function buildMainMenuKeyboard() {
 
 function buildHelpKeyboard() {
   return inlineKeyboardAttachment([
+    [Keyboard.button.callback('🧭 Навигация по разделам', 'help:topic:navigation')],
+    [Keyboard.button.callback('⬇️ Скачивание файлов', 'help:topic:download')],
+    [Keyboard.button.callback('⭐ Избранное', 'help:topic:favorites')],
+    [Keyboard.button.callback('🔎 Поиск', 'help:topic:search')],
     [Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)],
-    [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+    [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
+  ]);
+}
+
+function buildHelpTopicKeyboard() {
+  return inlineKeyboardAttachment([
+    [Keyboard.button.callback('⬅️ Назад', 'help:main')],
+    [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
   ]);
 }
 
@@ -327,7 +346,7 @@ function buildSearchKeyboard() {
     Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`),
   ]);
   rows.push([Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)]);
-  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
+  rows.push([Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]);
   return inlineKeyboardAttachment(rows);
 }
 
@@ -337,7 +356,7 @@ function buildAdminKeyboard(activeDays = 7) {
   return inlineKeyboardAttachment([
     [Keyboard.button.callback(`🗓 ${weeklyLabel}`, 'admin:report:7')],
     [Keyboard.button.callback(`📊 ${allTimeLabel}`, 'admin:report:0')],
-    [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+    [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
   ]);
 }
 
@@ -346,44 +365,12 @@ function decorateSingleItem(item) {
   return decorateFolderItems(parent, [item])[0] || item;
 }
 
-function buildFavoriteFallbackItems() {
-  const preferredNames = [
-    '01 Мастер-бренд Ямала',
-    '02 Ямал-100',
-    '03 Фирменные стили МО',
-  ];
-  const rootByName = new Map(resolveRootMenuFolders(getRootFolders()).map((item) => [item.name, item]));
-  const fallback = [];
-
-  for (const name of preferredNames) {
-    const item = rootByName.get(name);
-    if (!item) continue;
-    fallback.push(item);
-    if (fallback.length >= config.favoritesLimit - 1) break;
-  }
-
-  return fallback.slice(0, config.favoritesLimit);
-}
-
-function getFavoriteItems() {
-  const ranked = state.getTopItems(config.favoritesLimit * 3);
-  const items = [];
-  const seen = new Set();
-
-  for (const record of ranked) {
-    if (!record?.item_id || seen.has(record.item_id)) continue;
-    const item = db.getById(record.item_id);
-    if (!item || !item.is_active) continue;
-    const decorated = decorateSingleItem(item);
-    items.push({
-      ...decorated,
-      uses: Number(record.uses || 0),
-    });
-    seen.add(record.item_id);
-    if (items.length >= config.favoritesLimit) break;
-  }
-
-  return items.length ? items : buildFavoriteFallbackItems();
+function favoriteButton(ctx, item) {
+  const saved = state.isFavorite(getFavoritesUserKey(ctx), item.id);
+  return Keyboard.button.callback(
+    saved ? '★ Удалить из избранного' : '☆ Добавить в избранное',
+    `favorite:${item.id}`
+  );
 }
 
 async function renderMainMenu(ctx, intro = false) {
@@ -409,33 +396,30 @@ async function renderStartMenu(ctx) {
   });
 }
 
-async function renderFavorites(ctx) {
-  const items = getFavoriteItems();
-  if (!items.length) {
+async function renderFavorites(ctx, page = 0) {
+  const allItems = state
+    .listFavorites(getFavoritesUserKey(ctx))
+    .map((itemId) => db.getById(itemId))
+    .filter(Boolean)
+    .map(decorateSingleItem);
+  if (!allItems.length) {
     await replyReplacingLast(ctx, 'Избранное пока пусто.', {
       attachments: [
-        inlineKeyboardAttachment([[Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]]),
+        inlineKeyboardAttachment([[Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]]),
       ],
     });
     return;
   }
 
+  const maxPage = Math.max(0, Math.ceil(allItems.length / config.pageSize) - 1);
+  const pageSafe = Math.min(Math.max(0, Number(page) || 0), maxPage);
+  const items = allItems.slice(pageSafe * config.pageSize, (pageSafe + 1) * config.pageSize);
   const rows = buildFolderItemRows(items);
-  rows.push([Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)]);
-  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
+  if (pageSafe > 0) rows.push([Keyboard.button.callback('◀️', `favorites:page:${pageSafe - 1}`)]);
+  if (pageSafe < maxPage) rows.push([Keyboard.button.callback('▶️', `favorites:page:${pageSafe + 1}`)]);
+  rows.push([Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]);
 
-  const hasStats = Number(state.stats()?.total_item_events || 0) > 0;
-  const text = hasStats
-    ? [
-        '⭐ Избранное',
-        'Здесь собраны самые часто открываемые разделы и файлы.',
-      ].join('\n')
-    : [
-        '⭐ Избранное',
-        'Пока статистики мало, поэтому показаны базовые разделы.',
-      ].join('\n');
-
-  await replyReplacingLast(ctx, text, {
+  await replyReplacingLast(ctx, '⭐ Избранное\nВаши сохранённые разделы и файлы.', {
     attachments: [inlineKeyboardAttachment(rows)],
   });
 }
@@ -504,7 +488,7 @@ async function renderAdminReport(ctx, days = 7) {
 
 function buildNavigationRows(parentId, page, total, pageSize) {
   if (parentId === ROOT_ID) {
-    return [[Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]];
+    return [[Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]];
   }
 
   const rows = [];
@@ -518,8 +502,20 @@ function buildNavigationRows(parentId, page, total, pageSize) {
   const parent = db.getById(parentId);
   const backId = parent?.parent_id || ROOT_ID;
   rows.push([Keyboard.button.callback('⬅️ Назад', `open:${backId}:0`)]);
-  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
+  rows.push([Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]);
   return rows;
+}
+
+const FORMAT_FOLDER_NAMES = new Set(['ai', 'cdr', 'eps', 'jpg', 'jpeg', 'pdf', 'png', 'svg']);
+
+function canDownloadAll(parentId) {
+  const children = db.listAllChildren(parentId);
+  if (db.listDescendantFiles(parentId).length < 2 || !children.length) return false;
+  if (children.every((item) => item.type === 'folder' && FORMAT_FOLDER_NAMES.has(item.name.toLowerCase()))) {
+    return true;
+  }
+  if (!children.every((item) => item.type === 'file')) return false;
+  return new Set(children.map((item) => path.parse(item.name).name.toLowerCase())).size === 1;
 }
 
 async function renderFolder(ctx, parentId, page = 0) {
@@ -541,14 +537,14 @@ async function renderFolder(ctx, parentId, page = 0) {
   const previewItem = pageClamped === 0 ? pickFolderPreviewItem(db.listAllChildren(parentId)) : null;
 
   const rows = buildFolderItemRows(children);
+  if (canDownloadAll(parentId)) {
+    rows.push([Keyboard.button.callback('⬇️ Скачать всё', `archive:${parentId}`)]);
+  }
+  if (parent) rows.push([favoriteButton(ctx, parent)]);
   rows.push(...buildNavigationRows(parentId, pageClamped, total, config.pageSize));
   const hint = getSectionHint(parent);
 
-  const header = [
-    `📂 ${title}`,
-    `Элементов: ${total}`,
-    `Страница: ${pageClamped + 1}/${Math.max(1, maxPage + 1)}`,
-  ].join('\n');
+  const header = `📂 ${title}`;
 
   const text = children.length
     ? [header, hint].filter(Boolean).join('\n\n')
@@ -631,11 +627,6 @@ async function previewFileById(ctx, fileId) {
     return;
   }
 
-  if (!isPreviewableFile(item)) {
-    await sendFileById(ctx, fileId);
-    return;
-  }
-
   const resolved = resolveCatalogFilePath(item);
   if (resolved.error) {
     await replyReplacingLast(ctx, resolved.error);
@@ -645,14 +636,15 @@ async function previewFileById(ctx, fileId) {
   const extension = fileExtension(item).toUpperCase();
   const backParent = item.parent_id || ROOT_ID;
   const text = [
-    `👁 Предпросмотр: ${item.name}`,
+    `${isPreviewableFile(item) ? '👁 Предпросмотр' : '📄 Файл'}: ${item.name}`,
     `Формат: ${extension}`,
     'Нажмите «Скачать», чтобы получить исходный файл.',
   ].join('\n');
   const keyboard = inlineKeyboardAttachment([
     [Keyboard.button.callback('⬇️ Скачать', `download:${item.id}`)],
+    [favoriteButton(ctx, item)],
     [Keyboard.button.callback('⬅️ К разделу', `open:${backParent}:0`)],
-    [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+    [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
   ]);
 
   if (['png', 'jpg', 'jpeg'].includes(fileExtension(item))) {
@@ -702,7 +694,7 @@ async function sendFileById(ctx, fileId) {
         attachmentJson,
         inlineKeyboardAttachment([
           [Keyboard.button.callback('⬅️ К разделу', `open:${backParent}:0`)],
-          [Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)],
+          [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
         ]),
       ],
     });
@@ -710,6 +702,69 @@ async function sendFileById(ctx, fileId) {
   } catch (err) {
     await replyReplacingLast(ctx, 'Не удалось отправить файл. Проверь размер/доступность файла.');
     console.error('[sendFileById] upload failed', err);
+  }
+}
+
+async function sendFolderArchive(ctx, folderId) {
+  const item = db.getById(folderId);
+  if (!item || item.type !== 'folder' || !canDownloadAll(folderId)) {
+    await replyReplacingLast(ctx, 'Архив недоступен.');
+    return;
+  }
+  const resolved = resolveCatalogFilePath(item);
+  if (resolved.error) {
+    await replyReplacingLast(ctx, resolved.error);
+    return;
+  }
+
+  if (activeArchives.size || activeArchives.has(folderId)) {
+    await replyReplacingLast(ctx, 'Архив уже создаётся. Попробуйте чуть позже.');
+    return;
+  }
+  const files = db.listDescendantFiles(folderId);
+  const totalBytes = files.reduce((sum, file) => {
+    const filePath = resolveCatalogFilePath(file);
+    return sum + (filePath.error ? 0 : fs.statSync(filePath.fullPath).size);
+  }, 0);
+  // ponytail: 100 MiB input cap; raise it only after MAX upload limits are verified in production.
+  if (totalBytes > 100 * 1024 * 1024) {
+    await replyReplacingLast(ctx, 'Архив слишком большой. Скачайте форматы по отдельности.');
+    return;
+  }
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'yamal-archive-'));
+  const archiveName = item.name.replace(/[^0-9a-zа-я._ -]+/giu, '_').slice(0, 80) || 'files';
+  const archiveBase = path.join(tempDir, archiveName);
+  const archivePath = `${archiveBase}.zip`;
+  activeArchives.add(folderId);
+  try {
+    await execFileAsync('python3', [
+      '-c',
+      'import shutil,sys; shutil.make_archive(sys.argv[1], "zip", root_dir=sys.argv[2])',
+      archiveBase,
+      resolved.fullPath,
+    ]);
+    const attachment = await retryMaxApiCall(
+      'uploadArchive',
+      () => bot.api.uploadFile({ source: fs.createReadStream(archivePath) }),
+      { retries: 3, delaysMs: [400, 1200, 2400] }
+    );
+    const attachmentJson = await retryMaxApiCall('archiveAttachmentToJson', () => attachment.toJson());
+    await replyReplacingLast(ctx, `🗜️ ${item.name}.zip`, {
+      attachments: [
+        attachmentJson,
+        inlineKeyboardAttachment([
+          [Keyboard.button.callback('⬅️ К разделу', `open:${item.id}:0`)],
+          [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
+        ]),
+      ],
+    });
+  } catch (err) {
+    console.error('[sendFolderArchive] failed', err);
+    await replyReplacingLast(ctx, 'Не удалось создать архив.');
+  } finally {
+    activeArchives.delete(folderId);
+    fs.rmSync(tempDir, { recursive: true, force: true });
   }
 }
 
@@ -743,14 +798,14 @@ async function runSearch(ctx, query) {
       ctx,
       'Пупупу....пусто',
       {
-        attachments: [inlineKeyboardAttachment([[Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]])],
+        attachments: [inlineKeyboardAttachment([[Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]])],
       }
     );
     return;
   }
 
   const rows = items.map((item) => [buttonForItem(item)]);
-  rows.push([Keyboard.button.callback('🏠 Меню', `open:${ROOT_ID}:0`)]);
+  rows.push([Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]);
 
   await replyReplacingLast(
     ctx,
@@ -816,18 +871,7 @@ bot.command('menu', async (ctx) => {
 
 bot.command('help', async (ctx) => {
   await safeHandle(ctx, async () => {
-    await replyReplacingLast(
-      ctx,
-      [
-        buildHelpText(),
-        '',
-        'Команды:',
-        '/start - открыть каталог',
-        '/menu - главное меню',
-        '/search <запрос> - поиск файла',
-        '/myid - показать ваш ID для настройки доступа',
-      ].join('\n')
-    );
+    await replyReplacingLast(ctx, buildHelpText(), { attachments: [buildHelpKeyboard()] });
   });
 });
 
@@ -905,6 +949,25 @@ bot.action(/.*/, async (ctx) => {
       return;
     }
 
+    m = data.match(/^archive:([a-f0-9]{16})$/i);
+    if (m) {
+      await sendFolderArchive(ctx, m[1].toLowerCase());
+      return;
+    }
+
+    m = data.match(/^favorite:([a-f0-9]{16})$/i);
+    if (m) {
+      const item = db.getById(m[1].toLowerCase());
+      if (!item) {
+        await replyReplacingLast(ctx, 'Материал не найден.');
+        return;
+      }
+      state.toggleFavorite(getFavoritesUserKey(ctx), item.id);
+      if (item.type === 'folder') await renderFolder(ctx, item.id, 0);
+      else await previewFileById(ctx, item.id);
+      return;
+    }
+
     m = data.match(/^quick:([a-z0-9_-]+)$/i);
     if (m) {
       const quick = getQuickSearchByKey(m[1].toLowerCase());
@@ -925,8 +988,22 @@ bot.action(/.*/, async (ctx) => {
       return;
     }
 
+    m = data.match(/^help:topic:(navigation|download|favorites|search)$/i);
+    if (m) {
+      await replyReplacingLast(ctx, HELP_TOPICS[m[1].toLowerCase()], {
+        attachments: [buildHelpTopicKeyboard()],
+      });
+      return;
+    }
+
     if (data === 'favorites:main') {
       await renderFavorites(ctx);
+      return;
+    }
+
+    m = data.match(/^favorites:page:(\d+)$/i);
+    if (m) {
+      await renderFavorites(ctx, Number.parseInt(m[1], 10));
       return;
     }
 

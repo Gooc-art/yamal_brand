@@ -32,6 +32,14 @@ function makeTempCatalogDb() {
     `INSERT INTO assets (id, parent_id, type, name, relative_path, is_active, sort_order)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run('file2', 'root', 'file', 'Source.pdf', 'Папка/Source.pdf', 1, 3);
+  db.prepare(
+    `INSERT INTO assets (id, parent_id, type, name, relative_path, is_active, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run('nested', 'folder1', 'file', 'Nested.svg', 'Папка/Nested.svg', 1, 1);
+  db.prepare(
+    `INSERT INTO assets (id, parent_id, type, name, relative_path, is_active, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run('hidden', 'root', 'folder', '04 Паттерны и элементы (каркас)', '02 Ямал-100/04 Паттерны и элементы (каркас)', 1, 4);
   db.close();
   return dbPath;
 }
@@ -48,5 +56,12 @@ test('catalog db can list all active children without pagination', () => {
     ['folder1', 'file1', 'file2']
   );
 
+  catalog.close();
+});
+
+test('catalog hides the removed Yamal-100 patterns branch and lists descendant files', () => {
+  const catalog = new CatalogDb(makeTempCatalogDb());
+  assert.equal(catalog.getById('hidden'), null);
+  assert.deepEqual(catalog.listDescendantFiles('folder1').map((item) => item.id), ['nested']);
   catalog.close();
 });

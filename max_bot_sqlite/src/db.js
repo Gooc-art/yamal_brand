@@ -1,17 +1,20 @@
 import Database from 'better-sqlite3';
 
+const VISIBLE_ASSET = `is_active = 1
+  AND relative_path NOT LIKE '02 Ямал-100/%Паттерны и элементы%'`;
+
 export class CatalogDb {
   constructor(dbPath) {
     this.db = new Database(dbPath, { fileMustExist: true, readonly: true });
 
-    this.stmtGetById = this.db.prepare('SELECT * FROM assets WHERE id = ? LIMIT 1');
+    this.stmtGetById = this.db.prepare(`SELECT * FROM assets WHERE id = ? AND ${VISIBLE_ASSET} LIMIT 1`);
     this.stmtCountChildren = this.db.prepare(
-      `SELECT COUNT(*) AS total FROM assets WHERE parent_id = ? AND is_active = 1`
+      `SELECT COUNT(*) AS total FROM assets WHERE parent_id = ? AND ${VISIBLE_ASSET}`
     );
     this.stmtListChildren = this.db.prepare(
       `SELECT *
        FROM assets
-       WHERE parent_id = ? AND is_active = 1
+       WHERE parent_id = ? AND ${VISIBLE_ASSET}
        ORDER BY sort_order ASC,
                 CASE type WHEN 'folder' THEN 0 ELSE 1 END ASC,
                 name ASC
@@ -20,11 +23,25 @@ export class CatalogDb {
     this.stmtListAllChildren = this.db.prepare(
       `SELECT *
        FROM assets
-       WHERE parent_id = ? AND is_active = 1
+       WHERE parent_id = ? AND ${VISIBLE_ASSET}
        ORDER BY sort_order ASC,
                 CASE type WHEN 'folder' THEN 0 ELSE 1 END ASC,
                 name ASC`
     );
+  }
+
+  listDescendantFiles(parentId) {
+    return this.db.prepare(
+      `WITH RECURSIVE descendants AS (
+         SELECT * FROM assets WHERE parent_id = ? AND ${VISIBLE_ASSET}
+         UNION ALL
+         SELECT child.* FROM assets child
+         JOIN descendants parent ON child.parent_id = parent.id
+         WHERE child.is_active = 1
+           AND child.relative_path NOT LIKE '02 Ямал-100/%Паттерны и элементы%'
+       )
+       SELECT * FROM descendants WHERE type = 'file' ORDER BY relative_path ASC`
+    ).all(parentId);
   }
 
   close() {
@@ -56,7 +73,7 @@ export class CatalogDb {
     const sql = `
       SELECT *
       FROM assets
-      WHERE is_active = 1
+      WHERE ${VISIBLE_ASSET}
         ${typeFilter}
         AND (${clauses})
       ORDER BY depth ASC, name ASC
@@ -69,7 +86,7 @@ export class CatalogDb {
   }
 
   allSearchCandidates(includeFolders = false, limit = 2000) {
-    const whereParts = ['is_active = 1'];
+    const whereParts = [VISIBLE_ASSET];
     if (!includeFolders) whereParts.push(`type = 'file'`);
     const whereSql = `WHERE ${whereParts.join(' AND ')}`;
     return this.db
