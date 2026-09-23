@@ -163,7 +163,7 @@ function normalizeButtonLabel(name, { stripNumericPrefix = true } = {}) {
   );
 }
 
-function cleanupFolderLabel(name) {
+export function cleanupFolderLabel(name) {
   return normalizeButtonLabel(name).replace(/\s*\(каркас\)$/iu, '');
 }
 

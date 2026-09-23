@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  cleanupFolderLabel,
   QUICK_SEARCHES,
   decorateFolderItems,
   getMainMenuQuickSearches,
@@ -173,6 +174,7 @@ test('technical scaffold suffix is hidden from folder buttons', () => {
     { type: 'folder', name: '02 Логотипы (каркас)' },
   ]);
   assert.equal(item.label, 'Логотипы');
+  assert.equal(cleanupFolderLabel('03 Шрифты (каркас)'), 'Шрифты');
 });
 
 test('horizontal logo folders do not get the umbrella icon', () => {

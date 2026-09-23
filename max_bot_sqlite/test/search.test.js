@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildQueryVariants, rankSearch, swapKeyboardLayout } from '../src/search.js';
+import {
+  buildQueryVariants,
+  filterExactIntentMatches,
+  rankSearch,
+  swapKeyboardLayout,
+} from '../src/search.js';
 
 test('buildQueryVariants expands synonyms and transliteration', () => {
   const variants = buildQueryVariants('логотип');
@@ -45,6 +50,16 @@ test('buildQueryVariants expands non-obvious user vocabulary', () => {
 test('buildQueryVariants corrects wrong keyboard layout', () => {
   assert.equal(swapKeyboardLayout('kjujnbg'), 'логотип');
   assert.equal(buildQueryVariants('kjujnbg').includes('логотип'), true);
+});
+
+test('exact brandbook search excludes descendants that only inherit the word from their path', () => {
+  const rows = [
+    { id: 'book', name: 'Брендбук Ямал.pdf', normalized_name: 'брендбук ямал' },
+    { id: 'logo', name: 'Логотип.svg', normalized_name: 'логотип', normalized_path: 'брендбук ямал логотип' },
+  ];
+
+  assert.deepEqual(filterExactIntentMatches('брендбук', rows).map((row) => row.id), ['book']);
+  assert.equal(filterExactIntentMatches('логотип', rows).length, 2);
 });
 
 test('rankSearch prefers exact and more relevant matches', () => {

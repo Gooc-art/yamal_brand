@@ -12,13 +12,14 @@ import { retryMaxApiCall } from './max-api-retry.js';
 import { RuntimeStateDb } from './state-db.js';
 import {
   QUICK_SEARCHES,
+  cleanupFolderLabel,
   decorateFolderItems,
   getQuickSearchByKey,
   getRootMenuLabel,
   getSectionHint,
   resolveRootMenuFolders,
 } from './menu.js';
-import { buildQueryVariants, rankSearch } from './search.js';
+import { buildQueryVariants, filterExactIntentMatches, rankSearch } from './search.js';
 
 function safeId(value) {
   return crypto.createHash('sha1').update(value, 'utf8').digest('hex').slice(0, 16);
@@ -531,7 +532,9 @@ async function renderFolder(ctx, parentId, page = 0) {
   const offset = pageClamped * config.pageSize;
 
   const parent = db.getById(parentId);
-  const title = parentId === ROOT_ID ? 'Бренд ЯМАЛ' : getRootMenuLabel(parent?.name) || parent?.name || 'Раздел';
+  const title = parentId === ROOT_ID
+    ? 'Бренд ЯМАЛ'
+    : getRootMenuLabel(parent?.name) || cleanupFolderLabel(parent?.name) || 'Раздел';
   const rawChildren = db.listChildren(parentId, config.pageSize, offset);
   const children = decorateFolderItems(parent, rawChildren);
   const previewItem = pageClamped === 0 ? pickFolderPreviewItem(db.listAllChildren(parentId)) : null;
@@ -775,8 +778,11 @@ async function runSearch(ctx, query) {
     return;
   }
 
-  const direct = db.searchByVariants(variants, true, config.maxSearchResults * 5);
-  const fuzzyPool = db.allSearchCandidates(true, 2000);
+  const direct = filterExactIntentMatches(
+    query,
+    db.searchByVariants(variants, true, config.maxSearchResults * 5)
+  );
+  const fuzzyPool = filterExactIntentMatches(query, db.allSearchCandidates(true, 2000));
   const fuzzy = rankSearch(query, fuzzyPool, config.maxSearchResults * 5);
 
   const merged = new Map();

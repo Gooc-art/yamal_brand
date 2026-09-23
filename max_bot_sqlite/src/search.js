@@ -144,6 +144,11 @@ export function buildQueryVariants(query) {
   return variants;
 }
 
+export function filterExactIntentMatches(query, rows) {
+  if (normalizeText(query) !== 'брендбук') return rows;
+  return rows.filter((row) => splitTokens(row.normalized_name || row.name).includes('брендбук'));
+}
+
 function ratio(a, b) {
   if (!a || !b) return 0;
   if (a === b) return 1;
