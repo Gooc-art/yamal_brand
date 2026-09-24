@@ -59,7 +59,23 @@ test('exact brandbook search excludes descendants that only inherit the word fro
   ];
 
   assert.deepEqual(filterExactIntentMatches('брендбук', rows).map((row) => row.id), ['book']);
-  assert.equal(filterExactIntentMatches('логотип', rows).length, 2);
+  assert.equal(filterExactIntentMatches('цвет', rows).length, 2);
+});
+
+test('category shortcuts return only the current matching folders, not every descendant mentioning the category', () => {
+  const rows = [
+    { id: 'fonts', type: 'folder', name: '03 Шрифты', normalized_name: '03 шрифты', normalized_path: '01 мастер бренд 03 шрифты' },
+    { id: 'logos', type: 'folder', name: '02 Логотипы (каркас)', normalized_name: '02 логотипы каркас', normalized_path: '02 ямал 100 02 логотипы каркас' },
+    { id: 'patterns', type: 'folder', name: 'Паттерны', normalized_name: 'паттерны', normalized_path: '04 паттерны и иллюстрации паттерны' },
+    { id: 'illustrations', type: 'folder', name: 'Иллюстрации', normalized_name: 'иллюстрации', normalized_path: '04 паттерны и иллюстрации иллюстрации' },
+    { id: 'font-file', type: 'file', name: 'Golos Text.zip', normalized_name: 'golos text zip', normalized_path: '01 мастер бренд 03 шрифты golos text zip' },
+    { id: 'manual', type: 'file', name: 'Брендбук.pdf', normalized_name: 'брендбук pdf', normalized_path: '01 фирменный стиль шрифты брендбук pdf' },
+  ];
+
+  assert.deepEqual(filterExactIntentMatches('шрифт', rows).map((row) => row.id), ['fonts']);
+  assert.deepEqual(filterExactIntentMatches('логотип', rows).map((row) => row.id), ['logos']);
+  assert.deepEqual(filterExactIntentMatches('паттерн', rows).map((row) => row.id), ['patterns']);
+  assert.deepEqual(filterExactIntentMatches('иллюстрация', rows).map((row) => row.id), ['illustrations']);
 });
 
 test('rankSearch prefers exact and more relevant matches', () => {

@@ -145,8 +145,31 @@ export function buildQueryVariants(query) {
 }
 
 export function filterExactIntentMatches(query, rows) {
-  if (normalizeText(query) !== 'брендбук') return rows;
-  return rows.filter((row) => splitTokens(row.normalized_name || row.name).includes('брендбук'));
+  const queryNorm = normalizeText(query);
+  if (queryNorm === 'брендбук') {
+    return rows.filter((row) => splitTokens(row.normalized_name || row.name).includes('брендбук'));
+  }
+
+  const categoryNames = {
+    'шрифт': ['шрифт', 'шрифты'],
+    'шрифты': ['шрифт', 'шрифты'],
+    'лого': ['логотип', 'логотипы'],
+    'логотип': ['логотип', 'логотипы'],
+    'логотипы': ['логотип', 'логотипы'],
+    'паттерн': ['паттерн', 'паттерны'],
+    'паттерны': ['паттерн', 'паттерны'],
+    'иллюстрация': ['иллюстрация', 'иллюстрации'],
+    'иллюстрации': ['иллюстрация', 'иллюстрации'],
+  }[queryNorm];
+  if (!categoryNames) return rows;
+
+  return rows.filter((row) => {
+    if (row.type !== 'folder') return false;
+    const name = normalizeText(row.normalized_name || row.name)
+      .replace(/^\d+\s+/, '')
+      .replace(/\s+каркас$/, '');
+    return categoryNames.includes(name);
+  });
 }
 
 function ratio(a, b) {
