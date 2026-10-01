@@ -1049,15 +1049,19 @@ async function startBot() {
     username: botInfo?.username,
     name: botInfo?.name,
   });
-  await bot.api.setMyCommands([
-    { name: 'start', description: 'Открыть официальный каталог бренда Ямала' },
-    { name: 'menu', description: 'Главное меню каталога' },
-    { name: 'search', description: 'Поиск материалов каталога' },
-    { name: 'help', description: 'Как пользоваться ботом' },
-    { name: 'myid', description: 'Показать ваш ID' },
-    { name: 'admin', description: 'Статистика для администратора' },
-  ]);
-  console.log('[boot] commands=updated');
+  try {
+    await bot.api.setMyCommands([
+      { name: 'start', description: 'Открыть официальный каталог бренда Ямала' },
+      { name: 'menu', description: 'Главное меню каталога' },
+      { name: 'search', description: 'Поиск материалов каталога' },
+      { name: 'help', description: 'Как пользоваться ботом' },
+      { name: 'myid', description: 'Показать ваш ID' },
+      { name: 'admin', description: 'Статистика для администратора' },
+    ]);
+    console.log('[boot] commands=updated');
+  } catch (err) {
+    console.warn('[boot] commands update skipped', err?.message || err);
+  }
   await bot.start();
 }
 

@@ -27,6 +27,7 @@ test('bot publishes MAX command hints on startup', () => {
   assert.match(botSource, /name:\s*'start'/);
   assert.match(botSource, /name:\s*'admin'/);
   assert.match(botSource, /\[boot\] commands=updated/);
+  assert.match(botSource, /\[boot\] commands update skipped/);
 });
 
 test('bot handles MAX start button before generic event routing', () => {
