@@ -226,3 +226,4 @@ python3 /home/sergey/yamal_brand/scripts/backup_bot_data.py --catalog-db /home/s
 - During migration from the old user-managed mode, deploy stops the legacy process and removes its `@reboot` crontab entry before enabling `systemd`.
 - Bot-side network calls now retry short-lived MAX API failures such as header/connect timeouts and `Attachment not ready`.
 - Updating MAX command hints is best-effort: an unavailable command API must not stop bot polling.
+- The MAX `Поиск` screen is text-only; it does not render quick-search buttons.

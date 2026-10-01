@@ -11,7 +11,6 @@ import { buildMessageIdsToDelete, getMessageId } from './chat-cleanup.js';
 import { retryMaxApiCall } from './max-api-retry.js';
 import { RuntimeStateDb } from './state-db.js';
 import {
-  QUICK_SEARCHES,
   cleanupFolderLabel,
   decorateFolderItems,
   getQuickSearchByKey,
@@ -34,7 +33,6 @@ const lastBotMessageIds = new Map();
 const adminReportChats = new Set();
 const activeArchives = new Set();
 const execFileAsync = promisify(execFile);
-const BOT_SEARCH_EXAMPLES = 'Брендбук, Логотип, Шрифт, Паттерн';
 const BOT_INTRO_TEXT = [
   'Добро пожаловать в чат-бот дизайн-материалов Ямала!',
   'Чтобы создать проект в едином стиле региона, скачайте нужные логотипы, шрифты или паттерны. Перед началом работы обязательно ознакомьтесь с правилами применения и порядком получения согласия на использование элементов мастер-бренда по ссылке: [ссылка].',
@@ -61,12 +59,7 @@ const HELP_TOPICS = {
 };
 
 function buildSearchText() {
-  return [
-    'Поиск по официальному каталогу бренда Ямала:',
-    'Отправьте слово или фразу, даже если не уверены в точном названии материала.',
-    'Можно искать брендбуки, логотипы, шрифты, паттерны и иллюстрации.',
-    `Например: ${BOT_SEARCH_EXAMPLES}.`,
-  ].join('\n');
+  return 'Введите запрос, например: «шрифт» или «брендбук».';
 }
 
 bot.catch((err, ctx) => {
@@ -340,15 +333,6 @@ function buildHelpTopicKeyboard() {
     [Keyboard.button.callback('⬅️ Назад', 'help:main')],
     [Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)],
   ]);
-}
-
-function buildSearchKeyboard() {
-  const rows = QUICK_SEARCHES.map((item) => [
-    Keyboard.button.callback(`🔎 ${item.label}`, `quick:${item.key}`),
-  ]);
-  rows.push([Keyboard.button.callback('⬅️ Назад', `open:${ROOT_ID}:0`)]);
-  rows.push([Keyboard.button.callback('🏠 В меню', `open:${ROOT_ID}:0`)]);
-  return inlineKeyboardAttachment(rows);
 }
 
 function buildAdminKeyboard(activeDays = 7) {
@@ -1014,11 +998,7 @@ bot.action(/.*/, async (ctx) => {
     }
 
     if (data === 'search:main') {
-      await replyReplacingLast(
-        ctx,
-        buildSearchText(),
-        { attachments: [buildSearchKeyboard()] }
-      );
+      await replyReplacingLast(ctx, buildSearchText());
       return;
     }
 

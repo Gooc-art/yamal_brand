@@ -67,14 +67,13 @@ test('help screen includes back and menu buttons', () => {
   assert.match(botSource, /attachments:\s*\[buildHelpKeyboard\(\)\]/);
 });
 
-test('main menu exposes dedicated search screen with quick shortcuts', () => {
+test('main menu search screen asks for text without shortcut buttons', () => {
   assert.match(botSource, /Keyboard\.button\.callback\('🔎 Поиск',\s*'search:main'\)/);
-  assert.match(botSource, /function buildSearchKeyboard\(\)/);
+  assert.doesNotMatch(botSource, /function buildSearchKeyboard\(\)/);
   assert.match(botSource, /function buildSearchText\(\)/);
   assert.match(botSource, /if \(data === 'search:main'\)/);
-  assert.match(botSource, /Поиск по официальному каталогу бренда Ямала:/);
-  assert.match(botSource, /Отправьте слово или фразу, даже если не уверены в точном названии материала\./);
-  assert.match(botSource, /attachments:\s*\[buildSearchKeyboard\(\)\]/);
+  assert.match(botSource, /Введите запрос, например: «шрифт» или «брендбук»\./);
+  assert.match(botSource, /replyReplacingLast\(\s*ctx,\s*buildSearchText\(\)\s*\)/);
 });
 
 test('main menu uses the agreed top-level button order', () => {

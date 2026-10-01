@@ -88,6 +88,7 @@ Snapshot contents:
 - `/start` -> run `children --parent-id <root_id>`
 - folder button -> run `children --parent-id <folder_id>`
 - text search -> run `search --query "<text>"`
+- MAX menu search opens a text-only prompt; users type queries such as `шрифт` or `брендбук`
 - file button -> run `get --id <file_id>` and send file URL/path
 - admin report -> restrict `/admin` or `/stats` to `ADMIN_USER_IDS` and read analytics from `max_bot_runtime.db`
 
