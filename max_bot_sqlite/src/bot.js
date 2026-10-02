@@ -18,7 +18,12 @@ import {
   getSectionHint,
   resolveRootMenuFolders,
 } from './menu.js';
-import { buildQueryVariants, filterExactIntentMatches, rankSearch } from './search.js';
+import {
+  buildQueryVariants,
+  categorySearchResultLabel,
+  filterExactIntentMatches,
+  rankSearch,
+} from './search.js';
 
 function safeId(value) {
   return crypto.createHash('sha1').update(value, 'utf8').digest('hex').slice(0, 16);
@@ -781,7 +786,10 @@ async function runSearch(ctx, query) {
     }
   }
 
-  const items = [...merged.values()].slice(0, config.maxSearchResults);
+  const items = [...merged.values()].slice(0, config.maxSearchResults).map((item) => ({
+    ...item,
+    label: categorySearchResultLabel(query, item) || item.label,
+  }));
   state.logSearch(query, items.length);
   if (!items.length) {
     await replyReplacingLast(

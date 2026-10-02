@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 
-const VISIBLE_ASSET = `is_active = 1
-  AND relative_path NOT LIKE '02 Ямал-100/%Паттерны и элементы%'`;
+const VISIBLE_ASSET = 'is_active = 1';
 
 export class CatalogDb {
   constructor(dbPath) {
@@ -38,7 +37,6 @@ export class CatalogDb {
          SELECT child.* FROM assets child
          JOIN descendants parent ON child.parent_id = parent.id
          WHERE child.is_active = 1
-           AND child.relative_path NOT LIKE '02 Ямал-100/%Паттерны и элементы%'
        )
        SELECT * FROM descendants WHERE type = 'file' ORDER BY relative_path ASC`
     ).all(parentId);

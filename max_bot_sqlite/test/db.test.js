@@ -53,15 +53,15 @@ test('catalog db can list all active children without pagination', () => {
   assert.equal(firstPage.length, 1);
   assert.deepEqual(
     allChildren.map((item) => item.id),
-    ['folder1', 'file1', 'file2']
+    ['folder1', 'file1', 'file2', 'hidden']
   );
 
   catalog.close();
 });
 
-test('catalog hides the removed Yamal-100 patterns branch and lists descendant files', () => {
+test('catalog exposes the Yamal-100 patterns branch and lists descendant files', () => {
   const catalog = new CatalogDb(makeTempCatalogDb());
-  assert.equal(catalog.getById('hidden'), null);
+  assert.equal(catalog.getById('hidden')?.id, 'hidden');
   assert.deepEqual(catalog.listDescendantFiles('folder1').map((item) => item.id), ['nested']);
   catalog.close();
 });

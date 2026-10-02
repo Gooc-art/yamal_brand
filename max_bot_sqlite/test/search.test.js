@@ -2,10 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildQueryVariants,
+  categorySearchResultLabel,
   filterExactIntentMatches,
   rankSearch,
   swapKeyboardLayout,
 } from '../src/search.js';
+
+test('category search labels identify the project from relative_path', () => {
+  const cases = [
+    ['брендбук', '01 Мастер-бренд Ямала/01 Фирменный стиль/Ямал мастер брендбук.pdf', 'Мастер-бренд. Брендбук'],
+    ['логотип', '02 Ямал-100/02 Логотипы (каркас)', 'Ямал 100. Логотипы'],
+    ['паттерн', '02 Ямал-100/04 Паттерны и элементы (каркас)/Паттерны', 'Ямал 100. Паттерны'],
+    ['паттерны', '03 Фирменные стили МО/Новый Уренгой/04 Паттерны и иллюстрации/Паттерны', 'Новый Уренгой. Паттерны'],
+    ['шрифт', '03 Фирменные стили МО/Ноябрьск/03 Шрифты', 'Ноябрьск. Шрифты'],
+    ['шрифты', '03 Фирменные стили МО/Салехард/03 Шрифты', 'Салехард. Шрифты'],
+  ];
+
+  for (const [query, relative_path, expected] of cases) {
+    assert.equal(categorySearchResultLabel(query, { relative_path }), expected);
+  }
+});
 
 test('buildQueryVariants expands synonyms and transliteration', () => {
   const variants = buildQueryVariants('логотип');

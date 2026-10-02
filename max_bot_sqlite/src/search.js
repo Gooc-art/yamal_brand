@@ -172,6 +172,29 @@ export function filterExactIntentMatches(query, rows) {
   });
 }
 
+export function categorySearchResultLabel(query, item) {
+  const category = {
+    'брендбук': 'Брендбук',
+    'лого': 'Логотипы',
+    'логотип': 'Логотипы',
+    'логотипы': 'Логотипы',
+    'паттерн': 'Паттерны',
+    'паттерны': 'Паттерны',
+    'шрифт': 'Шрифты',
+    'шрифты': 'Шрифты',
+  }[normalizeText(query)];
+  if (!category) return '';
+
+  const relativePath = String(item?.relative_path || '');
+  const project = relativePath.startsWith('01 Мастер-бренд Ямала/')
+    ? 'Мастер-бренд'
+    : relativePath.startsWith('02 Ямал-100/')
+      ? 'Ямал 100'
+      : relativePath.match(/^03 Фирменные стили МО\/([^/]+)\//u)?.[1];
+
+  return project ? `${project}. ${category}` : '';
+}
+
 function ratio(a, b) {
   if (!a || !b) return 0;
   if (a === b) return 1;
