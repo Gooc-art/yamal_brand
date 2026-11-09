@@ -6,6 +6,9 @@ const CONSTRUCTOR_STYLE_FIELD_IDS = new Set(['color_variant', 'brand_lockup', 'g
 const CONSTRUCTOR_PRIMARY_STYLE_FIELD_IDS = new Set(['brand_lockup', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_LIVE_PREVIEW_FIELD_IDS = new Set(['color_variant', 'graphic_element', 'design_variant', 'background_style', 'palette_tone']);
 const CONSTRUCTOR_DRAFT_STORAGE_KEY = 'yamal-site-constructor-drafts-v1';
+const CONSTRUCTOR_LOCAL_FIELD_IDS = new Set(['custom_logo_src', 'custom_logo_name']);
+const AUTH_STORAGE_KEY = 'yamal-site-account-v1';
+const AUTH_TOKEN_STORAGE_KEY = 'yamal-site-token-v1';
 const CONSTRUCTOR_DRAFT_SAVE_DELAY = 220;
 const CONSTRUCTOR_PREVIEW_STACKED_BREAKPOINT = 980;
 const CONSTRUCTOR_PREVIEW_FLOAT_BREAKPOINT = 0;
@@ -32,6 +35,68 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function normalizeAuthEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hashLocalPassword(value) {
+  const source = String(value || '');
+  let hash = 5381;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = ((hash << 5) + hash) ^ source.charCodeAt(index);
+  }
+  return String(hash >>> 0);
+}
+
+function normalizeYamalUserInput(input = {}) {
+  return {
+    lastName: String(input.lastName || '').trim(),
+    firstName: String(input.firstName || '').trim(),
+    middleName: String(input.middleName || '').trim(),
+    phoneNumber: String(input.phoneNumber || '').trim(),
+    organization: String(input.organization || '').trim(),
+    email: normalizeAuthEmail(input.email),
+    password: String(input.password || ''),
+  };
+}
+
+function validateYamalAuth(mode, input = {}, users = []) {
+  const data = normalizeYamalUserInput(input);
+  const errors = {};
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.email = 'Укажите корректный email.';
+  }
+  if (!data.password || data.password.length < 6) {
+    errors.password = 'Пароль должен быть не короче 6 символов.';
+  }
+  if (mode === 'register') {
+    if (!data.firstName) errors.firstName = 'Укажите имя.';
+    if (!data.lastName) errors.lastName = 'Укажите фамилию.';
+    if (!data.organization) errors.organization = 'Укажите организацию.';
+    if (users.some((user) => normalizeAuthEmail(user.email) === data.email)) {
+      errors.email = 'Пользователь с таким email уже зарегистрирован.';
+    }
+  }
+  return { ok: Object.keys(errors).length === 0, errors, data };
+}
+
+function buildYamalLocalUser(input = {}, nowValue = new Date()) {
+  const data = normalizeYamalUserInput(input);
+  return {
+    id: data.email || `user-${Date.now()}`,
+    email: data.email,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    middleName: data.middleName,
+    phoneNumber: data.phoneNumber,
+    organization: data.organization,
+    role: 'User',
+    isActive: true,
+    passwordHash: hashLocalPassword(data.password),
+    createdAt: nowValue instanceof Date ? nowValue.toISOString() : String(nowValue || ''),
+  };
 }
 
 function hexToRgb(hex) {
@@ -1100,6 +1165,16 @@ function normalizeConstructorDraftInput(fields, input) {
     normalized[fieldId] = value;
   });
 
+  CONSTRUCTOR_LOCAL_FIELD_IDS.forEach((fieldId) => {
+    if (!Object.prototype.hasOwnProperty.call(source, fieldId)) {
+      return;
+    }
+    const value = String(source[fieldId] ?? '').trim();
+    if (value) {
+      normalized[fieldId] = value;
+    }
+  });
+
   return normalized;
 }
 
@@ -1348,6 +1423,9 @@ function buildConstructorWarnings(fields, input, options = {}) {
 function collectConstructorFormInput(form) {
   const input = {};
   new FormData(form).forEach((value, key) => {
+    if (value instanceof File) {
+      return;
+    }
     input[key] = String(value);
   });
   return input;
@@ -1789,6 +1867,11 @@ if (typeof module !== 'undefined' && module.exports) {
     buildConsultantMemoryPayload,
     normalizeConsultantAdvice,
     normalizeConsultantDeepAnswer,
+    normalizeAuthEmail,
+    hashLocalPassword,
+    normalizeYamalUserInput,
+    validateYamalAuth,
+    buildYamalLocalUser,
   };
 }
 
@@ -1828,6 +1911,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     consultantIntentId: '',
     consultantHistory: [],
     consultantContext: null,
+    authMode: 'login',
+    account: null,
   };
   const constructorBuildCache = new Map();
   let constructorBuildAbortController = null;
@@ -1855,6 +1940,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     solutionLabFilters: document.querySelector('#solution-lab-filters'),
     solutionLabMeta: document.querySelector('#solution-lab-meta'),
     solutionLabGrid: document.querySelector('#solution-lab-grid'),
+    accountPanel: document.querySelector('#account-panel'),
     setupBanner: document.querySelector('#setup-banner'),
     topSearches: document.querySelector('#top-searches'),
     contentMode: document.querySelector('#content-mode'),

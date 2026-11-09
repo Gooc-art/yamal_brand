@@ -42,6 +42,8 @@ $config = site_config();
             <a class="link-button" href="<?= htmlspecialchars(asset_url('assets/brand-logo-main.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" download>SVG логотип</a>
           </div>
 
+          <section id="account-panel" class="account-panel" aria-live="polite"></section>
+
           <form id="search-form" class="search-panel hero-search-panel">
             <label class="search-label" for="search-input">Поиск</label>
             <div class="search-row">
